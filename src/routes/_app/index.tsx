@@ -51,7 +51,7 @@ const features = [
   { icon: Wallet, title: "Wallet & Prizes", desc: "Add funds, pay entry fees, withdraw winnings.", to: "/wallet" },
   { icon: BarChart3, title: "Match Stats", desc: "Kill points, placement points, full match history.", to: "/profile" },
   { icon: Bell, title: "Notifications", desc: "Email, SMS, in-app alerts for match reminders & results.", to: "/profile" },
-  { icon: MessageCircle, title: "Community", desc: "Forums, comments, follow players & clans.", to: "/community" },
+  { icon: Bell, title: "Alerts", desc: "Get notified when new tournaments go live.", to: "/notifications" },
   { icon: Smartphone, title: "Mobile First", desc: "PWA, blazing fast on every screen size.", to: "/" },
 ];
 

@@ -16,7 +16,6 @@ const navItems = [
   { to: "/matches", label: "Matches", icon: Trophy },
   { to: "/leaderboard", label: "Leaderboard", icon: Crown },
   { to: "/teams", label: "Teams", icon: Users },
-  { to: "/community", label: "Community", icon: MessageCircle },
 ] as const;
 
 export function Navbar() {

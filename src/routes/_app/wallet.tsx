@@ -24,7 +24,7 @@ function WalletPage() {
     }
   }, [user, authLoading, router]);
   
-  if (authLoading || !user) return <div className="p-20 text-center text-muted-foreground font-display tracking-widest uppercase">Initializing...</div>;
+
   const depositBalance = user?.deposit_balance || 0;
   const winningBalance = user?.winning_balance || 0;
   const totalBalance = depositBalance + winningBalance;
@@ -34,6 +34,8 @@ function WalletPage() {
   const [upiId, setUpiId] = useState("");
   const [upiNumber, setUpiNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (authLoading || !user) return <div className="p-20 text-center text-muted-foreground font-display tracking-widest uppercase">Initializing...</div>;
 
   const handleWithdrawClick = () => {
     if (winningBalance <= 0) {

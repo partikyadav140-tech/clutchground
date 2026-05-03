@@ -79,7 +79,7 @@ export function Footer() {
             </div>
           </div>
           {[
-            { title: "Compete", links: [["Tournaments", "/tournaments"], ["Leaderboard", "/leaderboard"], ["Teams", "/teams"], ["Community", "/community"]] as const },
+            { title: "Compete", links: [["Tournaments", "/tournaments"], ["Leaderboard", "/leaderboard"], ["Teams", "/teams"]] as const },
             { title: "Account", links: [["Profile", "/profile"], ["Wallet", "/wallet"], ["Login", "/login"], ["Signup", "/signup"]] as const },
             { title: "Legal & Support", links: [["Contact Us", "/contact"], ["Privacy Policy", "/privacy"], ["Terms & Conditions", "/terms"], ["Anti-Cheat Policy", "/anti-cheat"], ["Admin", "/admin"]] as const },
           ].map((col) => (

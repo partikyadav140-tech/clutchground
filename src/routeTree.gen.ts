@@ -23,7 +23,6 @@ import { Route as AppMatchesRouteImport } from './routes/_app/matches'
 import { Route as AppLoginRouteImport } from './routes/_app/login'
 import { Route as AppLeaderboardRouteImport } from './routes/_app/leaderboard'
 import { Route as AppContactRouteImport } from './routes/_app/contact'
-import { Route as AppCommunityRouteImport } from './routes/_app/community'
 import { Route as AppAntiCheatRouteImport } from './routes/_app/anti-cheat'
 import { Route as AppTournamentsIndexRouteImport } from './routes/_app/tournaments/index'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
@@ -103,11 +102,6 @@ const AppContactRoute = AppContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => AppRoute,
 } as any)
-const AppCommunityRoute = AppCommunityRouteImport.update({
-  id: '/community',
-  path: '/community',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppAntiCheatRoute = AppAntiCheatRouteImport.update({
   id: '/anti-cheat',
   path: '/anti-cheat',
@@ -157,7 +151,6 @@ const AppAdminMessagesRoute = AppAdminMessagesRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/anti-cheat': typeof AppAntiCheatRoute
-  '/community': typeof AppCommunityRoute
   '/contact': typeof AppContactRoute
   '/leaderboard': typeof AppLeaderboardRoute
   '/login': typeof AppLoginRoute
@@ -181,7 +174,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/anti-cheat': typeof AppAntiCheatRoute
-  '/community': typeof AppCommunityRoute
   '/contact': typeof AppContactRoute
   '/leaderboard': typeof AppLeaderboardRoute
   '/login': typeof AppLoginRoute
@@ -208,7 +200,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/_app/anti-cheat': typeof AppAntiCheatRoute
-  '/_app/community': typeof AppCommunityRoute
   '/_app/contact': typeof AppContactRoute
   '/_app/leaderboard': typeof AppLeaderboardRoute
   '/_app/login': typeof AppLoginRoute
@@ -236,7 +227,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/anti-cheat'
-    | '/community'
     | '/contact'
     | '/leaderboard'
     | '/login'
@@ -260,7 +250,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/anti-cheat'
-    | '/community'
     | '/contact'
     | '/leaderboard'
     | '/login'
@@ -286,7 +275,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/_app/anti-cheat'
-    | '/_app/community'
     | '/_app/contact'
     | '/_app/leaderboard'
     | '/_app/login'
@@ -414,13 +402,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppContactRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/community': {
-      id: '/_app/community'
-      path: '/community'
-      fullPath: '/community'
-      preLoaderRoute: typeof AppCommunityRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/anti-cheat': {
       id: '/_app/anti-cheat'
       path: '/anti-cheat'
@@ -489,7 +470,6 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAntiCheatRoute: typeof AppAntiCheatRoute
-  AppCommunityRoute: typeof AppCommunityRoute
   AppContactRoute: typeof AppContactRoute
   AppLeaderboardRoute: typeof AppLeaderboardRoute
   AppLoginRoute: typeof AppLoginRoute
@@ -515,7 +495,6 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAntiCheatRoute: AppAntiCheatRoute,
-  AppCommunityRoute: AppCommunityRoute,
   AppContactRoute: AppContactRoute,
   AppLeaderboardRoute: AppLeaderboardRoute,
   AppLoginRoute: AppLoginRoute,
