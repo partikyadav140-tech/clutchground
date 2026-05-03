@@ -32,14 +32,14 @@ export function Hero() {
           autoPlay
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-50"
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-80"
           src="/hero.mp4"
         />
         
         {/* Advanced gradients for text readability on all screens */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/20 to-background z-10 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent sm:from-transparent sm:bg-gradient-to-r sm:from-background/95 sm:via-background/60 sm:to-transparent z-10 pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.6)_100%)] z-10 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/10 to-background/90 z-10 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent sm:from-transparent sm:bg-gradient-to-r sm:from-background/90 sm:via-background/40 sm:to-transparent z-10 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)] z-10 pointer-events-none" />
       </div>
 
       {/* Cyberpunk grid overlay */}
