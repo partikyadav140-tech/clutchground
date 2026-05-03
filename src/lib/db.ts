@@ -1,10 +1,21 @@
 "use server";
 import Database from 'better-sqlite3';
 import path from 'path';
+import fs from 'fs';
 
 let db: any;
 try {
-  const dbPath = process.env.DATABASE_URL || path.resolve(process.cwd(), 'arena.db');
+  let dbPath = process.env.DATABASE_URL || path.resolve(process.cwd(), 'arena.db');
+  
+  const dir = path.dirname(dbPath);
+  if (!fs.existsSync(dir)) {
+    try {
+      fs.mkdirSync(dir, { recursive: true });
+    } catch (err) {
+      dbPath = path.resolve(process.cwd(), 'arena.db');
+    }
+  }
+
   db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
 } catch (e) {
@@ -171,7 +182,8 @@ try {
 
 // Seed initial tournaments if empty
 const countStmt = db.prepare('SELECT COUNT(*) as count FROM tournaments');
-const { count } = countStmt.get() as { count: number };
+const res = countStmt.get() as { count: number } | null;
+const count = res ? res.count : 0;
 
 if (count === 0) {
   const insertTournament = db.prepare(`
