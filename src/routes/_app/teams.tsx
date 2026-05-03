@@ -80,7 +80,7 @@ function TeamsPage() {
             <h3 className="font-display text-xl font-black tracking-wide group-hover:text-primary transition-colors">{t.name}</h3>
 
             <div className="mt-5 grid grid-cols-2 gap-2 text-center">
-              <Stat icon={Users} value={`${t.members?.length || 0}/5`} label="Members" />
+              <Stat icon={Users} value={`${t.members?.length + 1 || 1}/4`} label="Members" />
               <Stat icon={Calendar} value={new Date(t.created_at).toLocaleDateString()} label="Founded" />
             </div>
 

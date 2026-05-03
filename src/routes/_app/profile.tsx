@@ -49,7 +49,7 @@ function ProfilePage() {
           setTeam(t);
           setTeamData({
             name: t.name, logo: t.logo || "",
-            members: [...t.members, ...Array(5 - t.members.length).fill({ ign: "", uid: "", role: "player" })].slice(0, 5)
+            members: [...t.members, ...Array(3 - t.members.length).fill({ ign: "", uid: "", role: "player" })].slice(0, 3)
           });
         }
         
@@ -91,7 +91,7 @@ function ProfilePage() {
       setTeam(t);
       setTeamData({
         name: t.name, logo: t.logo || "",
-        members: [...t.members, ...Array(5 - t.members.length).fill({ ign: "", uid: "", role: "player" })].slice(0, 5)
+        members: [...t.members, ...Array(3 - t.members.length).fill({ ign: "", uid: "", role: "player" })].slice(0, 3)
       });
       setIsEditingTeam(false);
       toast.success("Team saved successfully!");
@@ -236,7 +236,7 @@ function ProfilePage() {
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] uppercase tracking-widest font-display text-muted-foreground mb-2">Roster (up to 5 teammates + You)</label>
+                <label className="block text-[10px] uppercase tracking-widest font-display text-muted-foreground mb-2">Roster (up to 3 teammates + You = 4 Players)</label>
                 <div className="space-y-2">
                   <div className="flex gap-2 text-xs font-bold text-muted-foreground px-2">
                     <div className="w-1/3">IGN</div><div className="w-1/3">UID</div><div className="w-1/4">Role</div>

@@ -405,8 +405,15 @@ export const requestJoinTeam = createServerFn({ method: "POST" })
     const existing = await db.prepare("SELECT id FROM team_requests WHERE team_id = ? AND user_id = ? AND status = 'pending'").get(teamId, userId);
     if (existing) throw new Error("You already have a pending request to this team.");
 
+    const team = await db.prepare('SELECT name, leader_id FROM teams WHERE id = ?').get(teamId) as any;
+
     db.prepare('INSERT INTO team_requests (team_id, user_id, ign, uid) VALUES (?, ?, ?, ?)')
       .run(teamId, userId, ign, uid);
+      
+    if (team) {
+      await db.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(team.leader_id, `📩 ${ign} has requested to join your team ${team.name}. Go to your Profile to review.`);
+    }
+
     return { success: true };
   });
 
@@ -439,7 +446,7 @@ export const resolveTeamRequest = createServerFn({ method: "POST" })
       
       if (status === 'approved') {
         const teamCount = await tx.prepare('SELECT COUNT(*) as count FROM team_members WHERE team_id = ?').get(req.team_id) as any;
-        if (teamCount.count >= 5) throw new Error("Team is full! Please click 'Edit Team' above and clear a player's details to remove them first.");
+        if (teamCount.count >= 3) throw new Error("Team is full! (Max 4 Players). Please click 'Edit Team' in your profile and clear a player's details to remove them first.");
         
         tx.prepare('INSERT INTO team_members (team_id, user_id, ign, uid, role) VALUES (?, ?, ?, ?, ?)')
           .run(req.team_id, req.user_id, req.ign, req.uid, 'player');
