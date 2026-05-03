@@ -56,13 +56,18 @@ export function useAuth() {
       }
       try {
         const userData = await (getUserFromSession as any)({ data: sessionId });
-        // Only notify if something actually changed (simplified check by stringifying)
-        if (JSON.stringify(userData) !== JSON.stringify(globalUser)) {
+        if (userData === null) {
+          clearSessionId();
+          if (globalUser) {
+            globalUser = null;
+            notifyListeners();
+          }
+        } else if (JSON.stringify(userData) !== JSON.stringify(globalUser)) {
           globalUser = userData;
           notifyListeners();
         }
       } catch (e) {
-        clearSessionId();
+        console.warn("Failed to fetch user session, keeping existing state");
       }
       setLoading(false);
     }
