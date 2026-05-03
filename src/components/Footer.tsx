@@ -56,10 +56,10 @@ export function Footer() {
             </p>
             <div className="flex gap-2">
               {[
-                { Icon: Twitter, href: "https://twitter.com", label: "Twitter" },
-                { Icon: Youtube, href: "https://youtube.com", label: "YouTube" },
-                { Icon: Instagram, href: "https://instagram.com", label: "Instagram" },
-                { Icon: MessageCircle, href: "https://discord.com", label: "Discord" },
+                { Icon: Instagram, href: "https://www.instagram.com/clutchgroundofficial", label: "Instagram" },
+                { Icon: Send, href: "https://t.me/clutchground", label: "Telegram" },
+                { Icon: MessageCircle, href: "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s", label: "WhatsApp" },
+                { Icon: Mail, href: "mailto:clutchgroundofficial@gmail.com", label: "Email" },
               ].map(({ Icon, href, label }) => (
                 <a
                   key={label}

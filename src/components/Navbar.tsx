@@ -107,7 +107,7 @@ export function Navbar() {
           {/* Wallet - Visible on Mobile & Desktop */}
           <Link to="/wallet" className="flex items-center gap-2 px-3 h-10 lg:h-9 rounded-full lg:rounded-md bg-secondary/80 border border-border hover:border-primary/60 transition-colors active:scale-95">
             <GodCoin className="w-5 h-5 lg:w-4 lg:h-4" />
-            <span className="text-sm font-bold text-white">{totalBalance}</span>
+            <span className="text-sm font-bold text-foreground">{totalBalance}</span>
           </Link>
 
           {/* Notifications - Visible on Mobile & Desktop */}
@@ -186,7 +186,7 @@ export function Navbar() {
           <div className="container mx-auto px-4 py-4 flex flex-col gap-1">
             <Link to="/wallet" onClick={() => setOpen(false)} className="flex items-center justify-between px-4 py-3 rounded-md bg-secondary/60 border border-border mb-2">
               <span className="flex items-center gap-3"><Wallet className="w-5 h-5 text-primary" /><span className="font-semibold uppercase tracking-wide text-sm">Wallet</span></span>
-              <span className="font-display font-bold text-white flex items-center gap-1.5"><GodCoin className="w-4 h-4" /> {totalBalance}</span>
+              <span className="font-display font-bold text-foreground flex items-center gap-1.5"><GodCoin className="w-4 h-4" /> {totalBalance}</span>
             </Link>
             {navItems.map((item) => {
               const Icon = item.icon;
