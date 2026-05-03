@@ -107,6 +107,15 @@ async function initDb() {
         is_hero BOOLEAN DEFAULT false
       );
 
+      DO $$ 
+      BEGIN 
+        BEGIN
+          ALTER TABLE tournaments ADD COLUMN is_hero BOOLEAN DEFAULT false;
+        EXCEPTION
+          WHEN duplicate_column THEN null;
+        END;
+      END $$;
+
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,
         user_id INTEGER NOT NULL,

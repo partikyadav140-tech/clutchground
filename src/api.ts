@@ -138,7 +138,7 @@ export const toggleHeroTournament = createServerFn({ method: "POST" })
     const { db } = await import("./lib/db");
     const id = data as unknown as number;
     const current = await db.prepare('SELECT is_hero FROM tournaments WHERE id = ?').get(id) as any;
-    await db.prepare('UPDATE tournaments SET is_hero = ? WHERE id = ?').run(current.is_hero ? 0 : 1, id);
+    await db.prepare('UPDATE tournaments SET is_hero = ? WHERE id = ?').run(!current.is_hero, id);
     return { success: true };
   });
 
