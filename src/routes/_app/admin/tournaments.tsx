@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_app/admin/tournaments")({
-  head: () => ({ meta: [{ title: "Tournaments Admin — GOD ESPORTS" }] }),
+  head: () => ({ meta: [{ title: "Tournaments Admin — CLUTCHGROUND" }] }),
   loader: async () => await getTournaments(),
   component: AdminTournamentsPage,
 });

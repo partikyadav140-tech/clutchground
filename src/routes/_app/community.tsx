@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/_app/community")({
   head: () => ({
     meta: [
-      { title: "Community — GOD ESPORTS" },
-      { name: "description", content: "Join the GOD ESPORTS community. Share clips, find squads, discuss strategy." },
+      { title: "Community — CLUTCHGROUND" },
+      { name: "description", content: "Join the CLUTCHGROUND community. Share clips, find squads, discuss strategy." },
     ],
   }),
   component: CommunityPage,

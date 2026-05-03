@@ -20,7 +20,7 @@ interface Props {
 
 const teamSizeFor = (mode: Props["mode"]) => (mode === "Solo" ? 0 : mode === "Duo" ? 1 : 3);
 
-export function JoinBattleDialog({ trigger, tournamentId, tournamentTitle = "GOD ESPORTS", mode = "Squad", entryFee = 0 }: Props) {
+export function JoinBattleDialog({ trigger, tournamentId, tournamentTitle = "CLUTCHGROUND", mode = "Squad", entryFee = 0 }: Props) {
   const [open, setOpen] = useState(false);
   const teamCount = teamSizeFor(mode);
   const { user } = useAuth();

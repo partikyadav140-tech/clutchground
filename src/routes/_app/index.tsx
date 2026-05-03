@@ -11,9 +11,9 @@ import { useAuth } from "../../lib/auth-client";
 export const Route = createFileRoute("/_app/")({
   head: () => ({
     meta: [
-      { title: "GOD ESPORTS — India's #1 Free Fire Tournament Arena" },
+      { title: "CLUTCHGROUND — India's #1 Free Fire Tournament Arena" },
       { name: "description", content: "Compete in Free Fire & Free Fire MAX tournaments. Solo, duo, squad battles. Real cash prizes, live leaderboard, anti-cheat protection." },
-      { property: "og:title", content: "GOD ESPORTS — Become a God of the Battleground" },
+      { property: "og:title", content: "CLUTCHGROUND — Rule the Battleground" },
       { property: "og:description", content: "India's most fierce Free Fire esports league." },
     ],
   }),

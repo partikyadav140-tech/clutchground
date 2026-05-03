@@ -101,7 +101,7 @@ export function Footer() {
             <span className="font-display tracking-widest text-primary">⚔ FORGED IN FIRE ⚔</span>
           </div>
           <div className="flex flex-col gap-1.5 items-center">
-            <p className="text-sm font-display font-bold tracking-widest text-muted-foreground uppercase">© 2026 GOD ESPORTS</p>
+            <p className="text-sm font-display font-bold tracking-widest text-muted-foreground uppercase">© 2026 CLUTCHGROUND</p>
             <p className="text-xs text-muted-foreground/80 tracking-wide">Designed & Developed by Pratikk Yadav <span className="mx-1 text-primary">|</span> +91 8307224756</p>
           </div>
         </div>

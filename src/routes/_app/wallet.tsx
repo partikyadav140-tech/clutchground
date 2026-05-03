@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { processWithdrawal } from "../../api";
 
 export const Route = createFileRoute("/_app/wallet")({
-  head: () => ({ meta: [{ title: "Wallet — GOD ESPORTS" }] }),
+  head: () => ({ meta: [{ title: "Wallet — CLUTCHGROUND" }] }),
   component: WalletPage,
 });
 

@@ -18,7 +18,7 @@ export function Tutorial() {
           steps: [
             { 
               popover: { 
-                title: 'Welcome to GOD ESPORTS! 👑', 
+                title: 'Welcome to CLUTCHGROUND! 👑', 
                 description: 'The ultimate arena for competitive mobile gaming. Let me give you a quick live tour of how things work. Tap Next!', 
                 side: "over", 
                 align: 'center' 

@@ -5,7 +5,7 @@ import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_app/admin/")({
-  head: () => ({ meta: [{ title: "Admin Dashboard — GOD ESPORTS" }] }),
+  head: () => ({ meta: [{ title: "Admin Dashboard — CLUTCHGROUND" }] }),
   component: AdminDashboard,
 });
 

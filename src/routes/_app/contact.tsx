@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/contact")({
-  head: () => ({ meta: [{ title: "Contact — GOD ESPORTS" }] }),
+  head: () => ({ meta: [{ title: "Contact — CLUTCHGROUND" }] }),
   component: () => (
     <div className="container mx-auto px-4 lg:px-8 py-10 lg:py-16 max-w-4xl">
       <PageHeader title="Contact" subtitle="War Room" />

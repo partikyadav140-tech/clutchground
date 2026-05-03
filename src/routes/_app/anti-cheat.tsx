@@ -3,7 +3,7 @@ import { PageHeader } from "./tournaments";
 import { Shield, AlertCircle, CheckCircle2, Eye } from "lucide-react";
 
 export const Route = createFileRoute("/_app/anti-cheat")({
-  head: () => ({ meta: [{ title: "Anti-Cheat — GOD ESPORTS" }] }),
+  head: () => ({ meta: [{ title: "Anti-Cheat — CLUTCHGROUND" }] }),
   component: () => (
     <div className="container mx-auto px-4 lg:px-8 py-10 lg:py-16 max-w-4xl">
       <PageHeader title="Anti-Cheat" subtitle="Fair Play Enforcement" />

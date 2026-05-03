@@ -7,7 +7,7 @@ import { signupUser } from "../../api";
 import { setSessionId } from "../../lib/auth-client";
 
 export const Route = createFileRoute("/_app/signup")({
-  head: () => ({ meta: [{ title: "Sign Up — GOD ESPORTS" }] }),
+  head: () => ({ meta: [{ title: "Sign Up — CLUTCHGROUND" }] }),
   component: SignupPage,
 });
 
@@ -60,7 +60,7 @@ function SignupPage() {
 
           <label className="flex items-start gap-2 text-xs text-muted-foreground">
             <input type="checkbox" required className="accent-primary mt-0.5" />
-            <span>I accept the GOD ESPORTS rules, anti-cheat policy, and confirm I am 13+.</span>
+            <span>I accept the CLUTCHGROUND rules, anti-cheat policy, and confirm I am 13+.</span>
           </label>
 
           <Button type="submit" variant="hero" size="lg" className="w-full font-display tracking-wider" disabled={loading}>

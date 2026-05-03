@@ -7,7 +7,7 @@ import { Crown, Skull } from "lucide-react";
 export const Route = createFileRoute("/_app/leaderboard")({
   head: () => ({
     meta: [
-      { title: "Global Leaderboard — GOD ESPORTS" },
+      { title: "Global Leaderboard — CLUTCHGROUND" },
       { name: "description", content: "Top Free Fire players ranked by kills, wins, and ELO points." },
     ],
   }),

@@ -8,7 +8,7 @@ import { GodCoin } from "@/components/GodCoin";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/payouts")({
-  head: () => ({ meta: [{ title: "Payouts Admin — GOD ESPORTS" }] }),
+  head: () => ({ meta: [{ title: "Payouts Admin — CLUTCHGROUND" }] }),
   loader: async () => await getPayouts(),
   component: AdminPayoutsPage,
 });

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/matches")({
-  head: () => ({ meta: [{ title: "My Matches — GOD ESPORTS" }] }),
+  head: () => ({ meta: [{ title: "My Matches — CLUTCHGROUND" }] }),
   component: MatchesPage,
 });
 

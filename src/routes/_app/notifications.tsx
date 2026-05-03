@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/notifications")({
-  head: () => ({ meta: [{ title: "Notifications — GOD ESPORTS" }] }),
+  head: () => ({ meta: [{ title: "Notifications — CLUTCHGROUND" }] }),
   component: NotificationsPage,
 });
 

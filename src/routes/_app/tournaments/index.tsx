@@ -9,7 +9,7 @@ import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 export const Route = createFileRoute("/_app/tournaments/")({
   head: () => ({
     meta: [
-      { title: "Tournaments — GOD ESPORTS" },
+      { title: "Tournaments — CLUTCHGROUND" },
       { name: "description", content: "Browse and join Free Fire tournaments. Solo, duo, squad. Battle Royale, knockout, league formats." },
     ],
   }),

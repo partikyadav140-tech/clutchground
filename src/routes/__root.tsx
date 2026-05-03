@@ -31,9 +31,9 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "GOD ESPORTS — India's #1 Free Fire Tournament Arena" },
+      { title: "CLUTCHGROUND — India's #1 Free Fire Tournament Arena" },
       { name: "description", content: "Compete in Free Fire & Free Fire MAX tournaments. Real cash prizes, live leaderboard, anti-cheat protection." },
-      { property: "og:title", content: "GOD ESPORTS — Become a God of the Battleground" },
+      { property: "og:title", content: "CLUTCHGROUND — Rule the Battleground" },
       { property: "og:description", content: "India's most fierce Free Fire esports league." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

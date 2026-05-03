@@ -172,7 +172,7 @@ function TournamentDetailPage() {
                 <div className="w-2 h-2 rounded-full bg-border mt-1.5 shrink-0" />
                 <div>
                   <div className="text-xs text-muted-foreground uppercase tracking-widest font-display mb-1">Yesterday, 06:30 PM</div>
-                  <p className="text-sm text-muted-foreground">Prize pool has been updated and officially verified by GOD ESPORTS management. Good luck warriors!</p>
+                  <p className="text-sm text-muted-foreground">Prize pool has been updated and officially verified by CLUTCHGROUND management. Good luck warriors!</p>
                 </div>
               </div>
             </div>
@@ -193,7 +193,7 @@ function TournamentDetailPage() {
                 "Room ID & password released 10 minutes before match start.",
                 "Submit screenshot proof of kills & placement after match.",
                 "Any form of hacking, teaming with enemies, or stream sniping = permanent ban.",
-                "Disputes handled by GOD ESPORTS admin team. Verdicts are final.",
+                "Disputes handled by CLUTCHGROUND admin team. Verdicts are final.",
                 "Prize money credited to wallet within 24 hours of admin verification.",
               ].map((r, i) => (
                 <li key={i} className="flex gap-3"><span className="text-primary font-display font-black">{String(i + 1).padStart(2, "0")}</span>{r}</li>

@@ -7,7 +7,7 @@ import { loginUser } from "../../api";
 import { setSessionId } from "../../lib/auth-client";
 
 export const Route = createFileRoute("/_app/login")({
-  head: () => ({ meta: [{ title: "Login — GOD ESPORTS" }] }),
+  head: () => ({ meta: [{ title: "Login — CLUTCHGROUND" }] }),
   component: LoginPage,
 });
 

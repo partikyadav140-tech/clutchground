@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 export const Route = createFileRoute("/_app/admin/registrations")({
-  head: () => ({ meta: [{ title: "Registrations Admin — GOD ESPORTS" }] }),
+  head: () => ({ meta: [{ title: "Registrations Admin — CLUTCHGROUND" }] }),
   loader: async () => {
     const t = await getTournaments();
     const r = await getRegistrations();

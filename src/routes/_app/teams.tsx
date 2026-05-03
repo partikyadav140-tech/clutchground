@@ -8,7 +8,7 @@ import { useAuth } from "../../lib/auth-client";
 import { useState } from "react";
 
 export const Route = createFileRoute("/_app/teams")({
-  head: () => ({ meta: [{ title: "Teams — GOD ESPORTS" }] }),
+  head: () => ({ meta: [{ title: "Teams — CLUTCHGROUND" }] }),
   loader: async () => await getAllTeams(),
   component: TeamsPage,
 });

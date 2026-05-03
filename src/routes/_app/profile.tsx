@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 import { getProfile, updateProfile, getMyTeam, saveMyTeam, getTeamRequests, resolveTeamRequest, getMyMatches, leaveTeam, deleteTeam } from "../../api";
 
 export const Route = createFileRoute("/_app/profile")({
-  head: () => ({ meta: [{ title: "My Profile — GOD ESPORTS" }] }),
+  head: () => ({ meta: [{ title: "My Profile — CLUTCHGROUND" }] }),
   component: ProfilePage,
 });
 
