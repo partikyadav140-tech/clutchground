@@ -1,6 +1,6 @@
 import { motion, useReducedMotion } from "framer-motion";
-import { useEffect, useRef, useState } from "react";
-import heroVideoAsset from "@/assets/free-fire-hero-v2.mp4";
+import { useEffect, useState } from "react";
+import heroBgAsset from "@/assets/hero-bg.jpg";
 import { Button } from "./ui/button";
 import { Link } from "@tanstack/react-router";
 import { Trophy, Zap, ChevronDown } from "lucide-react";
@@ -10,38 +10,12 @@ import { toast } from "sonner";
 
 export function Hero() {
   const reduce = useReducedMotion();
-  const videoRef = useRef<HTMLVideoElement>(null);
   const [ended, setEnded] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    const onEnd = () => {
-      try { 
-        v.pause(); 
-        // Go back slightly so it doesn't show a black frame if the video ends that way
-        v.currentTime = Math.max(0, v.duration - 0.1); 
-      } catch {}
-      setEnded(true);
-    };
-    
-    v.addEventListener("ended", onEnd);
-    
-    // Fallback: check time update to catch it before it actually ends to ensure it stays on the last frame
-    const onTimeUpdate = () => {
-      if (v.duration && v.currentTime >= v.duration - 0.2 && !ended) {
-        v.pause();
-        setEnded(true);
-      }
-    };
-    v.addEventListener("timeupdate", onTimeUpdate);
-
-    return () => {
-      v.removeEventListener("ended", onEnd);
-      v.removeEventListener("timeupdate", onTimeUpdate);
-    };
-  }, [ended]);
+    setEnded(true);
+  }, []);
 
   const t = (delay: number, duration = 0.7) => ({
     duration: reduce ? 0 : duration,
@@ -53,13 +27,9 @@ export function Hero() {
     <section className="relative w-full min-h-[100svh] overflow-hidden bg-background">
       {/* Background Media */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-black">
-        <video
-          ref={videoRef}
-          src={heroVideoAsset}
-          autoPlay
-          muted
-          playsInline
-          preload="auto"
+        <img
+          src={heroBgAsset}
+          alt="Esports Background"
           className="w-full h-full object-cover object-center opacity-80"
         />
         {/* Advanced gradients for text readability on all screens */}
