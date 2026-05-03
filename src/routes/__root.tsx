@@ -1,6 +1,7 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { Tutorial } from "@/components/Tutorial";
+import { SplashScreen } from "@/components/SplashScreen";
 
 import appCss from "../styles.css?url";
 
@@ -57,9 +58,16 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <SplashScreen />
         {children}
         <Tutorial />
-        <Toaster />
+        <Toaster 
+          theme="dark" 
+          toastOptions={{
+            className: "bg-background border border-primary/50 text-foreground font-display clip-notch shadow-fire",
+            descriptionClassName: "text-muted-foreground font-sans",
+          }}
+        />
         <Scripts />
       </body>
     </html>

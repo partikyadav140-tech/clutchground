@@ -138,7 +138,13 @@ function ProfilePage() {
     }
   };
 
-  if (!user || loading) return <div className="p-20 text-center">Loading...</div>;
+  if (loading) return <div className="p-20 text-center flex justify-center items-center h-[50vh]"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+  if (!user) {
+    if (typeof window !== 'undefined') {
+      router.navigate({ to: "/login" });
+    }
+    return null;
+  }
 
   return (
     <div className="container mx-auto px-4 lg:px-8 py-10 lg:py-16">

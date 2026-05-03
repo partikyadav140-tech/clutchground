@@ -27,11 +27,15 @@ export function Hero() {
     <section className="relative w-full min-h-[100svh] overflow-hidden bg-background">
       {/* Background Media */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-black">
-        <img
-          src={heroBgAsset}
-          alt="Esports Background"
-          className="w-full h-full object-cover object-center opacity-80"
-        />
+        <div className="absolute inset-0 z-0 pointer-events-none w-[300vw] h-[300vh] sm:w-[150vw] sm:h-[150vw] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-60">
+          <iframe
+            src="https://www.youtube.com/embed/JDY8XkebaeA?autoplay=1&mute=1&loop=1&playlist=JDY8XkebaeA&controls=0&showinfo=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&iv_load_policy=3"
+            title="Hero Background"
+            className="w-full h-full object-cover"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            style={{ border: 0 }}
+          />
+        </div>
         {/* Advanced gradients for text readability on all screens */}
         <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/20 to-background z-10 pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent sm:from-transparent sm:bg-gradient-to-r sm:from-background/95 sm:via-background/60 sm:to-transparent z-10 pointer-events-none" />

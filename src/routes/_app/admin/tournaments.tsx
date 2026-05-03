@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { PageHeader } from "../tournaments/index";
 import { Trophy, ArrowLeft, Plus, Edit, Trash, ListChecks, Download } from "lucide-react";
-import { getTournaments, addTournament, deleteTournament, updateTournament, toggleHeroTournament, getTournamentResults, saveTournamentResults, rescheduleTournament } from "../../../api";
+import { getTournaments, addTournament, deleteTournament, updateTournament, toggleHeroTournament, getTournamentResults, saveTournamentResults, rescheduleTournament, deleteAllTournaments } from "../../../api";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -119,6 +119,18 @@ function AdminTournamentsPage() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    if (confirm("CRITICAL WARNING: This will permanently delete ALL tournaments and their associated registrations and results! Are you absolutely sure?")) {
+      try {
+        await (deleteAllTournaments as any)({});
+        toast.success("All tournaments deleted!");
+        router.invalidate();
+      } catch (err: any) {
+        toast.error("Failed to delete all tournaments.");
+      }
+    }
+  };
+
   const handleToggleHero = async (id: number) => {
     try {
       await (toggleHeroTournament as any)({ data: id });
@@ -158,9 +170,14 @@ function AdminTournamentsPage() {
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <h3 className="font-display text-sm uppercase tracking-[0.25em] text-primary flex items-center gap-2"><Trophy className="w-4 h-4" /> Operations</h3>
           {!showForm && (
-            <Button onClick={() => { setEditingT(null); setFormData({ title: "", game: "Free Fire", mode: "Squad", format: "Battle Royale", entry: 0, prize: 0, slots: 0, filled: 0, startsAt: "", status: "open", banner: "from-orange-600 to-red-700", room_id: "", room_pass: "" }); setShowForm(true); }} className="flex items-center gap-2" variant="hero" size="sm">
-              <Plus className="w-4 h-4" /> Create New
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outlineFire" size="sm" onClick={handleDeleteAll} className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                Delete All
+              </Button>
+              <Button onClick={() => { setEditingT(null); setFormData({ title: "", game: "Free Fire", mode: "Squad", format: "Battle Royale", entry: 0, prize: 0, slots: 0, filled: 0, startsAt: "", status: "open", banner: "from-orange-600 to-red-700", room_id: "", room_pass: "" }); setShowForm(true); }} className="flex items-center gap-2" variant="hero" size="sm">
+                <Plus className="w-4 h-4" /> Create New
+              </Button>
+            </div>
           )}
         </div>
 

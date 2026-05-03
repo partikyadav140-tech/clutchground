@@ -59,8 +59,15 @@ function SignupPage() {
           <Field label="Password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
 
           <label className="flex items-start gap-2 text-xs text-muted-foreground">
-            <input type="checkbox" required className="accent-primary mt-0.5" />
-            <span>I accept the CLUTCHGROUND rules, anti-cheat policy, and confirm I am 13+.</span>
+            <input type="checkbox" required className="accent-primary mt-0.5 shrink-0" />
+            <span className="leading-tight">
+              I accept the CLUTCHGROUND{" "}
+              <Link to="/rules" className="text-primary hover:underline">Rules</Link>,{" "}
+              <Link to="/anti-cheat" className="text-primary hover:underline">Anti-Cheat</Link>,{" "}
+              <Link to="/terms" className="text-primary hover:underline">Terms</Link> &{" "}
+              <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>{" "}
+              and confirm I am 13+.
+            </span>
           </label>
 
           <Button type="submit" variant="hero" size="lg" className="w-full font-display tracking-wider" disabled={loading}>

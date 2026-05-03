@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { PageHeader } from "../tournaments/index";
 import { Users, CheckCircle, ArrowLeft, Edit2 } from "lucide-react";
-import { getUsers, updateCoinBalance } from "../../../api";
+import { getUsers, updateCoinBalance, deleteUser, deleteAllUsers } from "../../../api";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { GodCoin } from "@/components/GodCoin";
@@ -41,6 +41,28 @@ function AdminUsersPage() {
     }
   };
 
+  const handleDeleteUser = async (userId: number, username: string) => {
+    if (!confirm(`WARNING: Are you sure you want to completely delete ${username} and invalidate their login credentials? This action cannot be undone.`)) return;
+    try {
+      await (deleteUser as any)({ data: { id: userId } });
+      toast.success(`User ${username} has been permanently deleted.`);
+      router.invalidate();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete user");
+    }
+  };
+
+  const handleDeleteAllUsers = async () => {
+    if (!confirm("CRITICAL WARNING: You are about to permanently delete ALL users (except admins). This action CANNOT be undone and will erase all teams, registrations, and wallets! Are you absolutely sure?")) return;
+    try {
+      await (deleteAllUsers as any)({});
+      toast.success("All non-admin users have been successfully purged.");
+      router.invalidate();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to delete users");
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 lg:px-8 py-10 lg:py-16 space-y-8">
       <Link to="/admin" className="inline-flex items-center gap-2 text-sm font-display uppercase tracking-widest text-muted-foreground hover:text-primary mb-2">
@@ -49,9 +71,16 @@ function AdminUsersPage() {
       <PageHeader title="Registered Users" subtitle="Database" />
 
       <div className="bg-card-gradient border border-border clip-notch p-5">
-        <h3 className="font-display text-sm uppercase tracking-[0.25em] text-primary mb-4 flex items-center gap-2"><Users className="w-4 h-4" /> User Directory ({users.length})</h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h3 className="font-display text-sm uppercase tracking-[0.25em] text-primary flex items-center gap-2">
+            <Users className="w-4 h-4" /> User Directory ({users.length})
+          </h3>
+          <Button variant="outlineFire" size="sm" onClick={handleDeleteAllUsers} className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive">
+            Delete All Users
+          </Button>
+        </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           {users.map((u: any) => (
             <div key={u.id} className="p-4 bg-secondary/60 border border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
@@ -88,6 +117,12 @@ function AdminUsersPage() {
                     <Edit2 className="w-3 h-3 mr-1" /> Edit
                   </Button>
                 </div>
+                
+                {u.role !== 'admin' && (
+                  <Button variant="outline" size="sm" className="h-6 mt-1 border-destructive/30 text-destructive hover:bg-destructive hover:text-destructive-foreground text-[10px] w-full" onClick={() => handleDeleteUser(u.id, u.username)}>
+                    Delete User
+                  </Button>
+                )}
               </div>
             </div>
           ))}

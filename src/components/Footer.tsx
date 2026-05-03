@@ -93,11 +93,18 @@ export function Footer() {
               </ul>
             </div>
           ))}
+          <div>
+            <h4 className="font-display font-bold text-foreground mb-4 uppercase tracking-widest text-sm border-b border-border/50 pb-2 inline-block">Legal & Support</h4>
+            <ul className="space-y-3 text-sm">
+              <li><Link to="/contact" className="hover:text-primary transition-colors flex items-center gap-2"><ArrowUpRight className="w-3 h-3" /> Contact Us</Link></li>
+              <li><Link to="/privacy" className="hover:text-primary transition-colors flex items-center gap-2"><ArrowUpRight className="w-3 h-3" /> Privacy Policy</Link></li>
+              <li><Link to="/terms" className="hover:text-primary transition-colors flex items-center gap-2"><ArrowUpRight className="w-3 h-3" /> Terms & Conditions</Link></li>
+              <li><Link to="/anti-cheat" className="hover:text-primary transition-colors flex items-center gap-2"><ArrowUpRight className="w-3 h-3" /> Anti-Cheat Policy</Link></li>
+            </ul>
+          </div>
         </div>
         <div className="mt-12 pt-6 border-t border-border/60 flex flex-col items-center justify-center gap-6 text-center">
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <button onClick={() => toast.info("Privacy policy coming soon.")} className="hover:text-primary transition-colors">Privacy</button>
-            <button onClick={() => toast.info("Terms coming soon.")} className="hover:text-primary transition-colors">Terms</button>
             <span className="font-display tracking-widest text-primary">⚔ FORGED IN FIRE ⚔</span>
           </div>
           <div className="flex flex-col gap-1.5 items-center">
