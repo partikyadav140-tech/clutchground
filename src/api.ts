@@ -538,7 +538,7 @@ export const saveTournamentResults = createServerFn({ method: "POST" })
       const tourney = await tx.prepare('SELECT title, prize, mode FROM tournaments WHERE id = ?').get(tournamentId) as any;
       if (!tourney) throw new Error("Tournament not found");
 
-      const stmt = tx.prepare('UPDATE registrations SET kills = ?, position = ?, points = ? WHERE id = ? AND tournament_id = ?');
+      const stmt = tx.prepare('UPDATE registrations SET kills = ?, position = ?, points = ?, awarded_prize = ? WHERE id = ? AND tournament_id = ?');
       const insertNotif = tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)');
       const addPrize = tx.prepare('UPDATE users SET winning_balance = winning_balance + ? WHERE id = ?');
       
@@ -590,7 +590,9 @@ export const saveTournamentResults = createServerFn({ method: "POST" })
         const r = results[i];
         const overallRank = i + 1; // 1st, 2nd, 3rd...
 
-        await stmt.run(r.killsNum, r.matchPosition, r.calculatedPoints, r.id, tournamentId);
+        const oldReg = await tx.prepare('SELECT kills, position, points, awarded_prize FROM registrations WHERE id = ?').get(r.id) as any;
+        const oldPrize = oldReg ? (oldReg.awarded_prize || 0) : 0;
+        const oldPoints = oldReg ? (oldReg.points || 0) : 0;
         
         let awardedPrize = 0;
         let rankForPrize = tourney.mode === 'Duo' ? r.matchPosition : overallRank;
@@ -599,13 +601,27 @@ export const saveTournamentResults = createServerFn({ method: "POST" })
         else if (rankForPrize === 2 && prize2 > 0) awardedPrize = prize2;
         else if (rankForPrize === 3 && prize3 > 0) awardedPrize = prize3;
 
-        if (awardedPrize > 0) {
-          await addPrize.run(awardedPrize, r.user_id);
-          await insertNotif.run(r.user_id, `💰 PRIZE WON! You received ${awardedPrize} CG Coins for placing #${rankForPrize} in ${tourney.title}!`);
+        await stmt.run(r.killsNum, r.matchPosition, r.calculatedPoints, awardedPrize, r.id, tournamentId);
+
+        let prizeDiff = awardedPrize - oldPrize;
+        
+        if (prizeDiff !== 0) {
+          await addPrize.run(prizeDiff, r.user_id);
+          if (oldPrize === 0 && awardedPrize > 0) {
+            await insertNotif.run(r.user_id, `💰 PRIZE WON! You received ${awardedPrize} CG Coins for placing #${rankForPrize} in ${tourney.title}!`);
+          } else if (prizeDiff > 0) {
+            await insertNotif.run(r.user_id, `💰 PRIZE INCREASED! Admin updated results for ${tourney.title}. You received an additional ${prizeDiff} CG Coins (Total: ${awardedPrize})!`);
+          } else if (prizeDiff < 0) {
+            await insertNotif.run(r.user_id, `📉 PRIZE ADJUSTED: Admin updated results for ${tourney.title}. ${Math.abs(prizeDiff)} CG Coins were deducted. Your total prize is now ${awardedPrize}.`);
+          }
         }
         
-        if (r.calculatedPoints > 0 || r.matchPosition > 0) {
+        const pointsDiff = r.calculatedPoints - oldPoints;
+        if (oldPoints === 0 && r.calculatedPoints > 0) {
            await insertNotif.run(r.user_id, `🏆 Match Results! You scored ${r.calculatedPoints} points (${r.killsNum} kills, Match Position ${r.matchPosition}) and finished Rank #${overallRank} in your recent tournament.`);
+        } else if (pointsDiff !== 0) {
+           const dir = pointsDiff > 0 ? 'increased' : 'decreased';
+           await insertNotif.run(r.user_id, `📊 SCORE ADJUSTED: Admin updated your score for ${tourney.title}. Your points ${dir} by ${Math.abs(pointsDiff)} to a new total of ${r.calculatedPoints}.`);
         }
       }
       

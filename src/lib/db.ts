@@ -143,6 +143,7 @@ async function initDb() {
         kills INTEGER DEFAULT 0,
         position INTEGER DEFAULT 0,
         points INTEGER DEFAULT 0,
+        awarded_prize INTEGER DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE CASCADE
@@ -162,6 +163,12 @@ async function initDb() {
       BEGIN 
         BEGIN
           ALTER TABLE team_members ADD COLUMN id SERIAL PRIMARY KEY;
+        EXCEPTION
+          WHEN duplicate_column THEN null;
+          WHEN others THEN null;
+        END;
+        BEGIN
+          ALTER TABLE registrations ADD COLUMN awarded_prize INTEGER DEFAULT 0;
         EXCEPTION
           WHEN duplicate_column THEN null;
           WHEN others THEN null;
