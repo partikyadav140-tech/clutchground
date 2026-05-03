@@ -173,7 +173,7 @@ function AdminTournamentsPage() {
 
   const openEdit = (t: any) => {
     setEditingT(t);
-    setFormData({ ...t, room_id: t.room_id || "", room_pass: t.room_pass || "" });
+    setFormData({ ...t, startsAt: t.startsAt || t.startsat || "", room_id: t.room_id || "", room_pass: t.room_pass || "" });
     setShowForm(true);
   };
 
