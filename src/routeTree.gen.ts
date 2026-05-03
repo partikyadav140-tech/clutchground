@@ -12,10 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppWalletRouteImport } from './routes/_app/wallet'
+import { Route as AppTermsRouteImport } from './routes/_app/terms'
 import { Route as AppTeamsRouteImport } from './routes/_app/teams'
 import { Route as AppSignupRouteImport } from './routes/_app/signup'
 import { Route as AppRulesRouteImport } from './routes/_app/rules'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
+import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
 import { Route as AppMatchesRouteImport } from './routes/_app/matches'
 import { Route as AppLoginRouteImport } from './routes/_app/login'
@@ -45,6 +47,11 @@ const AppWalletRoute = AppWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTermsRoute = AppTermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTeamsRoute = AppTeamsRouteImport.update({
   id: '/teams',
   path: '/teams',
@@ -63,6 +70,11 @@ const AppRulesRoute = AppRulesRouteImport.update({
 const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrivacyRoute = AppPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => AppRoute,
 } as any)
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
@@ -145,10 +157,12 @@ export interface FileRoutesByFullPath {
   '/login': typeof AppLoginRoute
   '/matches': typeof AppMatchesRoute
   '/notifications': typeof AppNotificationsRoute
+  '/privacy': typeof AppPrivacyRoute
   '/profile': typeof AppProfileRoute
   '/rules': typeof AppRulesRoute
   '/signup': typeof AppSignupRoute
   '/teams': typeof AppTeamsRoute
+  '/terms': typeof AppTermsRoute
   '/wallet': typeof AppWalletRoute
   '/admin/payouts': typeof AppAdminPayoutsRoute
   '/admin/registrations': typeof AppAdminRegistrationsRoute
@@ -166,10 +180,12 @@ export interface FileRoutesByTo {
   '/login': typeof AppLoginRoute
   '/matches': typeof AppMatchesRoute
   '/notifications': typeof AppNotificationsRoute
+  '/privacy': typeof AppPrivacyRoute
   '/profile': typeof AppProfileRoute
   '/rules': typeof AppRulesRoute
   '/signup': typeof AppSignupRoute
   '/teams': typeof AppTeamsRoute
+  '/terms': typeof AppTermsRoute
   '/wallet': typeof AppWalletRoute
   '/': typeof AppIndexRoute
   '/admin/payouts': typeof AppAdminPayoutsRoute
@@ -190,10 +206,12 @@ export interface FileRoutesById {
   '/_app/login': typeof AppLoginRoute
   '/_app/matches': typeof AppMatchesRoute
   '/_app/notifications': typeof AppNotificationsRoute
+  '/_app/privacy': typeof AppPrivacyRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/rules': typeof AppRulesRoute
   '/_app/signup': typeof AppSignupRoute
   '/_app/teams': typeof AppTeamsRoute
+  '/_app/terms': typeof AppTermsRoute
   '/_app/wallet': typeof AppWalletRoute
   '/_app/': typeof AppIndexRoute
   '/_app/admin/payouts': typeof AppAdminPayoutsRoute
@@ -215,10 +233,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/matches'
     | '/notifications'
+    | '/privacy'
     | '/profile'
     | '/rules'
     | '/signup'
     | '/teams'
+    | '/terms'
     | '/wallet'
     | '/admin/payouts'
     | '/admin/registrations'
@@ -236,10 +256,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/matches'
     | '/notifications'
+    | '/privacy'
     | '/profile'
     | '/rules'
     | '/signup'
     | '/teams'
+    | '/terms'
     | '/wallet'
     | '/'
     | '/admin/payouts'
@@ -259,10 +281,12 @@ export interface FileRouteTypes {
     | '/_app/login'
     | '/_app/matches'
     | '/_app/notifications'
+    | '/_app/privacy'
     | '/_app/profile'
     | '/_app/rules'
     | '/_app/signup'
     | '/_app/teams'
+    | '/_app/terms'
     | '/_app/wallet'
     | '/_app/'
     | '/_app/admin/payouts'
@@ -301,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWalletRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/terms': {
+      id: '/_app/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof AppTermsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/teams': {
       id: '/_app/teams'
       path: '/teams'
@@ -327,6 +358,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/privacy': {
+      id: '/_app/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof AppPrivacyRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/notifications': {
@@ -438,10 +476,12 @@ interface AppRouteChildren {
   AppLoginRoute: typeof AppLoginRoute
   AppMatchesRoute: typeof AppMatchesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
+  AppPrivacyRoute: typeof AppPrivacyRoute
   AppProfileRoute: typeof AppProfileRoute
   AppRulesRoute: typeof AppRulesRoute
   AppSignupRoute: typeof AppSignupRoute
   AppTeamsRoute: typeof AppTeamsRoute
+  AppTermsRoute: typeof AppTermsRoute
   AppWalletRoute: typeof AppWalletRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAdminPayoutsRoute: typeof AppAdminPayoutsRoute
@@ -461,10 +501,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppLoginRoute: AppLoginRoute,
   AppMatchesRoute: AppMatchesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
+  AppPrivacyRoute: AppPrivacyRoute,
   AppProfileRoute: AppProfileRoute,
   AppRulesRoute: AppRulesRoute,
   AppSignupRoute: AppSignupRoute,
   AppTeamsRoute: AppTeamsRoute,
+  AppTermsRoute: AppTermsRoute,
   AppWalletRoute: AppWalletRoute,
   AppIndexRoute: AppIndexRoute,
   AppAdminPayoutsRoute: AppAdminPayoutsRoute,
