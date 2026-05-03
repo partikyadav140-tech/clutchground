@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar, Trophy, Users, Target, Shield, ArrowLeft, Crosshair, Share2, Heart, Download } from "lucide-react";
 import { toast } from "sonner";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import { useAuth } from "../../../lib/auth-client";
@@ -93,10 +94,21 @@ function TournamentDetailPage() {
               } 
             }
           ],
-          onDestroyStarted: () => {
-            if (!driverObj.hasNextStep() || confirm("Are you sure you want to skip the rest of the tour?")) {
+          onDestroyStarted: async () => {
+            if (!driverObj.hasNextStep()) {
               driverObj.destroy();
               localStorage.setItem("god_esports_tour_detail_seen", "true");
+            } else {
+              const yes = await confirmDialog({
+                title: "Skip Tutorial?",
+                description: "Are you sure you want to skip the rest of the tour?",
+                confirmText: "Skip",
+                isDestructive: true
+              });
+              if (yes) {
+                driverObj.destroy();
+                localStorage.setItem("god_esports_tour_detail_seen", "true");
+              }
             }
           },
         });

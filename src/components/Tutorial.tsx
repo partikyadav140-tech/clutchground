@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { driver } from "driver.js";
+import { confirmDialog } from "./ConfirmDialog";
 import "driver.js/dist/driver.css";
 
 export function Tutorial() {
@@ -73,10 +74,21 @@ export function Tutorial() {
           allowClose: true,
           popoverClass: 'driverjs-theme',
           steps: steps as any,
-          onDestroyStarted: () => {
-            if (!driverObj.hasNextStep() || confirm("Are you sure you want to skip the rest of the tour?")) {
+          onDestroyStarted: async () => {
+            if (!driverObj.hasNextStep()) {
               driverObj.destroy();
               localStorage.setItem("god_esports_tutorial_driver_seen", "true");
+            } else {
+              const yes = await confirmDialog({
+                title: "Skip Tutorial?",
+                description: "Are you sure you want to skip the rest of the tour?",
+                confirmText: "Skip",
+                isDestructive: true
+              });
+              if (yes) {
+                driverObj.destroy();
+                localStorage.setItem("god_esports_tutorial_driver_seen", "true");
+              }
             }
           },
         });

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { confirmDialog } from "@/components/ConfirmDialog";
 
 export const Route = createFileRoute("/_app/admin/tournaments")({
   head: () => ({ meta: [{ title: "Tournaments Admin — CLUTCHGROUND" }] }),
@@ -108,7 +109,13 @@ function AdminTournamentsPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (confirm("Are you sure you want to delete this tournament?")) {
+    const yes = await confirmDialog({
+      title: "Delete Tournament?",
+      description: "Are you sure you want to delete this tournament?",
+      confirmText: "Delete",
+      isDestructive: true
+    });
+    if (yes) {
       try {
         await (deleteTournament as any)({ data: id });
         toast.success("Tournament deleted!");
@@ -120,7 +127,13 @@ function AdminTournamentsPage() {
   };
 
   const handleDeleteAll = async () => {
-    if (confirm("CRITICAL WARNING: This will permanently delete ALL tournaments and their associated registrations and results! Are you absolutely sure?")) {
+    const yes = await confirmDialog({
+      title: "Delete ALL Tournaments?",
+      description: "CRITICAL WARNING: This will permanently delete ALL tournaments and their associated registrations and results! Are you absolutely sure?",
+      confirmText: "DELETE ALL",
+      isDestructive: true
+    });
+    if (yes) {
       try {
         await (deleteAllTournaments as any)({});
         toast.success("All tournaments deleted!");
@@ -142,7 +155,12 @@ function AdminTournamentsPage() {
   };
 
   const handleReschedule = async (id: number) => {
-    if (confirm("Are you sure you want to reschedule this match? This will reset all points/kills and set it to upcoming.")) {
+    const yes = await confirmDialog({
+      title: "Reschedule Match?",
+      description: "Are you sure you want to reschedule this match? This will reset all points/kills and set it to upcoming.",
+      confirmText: "Reschedule"
+    });
+    if (yes) {
       try {
         await (rescheduleTournament as any)({ data: id });
         toast.success("Tournament rescheduled!");

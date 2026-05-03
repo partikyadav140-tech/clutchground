@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "../../lib/auth-client";
 import { useState, useEffect } from "react";
+import { confirmDialog } from "@/components/ConfirmDialog";
 import { getProfile, updateProfile, getMyTeam, saveMyTeam, getTeamRequests, resolveTeamRequest, getMyMatches, leaveTeam, deleteTeam } from "../../api";
 
 export const Route = createFileRoute("/_app/profile")({
@@ -115,7 +116,13 @@ function ProfilePage() {
   };
 
   const handleLeaveTeam = async () => {
-    if (!confirm("Are you sure you want to leave the team?")) return;
+    const yes = await confirmDialog({
+      title: "Leave Team?",
+      description: "Are you sure you want to leave the team?",
+      confirmText: "Leave",
+      isDestructive: true
+    });
+    if (!yes) return;
     try {
       await (leaveTeam as any)({ data: { userId: user.id, teamId: team.id } });
       setTeam(null);
@@ -126,7 +133,13 @@ function ProfilePage() {
   };
 
   const handleDeleteTeam = async () => {
-    if (!confirm("Are you sure you want to completely delete your team? This cannot be undone.")) return;
+    const yes = await confirmDialog({
+      title: "Delete Team?",
+      description: "Are you sure you want to completely delete your team? This cannot be undone.",
+      confirmText: "Delete",
+      isDestructive: true
+    });
+    if (!yes) return;
     try {
       await (deleteTeam as any)({ data: { userId: user.id, teamId: team.id } });
       setTeam(null);

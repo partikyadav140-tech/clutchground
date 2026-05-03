@@ -6,6 +6,7 @@ import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { GodCoin } from "@/components/GodCoin";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ConfirmDialog";
 
 export const Route = createFileRoute("/_app/admin/payouts")({
   head: () => ({ meta: [{ title: "Payouts Admin — CLUTCHGROUND" }] }),
@@ -23,8 +24,14 @@ function AdminPayoutsPage() {
     return <div className="p-20 text-center text-destructive font-bold">ACCESS DENIED</div>;
   }
 
-  const handleStatusChange = async (payoutId: number, userId: number, amount: number, status: string) => {
-    if (!confirm(`Are you sure you want to mark this payout as ${status.toUpperCase()}?`)) return;
+  const handleResolve = async (payoutId: number, userId: number, amount: number, status: string) => {
+    const yes = await confirmDialog({
+      title: "Resolve Payout?",
+      description: `Are you sure you want to mark this payout as ${status.toUpperCase()}?`,
+      confirmText: status.toUpperCase(),
+      isDestructive: status === 'rejected'
+    });
+    if (!yes) return;
     
     try {
       await (updatePayoutStatus as any)({ data: { payoutId, status, userId, amount } });
@@ -80,10 +87,10 @@ function AdminPayoutsPage() {
                   
                   {p.status === 'pending' && (
                     <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
-                      <Button variant="outline" size="sm" className="h-10 border-green-500/50 hover:bg-green-500/10 hover:text-green-500 text-xs w-full md:w-auto" onClick={() => handleStatusChange(p.id, p.user_id, p.amount, 'completed')}>
+                      <Button variant="outline" size="sm" className="h-10 border-green-500/50 hover:bg-green-500/10 hover:text-green-500 text-xs w-full md:w-auto" onClick={() => handleResolve(p.id, p.user_id, p.amount, 'completed')}>
                         <CheckCircle className="w-4 h-4 mr-1.5" /> Mark Paid
                       </Button>
-                      <Button variant="outline" size="sm" className="h-10 border-red-500/50 hover:bg-red-500/10 hover:text-red-500 text-xs w-full md:w-auto" onClick={() => handleStatusChange(p.id, p.user_id, p.amount, 'rejected')}>
+                      <Button variant="outline" size="sm" className="h-10 border-red-500/50 hover:bg-red-500/10 hover:text-red-500 text-xs w-full md:w-auto" onClick={() => handleResolve(p.id, p.user_id, p.amount, 'rejected')}>
                         <XCircle className="w-4 h-4 mr-1.5" /> Reject (Refund)
                       </Button>
                     </div>

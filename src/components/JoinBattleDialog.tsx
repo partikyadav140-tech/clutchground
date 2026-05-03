@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Crown, Users, Trophy, Check } from "lucide-react";
 import { toast } from "sonner";
+import { confirmDialog } from "./ConfirmDialog";
 import { useAuth } from "../lib/auth-client";
 import { useRouter } from "@tanstack/react-router";
 import { registerForTournament, getProfile, getMyTeam } from "../api";
@@ -102,7 +103,12 @@ export function JoinBattleDialog({ trigger, tournamentId, tournamentTitle = "CLU
       
       if (dbBalance < entryFee) {
         const diff = entryFee - dbBalance;
-        if (!window.confirm(`⚠️ You don't have enough Deposit Coins. This will deduct ${dbBalance} from Deposit Coins and ${diff} from your Earned Coins (Winnings). Proceed?`)) {
+        const yes = await confirmDialog({
+          title: "Mixed Funds",
+          description: `⚠️ You don't have enough Deposit Coins. This will deduct ${dbBalance} from Deposit Coins and ${diff} from your Earned Coins (Winnings). Proceed?`,
+          confirmText: "Proceed"
+        });
+        if (!yes) {
           return;
         }
       }

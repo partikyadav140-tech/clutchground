@@ -6,6 +6,7 @@ import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { GodCoin } from "@/components/GodCoin";
 import { toast } from "sonner";
+import { confirmDialog, promptDialog } from "@/components/ConfirmDialog";
 
 export const Route = createFileRoute("/_app/admin/users")({
   head: () => ({ meta: [{ title: "Users Admin — CLUTCHGROUND" }] }),
@@ -24,7 +25,11 @@ function AdminUsersPage() {
   }
 
   const handleEditBalance = async (userId: number, username: string, type: "deposit_balance" | "winning_balance", current: number) => {
-    const val = prompt(`Edit ${type === "deposit_balance" ? "Deposit Coins" : "Earned Coins (Winnings)"} for ${username}:`, current.toString());
+    const val = await promptDialog({
+      title: "Edit Balance",
+      description: `Edit ${type === "deposit_balance" ? "Deposit Coins" : "Earned Coins (Winnings)"} for ${username}:`,
+      defaultValue: current.toString()
+    });
     if (val === null) return;
     const num = parseInt(val, 10);
     if (isNaN(num)) {
@@ -42,7 +47,13 @@ function AdminUsersPage() {
   };
 
   const handleDeleteUser = async (userId: number, username: string) => {
-    if (!confirm(`WARNING: Are you sure you want to completely delete ${username} and invalidate their login credentials? This action cannot be undone.`)) return;
+    const yes = await confirmDialog({
+      title: "Delete User",
+      description: `WARNING: Are you sure you want to completely delete ${username} and invalidate their login credentials? This action cannot be undone.`,
+      confirmText: "Delete",
+      isDestructive: true
+    });
+    if (!yes) return;
     try {
       await (deleteUser as any)({ data: { id: userId } });
       toast.success(`User ${username} has been permanently deleted.`);
@@ -53,7 +64,13 @@ function AdminUsersPage() {
   };
 
   const handleDeleteAllUsers = async () => {
-    if (!confirm("CRITICAL WARNING: You are about to permanently delete ALL users (except admins). This action CANNOT be undone and will erase all teams, registrations, and wallets! Are you absolutely sure?")) return;
+    const yes = await confirmDialog({
+      title: "Delete ALL Users?",
+      description: "CRITICAL WARNING: You are about to permanently delete ALL users (except admins). This action CANNOT be undone and will erase all teams, registrations, and wallets! Are you absolutely sure?",
+      confirmText: "PURGE USERS",
+      isDestructive: true
+    });
+    if (!yes) return;
     try {
       await (deleteAllUsers as any)({});
       toast.success("All non-admin users have been successfully purged.");
