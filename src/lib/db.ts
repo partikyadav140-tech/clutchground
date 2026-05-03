@@ -4,7 +4,7 @@ import path from 'path';
 
 let db: any;
 try {
-  const dbPath = path.resolve(process.cwd(), 'arena.db');
+  const dbPath = process.env.DATABASE_URL || path.resolve(process.cwd(), 'arena.db');
   db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
 } catch (e) {

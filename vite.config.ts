@@ -11,6 +11,11 @@ export default defineConfig({
     tailwindcss(),
     tsconfigPaths(),
   ],
+  preview: {
+    host: true,
+    port: parseInt(process.env.PORT || "4173"),
+    allowedHosts: true,
+  },
   server: {
     host: true,
     allowedHosts: true,
