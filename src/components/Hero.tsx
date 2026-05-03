@@ -27,15 +27,24 @@ export function Hero() {
     <section className="relative w-full min-h-[100svh] overflow-hidden bg-background">
       {/* Background Media */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-black">
-        {/* Native Video for Instant Playback and Zero Watermarks */}
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-40"
-          src="https://assets.mixkit.co/videos/preview/mixkit-cyberpunk-city-and-flying-cars-animation-31566-large.mp4"
-        />
+        <div 
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-40"
+          style={{
+            width: '100vw',
+            height: '56.25vw', // 16:9 aspect ratio
+            minHeight: '100vh',
+            minWidth: '177.77vh', // 16:9 aspect ratio
+            transform: 'translate(-50%, -50%) scale(1.35)' // Scale up to hide UI elements
+          }}
+        >
+          <iframe
+            src="https://www.youtube.com/embed/JDY8XkebaeA?autoplay=1&mute=1&loop=1&playlist=JDY8XkebaeA&controls=0&showinfo=0&modestbranding=1&rel=0&playsinline=1&disablekb=1&fs=0&iv_load_policy=3&vq=hd1080"
+            title="Hero Background"
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            style={{ border: 0 }}
+          />
+        </div>
         
         {/* Advanced gradients for text readability on all screens */}
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/20 to-background z-10 pointer-events-none" />
