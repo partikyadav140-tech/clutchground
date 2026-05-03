@@ -821,3 +821,17 @@ export const deleteAllTournaments = createServerFn({ method: "POST" })
     await db.prepare("DELETE FROM tournaments").run();
     return { success: true };
   });
+
+export const saveContactMessage = createServerFn({ method: "POST" })
+  .handler(async ({ data }) => {
+    const { db } = await import("./lib/db");
+    const { name, email, message } = data as any;
+    await db.prepare('INSERT INTO contact_messages (name, email, message) VALUES (?, ?, ?)').run(name, email, message);
+    return { success: true };
+  });
+
+export const getContactMessages = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { db } = await import("./lib/db");
+    return await db.prepare('SELECT * FROM contact_messages ORDER BY created_at DESC').all();
+  });

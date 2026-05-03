@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader } from "../tournaments/index";
-import { Users, Trophy, ClipboardList, Banknote } from "lucide-react";
+import { Users, Trophy, ClipboardList, Banknote, Mail } from "lucide-react";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 
@@ -50,6 +50,12 @@ function AdminDashboard() {
           <Banknote className="w-12 h-12 text-primary mb-4 group-hover:scale-110 transition-transform" />
           <h3 className="font-display font-bold tracking-widest uppercase text-lg">Payouts</h3>
           <p className="text-xs text-muted-foreground mt-2">Process and manage player withdrawal requests.</p>
+        </Link>
+
+        <Link to="/admin/messages" className="bg-card-gradient border border-border clip-notch p-8 flex flex-col items-center justify-center text-center hover:border-primary/60 hover:shadow-fire transition-all group">
+          <Mail className="w-12 h-12 text-primary mb-4 group-hover:scale-110 transition-transform" />
+          <h3 className="font-display font-bold tracking-widest uppercase text-lg">Messages</h3>
+          <p className="text-xs text-muted-foreground mt-2">View contact messages from users.</p>
         </Link>
       </div>
     </div>

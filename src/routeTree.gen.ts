@@ -32,6 +32,7 @@ import { Route as AppAdminUsersRouteImport } from './routes/_app/admin/users'
 import { Route as AppAdminTournamentsRouteImport } from './routes/_app/admin/tournaments'
 import { Route as AppAdminRegistrationsRouteImport } from './routes/_app/admin/registrations'
 import { Route as AppAdminPayoutsRouteImport } from './routes/_app/admin/payouts'
+import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin/messages'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -147,6 +148,11 @@ const AppAdminPayoutsRoute = AppAdminPayoutsRouteImport.update({
   path: '/admin/payouts',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminMessagesRoute = AppAdminMessagesRouteImport.update({
+  id: '/admin/messages',
+  path: '/admin/messages',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/teams': typeof AppTeamsRoute
   '/terms': typeof AppTermsRoute
   '/wallet': typeof AppWalletRoute
+  '/admin/messages': typeof AppAdminMessagesRoute
   '/admin/payouts': typeof AppAdminPayoutsRoute
   '/admin/registrations': typeof AppAdminRegistrationsRoute
   '/admin/tournaments': typeof AppAdminTournamentsRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/terms': typeof AppTermsRoute
   '/wallet': typeof AppWalletRoute
   '/': typeof AppIndexRoute
+  '/admin/messages': typeof AppAdminMessagesRoute
   '/admin/payouts': typeof AppAdminPayoutsRoute
   '/admin/registrations': typeof AppAdminRegistrationsRoute
   '/admin/tournaments': typeof AppAdminTournamentsRoute
@@ -214,6 +222,7 @@ export interface FileRoutesById {
   '/_app/terms': typeof AppTermsRoute
   '/_app/wallet': typeof AppWalletRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/admin/messages': typeof AppAdminMessagesRoute
   '/_app/admin/payouts': typeof AppAdminPayoutsRoute
   '/_app/admin/registrations': typeof AppAdminRegistrationsRoute
   '/_app/admin/tournaments': typeof AppAdminTournamentsRoute
@@ -240,6 +249,7 @@ export interface FileRouteTypes {
     | '/teams'
     | '/terms'
     | '/wallet'
+    | '/admin/messages'
     | '/admin/payouts'
     | '/admin/registrations'
     | '/admin/tournaments'
@@ -264,6 +274,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/wallet'
     | '/'
+    | '/admin/messages'
     | '/admin/payouts'
     | '/admin/registrations'
     | '/admin/tournaments'
@@ -289,6 +300,7 @@ export interface FileRouteTypes {
     | '/_app/terms'
     | '/_app/wallet'
     | '/_app/'
+    | '/_app/admin/messages'
     | '/_app/admin/payouts'
     | '/_app/admin/registrations'
     | '/_app/admin/tournaments'
@@ -465,6 +477,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminPayoutsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/messages': {
+      id: '/_app/admin/messages'
+      path: '/admin/messages'
+      fullPath: '/admin/messages'
+      preLoaderRoute: typeof AppAdminMessagesRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -484,6 +503,7 @@ interface AppRouteChildren {
   AppTermsRoute: typeof AppTermsRoute
   AppWalletRoute: typeof AppWalletRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppAdminMessagesRoute: typeof AppAdminMessagesRoute
   AppAdminPayoutsRoute: typeof AppAdminPayoutsRoute
   AppAdminRegistrationsRoute: typeof AppAdminRegistrationsRoute
   AppAdminTournamentsRoute: typeof AppAdminTournamentsRoute
@@ -509,6 +529,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTermsRoute: AppTermsRoute,
   AppWalletRoute: AppWalletRoute,
   AppIndexRoute: AppIndexRoute,
+  AppAdminMessagesRoute: AppAdminMessagesRoute,
   AppAdminPayoutsRoute: AppAdminPayoutsRoute,
   AppAdminRegistrationsRoute: AppAdminRegistrationsRoute,
   AppAdminTournamentsRoute: AppAdminTournamentsRoute,

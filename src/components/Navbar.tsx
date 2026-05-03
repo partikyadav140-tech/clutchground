@@ -228,6 +228,9 @@ export function Navbar() {
             <Link to="/rules" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-secondary/60">
               <Shield className="w-5 h-5" /><span className="font-semibold uppercase tracking-wide">Rules</span>
             </Link>
+            <Link to="/contact" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-secondary/60">
+              <MessageCircle className="w-5 h-5" /><span className="font-semibold uppercase tracking-wide">Contact Us</span>
+            </Link>
           </div>
         </div>
       )}
