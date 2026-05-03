@@ -1,6 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { PageHeader } from "./tournaments";
-import { Trophy, Target, Crosshair, TrendingUp, Edit3, Bell, Share2, Save, Users, Crown, Plus, Trash } from "lucide-react";
+import { Trophy, Target, Crosshair, TrendingUp, Edit3, Bell, Share2, Save, Users, Crown, Plus, Trash, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "../../lib/auth-client";
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_app/profile")({
 });
 
 function ProfilePage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const router = useRouter();
   
   const [loading, setLoading] = useState(true);
@@ -195,13 +195,14 @@ function ProfilePage() {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-2 mt-5">
+          <div className="grid grid-cols-3 gap-2 mt-5">
             {isEditingProfile ? (
               <Button variant="hero" size="sm" onClick={handleSaveProfile}><Save className="w-4 h-4" /> Save</Button>
             ) : (
               <Button variant="outlineFire" size="sm" onClick={() => setIsEditingProfile(true)}><Edit3 className="w-4 h-4" /> Edit</Button>
             )}
             <Button variant="outlineFire" size="sm" onClick={() => { navigator.clipboard?.writeText(window.location.href); toast.success("Profile link copied!"); }}><Share2 className="w-4 h-4" /> Share</Button>
+            <Button variant="outlineFire" size="sm" onClick={logout} className="border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"><LogOut className="w-4 h-4" /> Logout</Button>
           </div>
         </div>
 
