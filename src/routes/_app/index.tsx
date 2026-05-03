@@ -95,7 +95,7 @@ const POSTERS = [
 function HomePage() {
   const { ts: allTournaments, lb: leaderboard } = Route.useLoaderData();
   const { user } = useAuth();
-  const displayTournaments = allTournaments.filter((t: any) => t.is_hero).slice(0, 4);
+  const displayTournaments = allTournaments.filter((t: any) => t.is_hero === true || t.is_hero === 1 || t.is_hero === '1' || t.is_hero === 'true').slice(0, 4);
 
   return (
     <>
