@@ -199,7 +199,7 @@ export const registerForTournament = createServerFn({ method: "POST" })
 
       if (needsApproval) {
         // Create request
-        const res = tx.prepare(`
+        const res = await tx.prepare(`
           INSERT INTO tournament_requests (team_id, tournament_id, requested_by, team_name, players_json, contact_email, contact_phone)
           VALUES (?, ?, ?, ?, ?, ?, ?)
         `).run(teamId, tournamentId, userId, teamName, JSON.stringify(players), contactEmail, contactPhone);
@@ -208,7 +208,7 @@ export const registerForTournament = createServerFn({ method: "POST" })
         const requester = await tx.prepare('SELECT username FROM users WHERE id = ?').get(userId) as any;
         const tourney = await tx.prepare('SELECT title FROM tournaments WHERE id = ?').get(tournamentId) as any;
 
-        tx.prepare('INSERT INTO notifications (user_id, message, action_type, action_data) VALUES (?, ?, ?, ?)').run(
+        await tx.prepare('INSERT INTO notifications (user_id, message, action_type, action_data) VALUES (?, ?, ?, ?)').run(
           leaderId,
           `⚠️ Your team member ${requester.username} wants to register your team for ${tourney.title}. Do you approve?`,
           'tournament_request',
@@ -216,7 +216,7 @@ export const registerForTournament = createServerFn({ method: "POST" })
         );
       } else {
         // Insert registration immediately
-        tx.prepare(`
+        await tx.prepare(`
           INSERT INTO registrations (user_id, tournament_id, team_name, players_json, contact_email, contact_phone)
           VALUES (?, ?, ?, ?, ?, ?)
         `).run(userId, tournamentId, teamName, JSON.stringify(players), contactEmail, contactPhone);
