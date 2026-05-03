@@ -17,27 +17,70 @@ export function clearSessionId() {
   localStorage.removeItem('sessionId');
 }
 
+// Global state for live updates across components
+let globalUser: any = null;
+const listeners = new Set<Function>();
+
+function notifyListeners() {
+  listeners.forEach(l => l(globalUser));
+}
+
+let polling = false;
+
 export function useAuth() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUserState] = useState<any>(globalUser);
+  const [loading, setLoading] = useState(!globalUser);
   const router = useRouter();
 
+  const setUser = (newUser: any) => {
+    globalUser = newUser;
+    notifyListeners();
+  };
+
   useEffect(() => {
+    const listener = (u: any) => {
+      setUserState(u);
+      setLoading(false);
+    };
+    listeners.add(listener);
+
     async function fetchUser() {
       const sessionId = getSessionId();
       if (!sessionId) {
+        if (globalUser) {
+          globalUser = null;
+          notifyListeners();
+        }
         setLoading(false);
         return;
       }
       try {
         const userData = await (getUserFromSession as any)({ data: sessionId });
-        setUser(userData);
+        // Only notify if something actually changed (simplified check by stringifying)
+        if (JSON.stringify(userData) !== JSON.stringify(globalUser)) {
+          globalUser = userData;
+          notifyListeners();
+        }
       } catch (e) {
         clearSessionId();
       }
       setLoading(false);
     }
-    fetchUser();
+    
+    if (!globalUser) {
+      fetchUser();
+    } else {
+      setLoading(false);
+    }
+
+    if (!polling) {
+      polling = true;
+      setInterval(fetchUser, 5000); // Poll every 5s for live coin updates
+    }
+
+    return () => {
+      listeners.delete(listener);
+    };
   }, []);
 
   const logout = async () => {
@@ -46,7 +89,8 @@ export function useAuth() {
       (logoutUser as any)({ data: sessionId });
     }
     localStorage.removeItem('sessionId');
-    setUser(null);
+    globalUser = null;
+    notifyListeners();
     router.navigate({ to: '/login' });
   };
 

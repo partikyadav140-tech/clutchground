@@ -227,7 +227,7 @@ function HomePage() {
       </Section>
 
       {/* Top players preview */}
-      <Section title="Hall Of Gods" subtitle="The top warriors this season." cta={{ label: "Full Leaderboard", to: "/leaderboard" }}>
+      <Section title="Hall Of Fame" subtitle="The top warriors this season." cta={{ label: "Full Leaderboard", to: "/leaderboard" }}>
         <div className="bg-card-gradient border border-border clip-notch overflow-hidden">
           <div className="grid grid-cols-12 gap-2 px-4 sm:px-6 py-3 border-b border-border/60 text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
             <div className="col-span-1">#</div>

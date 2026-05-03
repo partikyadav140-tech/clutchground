@@ -97,7 +97,7 @@ export function JoinBattleDialog({ trigger, tournamentId, tournamentTitle = "GOD
       const winBalance = (user as any)?.winning_balance || 0;
       
       if (dbBalance + winBalance < entryFee) {
-        return toast.error(`Insufficient funds. You need ${entryFee} GOD Coins to enter.`);
+        return toast.error(`Insufficient funds. You need ${entryFee} CG Coins to enter.`);
       }
       
       if (dbBalance < entryFee) {

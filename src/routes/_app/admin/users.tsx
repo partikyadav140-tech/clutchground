@@ -67,7 +67,7 @@ function AdminUsersPage() {
               </div>
               
               <div className="flex flex-col gap-2 shrink-0 bg-background/50 p-3 border border-border/50 rounded-md">
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Manage God Coins</div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Manage CG Coins</div>
                 
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-1.5 text-sm">

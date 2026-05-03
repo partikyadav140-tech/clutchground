@@ -129,8 +129,8 @@ function WalletPage() {
       <div className="mt-6 bg-secondary/30 border border-primary/30 p-4 rounded-md flex items-start gap-4">
         <ShieldAlert className="w-6 h-6 text-primary shrink-0 mt-0.5" />
         <div className="text-sm text-muted-foreground">
-          <p><strong className="text-primary font-display tracking-wider">1 GOD COIN = ₹1 (INR)</strong></p>
-          <p className="mt-1">All tournament entry fees and prizes are processed in GOD Coins. Coins you add to your wallet (Deposit Coins) can only be used to pay entry fees. Only coins you win from tournaments (Earned Coins) can be withdrawn to your bank account.</p>
+          <p><strong className="text-primary font-display tracking-wider">1 CG COIN = ₹1 (INR)</strong></p>
+          <p className="mt-1">All tournament entry fees and prizes are processed in CG Coins. Coins you add to your wallet (Deposit Coins) can only be used to pay entry fees. Only coins you win from tournaments (Earned Coins) can be withdrawn to your bank account.</p>
         </div>
       </div>
 
@@ -174,7 +174,7 @@ function WalletPage() {
               />
             </div>
             <div>
-              <label className="block text-[10px] uppercase tracking-widest font-display font-bold text-muted-foreground mb-1">Withdraw Amount (God Coins) *</label>
+              <label className="block text-[10px] uppercase tracking-widest font-display font-bold text-muted-foreground mb-1">Withdraw Amount (CG Coins) *</label>
               <div className="relative">
                 <GodCoin className="w-5 h-5 absolute left-3 top-2.5" />
                 <input

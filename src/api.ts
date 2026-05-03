@@ -163,7 +163,7 @@ export const registerForTournament = createServerFn({ method: "POST" })
         if (!user) throw new Error("User not found");
         
         if (user.deposit_balance + user.winning_balance < t.entry) {
-          throw new Error(`Insufficient funds. You need ${t.entry} GOD Coins.`);
+          throw new Error(`Insufficient funds. You need ${t.entry} CG Coins.`);
         }
 
         let remaining = t.entry;
@@ -596,7 +596,7 @@ export const saveTournamentResults = createServerFn({ method: "POST" })
 
         if (awardedPrize > 0) {
           addPrize.run(awardedPrize, r.user_id);
-          insertNotif.run(r.user_id, `💰 PRIZE WON! You received ${awardedPrize} GOD Coins for placing #${rankForPrize} in ${tourney.title}!`);
+          insertNotif.run(r.user_id, `💰 PRIZE WON! You received ${awardedPrize} CG Coins for placing #${rankForPrize} in ${tourney.title}!`);
         }
         
         if (r.calculatedPoints > 0 || r.matchPosition > 0) {
@@ -709,7 +709,7 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" })
       } else {
         if (tourney.entry > 0) {
           db.prepare('UPDATE users SET deposit_balance = deposit_balance + ? WHERE id = ?').run(tourney.entry, req.requested_by);
-          insertNotif.run(req.requested_by, `❌ Your Captain has rejected the tournament registration for ${tourney.title}. Your entry fee of ${tourney.entry} GOD Coins has been refunded to your Deposit Balance.`);
+          insertNotif.run(req.requested_by, `❌ Your Captain has rejected the tournament registration for ${tourney.title}. Your entry fee of ${tourney.entry} CG Coins has been refunded to your Deposit Balance.`);
         } else {
           insertNotif.run(req.requested_by, `❌ Your Captain has rejected the tournament registration for ${tourney.title}.`);
         }
@@ -735,7 +735,7 @@ export const processWithdrawal = createServerFn({ method: "POST" })
       
       db.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(
         userId, 
-        `💸 Withdrawal of ${amount} GOD Coins initiated! You will receive your money to UPI ID ${upiId} within 2-3 working days.`
+        `💸 Withdrawal of ${amount} CG Coins initiated! You will receive your money to UPI ID ${upiId} within 2-3 working days.`
       );
     })();
     return { success: true };
@@ -761,11 +761,11 @@ export const updatePayoutStatus = createServerFn({ method: "POST" })
       db.prepare('UPDATE withdrawals SET status = ? WHERE id = ?').run(status, payoutId);
       
       if (status === 'completed') {
-        db.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(userId, `✅ Your withdrawal of ${amount} GOD Coins has been successfully processed and sent to your UPI!`);
+        db.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(userId, `✅ Your withdrawal of ${amount} CG Coins has been successfully processed and sent to your UPI!`);
       } else if (status === 'rejected') {
         // Refund the coins
         db.prepare('UPDATE users SET winning_balance = winning_balance + ? WHERE id = ?').run(amount, userId);
-        db.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(userId, `❌ Your withdrawal of ${amount} GOD Coins was rejected. The coins have been refunded to your wallet.`);
+        db.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(userId, `❌ Your withdrawal of ${amount} CG Coins was rejected. The coins have been refunded to your wallet.`);
       }
     })();
     return { success: true };

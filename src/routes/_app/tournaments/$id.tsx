@@ -181,7 +181,7 @@ function TournamentDetailPage() {
           <Card title="About This Tournament">
             <div className="text-sm text-muted-foreground leading-relaxed space-y-4">
               <p>Welcome to the ultimate battleground! The <strong className="text-primary">{t.title}</strong> is a high-stakes {t.game} event where the best of the best compete for glory and a share of the ₹{t.prize.toLocaleString()} prize pool.</p>
-              <p>Gather your squad, strategize your drops, and fight for survival in this intense {t.mode} format. Whether you are a seasoned veteran or an rising star, this is your chance to prove your worth and etch your name into the Hall of Gods.</p>
+              <p>Gather your squad, strategize your drops, and fight for survival in this intense {t.mode} format. Whether you are a seasoned veteran or an rising star, this is your chance to prove your worth and etch your name into the Hall of Fame.</p>
               <p>Registration closes soon, and slots are strictly on a first-come, first-serve basis. Prepare your loadouts and get ready to drop into the combat zone.</p>
             </div>
           </Card>

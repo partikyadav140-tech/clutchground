@@ -23,7 +23,7 @@ function LeaderboardPage() {
 
   return (
     <div className="container mx-auto px-4 lg:px-8 py-10 lg:py-16">
-      <PageHeader title="Leaderboard" subtitle="Hall Of Gods" />
+      <PageHeader title="Leaderboard" subtitle="Hall Of Fame" />
 
       <div className="mt-8 flex gap-2 overflow-x-auto -mx-1 px-1 pb-1">
         {tabs.map((t) => (
@@ -65,7 +65,7 @@ function LeaderboardPage() {
         </div>
       ) : (
         <div className="mt-10 text-center text-muted-foreground p-10 bg-card-gradient border border-border clip-notch">
-          More match data required to build the Hall of Gods.
+          More match data required to build the Hall of Fame.
         </div>
       )}
 
