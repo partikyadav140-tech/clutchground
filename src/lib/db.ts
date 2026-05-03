@@ -203,25 +203,7 @@ async function initDb() {
       `);
     } catch(e) {}
 
-    // Seed tournaments
-    const { rows } = await pool.query('SELECT COUNT(*) as count FROM tournaments');
-    if (parseInt(rows[0].count) === 0) {
-      const initialTournaments = [
-        ["GOD CHAMPIONS CUP", "Free Fire", "Squad", "Battle Royale", 100, 50000, 48, 41, "Today 9:00 PM", "open", "from-orange-600 to-red-700"],
-        ["RAGE ROYALE #14", "Free Fire MAX", "Solo", "Battle Royale", 0, 5000, 50, 50, "Live now", "live", "from-red-700 to-yellow-600"],
-        ["CLASH KINGS LEAGUE", "Clash Squad", "Squad", "League", 200, 100000, 16, 9, "Sat 8:00 PM", "upcoming", "from-amber-600 to-orange-700"],
-        ["MIDNIGHT SHOWDOWN", "Free Fire", "Duo", "Knockout", 50, 15000, 32, 22, "Tonight 11 PM", "open", "from-rose-700 to-orange-600"],
-        ["ROOKIE FIRE NIGHT", "Free Fire", "Solo", "Battle Royale", 0, 2000, 60, 14, "Tomorrow 7 PM", "open", "from-orange-500 to-red-600"],
-        ["GOD INVITATIONAL", "Free Fire MAX", "Squad", "League", 500, 250000, 12, 12, "Next Sunday", "upcoming", "from-yellow-600 via-orange-700 to-red-800"],
-      ];
 
-      for (const t of initialTournaments) {
-        await pool.query(`
-          INSERT INTO tournaments (title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        `, t);
-      }
-    }
   } catch (e) {
     console.error("DB Init error:", e);
   }
