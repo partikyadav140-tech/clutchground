@@ -7,7 +7,7 @@ export const loginUser = createServerFn({ method: "POST" })
     const { db } = await import("./lib/db");
     const { username, password } = data as unknown as { username: string; password: string };
     const userStmt = db.prepare('SELECT * FROM users WHERE username = ? AND password = ?');
-    const user = await userStmt.get(username, password) as any;
+    const user = userStmt.get(username, password) as any;
     
     if (!user) {
       throw new Error("Invalid username or password");
@@ -16,7 +16,7 @@ export const loginUser = createServerFn({ method: "POST" })
     const sessionId = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(); // 7 days
 
-    await db.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)').run(sessionId, user.id, expiresAt);
+    await .prepare().();
 
     return { sessionId, user: { id: user.id, username: user.username, role: user.role } };
   });
@@ -27,19 +27,19 @@ export const signupUser = createServerFn({ method: "POST" })
     const { username, password, ign, uid, email, phone } = data as any;
 
     const checkStmt = db.prepare('SELECT id FROM users WHERE username = ?');
-    const exists = await checkStmt.get(username);
+    const exists = checkStmt.get(username);
     if (exists) {
       throw new Error("Username already taken");
     }
 
     const insertStmt = db.prepare('INSERT INTO users (username, password, ign, uid, email, phone) VALUES (?, ?, ?, ?, ?, ?)');
-    const result = await insertStmt.run(username, password, ign || null, uid || null, email || null, phone || null);
+    const result = insertStmt.run(username, password, ign || null, uid || null, email || null, phone || null);
     const userId = result.lastInsertRowid;
 
     const sessionId = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString();
 
-    await db.prepare('INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)').run(sessionId, userId, expiresAt);
+    await .prepare().();
 
     return { sessionId, user: { id: userId, username, role: 'user' } };
   });
@@ -56,7 +56,7 @@ export const getUserFromSession = createServerFn({ method: "GET" })
       JOIN users ON sessions.user_id = users.id 
       WHERE sessions.id = ? AND sessions.expires_at > ?
     `);
-    const user = await stmt.get(sessionId, new Date().toISOString()) as any;
+    const user = stmt.get(sessionId, new Date().toISOString()) as any;
     return user || null;
   });
 
@@ -65,7 +65,7 @@ export const logoutUser = createServerFn({ method: "POST" })
     const { db } = await import("./lib/db");
     const sessionId = data as unknown as string;
     if (sessionId) {
-      await db.prepare('DELETE FROM sessions WHERE id = ?').run(sessionId);
+      await .prepare().();
     }
     return { success: true };
   });
@@ -73,13 +73,13 @@ export const logoutUser = createServerFn({ method: "POST" })
 export const getUsers = createServerFn({ method: "GET" })
   .handler(async () => {
     const { db } = await import("./lib/db");
-    return await db.prepare('SELECT id, username, password, role, created_at, deposit_balance, winning_balance FROM users').all();
+    return await .prepare().();
   });
 
 export const getTournaments = createServerFn({ method: "GET" })
   .handler(async () => {
     const { db } = await import("./lib/db");
-    return await db.prepare('SELECT * FROM tournaments').all();
+    return await .prepare().();
   });
 
 export const addTournament = createServerFn({ method: "POST" })
@@ -90,7 +90,7 @@ export const addTournament = createServerFn({ method: "POST" })
       INSERT INTO tournaments (title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id, room_pass)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    await stmt.run(title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id || null, room_pass || null);
+    stmt.run(title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id || null, room_pass || null);
     return { success: true };
   });
 
@@ -99,23 +99,23 @@ export const updateTournament = createServerFn({ method: "POST" })
     const { db } = await import("./lib/db");
     const { id, title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id, room_pass } = data as unknown as any;
     
-    const old = await db.prepare('SELECT room_id, room_pass FROM tournaments WHERE id = ?').get(id) as any;
+    const old = await .prepare().() as any;
 
     const stmt = db.prepare(`
       UPDATE tournaments 
       SET title=?, game=?, mode=?, format=?, entry=?, prize=?, slots=?, filled=?, startsAt=?, status=?, banner=?, room_id=?, room_pass=?
       WHERE id=?
     `);
-    await stmt.run(title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id || null, room_pass || null, id);
+    stmt.run(title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id || null, room_pass || null, id);
 
     if ((room_id && room_id !== old?.room_id) || (room_pass && room_pass !== old?.room_pass)) {
-      const registrations = await db.prepare('SELECT user_id FROM registrations WHERE tournament_id = ?').all(id) as any[];
+      const registrations = await .prepare().() as any[];
       const insertNotif = db.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)');
       const notifMsg = `🔑 Room details for ${title} updated! ` + 
         (room_id ? `ID: ${room_id} ` : '') + 
         (room_pass ? `Pass: ${room_pass}` : '');
       for (const r of registrations) {
-        await insertNotif.run(r.user_id, notifMsg.trim());
+        insertNotif.run(r.user_id, notifMsg.trim());
       }
     }
 
@@ -127,8 +127,8 @@ export const deleteTournament = createServerFn({ method: "POST" })
     const { db } = await import("./lib/db");
     const id = data as unknown as number;
     await db.transaction(async (tx) => {
-      await tx.prepare('DELETE FROM registrations WHERE tournament_id = ?').run(id);
-      await tx.prepare('DELETE FROM tournaments WHERE id = ?').run(id);
+      await .prepare().();
+      await .prepare().();
     });
     return { success: true };
   });
@@ -137,8 +137,8 @@ export const toggleHeroTournament = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db } = await import("./lib/db");
     const id = data as unknown as number;
-    const current = await db.prepare('SELECT is_hero FROM tournaments WHERE id = ?').get(id) as any;
-    await db.prepare('UPDATE tournaments SET is_hero = ? WHERE id = ?').run(current.is_hero ? 0 : 1, id);
+    const current = await .prepare().() as any;
+    await .prepare().();
     return { success: true };
   });
 
@@ -148,18 +148,18 @@ export const registerForTournament = createServerFn({ method: "POST" })
     const { userId, tournamentId, teamName, players, contactEmail, contactPhone } = data as any;
     
     // Check if tournament exists and has slots
-    const t = await db.prepare('SELECT filled, slots, entry FROM tournaments WHERE id = ?').get(tournamentId) as any;
+    const t = await .prepare().() as any;
     if (!t) throw new Error("Tournament not found");
     if (t.filled >= t.slots) throw new Error("Tournament is full");
 
     // Check if already registered
-    const existing = await db.prepare('SELECT id FROM registrations WHERE user_id = ? AND tournament_id = ?').get(userId, tournamentId);
+    const existing = await .prepare().();
     if (existing) throw new Error("You are already registered for this tournament");
 
     await db.transaction(async (tx) => {
       // Handle Entry Fee Deduction
       if (t.entry > 0) {
-        const user = await tx.prepare('SELECT deposit_balance, winning_balance FROM users WHERE id = ?').get(userId) as any;
+        const user = await .prepare().() as any;
         if (!user) throw new Error("User not found");
         
         if (user.deposit_balance + user.winning_balance < t.entry) {
@@ -179,7 +179,7 @@ export const registerForTournament = createServerFn({ method: "POST" })
           newWinning -= remaining;
         }
 
-        await tx.prepare('UPDATE users SET deposit_balance = ?, winning_balance = ? WHERE id = ?').run(newDeposit, newWinning, userId);
+        await .prepare().();
       }
 
       let needsApproval = false;
@@ -187,7 +187,7 @@ export const registerForTournament = createServerFn({ method: "POST" })
       let leaderId = null;
 
       if (teamName) {
-        const teamInfo = await tx.prepare('SELECT id, leader_id FROM teams WHERE name = ?').get(teamName) as any;
+        const teamInfo = await .prepare().() as any;
         if (teamInfo) {
           teamId = teamInfo.id;
           leaderId = teamInfo.leader_id;
@@ -205,8 +205,8 @@ export const registerForTournament = createServerFn({ method: "POST" })
         `).run(teamId, tournamentId, userId, teamName, JSON.stringify(players), contactEmail, contactPhone);
         
         const reqId = res.lastInsertRowid;
-        const requester = await tx.prepare('SELECT username FROM users WHERE id = ?').get(userId) as any;
-        const tourney = await tx.prepare('SELECT title FROM tournaments WHERE id = ?').get(tournamentId) as any;
+        const requester = await .prepare().() as any;
+        const tourney = await .prepare().() as any;
 
         tx.prepare('INSERT INTO notifications (user_id, message, action_type, action_data) VALUES (?, ?, ?, ?)').run(
           leaderId,
@@ -222,16 +222,16 @@ export const registerForTournament = createServerFn({ method: "POST" })
         `).run(userId, tournamentId, teamName, JSON.stringify(players), contactEmail, contactPhone);
 
         // Increment filled slots
-        await tx.prepare('UPDATE tournaments SET filled = filled + 1 WHERE id = ?').run(tournamentId);
+        await .prepare().();
 
         // Give notification to team members
-        const team = await tx.prepare('SELECT id FROM teams WHERE leader_id = ?').get(userId) as any;
+        const team = await .prepare().() as any;
         if (team) {
-          const members = await tx.prepare('SELECT user_id FROM team_members WHERE team_id = ? AND user_id IS NOT NULL').all(team.id) as any[];
+          const members = await .prepare().() as any[];
           const insertNotif = tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)');
           for (const m of members) {
             if (m.user_id !== userId) {
-              await insertNotif.run(m.user_id, `🏆 Your Captain has registered your team for a new tournament! Check your matches.`);
+              insertNotif.run(m.user_id, `🏆 Your Captain has registered your team for a new tournament! Check your matches.`);
             }
           }
         }
@@ -264,14 +264,14 @@ export const getProfile = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db } = await import("./lib/db");
     const userId = data as unknown as number;
-    return await db.prepare('SELECT id, username, role, ign, uid, email, phone, created_at, deposit_balance, winning_balance FROM users WHERE id = ?').get(userId) as any;
+    return await .prepare().() as any;
   });
 
 export const updateCoinBalance = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db } = await import("./lib/db");
     const { userId, type, amount } = data as unknown as { userId: number; type: "deposit_balance" | "winning_balance"; amount: number };
-    await db.prepare(`UPDATE users SET ${type} = ? WHERE id = ?`).run(amount, userId);
+    await .prepare().();
     return { success: true };
   });
 
@@ -279,18 +279,18 @@ export const getMyTeam = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db } = await import("./lib/db");
     const userId = data as unknown as number;
-    let team = await db.prepare('SELECT * FROM teams WHERE leader_id = ?').get(userId) as any;
+    let team = await .prepare().() as any;
     
     if (!team) {
-      const member = await db.prepare('SELECT team_id FROM team_members WHERE user_id = ?').get(userId) as any;
+      const member = await .prepare().() as any;
       if (member) {
-        team = await db.prepare('SELECT * FROM teams WHERE id = ?').get(member.team_id) as any;
+        team = await .prepare().() as any;
       }
     }
     
     if (!team) return null;
-    const members = await db.prepare('SELECT * FROM team_members WHERE team_id = ?').all(team.id);
-    const leader = await db.prepare('SELECT username, ign, uid FROM users WHERE id = ?').get(team.leader_id);
+    const members = await .prepare().();
+    const leader = await .prepare().();
     return { ...team, members, leader };
   });
 
@@ -300,17 +300,17 @@ export const saveMyTeam = createServerFn({ method: "POST" })
     const { userId, teamName, logo, members } = data as any;
     
     await db.transaction(async (tx) => {
-      let team = await tx.prepare('SELECT id FROM teams WHERE leader_id = ?').get(userId) as any;
+      let team = await .prepare().() as any;
       let teamId;
       let existingMembers: any[] = [];
       
       if (team) {
         teamId = team.id;
-        existingMembers = await tx.prepare('SELECT uid, user_id FROM team_members WHERE team_id = ? AND user_id IS NOT NULL').all(teamId) as any[];
-        await tx.prepare('UPDATE teams SET name = ?, logo = ? WHERE id = ?').run(teamName, logo || '', teamId);
-        await tx.prepare('DELETE FROM team_members WHERE team_id = ?').run(teamId);
+        existingMembers = await .prepare().() as any[];
+        await .prepare().();
+        await .prepare().();
       } else {
-        const res = await tx.prepare('INSERT INTO teams (name, leader_id, logo) VALUES (?, ?, ?)').run(teamName, userId, logo || '');
+        const res = await .prepare().();
         teamId = res.lastInsertRowid;
       }
 
@@ -324,11 +324,11 @@ export const saveMyTeam = createServerFn({ method: "POST" })
           
           // If not found, try to recover it from approved requests just in case it was lost
           if (!memberUserId) {
-             const req = await tx.prepare("SELECT user_id FROM team_requests WHERE team_id = ? AND uid = ? AND status = 'approved' ORDER BY created_at DESC LIMIT 1").get(teamId, m.uid) as any;
+             const req = await .prepare().() as any;
              if (req) memberUserId = req.user_id;
           }
 
-          await insertMember.run(teamId, memberUserId || null, m.ign, m.uid, m.role || 'player');
+          insertMember.run(teamId, memberUserId || null, m.ign, m.uid, m.role || 'player');
         }
       }
 
@@ -337,7 +337,7 @@ export const saveMyTeam = createServerFn({ method: "POST" })
         const insertNotif = tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)');
         for (const ex of existingMembers) {
           if (!newUids.has(ex.uid)) {
-            await insertNotif.run(ex.user_id, `❌ You have been removed from the team ${teamName}.`);
+            insertNotif.run(ex.user_id, `❌ You have been removed from the team ${teamName}.`);
           }
         }
       }
@@ -351,13 +351,13 @@ export const leaveTeam = createServerFn({ method: "POST" })
     const { userId, teamId } = data as any;
     
     await db.transaction(async (tx) => {
-      const user = await tx.prepare('SELECT username, ign FROM users WHERE id = ?').get(userId) as any;
-      const team = await tx.prepare('SELECT name, leader_id FROM teams WHERE id = ?').get(teamId) as any;
+      const user = await .prepare().() as any;
+      const team = await .prepare().() as any;
       
       if (!user || !team) throw new Error("Invalid team or user");
       
-      await tx.prepare('DELETE FROM team_members WHERE team_id = ? AND user_id = ?').run(teamId, userId);
-      await tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(team.leader_id, `⚠️ ${user.ign || user.username} has left your team ${team.name}.`);
+      await .prepare().();
+      await .prepare().();
     });
     return { success: true };
   });
@@ -368,20 +368,20 @@ export const deleteTeam = createServerFn({ method: "POST" })
     const { userId, teamId } = data as any;
     
     await db.transaction(async (tx) => {
-      const team = await tx.prepare('SELECT name, leader_id FROM teams WHERE id = ?').get(teamId) as any;
+      const team = await .prepare().() as any;
       if (!team) throw new Error("Team not found");
       if (team.leader_id !== userId) throw new Error("Only the captain can delete the team");
       
-      const members = await tx.prepare('SELECT user_id FROM team_members WHERE team_id = ? AND user_id IS NOT NULL').all(teamId) as any[];
+      const members = await .prepare().() as any[];
       
-      await tx.prepare('DELETE FROM team_requests WHERE team_id = ?').run(teamId);
-      await tx.prepare('DELETE FROM team_members WHERE team_id = ?').run(teamId);
-      await tx.prepare('DELETE FROM teams WHERE id = ?').run(teamId);
+      await .prepare().();
+      await .prepare().();
+      await .prepare().();
       
       const insertNotif = tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)');
       for (const m of members) {
         if (m.user_id !== userId) {
-          await insertNotif.run(m.user_id, `⚠️ The team ${team.name} has been deleted by the captain.`);
+          insertNotif.run(m.user_id, `⚠️ The team ${team.name} has been deleted by the captain.`);
         }
       }
     });
@@ -391,8 +391,8 @@ export const deleteTeam = createServerFn({ method: "POST" })
 export const getAllTeams = createServerFn({ method: "GET" })
   .handler(async () => {
     const { db } = await import("./lib/db");
-    const teams = await db.prepare('SELECT * FROM teams ORDER BY created_at DESC').all() as any[];
-    const allMembers = await db.prepare('SELECT * FROM team_members').all() as any[];
+    const teams = await .prepare().() as any[];
+    const allMembers = await .prepare().() as any[];
     return teams.map(t => ({ ...t, members: allMembers.filter(m => m.team_id === t.id) }));
   });
 
@@ -402,7 +402,7 @@ export const requestJoinTeam = createServerFn({ method: "POST" })
     const { teamId, userId, ign, uid } = data as any;
     if (!ign || !uid) throw new Error("Please set your IGN and UID in your profile first.");
     
-    const existing = await db.prepare("SELECT id FROM team_requests WHERE team_id = ? AND user_id = ? AND status = 'pending'").get(teamId, userId);
+    const existing = await .prepare().();
     if (existing) throw new Error("You already have a pending request to this team.");
 
     db.prepare('INSERT INTO team_requests (team_id, user_id, ign, uid) VALUES (?, ?, ?, ?)')
@@ -414,7 +414,7 @@ export const getTeamRequests = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db } = await import("./lib/db");
     const leaderId = data as unknown as number;
-    const team = await db.prepare('SELECT id FROM teams WHERE leader_id = ?').get(leaderId) as any;
+    const team = await .prepare().() as any;
     if (!team) return [];
     
     return db.prepare(`
@@ -432,21 +432,21 @@ export const resolveTeamRequest = createServerFn({ method: "POST" })
     const { requestId, status } = data as any;
     
     await db.transaction(async (tx) => {
-      const req = await tx.prepare('SELECT * FROM team_requests WHERE id = ?').get(requestId) as any;
+      const req = await .prepare().() as any;
       if (!req) throw new Error("Request not found");
       
-      await tx.prepare('UPDATE team_requests SET status = ? WHERE id = ?').run(status, requestId);
+      await .prepare().();
       
       if (status === 'approved') {
-        const teamCount = await tx.prepare('SELECT COUNT(*) as count FROM team_members WHERE team_id = ?').get(req.team_id) as any;
+        const teamCount = await .prepare().() as any;
         if (teamCount.count >= 5) throw new Error("Team is full! Please click 'Edit Team' above and clear a player's details to remove them first.");
         
         tx.prepare('INSERT INTO team_members (team_id, user_id, ign, uid, role) VALUES (?, ?, ?, ?, ?)')
           .run(req.team_id, req.user_id, req.ign, req.uid, 'player');
           
-        await tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(req.user_id, '🎉 Your request to join the team has been approved!');
+        await .prepare().();
       } else {
-        await tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(req.user_id, '❌ Your request to join the team was declined.');
+        await .prepare().();
       }
     });
     return { success: true };
@@ -456,14 +456,14 @@ export const getNotifications = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db } = await import("./lib/db");
     const userId = data as unknown as number;
-    return await db.prepare('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 20').all(userId);
+    return await .prepare().();
   });
 
 export const markNotificationsRead = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db } = await import("./lib/db");
     const userId = data as unknown as number;
-    await db.prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ?').run(userId);
+    await .prepare().();
     return { success: true };
   });
 
@@ -479,7 +479,7 @@ export const getMyMatches = createServerFn({ method: "POST" })
       WHERE tm.user_id = ?
     `).get(userId) as any;
     
-    const leaderTeam = await db.prepare('SELECT name, id FROM teams WHERE leader_id = ?').get(userId) as any;
+    const leaderTeam = await .prepare().() as any;
     
     const teamName1 = userTeam ? userTeam.name : null;
     const teamName2 = leaderTeam ? leaderTeam.name : null;
@@ -530,7 +530,7 @@ export const saveTournamentResults = createServerFn({ method: "POST" })
     const { tournamentId, results } = data as any;
     
     await db.transaction(async (tx) => {
-      const tourney = await tx.prepare('SELECT title, prize, mode FROM tournaments WHERE id = ?').get(tournamentId) as any;
+      const tourney = await .prepare().() as any;
       if (!tourney) throw new Error("Tournament not found");
 
       const stmt = tx.prepare('UPDATE registrations SET kills = ?, position = ?, points = ? WHERE id = ? AND tournament_id = ?');
@@ -585,7 +585,7 @@ export const saveTournamentResults = createServerFn({ method: "POST" })
         const r = results[i];
         const overallRank = i + 1; // 1st, 2nd, 3rd...
 
-        await stmt.run(r.killsNum, r.matchPosition, r.calculatedPoints, r.id, tournamentId);
+        stmt.run(r.killsNum, r.matchPosition, r.calculatedPoints, r.id, tournamentId);
         
         let awardedPrize = 0;
         let rankForPrize = tourney.mode === 'Duo' ? r.matchPosition : overallRank;
@@ -595,17 +595,17 @@ export const saveTournamentResults = createServerFn({ method: "POST" })
         else if (rankForPrize === 3 && prize3 > 0) awardedPrize = prize3;
 
         if (awardedPrize > 0) {
-          await addPrize.run(awardedPrize, r.user_id);
-          await insertNotif.run(r.user_id, `💰 PRIZE WON! You received ${awardedPrize} CG Coins for placing #${rankForPrize} in ${tourney.title}!`);
+          addPrize.run(awardedPrize, r.user_id);
+          insertNotif.run(r.user_id, `💰 PRIZE WON! You received ${awardedPrize} CG Coins for placing #${rankForPrize} in ${tourney.title}!`);
         }
         
         if (r.calculatedPoints > 0 || r.matchPosition > 0) {
-           await insertNotif.run(r.user_id, `🏆 Match Results! You scored ${r.calculatedPoints} points (${r.killsNum} kills, Match Position ${r.matchPosition}) and finished Rank #${overallRank} in your recent tournament.`);
+           insertNotif.run(r.user_id, `🏆 Match Results! You scored ${r.calculatedPoints} points (${r.killsNum} kills, Match Position ${r.matchPosition}) and finished Rank #${overallRank} in your recent tournament.`);
         }
       }
       
       // Optionally mark tournament as finished here if you want
-      await tx.prepare("UPDATE tournaments SET status = 'completed' WHERE id = ?").run(tournamentId);
+      await .prepare().();
     });
     return { success: true };
   });
@@ -616,18 +616,18 @@ export const rescheduleTournament = createServerFn({ method: "POST" })
     const id = data as unknown as number;
 
     await db.transaction(async (tx) => {
-      const tourney = await tx.prepare('SELECT title FROM tournaments WHERE id = ?').get(id) as any;
+      const tourney = await .prepare().() as any;
       if (!tourney) throw new Error("Tournament not found");
 
-      await tx.prepare("UPDATE tournaments SET status = 'upcoming' WHERE id = ?").run(id);
-      await tx.prepare("UPDATE registrations SET kills = 0, position = 0, points = 0 WHERE tournament_id = ?").run(id);
+      await .prepare().();
+      await .prepare().();
 
-      const registrations = await tx.prepare('SELECT user_id FROM registrations WHERE tournament_id = ?').all(id) as any[];
+      const registrations = await .prepare().() as any[];
       const insertNotif = tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)');
       const notifMsg = `⚠️ The match ${tourney.title} has been RESCHEDULED. Please check your Upcoming Matches.`;
       
       for (const r of registrations) {
-        await insertNotif.run(r.user_id, notifMsg);
+        insertNotif.run(r.user_id, notifMsg);
       }
     });
     return { success: true };
@@ -659,7 +659,7 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" })
         WHERE tm.user_id = ?
       `).get(rows[i].user_id) as any;
       if (!t) {
-        const t2 = await db.prepare('SELECT name FROM teams WHERE leader_id = ?').get(rows[i].user_id) as any;
+        const t2 = await .prepare().() as any;
         rows[i].team = t2 ? t2.name : "Free Agent";
       } else {
         rows[i].team = t.name;
@@ -680,14 +680,14 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" })
     const { requestId, status } = data as any;
 
     await db.transaction(async (tx) => {
-      const req = await tx.prepare('SELECT * FROM tournament_requests WHERE id = ?').get(requestId) as any;
+      const req = await .prepare().() as any;
       if (!req) throw new Error("Request not found");
       if (req.status !== 'pending') throw new Error("Request already resolved");
 
-      await tx.prepare("UPDATE tournament_requests SET status = ? WHERE id = ?").run(status, requestId);
-      await tx.prepare("UPDATE notifications SET action_type = 'resolved' WHERE action_type = 'tournament_request' AND action_data = ?").run(requestId.toString());
+      await .prepare().();
+      await .prepare().());
 
-      const tourney = await tx.prepare('SELECT title, entry FROM tournaments WHERE id = ?').get(req.tournament_id) as any;
+      const tourney = await .prepare().() as any;
       const insertNotif = tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)');
 
       if (status === 'approved') {
@@ -696,22 +696,22 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" })
           VALUES (?, ?, ?, ?, ?, ?)
         `).run(req.requested_by, req.tournament_id, req.team_name, req.players_json, req.contact_email, req.contact_phone);
 
-        await tx.prepare('UPDATE tournaments SET filled = filled + 1 WHERE id = ?').run(req.tournament_id);
+        await .prepare().();
 
-        await insertNotif.run(req.requested_by, `🎉 Your Captain has approved the tournament registration for ${tourney.title}!`);
+        insertNotif.run(req.requested_by, `🎉 Your Captain has approved the tournament registration for ${tourney.title}!`);
 
-        const members = await tx.prepare('SELECT user_id FROM team_members WHERE team_id = ? AND user_id IS NOT NULL').all(req.team_id) as any[];
+        const members = await .prepare().() as any[];
         for (const m of members) {
           if (m.user_id !== req.requested_by) {
-            await insertNotif.run(m.user_id, `🏆 Your Captain has registered your team for ${tourney.title}! Check your matches.`);
+            insertNotif.run(m.user_id, `🏆 Your Captain has registered your team for ${tourney.title}! Check your matches.`);
           }
         }
       } else {
         if (tourney.entry > 0) {
-          await tx.prepare('UPDATE users SET deposit_balance = deposit_balance + ? WHERE id = ?').run(tourney.entry, req.requested_by);
-          await insertNotif.run(req.requested_by, `❌ Your Captain has rejected the tournament registration for ${tourney.title}. Your entry fee of ${tourney.entry} CG Coins has been refunded to your Deposit Balance.`);
+          await .prepare().();
+          insertNotif.run(req.requested_by, `❌ Your Captain has rejected the tournament registration for ${tourney.title}. Your entry fee of ${tourney.entry} CG Coins has been refunded to your Deposit Balance.`);
         } else {
-          await insertNotif.run(req.requested_by, `❌ Your Captain has rejected the tournament registration for ${tourney.title}.`);
+          insertNotif.run(req.requested_by, `❌ Your Captain has rejected the tournament registration for ${tourney.title}.`);
         }
       }
     });
@@ -724,14 +724,14 @@ export const processWithdrawal = createServerFn({ method: "POST" })
     const { userId, amount, upiId, upiNumber } = data as unknown as { userId: number; amount: number; upiId: string; upiNumber: string };
     
     await db.transaction(async (tx) => {
-      const user = await tx.prepare('SELECT winning_balance FROM users WHERE id = ?').get(userId) as any;
+      const user = await .prepare().() as any;
       if (!user) throw new Error("User not found");
       if (user.winning_balance < amount) throw new Error("Insufficient Earned Coins to withdraw this amount.");
       if (amount <= 0) throw new Error("Withdraw amount must be greater than 0.");
       
-      await tx.prepare('UPDATE users SET winning_balance = winning_balance - ? WHERE id = ?').run(amount, userId);
+      await .prepare().();
       
-      await tx.prepare('INSERT INTO withdrawals (user_id, amount, upi_id, upi_number) VALUES (?, ?, ?, ?)').run(userId, amount, upiId, upiNumber);
+      await .prepare().();
       
       tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(
         userId, 
@@ -758,14 +758,14 @@ export const updatePayoutStatus = createServerFn({ method: "POST" })
     const { payoutId, status, userId, amount } = data as unknown as { payoutId: number; status: string; userId: number; amount: number };
     
     await db.transaction(async (tx) => {
-      await tx.prepare('UPDATE withdrawals SET status = ? WHERE id = ?').run(status, payoutId);
+      await .prepare().();
       
       if (status === 'completed') {
-        await tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(userId, `✅ Your withdrawal of ${amount} CG Coins has been successfully processed and sent to your UPI!`);
+        await .prepare().();
       } else if (status === 'rejected') {
         // Refund the coins
-        await tx.prepare('UPDATE users SET winning_balance = winning_balance + ? WHERE id = ?').run(amount, userId);
-        await tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(userId, `❌ Your withdrawal of ${amount} CG Coins was rejected. The coins have been refunded to your wallet.`);
+        await .prepare().();
+        await .prepare().();
       }
     });
     return { success: true };
