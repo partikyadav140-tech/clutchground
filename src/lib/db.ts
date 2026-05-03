@@ -149,6 +149,7 @@ async function initDb() {
       );
 
       CREATE TABLE IF NOT EXISTS team_members (
+        id SERIAL PRIMARY KEY,
         team_id INTEGER NOT NULL,
         user_id INTEGER,
         ign TEXT NOT NULL,
@@ -156,6 +157,16 @@ async function initDb() {
         role TEXT DEFAULT 'player',
         FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
       );
+
+      DO $$ 
+      BEGIN 
+        BEGIN
+          ALTER TABLE team_members ADD COLUMN id SERIAL PRIMARY KEY;
+        EXCEPTION
+          WHEN duplicate_column THEN null;
+          WHEN others THEN null;
+        END;
+      END $$;
 
       CREATE TABLE IF NOT EXISTS team_requests (
         id SERIAL PRIMARY KEY,
