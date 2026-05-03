@@ -470,7 +470,7 @@ export const markNotificationsRead = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db } = await import("./lib/db");
     const userId = data as unknown as number;
-    await db.prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ?').run(userId);
+    await db.prepare('UPDATE notifications SET is_read = true WHERE user_id = ?').run(userId);
     return { success: true };
   });
 
