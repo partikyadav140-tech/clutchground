@@ -33,11 +33,9 @@ export function Hero() {
           loop
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-60 mix-blend-screen"
-        >
-          <source src="/hero.mp4" type="video/mp4" />
-          <source src="https://assets.mixkit.co/videos/preview/mixkit-cyberpunk-city-and-flying-cars-animation-31566-large.mp4" type="video/mp4" />
-        </video>
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-40"
+          src="https://assets.mixkit.co/videos/preview/mixkit-cyberpunk-city-and-flying-cars-animation-31566-large.mp4"
+        />
         
         {/* Advanced gradients for text readability on all screens */}
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/20 to-background z-10 pointer-events-none" />
