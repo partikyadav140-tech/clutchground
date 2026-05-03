@@ -284,6 +284,9 @@ function HomePage() {
           </div>
         </div>
       </section>
+      <div id="debug-is-hero" style={{ display: 'none' }}>
+        DEBUG: {JSON.stringify(allTournaments.map((t: any) => ({ id: t.id, is_hero: t.is_hero, typeof: typeof t.is_hero })))}
+      </div>
     </>
   );
 }

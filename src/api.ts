@@ -647,12 +647,12 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" })
       FROM users u
       JOIN registrations r ON r.user_id = u.id
       GROUP BY u.id
-      HAVING points > 0
+      HAVING COALESCE(SUM(r.points), 0) > 0
       ORDER BY points DESC, kills DESC
     `).all() as any[];
 
     for (let i = 0; i < rows.length; i++) {
-      const t = db.prepare(`
+      const t = await db.prepare(`
         SELECT t.name 
         FROM team_members tm 
         JOIN teams t ON t.id = tm.team_id 
