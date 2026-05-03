@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Logo } from "./Logo";
-import { Twitter, Youtube, Instagram, MessageCircle, Send, Flame, Mail, ArrowUpRight } from "lucide-react";
+import { Twitter, Youtube, Instagram, MessageCircle, Send, Flame, Mail, ArrowUpRight, Headset } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
@@ -60,6 +60,7 @@ export function Footer() {
                 { Icon: Send, href: "https://t.me/clutchground", label: "Telegram" },
                 { Icon: MessageCircle, href: "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s", label: "WhatsApp" },
                 { Icon: Mail, href: "mailto:clutchgroundofficial@gmail.com", label: "Email" },
+                { Icon: Headset, href: "https://discord.gg/clutchground", label: "Discord" },
               ].map(({ Icon, href, label }) => (
                 <a
                   key={label}
