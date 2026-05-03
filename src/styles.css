@@ -47,41 +47,42 @@
 
 :root,
 .dark {
-  --radius: 0.5rem;
-  /* Clean White with Pink Accents */
-  --background: oklch(1 0 0); /* Pure White */
-  --foreground: oklch(0.15 0.05 330);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.05 330);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.05 330);
+  --radius: 0.75rem;
+  /* Ultra-Premium Sleek Dark Mode */
+  --background: oklch(0.14 0.01 280); /* Deep rich slate/navy black */
+  --foreground: oklch(0.98 0.01 280); /* Crisp white text */
+  --card: oklch(0.18 0.02 280);       /* Slightly lighter surface */
+  --card-foreground: oklch(0.98 0.01 280);
+  --popover: oklch(0.18 0.02 280);
+  --popover-foreground: oklch(0.98 0.01 280);
 
-  --primary: oklch(0.65 0.25 340); /* Vibrant Pink */
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.97 0.01 330); /* Very light pink/gray */
-  --secondary-foreground: oklch(0.20 0.05 330);
-  --muted: oklch(0.95 0.01 330);
-  --muted-foreground: oklch(0.45 0.05 330);
-  --accent: oklch(0.90 0.10 340); /* Soft pink accent */
-  --accent-foreground: oklch(0.15 0.05 330);
+  --primary: oklch(0.65 0.28 320);     /* Striking Neon Pink/Magenta */
+  --primary-foreground: oklch(1 0 0); /* Pure White */
+  --secondary: oklch(0.22 0.03 280);   /* Soft transparent gray for secondary buttons */
+  --secondary-foreground: oklch(0.98 0.01 280);
+  --muted: oklch(0.20 0.02 280);
+  --muted-foreground: oklch(0.70 0.02 280);
+  --accent: oklch(0.25 0.04 280);      /* Hover states */
+  --accent-foreground: oklch(0.98 0.01 280);
   --destructive: oklch(0.62 0.26 22);
   --destructive-foreground: oklch(1 0 0);
 
-  --border: oklch(0.92 0.02 330);
-  --input: oklch(1 0 0);
-  --ring: oklch(0.65 0.25 340);
+  --border: oklch(0.28 0.04 280 / 0.6); /* Subtle glass borders */
+  --input: oklch(0.20 0.03 280);
+  --ring: oklch(0.65 0.28 320 / 0.8);
 
-  --fire: oklch(0.65 0.25 340);
-  --blood: oklch(0.55 0.20 340);
-  --ember: oklch(0.85 0.15 340);
-  --gold: oklch(0.75 0.16 85);
+  --fire: oklch(0.65 0.28 320);
+  --blood: oklch(0.45 0.25 290);        /* Deep neon purple */
+  --ember: oklch(0.75 0.20 340);
+  --gold: oklch(0.85 0.16 85);
 
-  --gradient-fire: linear-gradient(135deg, oklch(0.55 0.20 340), oklch(0.65 0.25 340), oklch(0.85 0.15 340));
-  --gradient-hero: radial-gradient(ellipse at top, oklch(0.98 0.01 330), oklch(1 0 0) 70%);
-  --gradient-card: linear-gradient(160deg, oklch(1 0 0), oklch(0.98 0.01 330));
-  --shadow-fire: 0 4px 20px oklch(0.65 0.25 340 / 0.25);
-  --shadow-ember: 0 4px 15px oklch(0.85 0.15 340 / 0.3);
-  --glow-text: 0 0 8px oklch(0.65 0.25 340 / 0.4);
+  --gradient-fire: linear-gradient(135deg, oklch(0.45 0.25 290), oklch(0.65 0.28 320), oklch(0.75 0.20 340));
+  --gradient-hero: radial-gradient(ellipse at top, oklch(0.20 0.05 290), oklch(0.14 0.01 280) 70%);
+  --gradient-card: linear-gradient(160deg, oklch(0.20 0.02 280), oklch(0.16 0.01 280));
+  
+  --shadow-fire: 0 8px 30px oklch(0.65 0.28 320 / 0.35);
+  --shadow-ember: 0 4px 15px oklch(0.75 0.20 340 / 0.2);
+  --glow-text: 0 0 12px oklch(0.65 0.28 320 / 0.6);
 }
 
 @layer base {

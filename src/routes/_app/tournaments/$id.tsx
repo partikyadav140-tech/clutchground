@@ -188,23 +188,35 @@ function TournamentDetailPage() {
 
       <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 order-2 lg:order-1">
-          <div className="flex lg:hidden gap-2 overflow-x-auto hide-scrollbar border-b border-border/50 pb-2 mb-6">
+          <div className="flex lg:hidden bg-secondary/80 p-1 rounded-xl mb-8 mx-auto w-full max-w-sm border border-border/50 shadow-inner">
             <button
               onClick={() => setActiveTab("info")}
-              className={`px-4 py-2 text-xs font-display font-bold uppercase tracking-widest whitespace-nowrap border-b-2 transition-colors ${activeTab === "info" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}
+              className={`flex-1 py-2.5 text-xs font-display font-bold uppercase tracking-widest rounded-lg transition-all ${
+                activeTab === "info"
+                  ? "bg-card text-primary shadow-md border border-border/50"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
               Info
             </button>
             <button
               onClick={() => setActiveTab("rules")}
-              className={`px-4 py-2 text-xs font-display font-bold uppercase tracking-widest whitespace-nowrap border-b-2 transition-colors ${activeTab === "rules" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}
+              className={`flex-1 py-2.5 text-xs font-display font-bold uppercase tracking-widest rounded-lg transition-all ${
+                activeTab === "rules"
+                  ? "bg-card text-primary shadow-md border border-border/50"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
-              Rules & Prize
+              Rules
             </button>
             {t.status === "completed" && (
               <button
                 onClick={() => setActiveTab("standings")}
-                className={`px-4 py-2 text-xs font-display font-bold uppercase tracking-widest whitespace-nowrap border-b-2 transition-colors ${activeTab === "standings" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}
+                className={`flex-1 py-2.5 text-xs font-display font-bold uppercase tracking-widest rounded-lg transition-all ${
+                  activeTab === "standings"
+                    ? "bg-card text-primary shadow-md border border-border/50"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
                 Standings
               </button>
