@@ -5,7 +5,7 @@ import { ArrowDownToLine, ArrowUpFromLine, Wallet as WalletIcon, ShieldAlert } f
 import { toast } from "sonner";
 import { GodCoin } from "@/components/GodCoin";
 import { useAuth } from "../../lib/auth-client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { processWithdrawal } from "../../api";
 
