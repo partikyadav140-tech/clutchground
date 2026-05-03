@@ -55,11 +55,11 @@ const features = [
   { icon: Smartphone, title: "Mobile First", desc: "PWA, blazing fast on every screen size.", to: "/" },
 ];
 
-function MobileSlider({ children, autoSlide = false }: { children: React.ReactNode, autoSlide?: boolean }) {
+function MobileSlider({ children, autoSlide = false, marquee = false }: { children: React.ReactNode, autoSlide?: boolean, marquee?: boolean }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
-    if (!autoSlide || !scrollRef.current) return;
+    if (!autoSlide || !scrollRef.current || marquee) return;
     const el = scrollRef.current;
     let idx = 0;
     const interval = setInterval(() => {
@@ -70,12 +70,31 @@ function MobileSlider({ children, autoSlide = false }: { children: React.ReactNo
       
       if (childWidth) {
         idx++;
-        if (idx >= el.children.length) idx = 0;
-        el.scrollTo({ left: idx * (childWidth + gap), behavior: 'smooth' });
+        if (idx >= el.children.length) {
+          el.scrollTo({ left: 0, behavior: 'auto' });
+          idx = 0;
+        } else {
+          el.scrollTo({ left: idx * (childWidth + gap), behavior: 'smooth' });
+        }
       }
     }, 3000);
     return () => clearInterval(interval);
-  }, [autoSlide]);
+  }, [autoSlide, marquee]);
+
+  if (marquee) {
+    return (
+      <div className="relative overflow-hidden -mx-4 px-4 sm:mx-0 sm:px-0">
+        <div className="flex gap-4 animate-marquee hover:[animation-play-state:paused] active:[animation-play-state:paused] w-max">
+          <div className="flex gap-4 shrink-0">
+            {children}
+          </div>
+          <div className="flex gap-4 shrink-0">
+            {children}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div ref={scrollRef} className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 overflow-x-auto snap-x snap-mandatory hide-scrollbar pb-4 -mx-4 px-4 sm:mx-0 sm:px-0">
@@ -203,7 +222,7 @@ function HomePage() {
 
       {/* Features grid */}
       <Section title="Built For Champions" subtitle="Every feature you need to dominate the arena.">
-        <MobileSlider autoSlide={true}>
+        <MobileSlider marquee={true}>
           {features.map((f, i) => {
             const Icon = f.icon;
             return (
