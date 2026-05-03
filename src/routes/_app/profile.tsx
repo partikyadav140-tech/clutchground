@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_app/profile")({
 });
 
 function ProfilePage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   
   const [loading, setLoading] = useState(true);
@@ -34,10 +34,11 @@ function ProfilePage() {
   });
 
   useEffect(() => {
-    if (!user) {
-      if (!loading) router.navigate({ to: "/login" });
+    if (!authLoading && !user) {
+      router.navigate({ to: "/login" });
       return;
     }
+    if (!user) return;
     async function load() {
       try {
         const p = await (getProfile as any)({ data: user.id });

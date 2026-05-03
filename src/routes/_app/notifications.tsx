@@ -13,16 +13,17 @@ export const Route = createFileRoute("/_app/notifications")({
 });
 
 function NotificationsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      if (!loading) router.navigate({ to: "/login" });
+    if (!authLoading && !user) {
+      router.navigate({ to: "/login" });
       return;
     }
+    if (!user) return;
     async function load() {
       try {
         const notifs = await (getNotifications as any)({ data: user.id });

@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_app/teams")({
 
 function TeamsPage() {
   const teams = Route.useLoaderData() as any[];
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [q, setQ] = useState("");

@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_app/wallet")({
 });
 
 function WalletPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   
   const depositBalance = user?.deposit_balance || 0;

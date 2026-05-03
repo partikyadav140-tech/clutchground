@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_app/matches")({
 });
 
 function MatchesPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,10 +58,11 @@ function MatchesPage() {
   };
 
   useEffect(() => {
-    if (!user) {
-      if (!loading) router.navigate({ to: "/login" });
+    if (!authLoading && !user) {
+      router.navigate({ to: "/login" });
       return;
     }
+    if (!user) return;
     async function load() {
       try {
         const m = await (getMyMatches as any)({ data: user.id });
