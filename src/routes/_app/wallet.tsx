@@ -17,7 +17,14 @@ export const Route = createFileRoute("/_app/wallet")({
 function WalletPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.navigate({ to: "/login" });
+    }
+  }, [user, authLoading, router]);
   
+  if (authLoading || !user) return <div className="p-20 text-center text-muted-foreground font-display tracking-widest uppercase">Initializing...</div>;
   const depositBalance = user?.deposit_balance || 0;
   const winningBalance = user?.winning_balance || 0;
   const totalBalance = depositBalance + winningBalance;

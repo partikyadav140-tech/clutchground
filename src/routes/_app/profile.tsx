@@ -63,7 +63,7 @@ function ProfilePage() {
       setLoading(false);
     }
     load();
-  }, [user]);
+  }, [user, authLoading, router]);
 
   const handleSaveProfile = async () => {
     try {

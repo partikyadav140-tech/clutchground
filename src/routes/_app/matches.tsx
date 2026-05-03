@@ -73,7 +73,7 @@ function MatchesPage() {
       setLoading(false);
     }
     load();
-  }, [user]);
+  }, [user, authLoading, router]);
 
   if (!user || loading) return <div className="p-20 text-center">Loading...</div>;
 

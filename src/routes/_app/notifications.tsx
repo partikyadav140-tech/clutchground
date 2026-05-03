@@ -39,7 +39,7 @@ function NotificationsPage() {
       setLoading(false);
     }
     load();
-  }, [user]);
+  }, [user, authLoading, router]);
 
   const handleResolve = async (reqId: string, status: string) => {
     try {
