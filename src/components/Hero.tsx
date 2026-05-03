@@ -27,26 +27,13 @@ export function Hero() {
     <section className="relative w-full min-h-[100svh] overflow-hidden bg-background">
       {/* Background Media */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-black">
-        {/* Loading Fallback Image (shows before video loads or if video is missing) */}
-        <img
-          src={heroBgAsset}
-          alt="Background"
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-40 transition-opacity duration-1000"
-          id="hero-fallback-bg"
-        />
-
         {/* Native Video for Instant Playback, Zero Watermarks, and No Looping */}
         <video
           autoPlay
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-0 transition-opacity duration-1000"
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-50"
           src="/hero.mp4"
-          onCanPlay={(e) => {
-            (e.target as HTMLVideoElement).style.opacity = '0.5';
-            const fallback = document.getElementById('hero-fallback-bg');
-            if (fallback) fallback.style.opacity = '0';
-          }}
         />
         
         {/* Advanced gradients for text readability on all screens */}
