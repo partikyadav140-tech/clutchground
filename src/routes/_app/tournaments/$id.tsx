@@ -47,11 +47,12 @@ export const Route = createFileRoute("/_app/tournaments/$id")({
 });
 
 const POSTERS = [
-  "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=800",
-  "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=800",
-  "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?auto=format&fit=crop&q=80&w=800",
-  "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&q=80&w=800",
-  "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&q=80&w=800",
+  "/posters/poster1.jpg",
+  "/posters/poster2.jpg",
+  "/posters/poster3.jpg",
+  "/posters/poster4.jpg",
+  "/posters/poster5.jpg",
+  "/posters/poster6.jpg",
 ];
 
 function TournamentDetailPage() {
