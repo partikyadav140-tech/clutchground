@@ -637,7 +637,7 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" })
   .handler(async () => {
     const { db } = await import("./lib/db");
     
-    const rows = db.prepare(`
+    const rows = await db.prepare(`
       SELECT 
         u.id as user_id,
         u.username as ign,
