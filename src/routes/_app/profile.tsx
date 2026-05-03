@@ -30,7 +30,7 @@ function ProfilePage() {
   const [teamData, setTeamData] = useState({
     name: "",
     logo: "",
-    members: Array(5).fill({ ign: "", uid: "", role: "player" })
+    members: Array(3).fill({ ign: "", uid: "", role: "player" })
   });
 
   useEffect(() => {

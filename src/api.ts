@@ -255,7 +255,7 @@ export const updateProfile = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db } = await import("./lib/db");
     const { userId, ign, uid, email, phone } = data as any;
-    db.prepare('UPDATE users SET ign = ?, uid = ?, email = ?, phone = ? WHERE id = ?')
+    await db.prepare('UPDATE users SET ign = ?, uid = ?, email = ?, phone = ? WHERE id = ?')
       .run(ign, uid, email, phone, userId);
     return { success: true };
   });
@@ -407,7 +407,7 @@ export const requestJoinTeam = createServerFn({ method: "POST" })
 
     const team = await db.prepare('SELECT name, leader_id FROM teams WHERE id = ?').get(teamId) as any;
 
-    db.prepare('INSERT INTO team_requests (team_id, user_id, ign, uid) VALUES (?, ?, ?, ?)')
+    await db.prepare('INSERT INTO team_requests (team_id, user_id, ign, uid) VALUES (?, ?, ?, ?)')
       .run(teamId, userId, ign, uid);
       
     if (team) {
@@ -448,7 +448,7 @@ export const resolveTeamRequest = createServerFn({ method: "POST" })
         const teamCount = await tx.prepare('SELECT COUNT(*) as count FROM team_members WHERE team_id = ?').get(req.team_id) as any;
         if (teamCount.count >= 3) throw new Error("Team is full! (Max 4 Players). Please click 'Edit Team' in your profile and clear a player's details to remove them first.");
         
-        tx.prepare('INSERT INTO team_members (team_id, user_id, ign, uid, role) VALUES (?, ?, ?, ?, ?)')
+        await tx.prepare('INSERT INTO team_members (team_id, user_id, ign, uid, role) VALUES (?, ?, ?, ?, ?)')
           .run(req.team_id, req.user_id, req.ign, req.uid, 'player');
           
         await tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(req.user_id, '🎉 Your request to join the team has been approved!');
@@ -479,7 +479,7 @@ export const getMyMatches = createServerFn({ method: "POST" })
     const { db } = await import("./lib/db");
     const userId = data as unknown as number;
     
-    const userTeam = db.prepare(`
+    const userTeam = await db.prepare(`
       SELECT t.name, t.id
       FROM teams t 
       JOIN team_members tm ON tm.team_id = t.id 
@@ -499,7 +499,6 @@ export const getMyMatches = createServerFn({ method: "POST" })
       FROM registrations r
       JOIN tournaments t ON r.tournament_id = t.id
       WHERE r.user_id = ? OR (r.team_name = ? AND r.team_name IS NOT NULL) OR (r.team_name = ? AND r.team_name IS NOT NULL)
-      GROUP BY t.id
 
       UNION ALL
 
@@ -508,9 +507,8 @@ export const getMyMatches = createServerFn({ method: "POST" })
       FROM tournament_requests req
       JOIN tournaments t ON req.tournament_id = t.id
       WHERE req.status = 'pending' AND (req.requested_by = ? OR req.team_id = ? OR req.team_id = ?)
-      GROUP BY t.id
 
-      ORDER BY 1 DESC
+      ORDER BY date DESC
     `).all(userId, teamName1, teamName2, userId, teamId1, teamId2);
   });
 
@@ -698,7 +696,7 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" })
       const insertNotif = tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)');
 
       if (status === 'approved') {
-        tx.prepare(`
+        await tx.prepare(`
           INSERT INTO registrations (user_id, tournament_id, team_name, players_json, contact_email, contact_phone)
           VALUES (?, ?, ?, ?, ?, ?)
         `).run(req.requested_by, req.tournament_id, req.team_name, req.players_json, req.contact_email, req.contact_phone);
@@ -740,7 +738,7 @@ export const processWithdrawal = createServerFn({ method: "POST" })
       
       await tx.prepare('INSERT INTO withdrawals (user_id, amount, upi_id, upi_number) VALUES (?, ?, ?, ?)').run(userId, amount, upiId, upiNumber);
       
-      tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(
+      await tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(
         userId, 
         `💸 Withdrawal of ${amount} CG Coins initiated! You will receive your money to UPI ID ${upiId} within 2-3 working days.`
       );
