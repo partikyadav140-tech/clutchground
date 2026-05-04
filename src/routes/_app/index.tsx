@@ -58,31 +58,33 @@ function HomePage() {
   useEffect(() => {
     const scrollFeatured = setInterval(() => {
       if (featuredScrollRef.current) {
-        const { scrollLeft, scrollWidth, clientWidth } = featuredScrollRef.current;
-        if (scrollLeft + clientWidth >= scrollWidth - 10) {
-          featuredScrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
-        } else {
-          const firstChild = featuredScrollRef.current.children[0] as HTMLElement;
-          if (firstChild) {
-            featuredScrollRef.current.scrollBy({ left: firstChild.offsetWidth + 16, behavior: 'smooth' });
-          }
+        const el = featuredScrollRef.current;
+        const firstChild = el.children[0] as HTMLElement;
+        if (!firstChild) return;
+        
+        if (el.scrollLeft >= el.scrollWidth / 2) {
+          el.scrollTo({ left: el.scrollLeft - el.scrollWidth / 2, behavior: 'auto' });
         }
+        setTimeout(() => {
+          el.scrollBy({ left: firstChild.offsetWidth + 16, behavior: 'smooth' });
+        }, 50);
       }
-    }, 3000);
+    }, 3500);
 
     const scrollUpcoming = setInterval(() => {
       if (upcomingScrollRef.current) {
-        const { scrollLeft, scrollWidth, clientWidth } = upcomingScrollRef.current;
-        if (scrollLeft + clientWidth >= scrollWidth - 10) {
-          upcomingScrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
-        } else {
-          const firstChild = upcomingScrollRef.current.children[0] as HTMLElement;
-          if (firstChild) {
-            upcomingScrollRef.current.scrollBy({ left: firstChild.offsetWidth + 12, behavior: 'smooth' });
-          }
+        const el = upcomingScrollRef.current;
+        const firstChild = el.children[0] as HTMLElement;
+        if (!firstChild) return;
+        
+        if (el.scrollLeft >= el.scrollWidth / 2) {
+          el.scrollTo({ left: el.scrollLeft - el.scrollWidth / 2, behavior: 'auto' });
         }
+        setTimeout(() => {
+          el.scrollBy({ left: firstChild.offsetWidth + 12, behavior: 'smooth' });
+        }, 50);
       }
-    }, 3000);
+    }, 4500);
 
     return () => {
       clearInterval(scrollFeatured);
@@ -149,15 +151,15 @@ function HomePage() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-display font-black text-lg text-foreground flex items-center gap-2">
-                <Flame className="w-5 h-5 text-primary" /> Live & Featured
+                <Flame className="w-5 h-5 text-primary" /> Featured Tournaments
               </h3>
               <Link to="/tournaments" className="text-xs font-bold text-primary flex items-center">
                 See All <ChevronRight className="w-3 h-3 ml-0.5" />
               </Link>
             </div>
             <div ref={featuredScrollRef} className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar -mx-4 px-4 pb-4 gap-4">
-              {displayTournaments.map((t: any, i: number) => (
-                <FeaturedTournamentCard key={t.id} t={t} i={i} />
+              {[...displayTournaments, ...displayTournaments, ...displayTournaments, ...displayTournaments].map((t: any, i: number) => (
+                <FeaturedTournamentCard key={`featured-${t.id}-${i}`} t={t} i={i} />
               ))}
             </div>
           </div>
@@ -175,8 +177,8 @@ function HomePage() {
           </div>
           <div ref={upcomingScrollRef} className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar -mx-4 px-4 pb-4 gap-3">
             {upcomingTournaments.length > 0 ? (
-              upcomingTournaments.map((t: any, i: number) => (
-                <CompactTournamentCard key={t.id} t={t} i={i} />
+              [...upcomingTournaments, ...upcomingTournaments, ...upcomingTournaments, ...upcomingTournaments].map((t: any, i: number) => (
+                <CompactTournamentCard key={`upcoming-${t.id}-${i}`} t={t} i={i} />
               ))
             ) : (
               <div className="p-6 bg-white rounded-2xl border border-border text-center w-full">
