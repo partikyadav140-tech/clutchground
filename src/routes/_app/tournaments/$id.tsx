@@ -414,8 +414,6 @@ function TournamentDetailPage() {
                   ))}
                 </ul>
               </div>
-
-              </div>
             </div>
 
             {/* Prizes Tab */}

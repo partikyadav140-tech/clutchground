@@ -864,6 +864,6 @@ export const getTransactions = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db } = await import("./lib/db");
     const userId = data as unknown as number;
-    return await db.prepare('SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC').all(userId);
+    return await db.prepare('SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 10').all(userId);
   });
 
