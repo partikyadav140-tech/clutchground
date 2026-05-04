@@ -13,7 +13,6 @@ import { confirmDialog } from "@/components/ConfirmDialog";
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import { useAuth } from "../../../lib/auth-client";
-import { GodCoin } from "@/components/GodCoin";
 
 export const Route = createFileRoute("/_app/tournaments/$id")({
   component: TournamentDetailPage,
