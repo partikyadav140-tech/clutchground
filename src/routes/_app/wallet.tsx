@@ -1,12 +1,12 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { ArrowDownToLine, ArrowUpFromLine, Wallet as WalletIcon, ShieldAlert, TrendingUp, Info, History } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Wallet as WalletIcon, ShieldAlert, TrendingUp, Info, History, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
 import { GodCoin } from "@/components/GodCoin";
 import { useAuth } from "../../lib/auth-client";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { processWithdrawal } from "../../api";
+import { processWithdrawal, getTransactions } from "../../api";
 
 export const Route = createFileRoute("/_app/wallet")({
   head: () => ({ meta: [{ title: "Wallet — Professional Esports Arena" }] }),
@@ -17,9 +17,20 @@ function WalletPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loadingTx, setLoadingTx] = useState(true);
+
   useEffect(() => {
     if (!authLoading && !user) {
       router.navigate({ to: "/login" });
+    } else if (user) {
+      getTransactions({ data: user.id }).then((txs) => {
+        setTransactions(txs);
+        setLoadingTx(false);
+      }).catch(err => {
+        console.error(err);
+        setLoadingTx(false);
+      });
     }
   }, [user, authLoading, router]);
 
@@ -71,6 +82,10 @@ function WalletPage() {
       setWithdrawAmount("");
       setUpiId("");
       setUpiNumber("");
+      
+      const newTxs = await getTransactions({ data: user.id });
+      setTransactions(newTxs);
+      
       router.invalidate();
     } catch (err: any) {
       toast.error(err.message || "Failed to process withdrawal.");
@@ -162,15 +177,45 @@ function WalletPage() {
         {/* Recent Transactions */}
         <div className="flex items-center justify-between mb-3 px-1">
           <h3 className="font-display font-black text-lg text-foreground">Transactions</h3>
-          <Button variant="ghost" size="sm" className="text-primary text-xs font-bold px-0 hover:bg-transparent">View All</Button>
         </div>
-        <div className="bg-white rounded-[1.25rem] border border-border p-8 text-center text-muted-foreground shadow-sm">
-          <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center mx-auto mb-3">
-            <History className="w-6 h-6 text-muted-foreground/50" />
+        
+        {loadingTx ? (
+          <div className="flex justify-center p-8">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
-          <p className="text-sm font-bold text-foreground">No transactions yet</p>
-          <p className="text-xs mt-1">Play tournaments to start earning.</p>
-        </div>
+        ) : transactions.length > 0 ? (
+          <div className="space-y-3">
+            {transactions.map((tx) => {
+              const isPositive = tx.type === 'deposit_added' || tx.type === 'winnings_added';
+              return (
+                <div key={tx.id} className="bg-white rounded-[1rem] border border-border p-4 flex items-center justify-between shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                      {isPositive ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-foreground">{tx.description}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mt-0.5">
+                        {new Date(tx.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className={`flex items-center gap-1 font-black ${isPositive ? 'text-emerald-600' : 'text-foreground'}`}>
+                    {isPositive ? '+' : '-'} <GodCoin className="w-3 h-3" /> {tx.amount}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="bg-white rounded-[1.25rem] border border-border p-8 text-center text-muted-foreground shadow-sm">
+            <div className="w-12 h-12 bg-secondary rounded-full flex items-center justify-center mx-auto mb-3">
+              <History className="w-6 h-6 text-muted-foreground/50" />
+            </div>
+            <p className="text-sm font-bold text-foreground">No transactions yet</p>
+            <p className="text-xs mt-1">Play tournaments to start earning.</p>
+          </div>
+        )}
       </div>
 
       {/* Withdrawal Dialog */}

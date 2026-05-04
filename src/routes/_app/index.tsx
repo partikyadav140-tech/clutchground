@@ -2,13 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { getTournaments, getGlobalLeaderboard } from "../../api";
 import {
   Trophy, Users, Crown, Shield, Wallet, Bell, BarChart3, Smartphone,
-  Flame, ChevronRight, Eye, Crosshair, Zap, Star, Radio, ArrowUpRight, ArrowDownToLine, Gamepad2
+  Flame, ChevronRight, Eye, Crosshair, Zap, Star, Radio, ArrowUpRight, ArrowDownToLine, Gamepad2, Clock
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { useAuth } from "../../lib/auth-client";
 import { GodCoin } from "@/components/GodCoin";
+import { useEffect, useRef } from "react";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -45,14 +46,49 @@ function HomePage() {
   const { user } = useAuth();
   
   const displayTournaments = allTournaments
-    .filter((t: any) => Boolean(t.is_hero) && t.is_hero !== "0" && t.is_hero !== 0 && t.is_hero !== "false" && t.is_hero !== "f")
-    .slice(0, 5);
+    .filter((t: any) => Boolean(t.is_hero) && t.is_hero !== "0" && t.is_hero !== 0 && t.is_hero !== "false" && t.is_hero !== "f");
 
-  const upcomingTournaments = allTournaments
-    .filter((t: any) => t.status === "upcoming")
-    .slice(0, 5);
+  const upcomingTournaments = allTournaments;
 
   const totalBalance = user ? ((user as any).deposit_balance || 0) + ((user as any).winning_balance || 0) : 0;
+
+  const featuredScrollRef = useRef<HTMLDivElement>(null);
+  const upcomingScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const scrollFeatured = setInterval(() => {
+      if (featuredScrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = featuredScrollRef.current;
+        if (scrollLeft + clientWidth >= scrollWidth - 10) {
+          featuredScrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          const firstChild = featuredScrollRef.current.children[0] as HTMLElement;
+          if (firstChild) {
+            featuredScrollRef.current.scrollBy({ left: firstChild.offsetWidth + 16, behavior: 'smooth' });
+          }
+        }
+      }
+    }, 3000);
+
+    const scrollUpcoming = setInterval(() => {
+      if (upcomingScrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = upcomingScrollRef.current;
+        if (scrollLeft + clientWidth >= scrollWidth - 10) {
+          upcomingScrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          const firstChild = upcomingScrollRef.current.children[0] as HTMLElement;
+          if (firstChild) {
+            upcomingScrollRef.current.scrollBy({ left: firstChild.offsetWidth + 12, behavior: 'smooth' });
+          }
+        }
+      }
+    }, 3000);
+
+    return () => {
+      clearInterval(scrollFeatured);
+      clearInterval(scrollUpcoming);
+    };
+  }, []);
 
   return (
     <div className="mb-safe pb-24 bg-background min-h-screen">
@@ -101,18 +137,11 @@ function HomePage() {
       </div>
 
       {/* ─── Main Content ─── */}
-      <div className="px-4 mt-6 space-y-8">
+      <div className="px-4 mt-6 space-y-8 overflow-hidden">
         
         {/* Promotional Banner */}
-        <div className="relative w-full h-32 rounded-2xl overflow-hidden shadow-lg border border-primary/20 block">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80" />
-          <div className="absolute inset-0 bg-[url('/hero.mp4')] opacity-20 mix-blend-overlay object-cover" />
-          <div className="relative z-10 h-full flex flex-col justify-center px-6">
-            <span className="inline-block px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-white text-primary w-max mb-2">Mega Event</span>
-            <h2 className="text-xl font-display font-black text-white leading-tight">CHAMPIONS CUP</h2>
-            <p className="text-white/90 text-xs mt-1 font-semibold">₹50,000 Prize Pool • Starts Tonight</p>
-          </div>
-          <Zap className="absolute right-4 bottom-0 text-white/10 w-24 h-24 translate-y-4" />
+        <div className="relative w-full aspect-[2/1] rounded-2xl overflow-hidden shadow-sm border border-border block">
+          <img src="/hero-image.png" alt="Hero Banner" className="w-full h-full object-cover" />
         </div>
 
         {/* Featured Tournaments (Horizontal Scroll) */}
@@ -126,7 +155,7 @@ function HomePage() {
                 See All <ChevronRight className="w-3 h-3 ml-0.5" />
               </Link>
             </div>
-            <div className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar -mx-4 px-4 pb-4 gap-4">
+            <div ref={featuredScrollRef} className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar -mx-4 px-4 pb-4 gap-4">
               {displayTournaments.map((t: any, i: number) => (
                 <FeaturedTournamentCard key={t.id} t={t} i={i} />
               ))}
@@ -134,30 +163,26 @@ function HomePage() {
           </div>
         )}
 
-        {/* Upcoming Tournaments (Vertical List) */}
+        {/* Upcoming Tournaments (Horizontal List) */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-display font-black text-lg text-foreground flex items-center gap-2">
-              <Gamepad2 className="w-5 h-5 text-purple" /> Upcoming Battles
+              <Gamepad2 className="w-5 h-5 text-purple" /> Upcoming Matches
             </h3>
+            <Link to="/tournaments" className="text-xs font-bold text-purple flex items-center">
+                View More <ChevronRight className="w-3 h-3 ml-0.5" />
+              </Link>
           </div>
-          <div className="space-y-3">
+          <div ref={upcomingScrollRef} className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar -mx-4 px-4 pb-4 gap-3">
             {upcomingTournaments.length > 0 ? (
-              upcomingTournaments.map((t: any) => (
-                <CompactTournamentCard key={t.id} t={t} />
+              upcomingTournaments.map((t: any, i: number) => (
+                <CompactTournamentCard key={t.id} t={t} i={i} />
               ))
             ) : (
-              <div className="p-6 bg-white rounded-2xl border border-border text-center">
+              <div className="p-6 bg-white rounded-2xl border border-border text-center w-full">
                 <p className="text-sm text-muted-foreground font-semibold">No upcoming tournaments right now.</p>
               </div>
             )}
-          </div>
-          <div className="mt-4">
-            <Link to="/tournaments">
-              <Button variant="outline" className="w-full bg-white border-border text-foreground font-bold rounded-xl h-12 shadow-sm">
-                Browse All Tournaments
-              </Button>
-            </Link>
           </div>
         </div>
 
@@ -213,13 +238,13 @@ function FeaturedTournamentCard({ t, i }: { t: any; i: number }) {
         
         <div className="flex items-center gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">
           <div className="flex items-center gap-1"><Trophy className="w-3 h-3 text-primary" /> ₹{t.prize}</div>
-          <div className="flex items-center gap-1"><Users className="w-3 h-3" /> {t.format}</div>
+          <div className="flex items-center gap-1"><Users className="w-3 h-3 text-primary" /> {t.format}</div>
         </div>
 
         <div className="mt-auto">
           <div className="flex justify-between text-[10px] font-bold text-muted-foreground mb-1.5">
             <span>{t.filled}/{t.slots} Joined</span>
-            <span className="text-primary">{t.startsAt}</span>
+            <span className="text-primary flex items-center gap-1"><Clock className="w-3 h-3"/> {t.startsAt}</span>
           </div>
           <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden mb-3">
             <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${fillPct}%` }} />
@@ -249,43 +274,55 @@ function FeaturedTournamentCard({ t, i }: { t: any; i: number }) {
   );
 }
 
-function CompactTournamentCard({ t }: { t: any }) {
+function CompactTournamentCard({ t, i }: { t: any; i: number }) {
   const poster = POSTERS[t.id % POSTERS.length];
   const fillPct = Math.min(100, (t.filled / t.slots) * 100);
 
   return (
-    <div className="bg-white rounded-[1rem] border border-border p-3 flex gap-3 items-center shadow-sm active:scale-[0.98] transition-transform">
-      <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative">
-        <img src={poster} alt="" className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        <span className="absolute bottom-1 left-1 text-white text-[8px] font-black uppercase bg-primary px-1.5 py-0.5 rounded">
-          {t.entry === 0 ? "FREE" : `₹${t.entry}`}
-        </span>
+    <motion.div 
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, delay: i * 0.1 }}
+      className="shrink-0 w-[85vw] max-w-[320px] snap-center bg-white rounded-[1rem] border border-border p-3 flex flex-col gap-3 shadow-sm active:scale-[0.98] transition-transform"
+    >
+      <div className="flex gap-3">
+        <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative">
+          <img src={poster} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+          <span className="absolute bottom-1 left-1 text-white text-[8px] font-black uppercase bg-primary px-1.5 py-0.5 rounded">
+            {t.entry === 0 ? "FREE" : `₹${t.entry}`}
+          </span>
+        </div>
+        
+        <div className="flex-1 min-w-0">
+          <h4 className="font-display font-black text-sm truncate leading-tight">{t.title}</h4>
+          <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase mt-1 mb-2">
+            <span className="bg-secondary px-1.5 py-0.5 rounded text-[9px]">{t.mode}</span>
+            <span className="bg-secondary px-1.5 py-0.5 rounded text-[9px]">{t.format}</span>
+          </div>
+          <div className="text-[10px] font-bold text-primary flex items-center gap-1">
+            <Clock className="w-3 h-3" /> {t.startsAt}
+          </div>
+        </div>
       </div>
       
-      <div className="flex-1 min-w-0">
-        <h4 className="font-display font-black text-sm truncate leading-tight">{t.title}</h4>
-        <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase mt-1 mb-2">
-          <span>{t.mode}</span> • <span>{t.format}</span> • <span className="text-primary">{t.startsAt}</span>
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex-1">
-            <div className="flex justify-between text-[8px] font-bold text-muted-foreground mb-1">
-              <span>{t.filled}/{t.slots}</span>
-              <span className="text-primary">₹{t.prize}</span>
-            </div>
-            <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
-              <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${fillPct}%` }} />
-            </div>
+      <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/50">
+        <div className="flex-1">
+          <div className="flex justify-between text-[8px] font-bold text-muted-foreground mb-1">
+            <span>{t.filled}/{t.slots} Joined</span>
+            <span className="text-primary font-black">Prize: ₹{t.prize}</span>
           </div>
-          <Link to="/tournaments/$id" params={{ id: String(t.id) }}>
-            <Button size="icon" className="h-7 w-7 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 shrink-0">
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </Link>
+          <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+            <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${fillPct}%` }} />
+          </div>
         </div>
+        <Link to="/tournaments/$id" params={{ id: String(t.id) }}>
+          <Button size="sm" className="h-8 rounded-lg bg-primary text-white font-bold text-[10px] shrink-0">
+            View
+          </Button>
+        </Link>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

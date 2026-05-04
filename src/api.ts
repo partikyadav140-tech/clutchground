@@ -271,7 +271,19 @@ export const updateCoinBalance = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db } = await import("./lib/db");
     const { userId, type, amount } = data as unknown as { userId: number; type: "deposit_balance" | "winning_balance"; amount: number };
-    await db.prepare(`UPDATE users SET ${type} = ? WHERE id = ?`).run(amount, userId);
+    
+    await db.transaction(async (tx) => {
+      const old = await tx.prepare(`SELECT ${type} as balance FROM users WHERE id = ?`).get(userId) as any;
+      const diff = amount - (old ? old.balance : 0);
+      
+      await tx.prepare(`UPDATE users SET ${type} = ? WHERE id = ?`).run(amount, userId);
+      
+      if (diff !== 0) {
+        const tType = type === 'deposit_balance' ? (diff > 0 ? 'deposit_added' : 'deposit_deducted') : (diff > 0 ? 'winnings_added' : 'winnings_deducted');
+        await tx.prepare('INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)').run(userId, Math.abs(diff), tType, "Admin Adjustment");
+      }
+    });
+
     return { success: true };
   });
 
@@ -835,3 +847,11 @@ export const getContactMessages = createServerFn({ method: "GET" })
     const { db } = await import("./lib/db");
     return await db.prepare('SELECT * FROM contact_messages ORDER BY created_at DESC').all();
   });
+
+export const getTransactions = createServerFn({ method: "POST" })
+  .handler(async ({ data }) => {
+    const { db } = await import("./lib/db");
+    const userId = data as unknown as number;
+    return await db.prepare('SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC').all(userId);
+  });
+
