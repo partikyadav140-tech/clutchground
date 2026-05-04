@@ -225,7 +225,7 @@ function TournamentDetailPage() {
           <div className="space-y-1.5 mb-4">
             <div className="flex justify-between text-[10px] uppercase tracking-widest">
               <span className="text-muted-foreground">{t.filled}/{t.slots} slots filled</span>
-              <span className="text-primary">{t.startsAt}</span>
+              <span className="text-primary">{t.startsAt || t.startsat}</span>
             </div>
             <div className="h-2 bg-secondary rounded-full overflow-hidden">
               <div className="h-full bg-fire-gradient rounded-full" style={{ width: `${fillPct}%` }} />
@@ -333,7 +333,7 @@ function TournamentDetailPage() {
                   { icon: Target, label: "Entry Fee", value: t.entry === 0 ? "FREE" : <span className="flex items-center gap-1"><GodCoin className="w-4 h-4" /> {t.entry}</span> },
                   { icon: Users, label: "Mode", value: t.mode },
                   { icon: Crosshair, label: "Format", value: t.format },
-                  { icon: Calendar, label: "Starts", value: t.startsAt },
+                  { icon: Calendar, label: "Starts", value: t.startsAt || t.startsat },
                   { icon: Shield, label: "Slots", value: `${t.filled} / ${t.slots}` },
                 ].map((d, i) => {
                   const Icon = d.icon;
@@ -513,7 +513,7 @@ function TournamentDetailPage() {
               <div className="space-y-1.5 mb-5">
                 <div className="flex justify-between text-[10px] uppercase tracking-widest">
                   <span className="text-muted-foreground">{t.filled}/{t.slots} slots</span>
-                  <span className="text-primary">{t.startsAt}</span>
+                  <span className="text-primary">{t.startsAt || t.startsat}</span>
                 </div>
                 <div className="h-2 bg-secondary rounded-full overflow-hidden">
                   <div className="h-full bg-fire-gradient rounded-full" style={{ width: `${fillPct}%` }} />
