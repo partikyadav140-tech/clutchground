@@ -48,7 +48,7 @@ const POSTERS = [
   "/posters/poster6.jpg",
 ];
 
-type TabType = "info" | "rules" | "standings";
+type TabType = "info" | "rules" | "prizes" | "standings";
 
 function TournamentDetailPage() {
   const { t, results, allRegistrations } = Route.useLoaderData();
@@ -155,6 +155,7 @@ function TournamentDetailPage() {
   const tabs: { key: TabType; label: string }[] = [
     { key: "info", label: "Info" },
     { key: "rules", label: "Rules" },
+    { key: "prizes", label: "Prizes" },
     ...(t.status === "completed" ? [{ key: "standings" as TabType, label: "Standings" }] : []),
   ];
 
@@ -414,8 +415,23 @@ function TournamentDetailPage() {
                 </ul>
               </div>
 
+              </div>
+            </div>
+
+            {/* Prizes Tab */}
+            <div className={`space-y-4 ${activeTab !== "prizes" ? "hidden lg:block" : ""}`}>
               <div className="rounded-2xl border border-border/60 bg-card-gradient p-5">
                 <div className="text-xs font-display uppercase tracking-widest text-primary mb-4">Prize Distribution</div>
+                
+                <div className="text-sm text-muted-foreground mb-5 bg-secondary/30 p-4 rounded-xl border border-border/40">
+                  <h4 className="font-bold text-foreground mb-1">How Prizes Are Awarded:</h4>
+                  {t.mode === 'Solo' ? (
+                    <p>In <strong>Solo</strong> mode, players are rewarded primarily for their aggressive gameplay. Prizes are given based directly on your total Kills and an extra bonus for being the Match MVP. Match placement still matters for your overall ranking, but coins are earned directly through combat performance!</p>
+                  ) : (
+                    <p>In <strong>{t.mode}</strong> mode, teams earn points based on their Match Placement (e.g., 12 points for a BOOYAH) plus their total team Kills. After all points are tallied, the top 3 teams on the overall leaderboard share the total prize pool (50% to 1st, 30% to 2nd, and 20% to 3rd).</p>
+                  )}
+                </div>
+
                 {t.mode === 'Solo' ? (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between p-4 rounded-xl border border-primary/40 bg-primary/5">
