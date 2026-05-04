@@ -1,23 +1,24 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
-import heroBgAsset from "@/assets/hero-bg.jpg";
 import { Button } from "./ui/button";
 import { Link } from "@tanstack/react-router";
-import { Trophy, Zap, ChevronDown } from "lucide-react";
+import { Trophy, Zap, ChevronDown, Flame, Star } from "lucide-react";
 import { JoinBattleDialog } from "./JoinBattleDialog";
 import { useAuth } from "../lib/auth-client";
 import { toast } from "sonner";
 
+const stats = [
+  { v: "120K+", l: "Players", icon: "👾" },
+  { v: "₹50L+", l: "Prize Pool", icon: "💰" },
+  { v: "850+", l: "Matches", icon: "⚔️" },
+  { v: "24/7", l: "Support", icon: "🔥" },
+];
+
 export function Hero() {
   const reduce = useReducedMotion();
-  const [ended, setEnded] = useState(false);
   const { user } = useAuth();
 
-  useEffect(() => {
-    setEnded(true);
-  }, []);
-
-  const t = (delay: number, duration = 0.7) => ({
+  const t = (delay: number, duration = 0.6) => ({
     duration: reduce ? 0 : duration,
     delay: reduce ? 0 : delay,
     ease: [0.22, 1, 0.36, 1] as const,
@@ -25,120 +26,133 @@ export function Hero() {
 
   return (
     <section className="relative w-full min-h-[100svh] overflow-hidden bg-background">
-      {/* Background Media */}
+      {/* Background Video */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-black">
-        {/* Native Video for Instant Playback, Zero Watermarks, and No Looping */}
         <video
           autoPlay
           muted
           playsInline
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-80"
+          loop
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-60"
           src="/hero.mp4"
         />
-        
-        {/* Advanced gradients for text readability on all screens */}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/10 to-background/90 z-10 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent sm:from-transparent sm:bg-gradient-to-r sm:from-background/90 sm:via-background/40 sm:to-transparent z-10 pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)] z-10 pointer-events-none" />
+        {/* Gradient overlays for mobile readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/20 to-background z-10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-transparent z-10 hidden sm:block" />
       </div>
 
-      {/* Cyberpunk grid overlay */}
-      <div className="absolute inset-0 grid-bg opacity-[0.15] z-10 pointer-events-none" />
+      {/* Subtle grid overlay */}
+      <div className="absolute inset-0 grid-bg opacity-[0.08] z-10 pointer-events-none" />
 
-      {/* Content Container */}
-      <div className="relative z-20 container mx-auto px-4 lg:px-8 min-h-[100svh] flex flex-col justify-center pt-24 pb-20 sm:pt-32 sm:pb-24 pointer-events-none">
-        
-        <div className="flex flex-col items-center text-center sm:items-start sm:text-left max-w-4xl mx-auto sm:mx-0 w-full mt-auto mb-auto pointer-events-auto">
-          {/* Live Badge */}
+      {/* Decorative accent lines */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-fire-gradient z-20 opacity-80" />
+
+      {/* Content */}
+      <div className="relative z-20 container mx-auto px-4 lg:px-8 min-h-[100svh] flex flex-col justify-end pb-28 sm:pb-24 sm:justify-center sm:pt-28 pt-24">
+        <div className="max-w-3xl w-full">
+          {/* Live Season Badge */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={t(0.2)}
-            className="inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full border border-primary/50 bg-primary/20 backdrop-blur-md mb-4 sm:mb-6 shadow-[0_0_15px_rgba(255,0,255,0.3)]"
+            transition={t(0.1)}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/40 bg-primary/10 backdrop-blur-md mb-5"
           >
-            <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-primary animate-pulse-glow" />
-            <span className="text-[10px] sm:text-xs font-display tracking-[0.2em] sm:tracking-[0.25em] text-white uppercase">Season 7 Live</span>
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse-glow" />
+            <span className="text-[11px] font-display tracking-[0.2em] text-primary uppercase font-bold">
+              Season 7 · Live Now
+            </span>
+            <Flame className="w-3.5 h-3.5 text-primary animate-flicker" />
           </motion.div>
 
           {/* Main Headline */}
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={t(0.4)}
-            className="font-display text-5xl sm:text-7xl lg:text-8xl xl:text-9xl font-black leading-[0.9] tracking-tighter"
+            transition={t(0.2)}
+            className="font-display font-black leading-[0.9] tracking-tighter"
           >
-            <span className="block text-foreground drop-shadow-lg">BECOME A</span>
-            <span className="block text-fire-gradient filter drop-shadow-[0_0_25px_rgba(255,0,255,0.5)]">GOD OF THE</span>
-            <span className="block text-foreground drop-shadow-lg">ARENA</span>
+            <span className="block text-4xl sm:text-6xl lg:text-7xl xl:text-8xl text-foreground drop-shadow-lg">
+              BECOME A
+            </span>
+            <span className="block text-5xl sm:text-7xl lg:text-8xl xl:text-9xl text-fire-gradient filter drop-shadow-[0_0_20px_oklch(0.65_0.28_320/0.4)]">
+              LEGEND
+            </span>
+            <span className="block text-3xl sm:text-5xl lg:text-6xl xl:text-7xl text-foreground/90 drop-shadow-lg">
+              OF THE ARENA
+            </span>
           </motion.h1>
 
           {/* Subtitle */}
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={t(0.6)}
-            className="mt-4 sm:mt-6 max-w-xs sm:max-w-xl text-sm sm:text-lg text-muted-foreground/90 font-medium leading-relaxed drop-shadow-md"
+            transition={t(0.35)}
+            className="mt-4 sm:mt-6 max-w-sm sm:max-w-xl text-sm sm:text-base text-muted-foreground/90 leading-relaxed"
           >
-            India's most elite Free Fire esports platform. Compete in high-stakes solo & squad tournaments for massive real cash prizes.
+            India's most elite Free Fire esports platform. Compete in high-stakes tournaments &amp; win real cash prizes.
           </motion.p>
 
-          {/* Call to Actions - Full width on mobile */}
+          {/* CTA Buttons */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={t(0.8)}
-            className="mt-8 flex flex-col sm:flex-row w-full sm:w-auto gap-3 sm:gap-4"
+            transition={t(0.5)}
+            className="mt-7 flex flex-col sm:flex-row gap-3 w-full sm:w-auto"
           >
             {user ? (
-              <Button asChild variant="hero" size="lg" className="w-full sm:w-auto font-display tracking-widest text-sm sm:text-base h-12 sm:h-14">
-                <Link to="/tournaments">
-                  <Trophy className="w-4 h-4 sm:w-5 sm:h-5" /> JOIN BATTLE
-                </Link>
-              </Button>
+              <JoinBattleDialog
+                mode="Squad"
+                trigger={
+                  <Button variant="hero" size="lg" className="w-full sm:w-auto font-display tracking-widest text-base h-13 sm:h-14 shadow-fire">
+                    <Trophy className="w-5 h-5" /> JOIN BATTLE
+                  </Button>
+                }
+              />
             ) : (
-              <Button asChild variant="hero" size="lg" className="w-full sm:w-auto font-display tracking-widest text-sm sm:text-base h-12 sm:h-14" onClick={() => toast.error("You must be logged in to join battles.")}>
+              <Button asChild variant="hero" size="lg" className="w-full sm:w-auto font-display tracking-widest text-base h-13 sm:h-14 shadow-fire">
                 <Link to="/login">
-                  <Trophy className="w-4 h-4 sm:w-5 sm:h-5" /> JOIN BATTLE
+                  <Trophy className="w-5 h-5" /> JOIN BATTLE
                 </Link>
               </Button>
             )}
-            <Link to="/tournaments" className="w-full sm:w-auto">
-              <Button variant="outlineFire" size="lg" className="w-full font-display tracking-widest text-sm sm:text-base h-12 sm:h-14 bg-background/50 backdrop-blur-md">
-                <Zap className="w-4 h-4 sm:w-5 sm:h-5" /> VIEW TOURNAMENTS
-              </Button>
-            </Link>
+            <Button asChild variant="outlineFire" size="lg" className="w-full sm:w-auto font-display tracking-widest text-base h-13 sm:h-14 bg-background/30 backdrop-blur-md">
+              <Link to="/tournaments">
+                <Zap className="w-5 h-5" /> VIEW TOURNAMENTS
+              </Link>
+            </Button>
           </motion.div>
 
-          {/* Stats Grid - Glassmorphism, tailored for mobile */}
+          {/* Stats Row */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={t(1.1)}
-            className="mt-10 sm:mt-16 w-full grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 max-w-sm sm:max-w-3xl"
+            transition={t(0.7)}
+            className="mt-10 grid grid-cols-4 gap-2 sm:gap-4 max-w-sm sm:max-w-lg"
           >
-            {[
-              { v: "120K+", l: "Players" },
-              { v: "₹50L+", l: "Prize Pool" },
-              { v: "850+", l: "Matches" },
-              { v: "24/7", l: "Live" },
-            ].map((s, i) => (
-              <div key={i} className="relative bg-card/40 backdrop-blur-xl border border-primary/30 clip-notch p-3 sm:p-5 flex flex-col items-center sm:items-start shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-                <div className="absolute top-0 left-0 w-4 sm:w-6 h-[2px] bg-primary" />
-                <div className="absolute top-0 left-0 w-[2px] h-4 sm:h-6 bg-primary" />
-                <div className="font-display text-xl sm:text-3xl font-black text-white text-glow">{s.v}</div>
-                <div className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-primary mt-0.5 sm:mt-1 font-bold">{s.l}</div>
+            {stats.map((s, i) => (
+              <div
+                key={i}
+                className="relative flex flex-col items-center text-center p-2.5 sm:p-4 rounded-xl bg-card/40 backdrop-blur-xl border border-primary/20 overflow-hidden"
+              >
+                <div className="absolute top-0 left-0 w-full h-0.5 bg-fire-gradient opacity-60" />
+                <div className="text-base sm:text-xl mb-0.5">{s.icon}</div>
+                <div className="font-display text-base sm:text-2xl font-black text-white text-glow leading-tight">{s.v}</div>
+                <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-primary/80 font-bold mt-0.5">{s.l}</div>
               </div>
             ))}
           </motion.div>
         </div>
       </div>
 
-      {/* Floating Scroll Indicator */}
+      {/* Scroll indicator - desktop only */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1, y: [0, 8, 0] }}
-        transition={{ opacity: { delay: 1.5, duration: 0.6 }, y: { duration: 1.6, repeat: Infinity, ease: "easeInOut", delay: 1.5 } }}
-        className="absolute bottom-20 sm:bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1 text-primary/70 pointer-events-none hidden sm:flex pointer-events-auto"
+        transition={{
+          opacity: { delay: 1.5, duration: 0.6 },
+          y: { duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 1.5 }
+        }}
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 hidden sm:flex flex-col items-center gap-1 text-primary/60"
       >
         <span className="text-[10px] font-display uppercase tracking-[0.3em]">Scroll</span>
         <ChevronDown className="w-4 h-4" />

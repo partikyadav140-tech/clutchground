@@ -1,15 +1,15 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { PageHeader } from "../tournaments/index";
-import { ArrowLeft, Banknote, CheckCircle, XCircle, Clock } from "lucide-react";
+import { ArrowLeft, Banknote, CheckCircle, XCircle, Clock, ShieldAlert } from "lucide-react";
 import { getPayouts, updatePayoutStatus } from "../../../api";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { GodCoin } from "@/components/GodCoin";
 import { toast } from "sonner";
 import { confirmDialog } from "@/components/ConfirmDialog";
+import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/_app/admin/payouts")({
-  head: () => ({ meta: [{ title: "Payouts Admin — CLUTCHGROUND" }] }),
+  head: () => ({ meta: [{ title: "Payouts Admin — Professional Esports Arena" }] }),
   loader: async () => await getPayouts(),
   component: AdminPayoutsPage,
 });
@@ -19,9 +19,25 @@ function AdminPayoutsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  if (loading) return <div className="p-20 text-center">Loading...</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[60vh] bg-background">
+      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
   if (!user || user.role !== 'admin') {
-    return <div className="p-20 text-center text-destructive font-bold">ACCESS DENIED</div>;
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 text-center">
+        <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
+          <ShieldAlert className="w-10 h-10 text-destructive" />
+        </div>
+        <h1 className="text-3xl font-display font-black text-foreground mb-2">Access Denied</h1>
+        <p className="text-muted-foreground font-semibold mb-8 max-w-sm">You must be logged in as an administrator to view this page.</p>
+        <Link to="/login">
+          <Button className="h-12 px-8 rounded-xl font-bold bg-primary text-white shadow-primary">Return to Login</Button>
+        </Link>
+      </div>
+    );
   }
 
   const handleResolve = async (payoutId: number, userId: number, amount: number, status: string) => {
@@ -42,61 +58,122 @@ function AdminPayoutsPage() {
     }
   };
 
-  return (
-    <div className="container mx-auto px-4 lg:px-8 py-10 lg:py-16 space-y-8">
-      <Link to="/admin" className="inline-flex items-center gap-2 text-sm font-display uppercase tracking-widest text-muted-foreground hover:text-primary mb-2">
-        <ArrowLeft className="w-4 h-4" /> Back to Admin
-      </Link>
-      <PageHeader title="Payout Requests" subtitle="Financials" />
+  const pendingCount = payouts.filter((p: any) => p.status === 'pending').length;
 
-      <div className="bg-card-gradient border border-border clip-notch p-5">
-        <h3 className="font-display text-sm uppercase tracking-[0.25em] text-primary mb-4 flex items-center gap-2">
-          <Banknote className="w-4 h-4" /> Withdrawal Queue ({payouts.length})
-        </h3>
+  return (
+    <div className="bg-background min-h-screen pb-24">
+      {/* ─── Top Header (Mobile First) ─── */}
+      <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         
+        <Link to="/admin" className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-primary mb-4 relative z-10 transition-colors bg-secondary/50 px-3 py-1.5 rounded-full">
+          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+        </Link>
+        
+        <div className="relative z-10 flex flex-col items-center text-center">
+          <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-3">
+            <Banknote className="w-6 h-6" />
+          </div>
+          <h1 className="font-display text-3xl font-black text-foreground">Payouts</h1>
+          <p className="text-sm text-muted-foreground mt-1 font-semibold">Financial Requests</p>
+        </div>
+
+        <div className="mt-6 flex items-center justify-center">
+          <div className="bg-secondary/50 px-4 py-2 rounded-xl flex items-center gap-2">
+            <div className={`w-2.5 h-2.5 rounded-full ${pendingCount > 0 ? 'bg-amber-500 animate-pulse' : 'bg-green-500'}`} />
+            <span className="text-sm font-bold text-foreground">{pendingCount} Pending Requests</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-4 mt-6">
         {payouts.length === 0 ? (
-          <div className="text-center p-10 text-muted-foreground bg-secondary/30 border border-border/50 clip-notch">
-            No withdrawal requests pending.
+          <div className="text-center py-12 bg-white rounded-[1.5rem] border border-border shadow-sm">
+            <Banknote className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
+            <p className="text-foreground font-semibold">No withdrawal requests found.</p>
           </div>
         ) : (
           <div className="space-y-4">
-            {payouts.map((p: any) => (
-              <div key={p.id} className="p-4 bg-secondary/60 border border-border flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <span className="font-bold text-primary text-lg">{p.username}</span>
-                    <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-full border ${p.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30' : p.status === 'completed' ? 'bg-green-500/10 text-green-500 border-green-500/30' : 'bg-red-500/10 text-red-500 border-red-500/30'}`}>
-                      {p.status}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 text-xs text-muted-foreground">
-                    <div>Contact: <span className="text-foreground">{p.email || 'N/A'}</span> / <span className="text-foreground">{p.phone || 'N/A'}</span></div>
-                    <div>Requested: <span className="text-foreground">{new Date(p.created_at).toLocaleString()}</span></div>
-                    <div>UPI ID: <span className="text-foreground font-mono">{p.upi_id}</span></div>
-                    <div>UPI Number: <span className="text-foreground font-mono">{p.upi_number}</span></div>
-                  </div>
-                </div>
-                
-                <div className="flex flex-col md:flex-row items-center gap-4 shrink-0 bg-background/50 p-3 border border-border/50 rounded-md">
-                  <div className="text-center md:text-right">
-                    <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Amount to Transfer</div>
-                    <div className="font-display text-2xl font-black text-fire-gradient flex items-center justify-center md:justify-end gap-1.5">
-                      <GodCoin className="w-5 h-5" /> {p.amount} <span className="text-sm text-muted-foreground font-sans font-normal">(₹{p.amount})</span>
+            {payouts.map((p: any, i: number) => (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: i * 0.05 }}
+                key={p.id} 
+                className={`bg-white rounded-[1.5rem] border ${p.status === 'pending' ? 'border-amber-200 shadow-md' : 'border-border shadow-sm'} overflow-hidden group`}
+              >
+                <div className="p-5">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <h3 className="font-display font-black text-xl text-foreground truncate">{p.username}</h3>
+                        <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full border ${
+                          p.status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+                          p.status === 'completed' ? 'bg-green-50 text-green-700 border-green-200' : 
+                          'bg-red-50 text-red-700 border-red-200'
+                        }`}>
+                          {p.status}
+                        </span>
+                      </div>
+                      
+                      <div className="bg-secondary/30 rounded-xl p-4 border border-border space-y-2.5">
+                        <div className="flex flex-col sm:flex-row sm:gap-6 gap-2.5 text-xs">
+                          <div className="truncate">
+                            <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px] block mb-0.5">Contact</span>
+                            <span className="font-semibold text-foreground">{p.phone || p.email || 'N/A'}</span>
+                          </div>
+                          <div className="truncate">
+                            <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px] block mb-0.5">Requested At</span>
+                            <span className="font-semibold text-foreground">{new Date(p.created_at).toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div className="h-px bg-border w-full" />
+                        <div className="flex flex-col sm:flex-row sm:gap-6 gap-2.5 text-xs">
+                          <div className="truncate">
+                            <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px] block mb-0.5">UPI ID</span>
+                            <span className="font-mono font-semibold text-primary bg-primary/5 px-1.5 py-0.5 rounded">{p.upi_id}</span>
+                          </div>
+                          {p.upi_number && (
+                            <div className="truncate">
+                              <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px] block mb-0.5">UPI Number</span>
+                              <span className="font-mono font-semibold text-foreground">{p.upi_number}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex flex-col sm:items-end justify-between min-w-[140px] shrink-0 border-t sm:border-t-0 border-border pt-4 sm:pt-0">
+                      <div className="text-left sm:text-right mb-4">
+                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Transfer Amount</div>
+                        <div className="font-display text-2xl font-black text-foreground flex items-center justify-start sm:justify-end gap-1.5">
+                          <GodCoin className="w-5 h-5" /> {p.amount}
+                        </div>
+                        <div className="text-xs font-semibold text-muted-foreground mt-0.5">≈ ₹{p.amount} INR</div>
+                      </div>
+                      
+                      {p.status === 'pending' && (
+                        <div className="flex flex-col gap-2 w-full">
+                          <Button 
+                            variant="outline" 
+                            className="rounded-xl font-bold h-11 bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:border-green-300 w-full" 
+                            onClick={() => handleResolve(p.id, p.user_id, p.amount, 'completed')}
+                          >
+                            <CheckCircle className="w-4 h-4 mr-2" /> Mark Paid
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            className="rounded-xl font-bold h-10 bg-white text-destructive border-destructive/20 hover:bg-destructive/10 w-full" 
+                            onClick={() => handleResolve(p.id, p.user_id, p.amount, 'rejected')}
+                          >
+                            <XCircle className="w-4 h-4 mr-2" /> Reject & Refund
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  
-                  {p.status === 'pending' && (
-                    <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
-                      <Button variant="outline" size="sm" className="h-10 border-green-500/50 hover:bg-green-500/10 hover:text-green-500 text-xs w-full md:w-auto" onClick={() => handleResolve(p.id, p.user_id, p.amount, 'completed')}>
-                        <CheckCircle className="w-4 h-4 mr-1.5" /> Mark Paid
-                      </Button>
-                      <Button variant="outline" size="sm" className="h-10 border-red-500/50 hover:bg-red-500/10 hover:text-red-500 text-xs w-full md:w-auto" onClick={() => handleResolve(p.id, p.user_id, p.amount, 'rejected')}>
-                        <XCircle className="w-4 h-4 mr-1.5" /> Reject (Refund)
-                      </Button>
-                    </div>
-                  )}
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         )}

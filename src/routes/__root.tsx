@@ -70,7 +70,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <Tutorial />
         <ConfirmDialog />
         <Toaster 
-          theme="dark" 
+          theme="light" 
           toastOptions={{
             className: "bg-background border border-primary/50 text-foreground font-display clip-notch shadow-fire",
             descriptionClassName: "text-muted-foreground font-sans",

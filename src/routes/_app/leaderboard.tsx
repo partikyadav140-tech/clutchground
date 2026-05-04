@@ -1,14 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { getGlobalLeaderboard } from "../../api";
-import { PageHeader } from "./tournaments";
-import { Crown, Skull } from "lucide-react";
+import { Crown, Skull, Trophy, TrendingUp, Medal } from "lucide-react";
+import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/_app/leaderboard")({
   head: () => ({
     meta: [
-      { title: "Global Leaderboard — CLUTCHGROUND" },
-      { name: "description", content: "Top Free Fire players ranked by kills, wins, and ELO points." },
+      { title: "Global Leaderboard — Professional Esports Arena" },
     ],
   }),
   loader: async () => await (getGlobalLeaderboard as any)(),
@@ -22,88 +21,158 @@ function LeaderboardPage() {
   const [tab, setTab] = useState<(typeof tabs)[number]>("Global");
 
   return (
-    <div className="container mx-auto px-4 lg:px-8 py-10 lg:py-16">
-      <PageHeader title="Leaderboard" subtitle="Hall Of Fame" />
-
-      <div className="mt-8 flex gap-2 overflow-x-auto -mx-1 px-1 pb-1">
-        {tabs.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-5 py-2.5 text-xs font-display uppercase tracking-widest border transition-all whitespace-nowrap ${
-              tab === t
-                ? "bg-primary text-primary-foreground border-primary shadow-fire"
-                : "bg-card border-border text-muted-foreground hover:border-primary/60 hover:text-foreground"
-            }`}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
-      <div className="mt-3 text-xs text-muted-foreground"><span className="font-display tracking-widest uppercase">Showing:</span> {tab} rankings · resets {tab === "Weekly" ? "Sunday 11:59 PM" : tab === "Monthly" ? "1st of month" : "season end"}</div>
-
-      {/* Top 3 podium */}
-      {leaderboard.length >= 3 ? (
-        <div className="mt-10 grid grid-cols-3 gap-3 sm:gap-6 max-w-4xl mx-auto">
-          {[leaderboard[1], leaderboard[0], leaderboard[2]].map((p, i) => {
-            const podiumPos = [2, 1, 3][i];
-            const heights = ["pt-12", "pt-4", "pt-16"];
-            return (
-              <div key={p.user_id} className={`text-center ${heights[i]}`}>
-                <div className={`mx-auto rounded-full bg-fire-gradient grid place-items-center font-display font-black text-primary-foreground shadow-fire ${podiumPos === 1 ? "w-24 h-24 sm:w-32 sm:h-32 text-3xl sm:text-5xl" : "w-20 h-20 sm:w-24 sm:h-24 text-2xl sm:text-3xl"}`}>
-                  {p.team ? p.team[0].toUpperCase() : 'T'}
-                </div>
-                {podiumPos === 1 && <Crown className="w-8 h-8 sm:w-10 sm:h-10 text-gold mx-auto -mt-3 drop-shadow-[0_0_12px_oklch(0.85_0.16_85)]" />}
-                <div className="mt-3 font-display font-black text-sm sm:text-lg truncate">{p.team || "Unknown Team"}</div>
-                <div className="text-[10px] sm:text-xs uppercase tracking-widest text-muted-foreground truncate">{p.kills || 0} Kills</div>
-                <div className={`mt-2 font-display font-black ${podiumPos === 1 ? "text-2xl sm:text-3xl text-fire-gradient" : "text-lg sm:text-xl text-primary"}`}>
-                  {p.points.toLocaleString()}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="mt-10 text-center text-muted-foreground p-10 bg-card-gradient border border-border clip-notch">
-          More match data required to build the Hall of Fame.
-        </div>
-      )}
-
-      {/* Full table */}
-      <div className="mt-10 bg-card-gradient border border-border clip-notch overflow-hidden">
-        <div className="grid grid-cols-12 gap-2 px-4 sm:px-6 py-3 border-b border-border/60 text-[10px] uppercase tracking-widest text-muted-foreground font-bold bg-secondary/40">
-          <div className="col-span-1">Rank</div>
-          <div className="col-span-6 sm:col-span-7">Team</div>
-          <div className="col-span-2 sm:col-span-2 text-right">K/W</div>
-          <div className="col-span-3 sm:col-span-2 text-right">Points</div>
-        </div>
-        {leaderboard.map((p) => (
-          <div key={p.user_id} className="grid grid-cols-12 gap-2 px-4 sm:px-6 py-3.5 border-b border-border/30 last:border-0 hover:bg-primary/5 transition-colors items-center">
-            <div className="col-span-1">
-              <span className={`font-display font-black text-base sm:text-lg ${p.rank === 1 ? "text-fire-gradient" : p.rank <= 3 ? "text-primary" : "text-muted-foreground"}`}>
-                {String(p.rank).padStart(2, "0")}
-              </span>
-            </div>
-            <div className="col-span-6 sm:col-span-7 flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-fire-gradient grid place-items-center font-display font-black text-xs text-primary-foreground shrink-0">
-                {p.team ? p.team[0].toUpperCase() : 'T'}
-              </div>
-              <div className="min-w-0">
-                <div className="font-bold truncate flex items-center gap-1.5">
-                  {p.team || "Unknown Team"}
-                  {p.badge === "god" && <Crown className="w-3.5 h-3.5 text-gold shrink-0" />}
-                  {p.badge === "elite" && <Skull className="w-3.5 h-3.5 text-primary shrink-0" />}
-                </div>
-              </div>
-            </div>
-            <div className="col-span-2 sm:col-span-2 text-right font-mono text-xs sm:text-sm">
-              <div className="text-foreground">{p.kills || 0}</div>
-              <div className="text-[10px] text-muted-foreground">{p.wins || 0}W</div>
-            </div>
-            <div className="col-span-3 sm:col-span-2 text-right font-display font-bold text-primary text-sm sm:text-base">{p.points.toLocaleString()}</div>
+    <div className="bg-background min-h-screen pb-24">
+      {/* ─── Top Header (Mobile First) ─── */}
+      <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+        
+        <div className="relative z-10 flex flex-col items-center text-center">
+          <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-3">
+            <Crown className="w-6 h-6" />
           </div>
-        ))}
+          <h1 className="font-display text-3xl font-black text-foreground">Hall of Fame</h1>
+          <p className="text-sm text-muted-foreground mt-1 font-semibold">Top players and squads</p>
+        </div>
+
+        {/* Tab bar */}
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar mt-6 snap-x -mx-4 px-4 pb-2">
+          {tabs.map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`snap-center px-5 py-2.5 text-xs font-bold uppercase tracking-wider rounded-full border transition-all whitespace-nowrap ${
+                tab === t
+                  ? "bg-primary text-white border-primary shadow-[0_4px_12px_oklch(0.65_0.22_45/0.3)]"
+                  : "bg-white border-border text-muted-foreground hover:border-primary/40 active:bg-secondary/60"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="px-4 mt-6">
+        <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest text-center mb-8 px-4 py-2 bg-secondary/50 rounded-xl border border-border/50">
+          Resets {tab === "Weekly" ? "every Sunday 11:59 PM" : tab === "Monthly" ? "on the 1st of each month" : "at season end"}
+        </div>
+
+        {/* Top 3 Podium */}
+        {leaderboard.length >= 3 ? (
+          <div className="mb-10 px-2 relative z-0">
+            <div className="flex items-end justify-center gap-3 sm:gap-6">
+              <PodiumCard p={leaderboard[1]} rank={2} medal="🥈" height="h-28" colorClass="from-slate-200 to-white border-slate-300" textClass="text-slate-500" />
+              <PodiumCard p={leaderboard[0]} rank={1} medal="🥇" height="h-36" featured colorClass="from-amber-200 to-amber-50 border-amber-300" textClass="text-amber-600" />
+              <PodiumCard p={leaderboard[2]} rank={3} medal="🥉" height="h-24" colorClass="from-orange-200 to-orange-50 border-orange-300" textClass="text-orange-600" />
+            </div>
+          </div>
+        ) : (
+          <div className="mb-8 p-8 text-center text-muted-foreground bg-white rounded-[1.5rem] border border-border shadow-sm font-semibold text-sm">
+            More match data required to build the Hall of Fame.
+          </div>
+        )}
+
+        {/* Full leaderboard table */}
+        <h3 className="font-display font-black text-lg text-foreground mb-3 px-1">Top Rankings</h3>
+        <div className="bg-white rounded-[1.5rem] border border-border shadow-sm overflow-hidden">
+          {/* Table header */}
+          <div className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-border bg-secondary/30 text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+            <div className="col-span-2 sm:col-span-1 text-center">Rank</div>
+            <div className="col-span-6 sm:col-span-7">Player / Team</div>
+            <div className="col-span-2 text-right">Kills</div>
+            <div className="col-span-2 text-right text-primary">Pts</div>
+          </div>
+
+          {leaderboard.length === 0 ? (
+            <div className="py-12 text-center text-muted-foreground flex flex-col items-center">
+              <Trophy className="w-10 h-10 mb-3 opacity-30" />
+              <p className="text-sm font-semibold">No rankings yet. Play matches to climb the ladder!</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border/50">
+              {leaderboard.map((p: any, i: number) => (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: i * 0.05 }}
+                  key={p.user_id || i}
+                  className="grid grid-cols-12 gap-2 px-4 py-3.5 hover:bg-primary/5 transition-colors items-center"
+                >
+                  <div className="col-span-2 sm:col-span-1 flex justify-center">
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center font-display font-black text-xs ${
+                      p.rank === 1 ? "bg-amber-100 text-amber-600" : 
+                      p.rank === 2 ? "bg-slate-100 text-slate-500" : 
+                      p.rank === 3 ? "bg-orange-100 text-orange-600" : 
+                      "bg-secondary text-muted-foreground"
+                    }`}>
+                      {p.rank}
+                    </span>
+                  </div>
+
+                  <div className="col-span-6 sm:col-span-7 flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 grid place-items-center font-display font-black text-xs text-primary shrink-0">
+                      {p.team ? p.team[0].toUpperCase() : "T"}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-sm text-foreground truncate flex items-center gap-1.5">
+                        {p.team || "Unknown Team"}
+                        {p.badge === "god" && <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                        {p.badge === "elite" && <Skull className="w-3.5 h-3.5 text-primary shrink-0" />}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground hidden sm:block font-semibold">
+                        {p.wins || 0} wins
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-span-2 text-right">
+                    <div className="font-mono text-sm font-bold text-foreground">{p.kills || 0}</div>
+                    <div className="text-[9px] text-muted-foreground uppercase font-bold sm:hidden">{p.wins || 0} W</div>
+                  </div>
+
+                  <div className="col-span-2 text-right font-display font-black text-primary text-sm sm:text-base leading-none">
+                    {p.points.toLocaleString()}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
+  );
+}
+
+function PodiumCard({ p, rank, medal, height, featured = false, colorClass, textClass }: {
+  p: any; rank: number; medal: string; height: string; featured?: boolean; colorClass: string; textClass: string;
+}) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: rank * 0.1 }}
+      className="flex-1 max-w-[110px] sm:max-w-[130px] flex flex-col items-center relative"
+    >
+      {/* Crown for #1 */}
+      {featured && <Crown className="absolute -top-7 w-6 h-6 text-amber-400 drop-shadow-sm z-20" />}
+
+      {/* Avatar */}
+      <div className={`relative z-10 rounded-full bg-white border-2 flex items-center justify-center font-display font-black text-primary shadow-md mb-2 ${
+        featured ? "w-14 h-14 text-2xl border-amber-300" : rank === 2 ? "w-11 h-11 text-lg border-slate-300" : "w-11 h-11 text-lg border-orange-300"
+      }`}>
+        {p.team ? p.team[0].toUpperCase() : "T"}
+      </div>
+
+      <div className={`font-bold text-xs sm:text-sm truncate w-full text-center px-1 mb-0.5 text-foreground`}>{p.team || "Unknown"}</div>
+      <div className="text-[10px] text-muted-foreground font-semibold mb-2">{p.kills || 0} kills</div>
+
+      {/* Podium bar */}
+      <div className={`w-full rounded-t-xl bg-gradient-to-b border-t shadow-sm flex flex-col items-center pt-2 ${colorClass} ${height}`}>
+        <span className="text-xl leading-none mb-1">{medal}</span>
+        <div className={`font-display font-black text-sm sm:text-base ${textClass}`}>
+          {p.points.toLocaleString()}
+        </div>
+      </div>
+    </motion.div>
   );
 }

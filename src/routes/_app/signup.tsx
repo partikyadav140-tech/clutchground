@@ -5,9 +5,11 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { signupUser } from "../../api";
 import { setSessionId } from "../../lib/auth-client";
+import { Eye, EyeOff, Flame } from "lucide-react";
+import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/_app/signup")({
-  head: () => ({ meta: [{ title: "Sign Up — CLUTCHGROUND" }] }),
+  head: () => ({ meta: [{ title: "Sign Up — Professional Esports Arena" }] }),
   component: SignupPage,
 });
 
@@ -20,6 +22,7 @@ function SignupPage() {
   const [uid, setUid] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [showPass, setShowPass] = useState(false);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +30,7 @@ function SignupPage() {
     try {
       const res = await (signupUser as any)({ data: { username, password, ign, uid, email, phone } });
       setSessionId(res.sessionId);
-      toast.success("Account created successfully!");
+      toast.success("Welcome to the arena, warrior! 🔥");
       window.location.href = "/";
     } catch (err: any) {
       toast.error(err.message || "Failed to create account");
@@ -37,58 +40,151 @@ function SignupPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-10rem)] grid lg:grid-cols-2">
-      <div className="flex items-center justify-center p-6 sm:p-12 order-2 lg:order-1">
-        <form
-          onSubmit={handleSignup}
-          className="w-full max-w-md space-y-4"
-        >
-          <div className="lg:hidden mb-4"><Logo size={64} /></div>
-          <div>
-            <h1 className="font-display text-3xl sm:text-4xl font-black tracking-tight">Join The Gods</h1>
-            <p className="text-muted-foreground text-sm mt-1">Forge your legend.</p>
+    <div className="min-h-[100svh] flex flex-col items-center justify-center px-4 py-8 mb-safe lg:mb-0 bg-background relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 pointer-events-none" />
+
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="relative w-full max-w-md z-10 my-auto"
+      >
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-6">
+          <div className="w-16 h-16 bg-white rounded-[1.25rem] shadow-sm border border-border flex items-center justify-center mb-3">
+            <Logo size={40} withText={false} />
           </div>
-
-          <div className="grid sm:grid-cols-2 gap-3">
-            <Field label="Username" placeholder="Enter username" value={username} onChange={e => setUsername(e.target.value)} required />
-            <Field label="In-Game Name (IGN)" placeholder="Enter IGN" value={ign} onChange={e => setIgn(e.target.value)} />
+          <div className="text-center">
+            <h1 className="font-display text-2xl sm:text-3xl font-black text-foreground">
+              Join The Arena
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1 font-semibold">120K+ warriors are waiting for you.</p>
           </div>
-          <Field label="Free Fire UID" placeholder="Enter UID" value={uid} onChange={e => setUid(e.target.value)} />
-          <Field label="Email" type="email" placeholder="Enter email" value={email} onChange={e => setEmail(e.target.value)} />
-          <Field label="Phone" type="tel" placeholder="Enter phone number" value={phone} onChange={e => setPhone(e.target.value)} />
-          <Field label="Password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
-
-          <label className="flex items-start gap-2 text-xs text-muted-foreground">
-            <input type="checkbox" required className="accent-primary mt-0.5 shrink-0" />
-            <span className="leading-tight">
-              I accept the CLUTCHGROUND{" "}
-              <Link to="/rules" className="text-primary hover:underline">Rules</Link>,{" "}
-              <Link to="/anti-cheat" className="text-primary hover:underline">Anti-Cheat</Link>,{" "}
-              <Link to="/terms" className="text-primary hover:underline">Terms</Link> &{" "}
-              <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>{" "}
-              and confirm I am 13+.
-            </span>
-          </label>
-
-          <Button type="submit" variant="hero" size="lg" className="w-full font-display tracking-wider" disabled={loading}>
-            {loading ? "FORGING ACCOUNT..." : "CREATE ACCOUNT"}
-          </Button>
-
-          <p className="text-center text-sm text-muted-foreground">
-            Already a god? <Link to="/login" className="text-primary font-bold hover:underline">Log in</Link>
-          </p>
-        </form>
-      </div>
-
-      <div className="hidden lg:flex relative bg-hero-gradient items-center justify-center p-12 overflow-hidden order-1 lg:order-2">
-        <div className="absolute inset-0 grid-bg opacity-30" />
-        <div className="absolute inset-0 scanlines" />
-        <div className="relative text-center max-w-md">
-          <Logo size={120} withText={false} />
-          <h2 className="mt-8 font-display text-5xl font-black text-fire-gradient">RISE.</h2>
-          <p className="mt-4 text-muted-foreground">120,000+ warriors compete every day. Your throne is waiting.</p>
         </div>
-      </div>
+
+        {/* Form card */}
+        <div className="rounded-[1.5rem] border border-border bg-white p-6 sm:p-8 shadow-sm">
+          <form onSubmit={handleSignup} className="space-y-4">
+            {/* Row 1 */}
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="Username *"
+                placeholder="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                autoComplete="username"
+              />
+              <Field
+                label="IGN"
+                placeholder="in-game name"
+                value={ign}
+                onChange={(e) => setIgn(e.target.value)}
+              />
+            </div>
+
+            {/* UID */}
+            <Field
+              label="Free Fire UID"
+              placeholder="Enter your UID"
+              value={uid}
+              onChange={(e) => setUid(e.target.value)}
+            />
+
+            {/* Email */}
+            <Field
+              label="Email"
+              type="email"
+              placeholder="you@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+            />
+
+            {/* Phone */}
+            <Field
+              label="Phone"
+              type="tel"
+              placeholder="+91 XXXXXXXXXX"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              autoComplete="tel"
+            />
+
+            {/* Password */}
+            <div>
+              <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">
+                Password *
+              </label>
+              <div className="relative">
+                <input
+                  type={showPass ? "text" : "password"}
+                  placeholder="Choose a strong password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                  className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-white outline-none px-4 pr-12 h-12 text-sm rounded-xl transition-all font-bold placeholder:font-semibold"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Terms */}
+            <label className="flex items-start gap-2.5 text-xs text-muted-foreground cursor-pointer px-1 mt-2">
+              <input type="checkbox" required className="accent-primary mt-0.5 shrink-0 w-3.5 h-3.5 rounded" />
+              <span className="leading-relaxed font-semibold">
+                I accept the{" "}
+                <Link to="/rules" className="text-primary font-bold hover:underline">Rules</Link>,{" "}
+                <Link to="/terms" className="text-primary font-bold hover:underline">Terms</Link> &{" "}
+                <Link to="/privacy" className="text-primary font-bold hover:underline">Privacy Policy</Link>.
+                I confirm I am 13+ years old.
+              </span>
+            </label>
+
+            {/* Submit */}
+            <Button
+              type="submit"
+              className="w-full font-bold mt-4 h-12 rounded-xl bg-primary text-white shadow-primary hover:opacity-90 active:scale-[0.98] transition-all"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Creating Account...
+                </span>
+              ) : (
+                <>
+                  <Flame className="w-4 h-4 mr-2" /> Join The Arena
+                </>
+              )}
+            </Button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-muted-foreground font-semibold">
+            Already a warrior?{" "}
+            <Link to="/login" className="text-primary font-black hover:underline">
+              Log in
+            </Link>
+          </p>
+        </div>
+
+        <div className="mt-8 flex items-center justify-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
+          <Link to="/rules" className="hover:text-primary transition-colors">Rules</Link>
+          <span className="w-1 h-1 rounded-full bg-border" />
+          <Link to="/anti-cheat" className="hover:text-primary transition-colors">Anti-Cheat</Link>
+          <span className="w-1 h-1 rounded-full bg-border" />
+          <Link to="/contact" className="hover:text-primary transition-colors">Support</Link>
+        </div>
+      </motion.div>
     </div>
   );
 }
@@ -96,8 +192,13 @@ function SignupPage() {
 function Field({ label, ...rest }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <div>
-      <label className="block text-[10px] uppercase tracking-widest font-display font-bold text-muted-foreground mb-1.5">{label}</label>
-      <input {...rest} className="w-full bg-card border border-border focus:border-primary outline-none px-4 h-11 text-sm transition-colors" />
+      <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">
+        {label}
+      </label>
+      <input
+        {...rest}
+        className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-white outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold placeholder:font-semibold"
+      />
     </div>
   );
 }
