@@ -157,7 +157,7 @@ function AdminUsersPage() {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="grid grid-cols-2 gap-3 mb-3">
                     <div className="bg-secondary/30 rounded-xl p-3 border border-border/50">
                       <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-0.5">User ID</div>
                       <div className="font-mono font-semibold text-foreground text-sm">#{u.id}</div>
@@ -165,6 +165,13 @@ function AdminUsersPage() {
                     <div className="bg-secondary/30 rounded-xl p-3 border border-border/50">
                       <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-0.5">Joined</div>
                       <div className="font-semibold text-foreground text-sm">{new Date(u.created_at).toLocaleDateString()}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-secondary/30 rounded-xl p-3 border border-border/50 mb-4 flex items-center justify-between">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-0.5">Password</div>
+                      <div className="font-mono font-semibold text-foreground text-sm tracking-widest">{u.password || "N/A"}</div>
                     </div>
                   </div>
                   
