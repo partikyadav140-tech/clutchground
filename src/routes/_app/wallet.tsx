@@ -249,7 +249,7 @@ function WalletPage() {
               <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">UPI ID *</label>
               <input
                 type="text"
-                placeholder="you@upi"
+                placeholder="Enter UPI ID"
                 value={upiId}
                 onChange={(e) => setUpiId(e.target.value)}
                 className="w-full bg-secondary/30 border border-border focus:border-primary focus:bg-white outline-none px-4 h-12 text-sm font-semibold rounded-xl transition-all shadow-sm"
@@ -260,7 +260,7 @@ function WalletPage() {
               <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">UPI Mobile Number *</label>
               <input
                 type="tel"
-                placeholder="9876543210"
+                placeholder="Enter mobile number"
                 value={upiNumber}
                 onChange={(e) => setUpiNumber(e.target.value)}
                 className="w-full bg-secondary/30 border border-border focus:border-primary focus:bg-white outline-none px-4 h-12 text-sm font-semibold rounded-xl transition-all shadow-sm"
