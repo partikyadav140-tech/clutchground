@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { SpeedDial } from "@/components/SpeedDial";
 
 export const Route = createFileRoute("/_app")({
   component: () => (
@@ -10,6 +11,7 @@ export const Route = createFileRoute("/_app")({
         <Outlet />
       </main>
       <Footer />
+      <SpeedDial />
     </div>
   ),
 });

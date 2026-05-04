@@ -1,6 +1,6 @@
 export function Footer() {
   return (
-    <footer className="relative border-t border-border/60 bg-card/40 mt-24 pb-12">
+    <footer className="relative border-t border-border/60 bg-card/40 mt-24 pb-28 lg:pb-12">
       <div className="absolute inset-x-0 top-0 h-px bg-fire-gradient opacity-50" />
 
       <div className="container mx-auto px-4 lg:px-8 pt-12">
