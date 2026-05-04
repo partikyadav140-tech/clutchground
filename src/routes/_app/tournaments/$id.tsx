@@ -210,7 +210,7 @@ function TournamentDetailPage() {
             <div>
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Prize Pool</div>
               {t.mode === 'Solo' ? (
-                <div className="font-display text-lg sm:text-xl font-black text-fire-gradient flex items-center gap-1">{t.per_kill_coin}/Kill | {t.first_place_coin} Win <GodCoin className="w-4 h-4 sm:w-5 sm:h-5" /></div>
+                <div className="font-display text-lg sm:text-xl font-black text-fire-gradient flex items-center gap-1">{t.per_kill_coin}/Kill | {t.first_place_coin} MVP <GodCoin className="w-4 h-4 sm:w-5 sm:h-5" /></div>
               ) : (
                 <div className="font-display text-3xl font-black text-fire-gradient flex items-center gap-1"><GodCoin className="w-7 h-7" /> {t.prize.toLocaleString()}</div>
               )}
@@ -329,7 +329,7 @@ function TournamentDetailPage() {
               {/* Stats grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[
-                  { icon: Trophy, label: "Prize Pool", value: t.mode === 'Solo' ? `${t.per_kill_coin}/Kill | ${t.first_place_coin} Win` : <span className="flex items-center gap-1"><GodCoin className="w-4 h-4" /> {t.prize.toLocaleString()}</span>, highlight: true },
+                  { icon: Trophy, label: "Prize Pool", value: t.mode === 'Solo' ? `${t.per_kill_coin}/Kill | ${t.first_place_coin} MVP` : <span className="flex items-center gap-1"><GodCoin className="w-4 h-4" /> {t.prize.toLocaleString()}</span>, highlight: true },
                   { icon: Target, label: "Entry Fee", value: t.entry === 0 ? "FREE" : <span className="flex items-center gap-1"><GodCoin className="w-4 h-4" /> {t.entry}</span> },
                   { icon: Users, label: "Mode", value: t.mode },
                   { icon: Crosshair, label: "Format", value: t.format },
@@ -419,7 +419,7 @@ function TournamentDetailPage() {
                 {t.mode === 'Solo' ? (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between p-4 rounded-xl border border-primary/40 bg-primary/5">
-                      <span className="font-display font-bold tracking-wide text-sm">🥇 1st Place (BOOYAH)</span>
+                      <span className="font-display font-bold tracking-wide text-sm">🥇 MVP</span>
                       <span className="font-display font-black text-fire-gradient text-lg flex items-center gap-1">
                         <GodCoin className="w-5 h-5" /> {t.first_place_coin}
                       </span>
@@ -499,7 +499,7 @@ function TournamentDetailPage() {
                 <div>
                   <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Prize Pool</div>
                   {t.mode === 'Solo' ? (
-                    <div className="font-display text-lg sm:text-xl font-black text-fire-gradient flex items-center gap-1">{t.per_kill_coin}/Kill | {t.first_place_coin} Win <GodCoin className="w-4 h-4 sm:w-5 sm:h-5" /></div>
+                    <div className="font-display text-lg sm:text-xl font-black text-fire-gradient flex items-center gap-1">{t.per_kill_coin}/Kill | {t.first_place_coin} MVP <GodCoin className="w-4 h-4 sm:w-5 sm:h-5" /></div>
                   ) : (
                     <div className="font-display text-3xl font-black text-fire-gradient flex items-center gap-1"><GodCoin className="w-7 h-7" /> {t.prize.toLocaleString()}</div>
                   )}

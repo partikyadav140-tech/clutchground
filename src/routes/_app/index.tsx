@@ -237,7 +237,7 @@ function FeaturedTournamentCard({ t, i }: { t: any; i: number }) {
         </div>
         
         <div className="flex items-center gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">
-          <div className="flex items-center gap-1"><Trophy className="w-3 h-3 text-primary" /> {t.mode === 'Solo' ? <span className="flex items-center gap-1">{t.per_kill_coin}/Kill | {t.first_place_coin} Win <GodCoin className="w-3 h-3" /></span> : <span className="flex items-center gap-1"><GodCoin className="w-3 h-3" /> {t.prize}</span>}</div>
+          <div className="flex items-center gap-1"><Trophy className="w-3 h-3 text-primary" /> {t.mode === 'Solo' ? <span className="flex items-center gap-1">{t.per_kill_coin}/Kill | {t.first_place_coin} MVP <GodCoin className="w-3 h-3" /></span> : <span className="flex items-center gap-1"><GodCoin className="w-3 h-3" /> {t.prize}</span>}</div>
           <div className="flex items-center gap-1"><Users className="w-3 h-3 text-primary" /> {t.format}</div>
         </div>
 

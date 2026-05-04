@@ -267,7 +267,7 @@ function AdminTournamentsPage() {
                 {formData.mode === 'Solo' && (
                   <>
                     <Input label="Coins Per Kill" type="number" value={formData.per_kill_coin} onChange={e => setFormData({...formData, per_kill_coin: Number(e.target.value)})} />
-                    <Input label="1st Position Coins" type="number" value={formData.first_place_coin} onChange={e => setFormData({...formData, first_place_coin: Number(e.target.value)})} />
+                    <Input label="MVP Coins" type="number" value={formData.first_place_coin} onChange={e => setFormData({...formData, first_place_coin: Number(e.target.value)})} />
                   </>
                 )}
                 <Input label="Total Slots" type="number" value={formData.slots} onChange={e => setFormData({...formData, slots: Number(e.target.value)})} />
@@ -346,7 +346,7 @@ function AdminTournamentsPage() {
                             <div className="bg-secondary/30 rounded-xl p-3 border border-border/50">
                               <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-0.5">Prize Pool</div>
                               <div className="font-display font-black text-primary text-base flex items-center gap-1 flex-wrap">
-                                {t.mode === 'Solo' ? <><GodCoin className="w-4 h-4" /> {t.per_kill_coin}/Kill | <GodCoin className="w-4 h-4" /> {t.first_place_coin} Win</> : <><GodCoin className="w-4 h-4" /> {t.prize}</>}
+                                {t.mode === 'Solo' ? <><GodCoin className="w-4 h-4" /> {t.per_kill_coin}/Kill | <GodCoin className="w-4 h-4" /> {t.first_place_coin} MVP</> : <><GodCoin className="w-4 h-4" /> {t.prize}</>}
                               </div>
                             </div>
                             <div className="bg-secondary/30 rounded-xl p-3 border border-border/50">
