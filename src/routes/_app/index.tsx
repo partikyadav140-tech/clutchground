@@ -48,7 +48,7 @@ function HomePage() {
   const displayTournaments = allTournaments
     .filter((t: any) => Boolean(t.is_hero) && t.is_hero !== "0" && t.is_hero !== 0 && t.is_hero !== "false" && t.is_hero !== "f");
 
-  const upcomingTournaments = allTournaments;
+  const upcomingTournaments = allTournaments.filter((t: any) => !Boolean(t.is_hero) || t.is_hero === "0" || t.is_hero === 0 || t.is_hero === "false" || t.is_hero === "f");
 
   const totalBalance = user ? ((user as any).deposit_balance || 0) + ((user as any).winning_balance || 0) : 0;
 
@@ -140,8 +140,8 @@ function HomePage() {
       <div className="px-4 mt-6 space-y-8 overflow-hidden">
         
         {/* Promotional Banner */}
-        <div className="relative w-full aspect-[2/1] rounded-2xl overflow-hidden shadow-sm border border-border block">
-          <img src="/hero-image.png" alt="Hero Banner" className="w-full h-full object-cover" />
+        <div className="relative w-full shadow-sm block bg-black/5">
+          <img src="/new-banner.png" alt="Hero Banner" className="w-full h-auto object-contain" />
         </div>
 
         {/* Featured Tournaments (Horizontal Scroll) */}
@@ -211,7 +211,7 @@ function FeaturedTournamentCard({ t, i }: { t: any; i: number }) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: i * 0.1 }}
-      className="shrink-0 w-[85vw] max-w-[320px] snap-center rounded-[1.25rem] bg-white border border-border shadow-[0_8px_24px_oklch(0_0_0/0.06)] overflow-hidden flex flex-col"
+      className="shrink-0 w-[85vw] max-w-[320px] snap-center rounded-[1.25rem] bg-white border border-border shadow-[0_8px_24px_oklch(0_0_0/0.06)] overflow-hidden flex flex-col hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)] transition-all duration-300 transform perspective-1000"
     >
       <div className="relative h-32 w-full overflow-hidden">
         <img src={poster} alt={t.title} className="w-full h-full object-cover" />
@@ -231,20 +231,20 @@ function FeaturedTournamentCard({ t, i }: { t: any; i: number }) {
       <div className="p-3.5 flex flex-col flex-1">
         <div className="flex justify-between items-start gap-2 mb-2">
           <h4 className="font-display font-black text-base leading-tight line-clamp-1">{t.title}</h4>
-          <div className="bg-primary/10 text-primary px-2 py-1 rounded-md text-[10px] font-black whitespace-nowrap">
-            {t.entry === 0 ? "FREE" : `₹${t.entry}`}
+          <div className="bg-primary/10 text-primary px-2 py-1 rounded-md text-[10px] font-black whitespace-nowrap flex items-center gap-1">
+            {t.entry === 0 ? "FREE" : <><GodCoin className="w-3 h-3" /> {t.entry}</>}
           </div>
         </div>
         
         <div className="flex items-center gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3">
-          <div className="flex items-center gap-1"><Trophy className="w-3 h-3 text-primary" /> ₹{t.prize}</div>
+          <div className="flex items-center gap-1"><Trophy className="w-3 h-3 text-primary" /> {t.mode === 'Solo' ? <span className="flex items-center gap-1">{t.per_kill_coin}/Kill | {t.first_place_coin} Win <GodCoin className="w-3 h-3" /></span> : <span className="flex items-center gap-1"><GodCoin className="w-3 h-3" /> {t.prize}</span>}</div>
           <div className="flex items-center gap-1"><Users className="w-3 h-3 text-primary" /> {t.format}</div>
         </div>
 
         <div className="mt-auto">
           <div className="flex justify-between text-[10px] font-bold text-muted-foreground mb-1.5">
             <span>{t.filled}/{t.slots} Joined</span>
-            <span className="text-primary flex items-center gap-1"><Clock className="w-3 h-3"/> {t.startsAt}</span>
+            <span className="text-primary flex items-center gap-1"><Clock className="w-3 h-3"/> {t.startsAt || t.startsat}</span>
           </div>
           <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden mb-3">
             <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${fillPct}%` }} />
@@ -283,14 +283,14 @@ function CompactTournamentCard({ t, i }: { t: any; i: number }) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: i * 0.1 }}
-      className="shrink-0 w-[85vw] max-w-[320px] snap-center bg-white rounded-[1rem] border border-border p-3 flex flex-col gap-3 shadow-sm active:scale-[0.98] transition-transform"
+      className="shrink-0 w-[85vw] max-w-[320px] snap-center bg-white rounded-[1rem] border border-border p-3 flex flex-col gap-3 shadow-sm hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)] transition-all duration-300 transform perspective-1000"
     >
       <div className="flex gap-3">
         <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative">
           <img src={poster} alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          <span className="absolute bottom-1 left-1 text-white text-[8px] font-black uppercase bg-primary px-1.5 py-0.5 rounded">
-            {t.entry === 0 ? "FREE" : `₹${t.entry}`}
+          <span className="absolute bottom-1 left-1 text-white text-[8px] font-black uppercase bg-primary px-1.5 py-0.5 rounded flex items-center gap-1">
+            {t.entry === 0 ? "FREE" : <><GodCoin className="w-2.5 h-2.5" /> {t.entry}</>}
           </span>
         </div>
         
@@ -301,7 +301,7 @@ function CompactTournamentCard({ t, i }: { t: any; i: number }) {
             <span className="bg-secondary px-1.5 py-0.5 rounded text-[9px]">{t.format}</span>
           </div>
           <div className="text-[10px] font-bold text-primary flex items-center gap-1">
-            <Clock className="w-3 h-3" /> {t.startsAt}
+            <Clock className="w-3 h-3" /> {t.startsAt || t.startsat}
           </div>
         </div>
       </div>
@@ -310,7 +310,7 @@ function CompactTournamentCard({ t, i }: { t: any; i: number }) {
         <div className="flex-1">
           <div className="flex justify-between text-[8px] font-bold text-muted-foreground mb-1">
             <span>{t.filled}/{t.slots} Joined</span>
-            <span className="text-primary font-black">Prize: ₹{t.prize}</span>
+            <span className="text-primary font-black flex items-center gap-1">{t.mode === 'Solo' ? <>{t.per_kill_coin}/Kill <GodCoin className="w-2.5 h-2.5" /></> : <>Prize: <GodCoin className="w-2.5 h-2.5" /> {t.prize}</>}</span>
           </div>
           <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
             <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${fillPct}%` }} />

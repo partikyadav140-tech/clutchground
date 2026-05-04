@@ -149,7 +149,7 @@ function AdminPayoutsPage() {
                         <div className="font-display text-2xl font-black text-foreground flex items-center justify-start sm:justify-end gap-1.5">
                           <GodCoin className="w-5 h-5" /> {p.amount}
                         </div>
-                        <div className="text-xs font-semibold text-muted-foreground mt-0.5">≈ ₹{p.amount} INR</div>
+                        <div className="text-xs font-semibold text-muted-foreground mt-0.5">≈ {p.amount} INR</div>
                       </div>
                       
                       {p.status === 'pending' && (

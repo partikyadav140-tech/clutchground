@@ -104,13 +104,31 @@ async function initDb() {
         banner TEXT NOT NULL DEFAULT 'from-orange-600 to-red-700',
         room_id TEXT,
         room_pass TEXT,
-        is_hero BOOLEAN DEFAULT false
+        is_hero BOOLEAN DEFAULT false,
+        hosted_by TEXT,
+        per_kill_coin INTEGER DEFAULT 0,
+        first_place_coin INTEGER DEFAULT 0
       );
 
       DO $$ 
       BEGIN 
         BEGIN
           ALTER TABLE tournaments ADD COLUMN is_hero BOOLEAN DEFAULT false;
+        EXCEPTION
+          WHEN duplicate_column THEN null;
+        END;
+        BEGIN
+          ALTER TABLE tournaments ADD COLUMN hosted_by TEXT;
+        EXCEPTION
+          WHEN duplicate_column THEN null;
+        END;
+        BEGIN
+          ALTER TABLE tournaments ADD COLUMN per_kill_coin INTEGER DEFAULT 0;
+        EXCEPTION
+          WHEN duplicate_column THEN null;
+        END;
+        BEGIN
+          ALTER TABLE tournaments ADD COLUMN first_place_coin INTEGER DEFAULT 0;
         EXCEPTION
           WHEN duplicate_column THEN null;
         END;

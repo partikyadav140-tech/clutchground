@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 const stats = [
   { v: "120K+", l: "Players", icon: "👾" },
-  { v: "₹50L+", l: "Prize Pool", icon: "💰" },
+  { v: "50L+ Coins", l: "Prize Pool", icon: "💰" },
   { v: "850+", l: "Matches", icon: "⚔️" },
   { v: "24/7", l: "Support", icon: "🔥" },
 ];

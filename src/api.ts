@@ -85,28 +85,28 @@ export const getTournaments = createServerFn({ method: "GET" })
 export const addTournament = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db } = await import("./lib/db");
-    const { title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id, room_pass } = data as unknown as any;
+    const { title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id, room_pass, hosted_by, per_kill_coin, first_place_coin } = data as unknown as any;
     const stmt = db.prepare(`
-      INSERT INTO tournaments (title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id, room_pass)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO tournaments (title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id, room_pass, hosted_by, per_kill_coin, first_place_coin)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    await stmt.run(title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id || null, room_pass || null);
+    await stmt.run(title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id || null, room_pass || null, hosted_by || null, per_kill_coin || 0, first_place_coin || 0);
     return { success: true };
   });
 
 export const updateTournament = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db } = await import("./lib/db");
-    const { id, title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id, room_pass } = data as unknown as any;
+    const { id, title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id, room_pass, hosted_by, per_kill_coin, first_place_coin } = data as unknown as any;
     
     const old = await db.prepare('SELECT room_id, room_pass FROM tournaments WHERE id = ?').get(id) as any;
 
     const stmt = db.prepare(`
       UPDATE tournaments 
-      SET title=?, game=?, mode=?, format=?, entry=?, prize=?, slots=?, filled=?, startsAt=?, status=?, banner=?, room_id=?, room_pass=?
+      SET title=?, game=?, mode=?, format=?, entry=?, prize=?, slots=?, filled=?, startsAt=?, status=?, banner=?, room_id=?, room_pass=?, hosted_by=?, per_kill_coin=?, first_place_coin=?
       WHERE id=?
     `);
-    await stmt.run(title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id || null, room_pass || null, id);
+    await stmt.run(title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id || null, room_pass || null, hosted_by || null, per_kill_coin || 0, first_place_coin || 0, id);
 
     if ((room_id && room_id !== old?.room_id) || (room_pass && room_pass !== old?.room_pass)) {
       const registrations = await db.prepare('SELECT user_id FROM registrations WHERE tournament_id = ?').all(id) as any[];
@@ -180,6 +180,7 @@ export const registerForTournament = createServerFn({ method: "POST" })
         }
 
         await tx.prepare('UPDATE users SET deposit_balance = ?, winning_balance = ? WHERE id = ?').run(newDeposit, newWinning, userId);
+        await tx.prepare('INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)').run(userId, t.entry, 'tournament_entry', `Entry Fee: ${t.title}`);
       }
 
       let needsApproval = false;
@@ -506,7 +507,7 @@ export const getMyMatches = createServerFn({ method: "POST" })
     const teamId2 = leaderTeam ? leaderTeam.id : null;
 
     return db.prepare(`
-      SELECT t.id, t.title as name, t.startsAt as date, t.status as match_status, t.prize, t.format, t.room_id, t.room_pass,
+      SELECT t.id, t.title as name, t.startsAt as date, t.status as match_status, t.prize, t.mode, t.format, t.room_id, t.room_pass, t.per_kill_coin, t.first_place_coin,
              r.kills, r.position, r.points, 'approved' as reg_status
       FROM registrations r
       JOIN tournaments t ON r.tournament_id = t.id
@@ -514,7 +515,7 @@ export const getMyMatches = createServerFn({ method: "POST" })
 
       UNION ALL
 
-      SELECT t.id, t.title as name, t.startsAt as date, t.status as match_status, t.prize, t.format, null as room_id, null as room_pass,
+      SELECT t.id, t.title as name, t.startsAt as date, t.status as match_status, t.prize, t.mode, t.format, null as room_id, null as room_pass, t.per_kill_coin, t.first_place_coin,
              0 as kills, 0 as position, 0 as points, req.status as reg_status
       FROM tournament_requests req
       JOIN tournaments t ON req.tournament_id = t.id
@@ -547,7 +548,7 @@ export const saveTournamentResults = createServerFn({ method: "POST" })
     const { tournamentId, results } = data as any;
     
     await db.transaction(async (tx) => {
-      const tourney = await tx.prepare('SELECT title, prize, mode FROM tournaments WHERE id = ?').get(tournamentId) as any;
+      const tourney = await tx.prepare('SELECT title, prize, mode, per_kill_coin, first_place_coin FROM tournaments WHERE id = ?').get(tournamentId) as any;
       if (!tourney) throw new Error("Tournament not found");
 
       const stmt = tx.prepare('UPDATE registrations SET kills = ?, position = ?, points = ?, awarded_prize = ? WHERE id = ? AND tournament_id = ?');
@@ -609,9 +610,13 @@ export const saveTournamentResults = createServerFn({ method: "POST" })
         let awardedPrize = 0;
         let rankForPrize = tourney.mode === 'Duo' ? r.matchPosition : overallRank;
 
-        if (rankForPrize === 1 && prize1 > 0) awardedPrize = prize1;
-        else if (rankForPrize === 2 && prize2 > 0) awardedPrize = prize2;
-        else if (rankForPrize === 3 && prize3 > 0) awardedPrize = prize3;
+        if (tourney.mode === 'Solo') {
+          awardedPrize = (r.killsNum * (tourney.per_kill_coin || 0)) + (rankForPrize === 1 ? (tourney.first_place_coin || 0) : 0);
+        } else {
+          if (rankForPrize === 1 && prize1 > 0) awardedPrize = prize1;
+          else if (rankForPrize === 2 && prize2 > 0) awardedPrize = prize2;
+          else if (rankForPrize === 3 && prize3 > 0) awardedPrize = prize3;
+        }
 
         await stmt.run(r.killsNum, r.matchPosition, r.calculatedPoints, awardedPrize, r.id, tournamentId);
 
@@ -619,6 +624,10 @@ export const saveTournamentResults = createServerFn({ method: "POST" })
         
         if (prizeDiff !== 0) {
           await addPrize.run(prizeDiff, r.user_id);
+          await tx.prepare('INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)').run(
+            r.user_id, Math.abs(prizeDiff), prizeDiff > 0 ? 'tournament_prize' : 'prize_deducted', 
+            prizeDiff > 0 ? `Prize Won: ${tourney.title}` : `Prize Adjusted: ${tourney.title}`
+          );
           if (oldPrize === 0 && awardedPrize > 0) {
             await insertNotif.run(r.user_id, `💰 PRIZE WON! You received ${awardedPrize} CG Coins for placing #${rankForPrize} in ${tourney.title}!`);
           } else if (prizeDiff > 0) {
@@ -742,6 +751,7 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" })
       } else {
         if (tourney.entry > 0) {
           await tx.prepare('UPDATE users SET deposit_balance = deposit_balance + ? WHERE id = ?').run(tourney.entry, req.requested_by);
+          await tx.prepare('INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)').run(req.requested_by, tourney.entry, 'refund', `Refund: ${tourney.title} Rejected`);
           await insertNotif.run(req.requested_by, `❌ Your Captain has rejected the tournament registration for ${tourney.title}. Your entry fee of ${tourney.entry} CG Coins has been refunded to your Deposit Balance.`);
         } else {
           await insertNotif.run(req.requested_by, `❌ Your Captain has rejected the tournament registration for ${tourney.title}.`);
@@ -763,6 +773,7 @@ export const processWithdrawal = createServerFn({ method: "POST" })
       if (amount <= 0) throw new Error("Withdraw amount must be greater than 0.");
       
       await tx.prepare('UPDATE users SET winning_balance = winning_balance - ? WHERE id = ?').run(amount, userId);
+      await tx.prepare('INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)').run(userId, amount, 'withdrawal', `Withdrawal Requested`);
       
       await tx.prepare('INSERT INTO withdrawals (user_id, amount, upi_id, upi_number) VALUES (?, ?, ?, ?)').run(userId, amount, upiId, upiNumber);
       
@@ -798,6 +809,7 @@ export const updatePayoutStatus = createServerFn({ method: "POST" })
       } else if (status === 'rejected') {
         // Refund the coins
         await tx.prepare('UPDATE users SET winning_balance = winning_balance + ? WHERE id = ?').run(amount, userId);
+        await tx.prepare('INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)').run(userId, amount, 'refund', `Withdrawal Refunded`);
         await tx.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(userId, `❌ Your withdrawal of ${amount} CG Coins was rejected. The coins have been refunded to your wallet.`);
       }
     });

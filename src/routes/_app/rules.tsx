@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_app/rules")({
             "Submit screenshot proof within 30 min of match end. Late submissions invalidated.",
             "Admin verdicts on disputes are final. Appeals via support.",
             "Prize money credited to wallet within 24 hours of admin verification.",
-            "Withdrawals require KYC. Minimum ₹500. Processed within 48 hours.",
+            "Withdrawals require KYC. Minimum 500 Coins. Processed within 48 hours.",
           ].map((r, i) => (
             <motion.div 
               initial={{ opacity: 0, y: 10 }}

@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { GodCoin } from "@/components/GodCoin";
 
 export const Route = createFileRoute("/_app/matches")({
   head: () => ({ meta: [{ title: "My Matches — Professional Esports Arena" }] }),
@@ -173,7 +174,7 @@ function MatchesPage() {
                     <div className="flex items-center gap-4">
                       <span className="flex items-center gap-1"><Crosshair className="w-3.5 h-3.5" /> {m.format}</span>
                     </div>
-                    <span className="text-primary flex items-center gap-1"><Trophy className="w-3.5 h-3.5" /> ₹{m.prize}</span>
+                    <span className="text-primary flex items-center gap-1"><Trophy className="w-3.5 h-3.5" /> {m.mode === 'Solo' ? <>{m.per_kill_coin}/Kill | {m.first_place_coin} Win <GodCoin className="w-3.5 h-3.5" /></> : <><GodCoin className="w-3.5 h-3.5" /> {m.prize}</>}</span>
                   </div>
                 </Link>
               </motion.div>

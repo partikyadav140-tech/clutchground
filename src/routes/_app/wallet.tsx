@@ -119,7 +119,7 @@ function WalletPage() {
               <GodCoin className="w-8 h-8 sm:w-10 sm:h-10 text-white drop-shadow-sm" />
               <div className="font-display text-5xl sm:text-6xl font-black drop-shadow-sm">{totalBalance}</div>
             </div>
-            <span className="text-xs font-semibold text-white/90 bg-black/20 px-3 py-1 rounded-full inline-block mt-2">1 Coin = ₹1</span>
+            <span className="text-xs font-semibold text-white/90 bg-black/20 px-3 py-1 rounded-full inline-block mt-2">1 Coin = 1 INR</span>
           </div>
         </div>
 
@@ -186,7 +186,7 @@ function WalletPage() {
         ) : transactions.length > 0 ? (
           <div className="space-y-3">
             {transactions.map((tx) => {
-              const isPositive = tx.type === 'deposit_added' || tx.type === 'winnings_added';
+              const isPositive = ['deposit_added', 'winnings_added', 'tournament_prize', 'refund'].includes(tx.type);
               return (
                 <div key={tx.id} className="bg-white rounded-[1rem] border border-border p-4 flex items-center justify-between shadow-sm">
                   <div className="flex items-center gap-3">
@@ -200,7 +200,7 @@ function WalletPage() {
                       </p>
                     </div>
                   </div>
-                  <div className={`flex items-center gap-1 font-black ${isPositive ? 'text-emerald-600' : 'text-foreground'}`}>
+                  <div className={`flex items-center gap-1 font-black ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
                     {isPositive ? '+' : '-'} <GodCoin className="w-3 h-3" /> {tx.amount}
                   </div>
                 </div>

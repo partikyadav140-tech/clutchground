@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Filter, Eye, Trophy, Crosshair, Zap, Users, Flame } from "lucide-react";
 import { motion } from "framer-motion";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
+import { GodCoin } from "@/components/GodCoin";
 
 export const Route = createFileRoute("/_app/tournaments/")({
   head: () => ({
@@ -162,7 +163,7 @@ function TournamentCard({ t, i }: { t: any; i: number }) {
       <div className="p-4 flex flex-col flex-1 relative">
         <div className="absolute right-4 -top-6 bg-white rounded-xl shadow-md border border-border px-3 py-1.5 flex flex-col items-center">
           <span className="text-[9px] font-bold uppercase text-muted-foreground">Entry</span>
-          <span className="font-display font-black text-primary text-sm leading-none mt-0.5">{t.entry === 0 ? "FREE" : `₹${t.entry}`}</span>
+          <span className="font-display font-black text-primary text-sm leading-none mt-0.5 flex items-center gap-1">{t.entry === 0 ? "FREE" : <><GodCoin className="w-3.5 h-3.5" /> {t.entry}</>}</span>
         </div>
 
         <div className="flex justify-between items-start gap-2 mb-2 pr-16">
@@ -170,7 +171,7 @@ function TournamentCard({ t, i }: { t: any; i: number }) {
         </div>
         
         <div className="flex items-center gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-4">
-          <div className="flex items-center gap-1"><Trophy className="w-3.5 h-3.5 text-primary" /> ₹{t.prize}</div>
+          <div className="flex items-center gap-1"><Trophy className="w-3.5 h-3.5 text-primary" /> <GodCoin className="w-3.5 h-3.5" /> {t.prize}</div>
           <div className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {t.format}</div>
           <div className="flex items-center gap-1"><Crosshair className="w-3.5 h-3.5" /> {t.mode}</div>
         </div>

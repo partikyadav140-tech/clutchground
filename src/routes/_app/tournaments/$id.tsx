@@ -8,10 +8,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
+import { GodCoin } from "@/components/GodCoin";
 import { confirmDialog } from "@/components/ConfirmDialog";
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import { useAuth } from "../../../lib/auth-client";
+import { GodCoin } from "@/components/GodCoin";
 
 export const Route = createFileRoute("/_app/tournaments/$id")({
   component: TournamentDetailPage,
@@ -196,11 +198,15 @@ function TournamentDetailPage() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Prize Pool</div>
-              <div className="font-display text-3xl font-black text-fire-gradient">₹{t.prize.toLocaleString()}</div>
+              {t.mode === 'Solo' ? (
+                <div className="font-display text-lg sm:text-xl font-black text-fire-gradient flex items-center gap-1">{t.per_kill_coin}/Kill | {t.first_place_coin} Win <GodCoin className="w-4 h-4 sm:w-5 sm:h-5" /></div>
+              ) : (
+                <div className="font-display text-3xl font-black text-fire-gradient flex items-center gap-1"><GodCoin className="w-7 h-7" /> {t.prize.toLocaleString()}</div>
+              )}
             </div>
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Entry</div>
-              <div className="font-display text-xl font-black">{t.entry === 0 ? "FREE" : `₹${t.entry}`}</div>
+              <div className="font-display text-xl font-black flex items-center justify-end gap-1">{t.entry === 0 ? "FREE" : <><GodCoin className="w-5 h-5" /> {t.entry}</>}</div>
             </div>
           </div>
 
@@ -230,7 +236,7 @@ function TournamentDetailPage() {
               entryFee={t.entry}
               trigger={
                 <Button variant="hero" size="lg" className="w-full font-display tracking-wider">
-                  {t.entry === 0 ? "BOOK FREE SLOT" : `PAY ₹${t.entry} & JOIN`}
+                  {t.entry === 0 ? "BOOK FREE SLOT" : <span className="flex items-center gap-1.5">PAY <GodCoin className="w-4 h-4" /> {t.entry} & JOIN</span>}
                 </Button>
               }
             />
@@ -312,8 +318,8 @@ function TournamentDetailPage() {
               {/* Stats grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[
-                  { icon: Trophy, label: "Prize Pool", value: `₹${t.prize.toLocaleString()}`, highlight: true },
-                  { icon: Target, label: "Entry Fee", value: t.entry === 0 ? "FREE" : `₹${t.entry}` },
+                  { icon: Trophy, label: "Prize Pool", value: t.mode === 'Solo' ? `${t.per_kill_coin}/Kill | ${t.first_place_coin} Win` : <span className="flex items-center gap-1"><GodCoin className="w-4 h-4" /> {t.prize.toLocaleString()}</span>, highlight: true },
+                  { icon: Target, label: "Entry Fee", value: t.entry === 0 ? "FREE" : <span className="flex items-center gap-1"><GodCoin className="w-4 h-4" /> {t.entry}</span> },
                   { icon: Users, label: "Mode", value: t.mode },
                   { icon: Crosshair, label: "Format", value: t.format },
                   { icon: Calendar, label: "Starts", value: t.startsAt },
@@ -342,7 +348,7 @@ function TournamentDetailPage() {
                 <div className="text-sm text-muted-foreground leading-relaxed space-y-3">
                   <p>
                     Welcome to the ultimate battleground! <strong className="text-foreground">{t.title}</strong> is a high-stakes {t.game} event where the best of the best compete for glory and a share of the{" "}
-                    <span className="text-primary font-bold">₹{t.prize.toLocaleString()}</span> prize pool.
+                    <span className="text-primary font-bold inline-flex items-center gap-1"><GodCoin className="w-4 h-4" /> {t.prize.toLocaleString()}</span> prize pool.
                   </p>
                   <p>
                     Gather your squad, strategize your drops, and fight for survival in this intense {t.mode} format. Whether you are a seasoned veteran or a rising star, this is your chance to prove your worth.
@@ -399,20 +405,37 @@ function TournamentDetailPage() {
 
               <div className="rounded-2xl border border-border/60 bg-card-gradient p-5">
                 <div className="text-xs font-display uppercase tracking-widest text-primary mb-4">Prize Distribution</div>
-                <div className="space-y-2">
-                  {[
-                    { rank: "🥇 1st Place", pct: 50, color: "border-amber-500/40 bg-amber-500/5" },
-                    { rank: "🥈 2nd Place", pct: 30, color: "border-slate-400/40 bg-slate-400/5" },
-                    { rank: "🥉 3rd Place", pct: 20, color: "border-amber-700/40 bg-amber-700/5" },
-                  ].map((p) => (
-                    <div key={p.rank} className={`flex items-center justify-between p-4 rounded-xl border ${p.color}`}>
-                      <span className="font-display font-bold tracking-wide text-sm">{p.rank}</span>
-                      <span className="font-display font-black text-fire-gradient text-lg">
-                        ₹{Math.round((t.prize * p.pct) / 100).toLocaleString()}
+                {t.mode === 'Solo' ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-4 rounded-xl border border-primary/40 bg-primary/5">
+                      <span className="font-display font-bold tracking-wide text-sm">🥇 1st Place (BOOYAH)</span>
+                      <span className="font-display font-black text-fire-gradient text-lg flex items-center gap-1">
+                        <GodCoin className="w-5 h-5" /> {t.first_place_coin}
                       </span>
                     </div>
-                  ))}
-                </div>
+                    <div className="flex items-center justify-between p-4 rounded-xl border border-emerald-500/40 bg-emerald-500/5">
+                      <span className="font-display font-bold tracking-wide text-sm">⚔️ Per Kill</span>
+                      <span className="font-display font-black text-emerald-500 text-lg flex items-center gap-1">
+                        <GodCoin className="w-5 h-5 text-emerald-500" /> {t.per_kill_coin}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {[
+                      { rank: "🥇 1st Place", pct: 50, color: "border-amber-500/40 bg-amber-500/5" },
+                      { rank: "🥈 2nd Place", pct: 30, color: "border-slate-400/40 bg-slate-400/5" },
+                      { rank: "🥉 3rd Place", pct: 20, color: "border-amber-700/40 bg-amber-700/5" },
+                    ].map((p) => (
+                      <div key={p.rank} className={`flex items-center justify-between p-4 rounded-xl border ${p.color}`}>
+                        <span className="font-display font-bold tracking-wide text-sm">{p.rank}</span>
+                        <span className="font-display font-black text-fire-gradient text-lg flex items-center gap-1">
+                          <GodCoin className="w-5 h-5" /> {Math.round((t.prize * p.pct) / 100).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -464,11 +487,15 @@ function TournamentDetailPage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Prize Pool</div>
-                  <div className="font-display text-3xl font-black text-fire-gradient">₹{t.prize.toLocaleString()}</div>
+                  {t.mode === 'Solo' ? (
+                    <div className="font-display text-lg sm:text-xl font-black text-fire-gradient flex items-center gap-1">{t.per_kill_coin}/Kill | {t.first_place_coin} Win <GodCoin className="w-4 h-4 sm:w-5 sm:h-5" /></div>
+                  ) : (
+                    <div className="font-display text-3xl font-black text-fire-gradient flex items-center gap-1"><GodCoin className="w-7 h-7" /> {t.prize.toLocaleString()}</div>
+                  )}
                 </div>
                 <div className="text-right">
                   <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Entry</div>
-                  <div className="font-display text-xl font-black">{t.entry === 0 ? "FREE" : `₹${t.entry}`}</div>
+                  <div className="font-display text-xl font-black flex items-center justify-end gap-1">{t.entry === 0 ? "FREE" : <><GodCoin className="w-5 h-5" /> {t.entry}</>}</div>
                 </div>
               </div>
 
@@ -496,7 +523,7 @@ function TournamentDetailPage() {
                   entryFee={t.entry}
                   trigger={
                     <Button variant="hero" size="lg" className="w-full font-display tracking-wider">
-                      {t.entry === 0 ? "BOOK FREE SLOT" : `PAY ₹${t.entry} & JOIN`}
+                      {t.entry === 0 ? "BOOK FREE SLOT" : <span className="flex items-center gap-1.5">PAY <GodCoin className="w-5 h-5" /> {t.entry} & JOIN</span>}
                     </Button>
                   }
                 />

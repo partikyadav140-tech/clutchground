@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { confirmDialog } from "@/components/ConfirmDialog";
 import { motion } from "framer-motion";
+import { GodCoin } from "@/components/GodCoin";
 
 export const Route = createFileRoute("/_app/admin/tournaments")({
   head: () => ({ meta: [{ title: "Tournaments Admin — Professional Esports Arena" }] }),
@@ -88,7 +89,7 @@ function AdminTournamentsPage() {
   const [formData, setFormData] = useState({
     title: "", game: "Free Fire", mode: "Squad", format: "Battle Royale",
     entry: 0, prize: 0, slots: 0, filled: 0, startsAt: "", status: "open", banner: "from-orange-600 to-red-700",
-    room_id: "", room_pass: ""
+    room_id: "", room_pass: "", hosted_by: "", per_kill_coin: 0, first_place_coin: 0
   });
 
   if (loading) return (
@@ -195,7 +196,7 @@ function AdminTournamentsPage() {
 
   const openEdit = (t: any) => {
     setEditingT(t);
-    setFormData({ ...t, startsAt: t.startsAt || t.startsat || "", room_id: t.room_id || "", room_pass: t.room_pass || "" });
+    setFormData({ ...t, startsAt: t.startsAt || t.startsat || "", room_id: t.room_id || "", room_pass: t.room_pass || "", hosted_by: t.hosted_by || "", per_kill_coin: t.per_kill_coin || 0, first_place_coin: t.first_place_coin || 0 });
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -222,7 +223,7 @@ function AdminTournamentsPage() {
           <div className="mt-6 flex flex-col sm:flex-row gap-3">
             <Button 
               className="w-full h-12 rounded-xl font-bold bg-primary text-white shadow-primary"
-              onClick={() => { setEditingT(null); setFormData({ title: "", game: "Free Fire", mode: "Squad", format: "Battle Royale", entry: 0, prize: 0, slots: 0, filled: 0, startsAt: "", status: "open", banner: "from-orange-600 to-red-700", room_id: "", room_pass: "" }); setShowForm(true); }}
+              onClick={() => { setEditingT(null); setFormData({ title: "", game: "Free Fire", mode: "Squad", format: "Battle Royale", entry: 0, prize: 0, slots: 0, filled: 0, startsAt: "", status: "open", banner: "from-orange-600 to-red-700", room_id: "", room_pass: "", hosted_by: "", per_kill_coin: 0, first_place_coin: 0 }); setShowForm(true); }}
             >
               <Plus className="w-5 h-5 mr-2" /> Create New Event
             </Button>
@@ -263,6 +264,12 @@ function AdminTournamentsPage() {
                 <Input label="Format" value={formData.format} onChange={e => setFormData({...formData, format: e.target.value})} placeholder="e.g. Battle Royale" />
                 <Input label="Entry Fee (Coins)" type="number" value={formData.entry} onChange={e => setFormData({...formData, entry: Number(e.target.value)})} />
                 <Input label="Prize Pool (Coins)" type="number" value={formData.prize} onChange={e => setFormData({...formData, prize: Number(e.target.value)})} />
+                {formData.mode === 'Solo' && (
+                  <>
+                    <Input label="Coins Per Kill" type="number" value={formData.per_kill_coin} onChange={e => setFormData({...formData, per_kill_coin: Number(e.target.value)})} />
+                    <Input label="1st Position Coins" type="number" value={formData.first_place_coin} onChange={e => setFormData({...formData, first_place_coin: Number(e.target.value)})} />
+                  </>
+                )}
                 <Input label="Total Slots" type="number" value={formData.slots} onChange={e => setFormData({...formData, slots: Number(e.target.value)})} />
                 <Input label="Filled Slots" type="number" value={formData.filled} onChange={e => setFormData({...formData, filled: Number(e.target.value)})} />
                 <Input label="Starts At (ISO Date)" value={formData.startsAt} onChange={e => setFormData({...formData, startsAt: e.target.value})} required placeholder="YYYY-MM-DD HH:MM:SS" />
@@ -277,6 +284,7 @@ function AdminTournamentsPage() {
                 </div>
                 <Input label="Room ID (Optional)" value={formData.room_id} onChange={e => setFormData({...formData, room_id: e.target.value})} placeholder="Will be hidden until 10m before" />
                 <Input label="Room Password (Optional)" value={formData.room_pass} onChange={e => setFormData({...formData, room_pass: e.target.value})} placeholder="Will be hidden until 10m before" />
+                <Input label="Hosted By" value={formData.hosted_by} onChange={e => setFormData({...formData, hosted_by: e.target.value})} placeholder="Host Name" />
               </div>
               
               <div className="pt-4 mt-4 border-t border-border/50">
@@ -337,7 +345,9 @@ function AdminTournamentsPage() {
                           <div className="grid grid-cols-2 gap-3 mt-4">
                             <div className="bg-secondary/30 rounded-xl p-3 border border-border/50">
                               <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-0.5">Prize Pool</div>
-                              <div className="font-display font-black text-primary text-base">₹{t.prize}</div>
+                              <div className="font-display font-black text-primary text-base flex items-center gap-1 flex-wrap">
+                                {t.mode === 'Solo' ? <><GodCoin className="w-4 h-4" /> {t.per_kill_coin}/Kill | <GodCoin className="w-4 h-4" /> {t.first_place_coin} Win</> : <><GodCoin className="w-4 h-4" /> {t.prize}</>}
+                              </div>
                             </div>
                             <div className="bg-secondary/30 rounded-xl p-3 border border-border/50">
                               <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-0.5">Slots Filled</div>

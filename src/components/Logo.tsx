@@ -1,4 +1,4 @@
-import logo from "@/assets/god-logo.png";
+import logo from "@/assets/new-logo.png";
 import { Link } from "@tanstack/react-router";
 
 export function Logo({ size = 40, withText = true }: { size?: number; withText?: boolean }) {
