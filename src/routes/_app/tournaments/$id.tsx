@@ -160,16 +160,16 @@ function TournamentDetailPage() {
 
   return (
     <div className="mb-safe lg:mb-0 min-h-[100svh] bg-background" style={{
-      '--background': 'oklch(0.12 0.01 260)',
-      '--foreground': 'oklch(0.98 0.005 255)',
-      '--card': 'oklch(0.15 0.02 260)',
-      '--card-foreground': 'oklch(0.98 0.005 255)',
-      '--muted': 'oklch(0.20 0.02 260)',
-      '--muted-foreground': 'oklch(0.65 0.02 260)',
-      '--border': 'oklch(0.22 0.02 260)',
-      '--secondary': 'oklch(0.18 0.02 260)',
-      '--secondary-foreground': 'oklch(0.98 0.005 255)',
-      '--gradient-card': 'linear-gradient(145deg, oklch(0.16 0.02 260), oklch(0.12 0.01 260))'
+      '--background': 'oklch(0.97 0.01 260)',
+      '--foreground': 'oklch(0.15 0.02 260)',
+      '--card': 'oklch(0.99 0.005 260)',
+      '--card-foreground': 'oklch(0.15 0.02 260)',
+      '--muted': 'oklch(0.95 0.01 260)',
+      '--muted-foreground': 'oklch(0.45 0.02 260)',
+      '--border': 'oklch(0.92 0.01 260)',
+      '--secondary': 'oklch(0.95 0.01 260)',
+      '--secondary-foreground': 'oklch(0.15 0.02 260)',
+      '--gradient-card': 'linear-gradient(145deg, oklch(1 0 0), oklch(0.97 0.01 260))'
     } as any}>
       <div className="bg-background text-foreground min-h-[100svh] pb-10">
       {/* ─── Hero Banner ─── */}
