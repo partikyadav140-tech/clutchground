@@ -7,18 +7,24 @@ export const loginUser = createServerFn({ method: "POST" }).handler(async ({ dat
   const { phone, password } = data as unknown as { phone: string; password: string };
   const normalizedPhone = typeof phone === "string" ? phone.trim() : phone;
 
+  console.log("Login attempt - Raw phone:", phone, "Normalized phone:", normalizedPhone);
+
   if (!normalizedPhone || !/^\d{10}$/.test(normalizedPhone)) {
+    console.log("Phone validation failed:", { normalizedPhone, isValid: /^\d{10}$/.test(normalizedPhone) });
     throw new Error("Phone number must be exactly 10 digits");
   }
 
   const userStmt = db.prepare("SELECT * FROM users WHERE phone = ?");
   const user = (await userStmt.get(normalizedPhone)) as any;
+  console.log("User lookup result:", user ? { id: user.id, username: user.username, role: user.role, phone: user.phone } : null);
 
   if (!user) {
+    console.log("No user found with phone:", normalizedPhone);
     throw new Error("Invalid phone number or password");
   }
 
   if (user.password !== password) {
+    console.log("Password mismatch for user:", user.username);
     throw new Error("Invalid phone number or password");
   }
 
