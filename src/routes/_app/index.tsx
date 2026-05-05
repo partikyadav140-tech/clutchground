@@ -214,10 +214,6 @@ function HomePage() {
             alt="Hero Banner"
             className="w-full h-auto max-h-[40rem] object-contain object-center"
           />
-          <div className="pointer-events-none absolute top-4 left-4 w-16 h-16 border-t-2 border-l-2 border-primary/60 rounded-br-[2rem]" />
-          <div className="pointer-events-none absolute top-4 right-4 w-16 h-16 border-t-2 border-r-2 border-primary/60 rounded-bl-[2rem]" />
-          <div className="pointer-events-none absolute bottom-4 left-4 w-16 h-16 border-b-2 border-l-2 border-primary/60 rounded-tr-[2rem]" />
-          <div className="pointer-events-none absolute bottom-4 right-4 w-16 h-16 border-b-2 border-r-2 border-primary/60 rounded-tl-[2rem]" />
         </div>
 
         {/* Featured Tournaments (Horizontal Scroll) */}
