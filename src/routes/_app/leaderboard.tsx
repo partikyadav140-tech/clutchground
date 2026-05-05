@@ -110,7 +110,7 @@ function LeaderboardPage() {
                   <span className="text-lg font-black tracking-tight">{currentUser.team || "Your Team"}</span>
                 </div>
                 <p className="text-sm text-slate-300 mt-2">
-                  {currentUser.points.toLocaleString()} points · {currentUser.kills || 0} kills · {currentUser.wins || 0} wins
+                  {currentUser.points.toLocaleString()} points
                 </p>
               </div>
               <div className="rounded-3xl bg-white/10 px-4 py-3 text-right">
@@ -131,8 +131,7 @@ function LeaderboardPage() {
           {/* Table header */}
           <div className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-border bg-secondary/30 text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
             <div className="col-span-2 sm:col-span-1 text-center">Rank</div>
-            <div className="col-span-6 sm:col-span-7">Player / Team</div>
-            <div className="col-span-2 text-right">Kills</div>
+            <div className="col-span-8 sm:col-span-9">Player / Team</div>
             <div className="col-span-2 text-right text-primary">Pts</div>
           </div>
 
@@ -169,7 +168,7 @@ function LeaderboardPage() {
                     </span>
                   </div>
 
-                  <div className="col-span-6 sm:col-span-7 flex items-center gap-3 min-w-0">
+                  <div className="col-span-8 sm:col-span-9 flex items-center gap-3 min-w-0">
                     <div className="w-9 h-9 rounded-full bg-primary/10 grid place-items-center font-display font-black text-xs text-primary shrink-0">
                       {p.team ? p.team[0].toUpperCase() : "T"}
                     </div>
@@ -183,18 +182,6 @@ function LeaderboardPage() {
                           <Skull className="w-3.5 h-3.5 text-primary shrink-0" />
                         )}
                       </div>
-                      <div className="text-[10px] text-muted-foreground hidden sm:block font-semibold">
-                        {p.wins || 0} wins
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-span-2 text-right">
-                    <div className="font-mono text-sm font-bold text-foreground">
-                      {p.kills || 0}
-                    </div>
-                    <div className="text-[9px] text-muted-foreground uppercase font-bold sm:hidden">
-                      {p.wins || 0} W
                     </div>
                   </div>
 
@@ -255,9 +242,6 @@ function PodiumCard({
         className={`font-bold text-xs sm:text-sm truncate w-full text-center px-1 mb-0.5 text-foreground`}
       >
         {p.team || "Unknown"}
-      </div>
-      <div className="text-[10px] text-muted-foreground font-semibold mb-2">
-        {p.kills || 0} kills
       </div>
 
       {/* Podium bar */}

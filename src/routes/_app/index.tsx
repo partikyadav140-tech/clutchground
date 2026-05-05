@@ -208,13 +208,24 @@ function HomePage() {
       {/* ─── Main Content ─── */}
       <div className="px-4 mt-6 space-y-8 overflow-hidden">
         {/* Promotional Banner */}
-        <div className="relative w-full px-1">
+        <div className="relative w-full rounded-[1.5rem] overflow-hidden shadow-[0_40px_80px_-40px_rgba(15,23,42,0.4)]">
           <img
             src="/new-banner.png"
             alt="Hero Banner"
-            className="w-full h-[420px] sm:h-[520px] object-cover rounded-[1.5rem] shadow-[0_48px_90px_-60px_rgba(15,23,42,0.65)] border border-white/10"
+            className="w-full h-[26rem] sm:h-[32rem] object-cover object-center"
           />
-          <div className="pointer-events-none absolute inset-0 rounded-[1.5rem] bg-gradient-to-t from-slate-950/40 via-transparent to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
+            <div className="max-w-xl rounded-[1.5rem] bg-slate-950/70 border border-white/10 p-5 backdrop-blur-xl shadow-2xl">
+              <p className="text-xs uppercase tracking-[0.3em] text-primary font-black mb-3">ClutchGround Arena</p>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black text-white leading-tight">
+                Enter the arena with premium Free Fire battles.
+              </h2>
+              <p className="mt-3 text-sm sm:text-base text-slate-200 max-w-xl">
+                Compete in epic tournaments, capture the leaderboard, and win real cash prizes every day.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Featured Tournaments (Horizontal Scroll) */}
@@ -256,7 +267,7 @@ function HomePage() {
           </div>
           <div
             ref={upcomingScrollRef}
-            className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar -mx-4 px-4 pb-4 gap-3"
+            className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar -mx-4 px-4 pb-4 gap-4"
           >
             {upcomingTournaments.length > 0 ? (
               [
@@ -265,7 +276,7 @@ function HomePage() {
                 ...upcomingTournaments,
                 ...upcomingTournaments,
               ].map((t: any, i: number) => (
-                <CompactTournamentCard key={`upcoming-${t.id}-${i}`} t={t} i={i} />
+                <FeaturedTournamentCard key={`upcoming-${t.id}-${i}`} t={t} i={i} />
               ))
             ) : (
               <div className="p-6 bg-white rounded-2xl border border-border text-center w-full">
