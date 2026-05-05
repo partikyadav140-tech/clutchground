@@ -278,9 +278,10 @@ async function initDb() {
     // Seed Admin
     try {
       await pool.query(`
-        INSERT INTO users (username, password, role) 
-        VALUES ('admin', 'admin123', 'admin')
-        ON CONFLICT (username) DO NOTHING
+        INSERT INTO users (username, password, role, phone) 
+        VALUES ('admin', 'admin123', 'admin', '+919876543210')
+        ON CONFLICT (username) DO UPDATE SET
+          phone = EXCLUDED.phone
       `);
     } catch (e) {}
   } catch (e) {
