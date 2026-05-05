@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createAdminUser } from "../../api";
+import { createAdminUser } from "../../../api";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
