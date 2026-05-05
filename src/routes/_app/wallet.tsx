@@ -213,7 +213,7 @@ function WalletPage() {
             </span>
             <div className="flex items-center justify-center gap-2 mt-2 mb-1">
               <GodCoin className="w-8 h-8 sm:w-10 sm:h-10 text-white drop-shadow-sm" />
-              <div className="font-display text-5xl sm:text-6xl font-black drop-shadow-sm">
+              <div className="font-sans text-5xl sm:text-6xl font-semibold drop-shadow-sm tabular-nums">
                 {totalBalance}
               </div>
             </div>
@@ -253,7 +253,7 @@ function WalletPage() {
             </div>
             <div className="flex items-center gap-1.5 mt-2">
               <GodCoin className="w-5 h-5" />
-              <span className="font-display text-2xl font-black text-emerald-600">
+              <span className="font-sans text-2xl font-semibold text-emerald-600 tabular-nums">
                 {winningBalance}
               </span>
             </div>
@@ -266,7 +266,7 @@ function WalletPage() {
             </div>
             <div className="flex items-center gap-1.5 mt-2">
               <GodCoin className="w-5 h-5" />
-              <span className="font-display text-2xl font-black text-blue-600">
+              <span className="font-sans text-2xl font-semibold text-blue-600 tabular-nums">
                 {depositBalance}
               </span>
             </div>
@@ -326,7 +326,7 @@ function WalletPage() {
                     </div>
                   </div>
                   <div
-                    className={`flex items-center gap-1 font-black ${isPositive ? "text-emerald-600" : "text-red-600"}`}
+                    className={`flex items-center gap-1 font-sans font-semibold tabular-nums ${isPositive ? "text-emerald-600" : "text-red-600"}`}
                   >
                     {isPositive ? "+" : "-"} <GodCoin className="w-3 h-3" /> {tx.amount}
                   </div>
@@ -371,7 +371,7 @@ function WalletPage() {
                   value={withdrawAmount}
                   max={winningBalance}
                   onChange={(e) => setWithdrawAmount(e.target.value)}
-                  className="w-full bg-secondary/30 border border-border focus:border-primary focus:bg-white outline-none pl-12 pr-4 h-14 text-lg font-display font-black rounded-xl transition-all shadow-sm"
+                  className="w-full bg-secondary/30 border border-border focus:border-primary focus:bg-white outline-none pl-12 pr-4 h-14 text-lg font-sans font-semibold rounded-xl transition-all shadow-sm tabular-nums"
                 />
               </div>
             </div>
@@ -439,7 +439,7 @@ function WalletPage() {
                   placeholder="0"
                   value={addCashAmount}
                   onChange={(e) => setAddCashAmount(e.target.value)}
-                  className="w-full bg-secondary/30 border border-border focus:border-primary focus:bg-white outline-none pl-12 pr-4 h-14 text-lg font-display font-black rounded-xl transition-all shadow-sm"
+                  className="w-full bg-secondary/30 border border-border focus:border-primary focus:bg-white outline-none pl-12 pr-4 h-14 text-lg font-sans font-semibold rounded-xl transition-all shadow-sm tabular-nums"
                 />
               </div>
             </div>
