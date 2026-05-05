@@ -149,7 +149,7 @@ function HomePage() {
                 </p>
                 <div className="flex items-center gap-1.5 justify-end">
                   <GodCoin className="w-5 h-5" />
-                  <span className="text-xl font-display font-black text-primary">
+                  <span className="text-xl font-semibold text-primary">
                     {totalBalance}
                   </span>
                 </div>
@@ -207,25 +207,13 @@ function HomePage() {
 
       {/* ─── Main Content ─── */}
       <div className="px-4 mt-6 space-y-8 overflow-hidden">
-        {/* Promotional Banner */}
-        <div className="relative w-full rounded-[1.5rem] overflow-hidden shadow-[0_40px_80px_-40px_rgba(15,23,42,0.4)]">
+        {/* Hero Banner - Clean Image */}
+        <div className="relative w-full overflow-hidden rounded-[2rem] border border-white/10 shadow-[0_35px_75px_-35px_rgba(15,23,42,0.45)]">
           <img
             src="/new-banner.png"
             alt="Hero Banner"
             className="w-full h-[26rem] sm:h-[32rem] object-cover object-center"
           />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8">
-            <div className="max-w-xl rounded-[1.5rem] bg-slate-950/70 border border-white/10 p-5 backdrop-blur-xl shadow-2xl">
-              <p className="text-xs uppercase tracking-[0.3em] text-primary font-black mb-3">ClutchGround Arena</p>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-black text-white leading-tight">
-                Enter the arena with premium Free Fire battles.
-              </h2>
-              <p className="mt-3 text-sm sm:text-base text-slate-200 max-w-xl">
-                Compete in epic tournaments, capture the leaderboard, and win real cash prizes every day.
-              </p>
-            </div>
-          </div>
         </div>
 
         {/* Featured Tournaments (Horizontal Scroll) */}

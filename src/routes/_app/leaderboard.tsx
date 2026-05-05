@@ -117,7 +117,7 @@ function LeaderboardPage() {
                 <div className="text-[10px] uppercase tracking-[0.3em] text-slate-400 font-semibold">
                   Current Score
                 </div>
-                <div className="text-3xl font-black text-white mt-1">
+                <div className="text-3xl font-semibold text-white mt-1">
                   {currentUser.points.toLocaleString()}
                 </div>
               </div>
@@ -154,7 +154,7 @@ function LeaderboardPage() {
                 >
                   <div className="col-span-2 sm:col-span-1 flex justify-center">
                     <span
-                      className={`w-7 h-7 rounded-full flex items-center justify-center font-display font-black text-xs ${
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${
                         p.rank === 1
                           ? "bg-amber-100 text-amber-600"
                           : p.rank === 2
@@ -185,9 +185,9 @@ function LeaderboardPage() {
                     </div>
                   </div>
 
-                  <div className="col-span-2 text-right font-display font-black text-primary text-sm sm:text-base leading-none">
-                    {p.points.toLocaleString()}
-                  </div>
+            <div className="col-span-2 text-right font-semibold text-primary text-sm sm:text-base leading-none">
+              {p.points.toLocaleString()}
+            </div>
                 </motion.div>
               ))}
             </div>
@@ -249,7 +249,7 @@ function PodiumCard({
         className={`w-full rounded-t-xl bg-gradient-to-b border-t shadow-sm flex flex-col items-center pt-2 ${colorClass} ${height}`}
       >
         <span className="text-xl leading-none mb-1">{medal}</span>
-        <div className={`font-display font-black text-sm sm:text-base ${textClass}`}>
+        <div className={`font-semibold text-sm sm:text-base ${textClass}`}>
           {p.points.toLocaleString()}
         </div>
       </div>
