@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useState } from "react";
 import { Users, CheckCircle, ArrowLeft, Edit2, ShieldAlert, Trash2 } from "lucide-react";
 import { getUsers, updateCoinBalance, banUser, deleteUser, deleteAllUsers } from "../../../api";
 import { useAuth } from "../../../lib/auth-client";
