@@ -87,21 +87,45 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
 // Temporary function to create admin user - remove after use
 export const createAdminUser = createServerFn({ method: "POST" }).handler(async () => {
   const { db } = await import("./lib/db");
-  
+
   try {
+    // Check if admin already exists
+    const existingAdmin = await db.prepare("SELECT * FROM users WHERE username = 'admin'").get();
+    if (existingAdmin) {
+      console.log("Existing admin found:", existingAdmin);
+    }
+
     // Delete existing admin if any
-    await db.prepare("DELETE FROM users WHERE username = 'admin'").run();
-    
+    const deleteResult = await db.prepare("DELETE FROM users WHERE username = 'admin'").run();
+    console.log("Delete result:", deleteResult);
+
+    // Also delete any user with the admin phone number
+    const deletePhoneResult = await db.prepare("DELETE FROM users WHERE phone = '8307224756'").run();
+    console.log("Delete phone result:", deletePhoneResult);
+
     // Create new admin user
     const insertStmt = db.prepare(
       "INSERT INTO users (username, password, role, phone) VALUES (?, ?, ?, ?)",
     );
     const result = await insertStmt.run('admin', 'admin123', 'admin', '8307224756');
-    
-    return { success: true, message: "Admin user created successfully" };
+    console.log("Insert result:", result);
+
+    // Verify the user was created
+    const verifyUser = await db.prepare("SELECT * FROM users WHERE username = 'admin'").get();
+    console.log("Created admin user:", verifyUser);
+
+    return {
+      success: true,
+      message: "Admin user created successfully",
+      user: verifyUser
+    };
   } catch (error) {
     console.error("Error creating admin user:", error);
-    throw new Error("Failed to create admin user");
+    return {
+      success: false,
+      message: `Failed to create admin user: ${error.message}`,
+      error: error.message
+    };
   }
 });
 

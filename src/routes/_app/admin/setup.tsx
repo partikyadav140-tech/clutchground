@@ -14,10 +14,17 @@ function AdminSetup() {
   const handleCreateAdmin = async () => {
     setLoading(true);
     try {
-      await (createAdminUser as any)({});
-      toast.success("Admin user created successfully!");
+      const result = await (createAdminUser as any)({});
+      if (result.success) {
+        toast.success("Admin user created successfully!");
+        console.log("Admin creation result:", result);
+      } else {
+        toast.error(result.message || "Failed to create admin user");
+        console.error("Admin creation failed:", result);
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to create admin user");
+      console.error("Admin creation error:", error);
     } finally {
       setLoading(false);
     }
