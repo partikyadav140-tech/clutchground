@@ -32,7 +32,7 @@ function TournamentsPage() {
   const [q, setQ] = useState("");
 
   const filtered = tournaments.filter((t: any) => {
-    if (t.status === "completed") return false;
+    if (t.status === "completed" || t.status === "locked") return false;
     if (q && !t.title.toLowerCase().includes(q.toLowerCase())) return false;
     if (filter === "Solo") return t.mode === "Solo";
     if (filter === "Duo") return t.mode === "Duo";

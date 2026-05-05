@@ -191,7 +191,8 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
     slots,
     filled,
     startsAt,
-    status,
+    // Auto-lock tournament when room details are provided
+    (room_id && room_pass) ? "locked" : status,
     banner,
     room_id || null,
     room_pass || null,
@@ -243,9 +244,10 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
 
     // Check if tournament exists and has slots
     const t = (await db
-      .prepare("SELECT title, startsAt, mode, format, entry, filled, slots FROM tournaments WHERE id = ?")
+      .prepare("SELECT title, startsAt, mode, format, entry, filled, slots, status FROM tournaments WHERE id = ?")
       .get(tournamentId)) as any;
     if (!t) throw new Error("Tournament not found");
+    if (t.status === "locked") throw new Error("Tournament is locked and no longer accepting registrations");
     if (t.filled >= t.slots) throw new Error("Tournament is full");
 
     // Check if already registered

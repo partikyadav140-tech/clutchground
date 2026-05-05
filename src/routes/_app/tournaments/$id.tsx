@@ -216,7 +216,16 @@ function TournamentDetailPage() {
             </div>
 
             {/* CTA */}
-            {isFull ? (
+            {t.status === "locked" ? (
+              <Button
+                variant="outlineFire"
+                size="lg"
+                className="w-full font-display tracking-wider border-amber-500/50 text-amber-400"
+                disabled
+              >
+                <Lock className="w-5 h-5 mr-2" /> TOURNAMENT LOCKED
+              </Button>
+            ) : isFull ? (
               <Button
                 variant="outlineFire"
                 size="lg"

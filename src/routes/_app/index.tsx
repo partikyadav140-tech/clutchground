@@ -63,9 +63,13 @@ function HomePage() {
   const isCompleted = (t: any) =>
     String(t.status || "").trim().toLowerCase() === "completed";
 
+  const isLocked = (t: any) =>
+    String(t.status || "").trim().toLowerCase() === "locked";
+
   const displayTournaments = allTournaments.filter(
     (t: any) =>
       !isCompleted(t) &&
+      !isLocked(t) &&
       Boolean(t.is_hero) &&
       t.is_hero !== "0" &&
       t.is_hero !== 0 &&
@@ -76,6 +80,7 @@ function HomePage() {
   const upcomingTournaments = allTournaments.filter(
     (t: any) =>
       !isCompleted(t) &&
+      !isLocked(t) &&
       (!Boolean(t.is_hero) ||
         t.is_hero === "0" ||
         t.is_hero === 0 ||
