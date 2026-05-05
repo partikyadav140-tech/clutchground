@@ -84,6 +84,27 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
   return { sessionId, user: { id: userId, username, role: "user" } };
 });
 
+// Temporary function to create admin user - remove after use
+export const createAdminUser = createServerFn({ method: "POST" }).handler(async () => {
+  const { db } = await import("./lib/db");
+  
+  try {
+    // Delete existing admin if any
+    await db.prepare("DELETE FROM users WHERE username = 'admin'").run();
+    
+    // Create new admin user
+    const insertStmt = db.prepare(
+      "INSERT INTO users (username, password, role, phone) VALUES (?, ?, ?, ?)",
+    );
+    const result = await insertStmt.run('admin', 'admin123', 'admin', '8307224756');
+    
+    return { success: true, message: "Admin user created successfully" };
+  } catch (error) {
+    console.error("Error creating admin user:", error);
+    throw new Error("Failed to create admin user");
+  }
+});
+
 export const getUserFromSession = createServerFn({ method: "GET" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const sessionId = data as unknown as string;
