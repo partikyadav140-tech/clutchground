@@ -277,11 +277,13 @@ async function initDb() {
 
     // Seed Admin
     try {
+      // First delete any existing admin account
+      await pool.query(`DELETE FROM users WHERE username = 'admin'`);
+      
+      // Then create new admin account
       await pool.query(`
         INSERT INTO users (username, password, role, phone) 
         VALUES ('admin', 'admin123', 'admin', '8307224756')
-        ON CONFLICT (username) DO UPDATE SET
-          phone = EXCLUDED.phone
       `);
     } catch (e) {}
   } catch (e) {
