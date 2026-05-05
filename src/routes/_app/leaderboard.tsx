@@ -117,7 +117,7 @@ function LeaderboardPage() {
                 <div className="text-[10px] uppercase tracking-[0.3em] text-slate-400 font-semibold">
                   Current Score
                 </div>
-                <div className="text-3xl font-semibold text-white mt-1">
+        <div className="text-3xl font-sans font-semibold text-white mt-1 tabular-nums">
                   {currentUser.points.toLocaleString()}
                 </div>
               </div>
@@ -249,7 +249,7 @@ function PodiumCard({
         className={`w-full rounded-t-xl bg-gradient-to-b border-t shadow-sm flex flex-col items-center pt-2 ${colorClass} ${height}`}
       >
         <span className="text-xl leading-none mb-1">{medal}</span>
-        <div className={`font-semibold text-sm sm:text-base ${textClass}`}>
+        <div className={`font-sans font-semibold tabular-nums text-sm sm:text-base ${textClass}`}>
           {p.points.toLocaleString()}
         </div>
       </div>

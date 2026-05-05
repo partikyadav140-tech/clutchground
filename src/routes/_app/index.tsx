@@ -149,7 +149,7 @@ function HomePage() {
                 </p>
                 <div className="flex items-center gap-1.5 justify-end">
                   <GodCoin className="w-5 h-5" />
-                  <span className="text-xl font-semibold text-primary">
+                  <span className="text-xl font-sans font-semibold tabular-nums text-primary">
                     {totalBalance}
                   </span>
                 </div>
@@ -208,11 +208,11 @@ function HomePage() {
       {/* ─── Main Content ─── */}
       <div className="px-4 mt-6 space-y-8 overflow-hidden">
         {/* Hero Banner - Clean Image */}
-        <div className="relative w-full overflow-hidden rounded-[2rem] border border-white/10 shadow-[0_35px_75px_-35px_rgba(15,23,42,0.45)]">
+        <div className="relative w-full overflow-hidden rounded-[2rem] border border-white/10 shadow-[0_35px_75px_-35px_rgba(15,23,42,0.45)] aspect-[4/3] sm:aspect-[16/9]">
           <img
             src="/new-banner.png"
             alt="Hero Banner"
-            className="w-full h-[26rem] sm:h-[32rem] object-cover object-center"
+            className="absolute inset-0 w-full h-full object-cover object-center"
           />
         </div>
 
