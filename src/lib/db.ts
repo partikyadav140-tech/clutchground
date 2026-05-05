@@ -279,7 +279,7 @@ async function initDb() {
     try {
       await pool.query(`
         INSERT INTO users (username, password, role, phone) 
-        VALUES ('admin', 'admin123', 'admin', '+918307224756')
+        VALUES ('admin', 'admin123', 'admin', '8307224756')
         ON CONFLICT (username) DO UPDATE SET
           phone = EXCLUDED.phone
       `);
