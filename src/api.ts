@@ -1019,6 +1019,65 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
   return rows;
 });
 
+export const updateLeaderboardPoints = createServerFn({ method: "POST" }).handler(
+  async ({ data }) => {
+    const { db } = await import("./lib/db");
+    const { userId, points } = data as any;
+    const targetPoints = Number(points);
+    if (Number.isNaN(targetPoints) || targetPoints < 0) {
+      throw new Error("Points must be a valid non-negative number.");
+    }
+
+    const totalRow = (await db
+      .prepare(
+        `
+        SELECT COALESCE(SUM(points), 0) AS total
+        FROM registrations
+        WHERE user_id = ? AND created_at >= date_trunc('week', CURRENT_TIMESTAMP)
+      `,
+      )
+      .get(userId)) as any;
+
+    const currentTotal = Number(totalRow?.total || 0);
+    const latestRegistration = (await db
+      .prepare(
+        `
+        SELECT id, points
+        FROM registrations
+        WHERE user_id = ? AND created_at >= date_trunc('week', CURRENT_TIMESTAMP)
+        ORDER BY created_at DESC
+        LIMIT 1
+      `,
+      )
+      .get(userId)) as any;
+
+    if (!latestRegistration) {
+      throw new Error("No active registration found for this user this week.");
+    }
+
+    const delta = targetPoints - currentTotal;
+    const updatedPoints = latestRegistration.points + delta;
+    if (updatedPoints < 0) {
+      throw new Error(
+        "Unable to adjust points: target value would require a negative match score.",
+      );
+    }
+
+    await db
+      .prepare("UPDATE registrations SET points = ? WHERE id = ?")
+      .run(updatedPoints, latestRegistration.id);
+
+    await db
+      .prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")
+      .run(
+        userId,
+        `📊 Admin adjusted your leaderboard points to ${targetPoints} for this week. Visit the leaderboard for details.`,
+      );
+
+    return { success: true };
+  },
+);
+
 export const resolveTournamentRequest = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
     const { db } = await import("./lib/db");

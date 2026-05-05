@@ -303,6 +303,12 @@ function AdminTournamentsPage() {
             >
               <Plus className="w-5 h-5 mr-2" /> Create New Event
             </Button>
+            <Link
+              to="/admin/leaderboard"
+              className="w-full sm:w-auto h-12 rounded-xl font-bold inline-flex items-center justify-center bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-all"
+            >
+              <Trophy className="w-4 h-4 mr-2" /> Leaderboard Standings
+            </Link>
             <Button
               variant="outline"
               className="w-full sm:w-auto h-12 rounded-xl font-bold border-destructive/20 text-destructive hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
@@ -729,6 +735,32 @@ function AdminTournamentsPage() {
                           setResultsData((prev) =>
                             prev.map((x) =>
                               x.id === r.id ? { ...x, position: Number(e.target.value) } : x,
+                            ),
+                          )
+                        }
+                      />
+                    </div>
+
+                    <div className="col-span-1 sm:col-span-2">
+                      <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1 sm:hidden">
+                        Manual Points
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        className="w-full bg-secondary/50 border border-border rounded-lg text-center px-2 py-1.5 text-sm outline-none focus:border-primary font-bold"
+                        value={typeof r.manualPoints !== "undefined" && r.manualPoints !== null ? r.manualPoints : ""}
+                        placeholder="Auto"
+                        onChange={(e) =>
+                          setResultsData((prev) =>
+                            prev.map((x) =>
+                              x.id === r.id
+                                ? {
+                                    ...x,
+                                    manualPoints:
+                                      e.target.value === "" ? undefined : Number(e.target.value),
+                                  }
+                                : x,
                             ),
                           )
                         }

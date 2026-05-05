@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Users, Trophy, ClipboardList, Banknote, Mail, ShieldAlert } from "lucide-react";
+import { Users, Trophy, ClipboardList, Banknote, Mail, ShieldAlert, RefreshCw } from "lucide-react";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -46,6 +46,14 @@ function AdminDashboard() {
       desc: "Create, edit, and delete events.",
       color: "text-amber-500",
       bg: "bg-amber-50",
+    },
+    {
+      to: "/admin/leaderboard",
+      icon: RefreshCw,
+      title: "Leaderboard Standings",
+      desc: "Review and adjust weekly leaderboard points.",
+      color: "text-violet-500",
+      bg: "bg-violet-50",
     },
     {
       to: "/admin/registrations",
