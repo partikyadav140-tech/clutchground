@@ -20,8 +20,6 @@ import { toast } from "sonner";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { GodCoin } from "@/components/GodCoin";
 import { confirmDialog } from "@/components/ConfirmDialog";
-import { driver } from "driver.js";
-import "driver.js/dist/driver.css";
 import { useAuth } from "../../../lib/auth-client";
 
 export const Route = createFileRoute("/_app/tournaments/$id")({
@@ -78,71 +76,6 @@ function TournamentDetailPage() {
 
   const canViewRoom = isJoined;
 
-
-  useEffect(() => {
-    const hasSeen = localStorage.getItem("god_esports_tour_detail_seen");
-    if (!hasSeen) {
-      const timer = setTimeout(() => {
-        const driverObj = driver({
-          showProgress: true,
-          animate: true,
-          allowClose: true,
-          popoverClass: "driverjs-theme",
-          steps: [
-            {
-              element: "#join-section-tour",
-              popover: {
-                title: "🔥 Join The Battle",
-                description:
-                  "Tap here to book your slot. If there is an entry fee, it will be deducted from your wallet. Hurry, slots fill up fast!",
-                side: "left",
-                align: "start",
-              },
-            },
-            {
-              element: "#room-details-tour",
-              popover: {
-                title: "🎮 Room ID & Password",
-                description:
-                  "Once you join, check back here exactly 10 minutes before the match starts to reveal the Custom Room ID and Password.",
-                side: "left",
-                align: "start",
-              },
-            },
-            {
-              element: "#results-rules-tour",
-              popover: {
-                title: "📸 Results & Verification",
-                description:
-                  "After the match, submit your screenshot proof to the admins as per the rules. Final Standings and Prize distribution will appear on this page automatically!",
-                side: "top",
-                align: "start",
-              },
-            },
-          ],
-          onDestroyStarted: async () => {
-            if (!driverObj.hasNextStep()) {
-              driverObj.destroy();
-              localStorage.setItem("god_esports_tour_detail_seen", "true");
-            } else {
-              const yes = await confirmDialog({
-                title: "Skip Tutorial?",
-                description: "Are you sure you want to skip the rest of the tour?",
-                confirmText: "Skip",
-                isDestructive: true,
-              });
-              if (yes) {
-                driverObj.destroy();
-                localStorage.setItem("god_esports_tour_detail_seen", "true");
-              }
-            }
-          },
-        });
-        driverObj.drive();
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, []);
 
   const downloadStandings = () => {
     if (!results || results.length === 0) return;

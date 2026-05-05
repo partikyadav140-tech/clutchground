@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { confirmDialog } from "./ConfirmDialog";
 import { useAuth } from "../lib/auth-client";
 import { useRouter } from "@tanstack/react-router";
-import { registerForTournament, getProfile, getMyTeam } from "../api";
+import { registerForTournament, getProfile, getMyTeam, checkUserRegistration } from "../api";
 import { useEffect } from "react";
 
 type Teammate = { name: string; ign: string; uid: string };
@@ -79,9 +79,9 @@ export function JoinBattleDialog({
           if (myTeam) {
             setLeader((l) => ({ ...l, teamName: myTeam.name }));
             teamReady = !!myTeam.name;
-            // Fill teammates (only players, not subs, up to teamCount)
+            // Fill teammates (only players/captions, not subs, up to teamCount, exclude leader)
             const activeMembers = myTeam.members
-              .filter((m: any) => m.role === "player")
+              .filter((m: any) => (m.role === "player" || m.role === "caption" || m.role === "captain") && m.user_id !== user.id)
               .slice(0, teamCount);
             setTeammates((current) => {
               const newT = [...current];
@@ -121,6 +121,19 @@ export function JoinBattleDialog({
     // We need the tournament ID. Assuming it's passed as a prop, wait! It wasn't passed.
     // I need to update Props to include tournamentId.
     if (!tournamentId) return toast.error("Invalid tournament.");
+
+    // Check if user is already registered
+    try {
+      const { isRegistered } = await (checkUserRegistration as any)({
+        data: { userId: user.id, tournamentId },
+      });
+      if (isRegistered) {
+        return toast.error("You are already registered for this tournament.");
+      }
+    } catch (e) {
+      console.error("Failed to check registration", e);
+      return toast.error("Failed to check registration status.");
+    }
 
     if (entryFee > 0) {
       const dbBalance = (user as any)?.deposit_balance || 0;

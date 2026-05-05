@@ -409,6 +409,17 @@ export const getRegistrations = createServerFn({ method: "GET" }).handler(async 
     .all();
 });
 
+export const checkUserRegistration = createServerFn({ method: "POST" }).handler(
+  async ({ data }) => {
+    const { db } = await import("./lib/db");
+    const { userId, tournamentId } = data as any;
+    const existing = await db
+      .prepare("SELECT id FROM registrations WHERE user_id = ? AND tournament_id = ?")
+      .get(userId, tournamentId);
+    return { isRegistered: !!existing };
+  },
+);
+
 export const updateProfile = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const { userId, ign, uid, email, phone } = data as any;

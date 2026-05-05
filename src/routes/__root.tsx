@@ -1,6 +1,5 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
-import { Tutorial } from "@/components/Tutorial";
 import { SplashScreen } from "@/components/SplashScreen";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 
@@ -88,7 +87,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
       <body>
         <SplashScreen />
         {children}
-        <Tutorial />
         <ConfirmDialog />
         <Toaster
           theme="light"
