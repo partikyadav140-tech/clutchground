@@ -283,9 +283,21 @@ function ProfilePage() {
                 </div>
               ) : (
                 <>
-                  <h2 className="font-display text-2xl font-black text-foreground">
-                    {profile?.ign || user.username}
-                  </h2>
+                  <div className="space-y-2">
+                    <div className="font-display text-2xl font-black text-foreground">
+                      {profile?.ign || user.username}
+                    </div>
+                    {profile?.ign && (
+                      <div className="text-sm text-muted-foreground font-semibold">
+                        @{user.username} • IGN: {profile.ign}
+                      </div>
+                    )}
+                    {!profile?.ign && (
+                      <div className="text-sm text-muted-foreground font-semibold">
+                        @{user.username}
+                      </div>
+                    )}
+                  </div>
                   <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary text-xs font-mono font-bold text-muted-foreground mt-2 border border-border">
                     UID: {profile?.uid || "Not set"}
                   </div>
@@ -536,8 +548,13 @@ function ProfilePage() {
                         </div>
                         <div>
                           <div className="font-bold text-sm text-foreground">
-                            {team.leader?.ign || team.leader?.username}
+                            {team.leader?.ign ? team.leader.ign : team.leader?.username}
                           </div>
+                          {team.leader?.username && team.leader?.ign && (
+                            <div className="text-[10px] text-muted-foreground">
+                              @{team.leader.username}
+                            </div>
+                          )}
                           {team.leader?.uid && (
                             <div className="text-[10px] font-mono text-muted-foreground">
                               UID: {team.leader.uid}
@@ -561,7 +578,10 @@ function ProfilePage() {
                             P{i + 2}
                           </div>
                           <div>
-                            <div className="font-bold text-sm text-foreground">{m.ign}</div>
+                            <div className="font-bold text-sm text-foreground">{m.ign || m.username}</div>
+                            {m.username && m.ign && (
+                              <div className="text-[10px] text-muted-foreground">@{m.username}</div>
+                            )}
                             <div className="text-[10px] font-mono text-muted-foreground">
                               UID: {m.uid}
                             </div>

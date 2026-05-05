@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageCircle, Facebook, Send, Plus, Mail } from "lucide-react";
+import { MessageCircle, Send, Plus, Mail } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function SpeedDial() {
@@ -13,12 +13,12 @@ export function SpeedDial() {
       color: "bg-[#25D366]",
     },
     {
-      name: "Facebook",
-      icon: Facebook,
-      url: "https://www.facebook.com/share/18tWtE1kW2/",
-      color: "bg-[#1877F2]",
+      name: "Discord",
+      icon: Send,
+      url: "https://discord.gg/uYXFJswHdg",
+      color: "bg-[#5865F2]",
     },
-    { name: "Telegram", icon: Send, url: "https://t.me/clutchground", color: "bg-[#0088cc]" },
+    { name: "Telegram", icon: MessageCircle, url: "https://t.me/clutchground", color: "bg-[#0088cc]" },
     {
       name: "Email",
       icon: Mail,

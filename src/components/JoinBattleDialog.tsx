@@ -79,15 +79,19 @@ export function JoinBattleDialog({
           if (myTeam) {
             setLeader((l) => ({ ...l, teamName: myTeam.name }));
             teamReady = !!myTeam.name;
-            // Fill teammates (only players/captions, not subs, up to teamCount, exclude leader)
+            // Fill teammates in role-priority order: caption/captain first, then players
             const activeMembers = myTeam.members
               .filter((m: any) => (m.role === "player" || m.role === "caption" || m.role === "captain") && m.user_id !== user.id)
+              .sort((a: any, b: any) => {
+                const priority = (role: string) => (role === "caption" || role === "captain" ? 0 : 1);
+                return priority(a.role) - priority(b.role);
+              })
               .slice(0, teamCount);
             setTeammates((current) => {
               const newT = [...current];
               activeMembers.forEach((m: any, i: number) => {
                 if (i < newT.length) {
-                  newT[i] = { name: m.ign, ign: m.ign, uid: m.uid }; // Use IGN as name if missing
+                  newT[i] = { name: m.ign, ign: m.ign, uid: m.uid };
                 }
               });
               return newT;

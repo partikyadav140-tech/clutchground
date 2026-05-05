@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_app/login")({
 function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const [username, setUsername] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
 
@@ -24,7 +24,7 @@ function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await (loginUser as any)({ data: { username, password } });
+      const res = await (loginUser as any)({ data: { phone, password } });
       setSessionId(res.sessionId);
       toast.success("Welcome back, warrior! 🔥");
       if (res.user.role === "admin") {
@@ -33,7 +33,7 @@ function LoginPage() {
         window.location.href = "/";
       }
     } catch (err: any) {
-      toast.error(err.message || "Invalid credentials");
+      toast.error(err.message || "Invalid phone number or password");
     } finally {
       setLoading(false);
     }
@@ -69,18 +69,18 @@ function LoginPage() {
         {/* Form card */}
         <div className="rounded-[1.5rem] border border-border bg-white p-6 sm:p-8 shadow-sm">
           <form onSubmit={handleLogin} className="space-y-4">
-            {/* Username */}
+            {/* Phone */}
             <div>
               <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">
-                Username
+                Phone
               </label>
               <input
-                type="text"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                type="tel"
+                placeholder="Enter your phone number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 required
-                autoComplete="username"
+                autoComplete="tel"
                 className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-white outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold placeholder:font-semibold"
               />
             </div>

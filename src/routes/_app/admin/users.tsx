@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { Users, CheckCircle, ArrowLeft, Edit2, ShieldAlert, Trash2 } from "lucide-react";
-import { getUsers, updateCoinBalance, deleteUser, deleteAllUsers } from "../../../api";
+import { getUsers, updateCoinBalance, banUser, deleteUser, deleteAllUsers } from "../../../api";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { GodCoin } from "@/components/GodCoin";
@@ -18,6 +18,7 @@ function AdminUsersPage() {
   const users = Route.useLoaderData();
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [searchTerm, setSearchTerm] = useState("");
 
   if (loading)
     return (
@@ -89,6 +90,23 @@ function AdminUsersPage() {
     }
   };
 
+  const handleBanUser = async (userId: number, username: string) => {
+    const yes = await confirmDialog({
+      title: "Ban User",
+      description: `Are you sure you want to ban ${username}? They will be logged out immediately and cannot perform any actions on the site, including withdrawals.`,
+      confirmText: "Ban",
+      isDestructive: true,
+    });
+    if (!yes) return;
+    try {
+      await (banUser as any)({ data: { id: userId } });
+      toast.success(`User ${username} has been banned.`);
+      router.invalidate();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to ban user");
+    }
+  };
+
   const handleDeleteAllUsers = async () => {
     const yes = await confirmDialog({
       title: "Delete ALL Users?",
@@ -106,6 +124,13 @@ function AdminUsersPage() {
       toast.error(e.message || "Failed to delete users");
     }
   };
+
+  const filteredUsers = users.filter((u: any) =>
+    searchTerm === "" ||
+    u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (u.ign && u.ign.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (u.phone && u.phone.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   return (
     <div className="bg-background min-h-screen pb-24">
@@ -130,9 +155,9 @@ function AdminUsersPage() {
 
         <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
           <div className="bg-secondary/50 px-4 py-3 rounded-xl flex items-center justify-center gap-2 border border-border">
-            <span className="text-2xl font-black font-display text-primary">{users.length}</span>
+            <span className="text-2xl font-black font-display text-primary">{filteredUsers.length}</span>
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
-              Total Users
+              Filtered Users
             </span>
           </div>
           <Button
@@ -146,14 +171,30 @@ function AdminUsersPage() {
       </div>
 
       <div className="px-4 mt-6">
-        {users.length === 0 ? (
+        {/* Search */}
+        <div className="mb-6">
+          <div className="bg-white rounded-[1.5rem] border border-border shadow-sm p-4">
+            <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">
+              Search Users
+            </label>
+            <input
+              type="text"
+              placeholder="Search by username, IGN, or phone number..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-white outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold placeholder:font-semibold"
+            />
+          </div>
+        </div>
+
+        {filteredUsers.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-[1.5rem] border border-border shadow-sm">
             <Users className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
             <p className="text-foreground font-semibold">No users registered yet.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {users.map((u: any, i: number) => (
+            {filteredUsers.map((u: any, i: number) => (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -175,6 +216,11 @@ function AdminUsersPage() {
                         </div>
                         {u.role === "admin" && (
                           <CheckCircle className="w-4 h-4 text-primary shrink-0" />
+                        )}
+                        {u.banned && (
+                          <span className="text-xs font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">
+                            BANNED
+                          </span>
                         )}
                       </div>
                       <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mt-0.5">
@@ -275,14 +321,29 @@ function AdminUsersPage() {
                   </div>
 
                   {u.role !== "admin" && (
-                    <div className="mt-4 pt-4 border-t border-border">
-                      <Button
-                        variant="outline"
-                        className="w-full rounded-xl font-bold h-10 border-destructive/20 text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteUser(u.id, u.username)}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" /> Ban & Delete Account
-                      </Button>
+                    <div className="mt-4 pt-4 border-t border-border space-y-2">
+                      {!u.banned ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            className="w-full rounded-xl font-bold h-10 border-orange-500/20 text-orange-600 hover:bg-orange-50"
+                            onClick={() => handleBanUser(u.id, u.username)}
+                          >
+                            <ShieldAlert className="w-4 h-4 mr-2" /> Ban User
+                          </Button>
+                          <Button
+                            variant="outline"
+                            className="w-full rounded-xl font-bold h-10 border-destructive/20 text-destructive hover:bg-destructive/10"
+                            onClick={() => handleDeleteUser(u.id, u.username)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" /> Delete Account
+                          </Button>
+                        </>
+                      ) : (
+                        <div className="w-full rounded-xl font-bold h-10 border-destructive/20 text-destructive bg-destructive/10 flex items-center justify-center">
+                          <ShieldAlert className="w-4 h-4 mr-2" /> User Banned
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

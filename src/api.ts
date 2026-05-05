@@ -4,12 +4,21 @@ import { z } from "zod";
 
 export const loginUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { username, password } = data as unknown as { username: string; password: string };
-  const userStmt = db.prepare("SELECT * FROM users WHERE username = ? AND password = ?");
-  const user = (await userStmt.get(username, password)) as any;
+  const { phone, password } = data as unknown as { phone: string; password: string };
+  const normalizedPhone = typeof phone === "string" ? phone.trim() : phone;
+  const userStmt = db.prepare("SELECT * FROM users WHERE phone = ?");
+  const user = (await userStmt.get(normalizedPhone)) as any;
 
   if (!user) {
-    throw new Error("Invalid username or password");
+    throw new Error("Invalid phone number or password");
+  }
+
+  if (user.password !== password) {
+    throw new Error("Invalid phone number or password");
+  }
+
+  if (user.banned) {
+    throw new Error("This account has been banned by the administrator due to violation of terms of service and illegal activities. Please contact support for assistance.");
   }
 
   const sessionId = crypto.randomUUID();
@@ -25,11 +34,22 @@ export const loginUser = createServerFn({ method: "POST" }).handler(async ({ dat
 export const signupUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const { username, password, ign, uid, email, phone } = data as any;
+  const normalizedPhone = typeof phone === "string" ? phone.trim() : phone;
+
+  if (!normalizedPhone) {
+    throw new Error("Phone number is required");
+  }
 
   const checkStmt = db.prepare("SELECT id FROM users WHERE username = ?");
   const exists = await checkStmt.get(username);
   if (exists) {
     throw new Error("Username already taken");
+  }
+
+  const phoneCheckStmt = db.prepare("SELECT id FROM users WHERE phone = ?");
+  const phoneExists = await phoneCheckStmt.get(normalizedPhone);
+  if (phoneExists) {
+    throw new Error("Phone number already registered");
   }
 
   const insertStmt = db.prepare(
@@ -41,7 +61,7 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
     ign || null,
     uid || null,
     email || null,
-    phone || null,
+    normalizedPhone,
   );
   const userId = result.lastInsertRowid;
 
@@ -61,12 +81,13 @@ export const getUserFromSession = createServerFn({ method: "GET" }).handler(asyn
   if (!sessionId) return null;
 
   const stmt = db.prepare(`
-      SELECT users.id, users.username, users.role, users.deposit_balance, users.winning_balance 
+      SELECT users.id, users.username, users.role, users.deposit_balance, users.winning_balance, users.banned
       FROM sessions 
       JOIN users ON sessions.user_id = users.id 
       WHERE sessions.id = ? AND sessions.expires_at > ?
     `);
   const user = (await stmt.get(sessionId, new Date().toISOString())) as any;
+  if (user && user.banned) return null; // Treat banned users as not logged in
   return user || null;
 });
 
@@ -83,7 +104,7 @@ export const getUsers = createServerFn({ method: "GET" }).handler(async () => {
   const { db } = await import("./lib/db");
   return await db
     .prepare(
-      "SELECT id, username, password, role, created_at, deposit_balance, winning_balance FROM users",
+      "SELECT id, username, password, role, created_at, deposit_balance, winning_balance, ign, phone, banned FROM users",
     )
     .all();
 });
@@ -241,6 +262,13 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
     const { db } = await import("./lib/db");
     const { userId, tournamentId, teamName, players, contactEmail, contactPhone } = data as any;
+
+    // Check if user is banned
+    const userCheck = (await db
+      .prepare("SELECT banned FROM users WHERE id = ?")
+      .get(userId)) as any;
+    if (!userCheck) throw new Error("User not found");
+    if (userCheck.banned) throw new Error("Account is banned. Cannot register for tournaments.");
 
     // Check if tournament exists and has slots
     const t = (await db
@@ -492,7 +520,16 @@ export const getMyTeam = createServerFn({ method: "POST" }).handler(async ({ dat
   }
 
   if (!team) return null;
-  const members = await db.prepare("SELECT * FROM team_members WHERE team_id = ?").all(team.id);
+  const members = await db
+    .prepare(
+      `
+      SELECT tm.*, u.username
+      FROM team_members tm
+      LEFT JOIN users u ON u.id = tm.user_id
+      WHERE tm.team_id = ?
+    `,
+    )
+    .all(team.id);
   const leader = await db
     .prepare("SELECT username, ign, uid FROM users WHERE id = ?")
     .get(team.leader_id);
@@ -620,7 +657,15 @@ export const deleteTeam = createServerFn({ method: "POST" }).handler(async ({ da
 export const getAllTeams = createServerFn({ method: "GET" }).handler(async () => {
   const { db } = await import("./lib/db");
   const teams = (await db.prepare("SELECT * FROM teams ORDER BY created_at DESC").all()) as any[];
-  const allMembers = (await db.prepare("SELECT * FROM team_members").all()) as any[];
+  const allMembers = (await db
+    .prepare(
+      `
+      SELECT tm.*, u.username
+      FROM team_members tm
+      LEFT JOIN users u ON u.id = tm.user_id
+    `,
+    )
+    .all()) as any[];
   return teams.map((t) => ({ ...t, members: allMembers.filter((m) => m.team_id === t.id) }));
 });
 
@@ -984,6 +1029,19 @@ export const rescheduleTournament = createServerFn({ method: "POST" }).handler(a
 export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(async () => {
   const { db } = await import("./lib/db");
 
+  await db.prepare(
+    `
+      CREATE TABLE IF NOT EXISTS leaderboard_overrides (
+        id INTEGER PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        week_start TIMESTAMP NOT NULL,
+        points INTEGER NOT NULL,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, week_start)
+      )
+    `,
+  ).run();
+
   const rows = (await db
     .prepare(
       `
@@ -991,13 +1049,13 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
         u.id as user_id,
         u.username as ign,
         COALESCE(SUM(r.kills), 0) as kills,
-        COALESCE(SUM(r.points), 0) as points,
+        COALESCE(lo.points, COALESCE(SUM(r.points), 0)) as points,
         SUM(CASE WHEN r.position = 1 THEN 1 ELSE 0 END) as wins
       FROM users u
-      JOIN registrations r ON r.user_id = u.id
-      WHERE r.created_at >= date_trunc('week', CURRENT_TIMESTAMP)
-      GROUP BY u.id
-      HAVING COALESCE(SUM(r.points), 0) > 0
+      LEFT JOIN registrations r ON r.user_id = u.id AND r.created_at >= date_trunc('week', CURRENT_TIMESTAMP)
+      LEFT JOIN leaderboard_overrides lo ON lo.user_id = u.id AND lo.week_start = date_trunc('week', CURRENT_TIMESTAMP)
+      GROUP BY u.id, u.username, lo.points
+      HAVING COALESCE(lo.points, COALESCE(SUM(r.points), 0)) > 0
       ORDER BY points DESC, kills DESC
     `,
     )
@@ -1041,50 +1099,51 @@ export const updateLeaderboardPoints = createServerFn({ method: "POST" }).handle
       throw new Error("Points must be a valid non-negative number.");
     }
 
-    const totalRow = (await db
-      .prepare(
-        `
-        SELECT COALESCE(SUM(points), 0) AS total
-        FROM registrations
-        WHERE user_id = ? AND created_at >= date_trunc('week', CURRENT_TIMESTAMP)
+    await db.prepare(
+      `
+        CREATE TABLE IF NOT EXISTS leaderboard_overrides (
+          id INTEGER PRIMARY KEY,
+          user_id INTEGER NOT NULL,
+          week_start TIMESTAMP NOT NULL,
+          points INTEGER NOT NULL,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(user_id, week_start)
+        )
       `,
-      )
-      .get(userId)) as any;
+    ).run();
 
-    const currentTotal = Number(totalRow?.total || 0);
-    const latestRegistration = (await db
-      .prepare(
-        `
-        SELECT id, points
-        FROM registrations
-        WHERE user_id = ? AND created_at >= date_trunc('week', CURRENT_TIMESTAMP)
-        ORDER BY created_at DESC
-        LIMIT 1
-      `,
-      )
-      .get(userId)) as any;
-
-    if (!latestRegistration) {
-      throw new Error("No active registration found for this user this week.");
+    const weekRow = (await db
+      .prepare("SELECT date_trunc('week', CURRENT_TIMESTAMP) as week_start")
+      .get()) as any;
+    const weekStart = weekRow?.week_start;
+    if (!weekStart) {
+      throw new Error("Unable to determine current week period.");
     }
 
-    const delta = targetPoints - currentTotal;
-    const updatedPoints = latestRegistration.points + delta;
-    if (updatedPoints < 0) {
-      throw new Error(
-        "Unable to adjust points: target value would require a negative match score.",
-      );
-    }
+    const existing = await db
+      .prepare(
+        "SELECT id FROM leaderboard_overrides WHERE user_id = ? AND week_start = ?",
+      )
+      .get(userId, weekStart);
 
-    await db
-      .prepare("UPDATE registrations SET points = ? WHERE id = ?")
-      .run(updatedPoints, latestRegistration.id);
+    if (existing) {
+      await db
+        .prepare(
+          "UPDATE leaderboard_overrides SET points = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        )
+        .run(targetPoints, existing.id);
+    } else {
+      await db
+        .prepare(
+          "INSERT INTO leaderboard_overrides (user_id, week_start, points) VALUES (?, ?, ?)")
+        .run(userId, weekStart, targetPoints);
+    }
 
     await db
       .prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")
       .run(
         userId,
-        `📊 Admin adjusted your leaderboard points to ${targetPoints} for this week. Visit the leaderboard for details.`,
+        `📊 Admin adjusted your leaderboard display points to ${targetPoints} for this week. Match standings remain unchanged.`,
       );
 
     return { success: true };
@@ -1191,9 +1250,10 @@ export const processWithdrawal = createServerFn({ method: "POST" }).handler(asyn
 
   await db.transaction(async (tx) => {
     const user = (await tx
-      .prepare("SELECT winning_balance FROM users WHERE id = ?")
+      .prepare("SELECT winning_balance, banned FROM users WHERE id = ?")
       .get(userId)) as any;
     if (!user) throw new Error("User not found");
+    if (user.banned) throw new Error("Account is banned. Cannot process withdrawal.");
     if (user.winning_balance < amount)
       throw new Error("Insufficient Earned Coins to withdraw this amount.");
     if (amount <= 0) throw new Error("Withdraw amount must be greater than 0.");
@@ -1282,6 +1342,19 @@ export const deleteUser = createServerFn({ method: "POST" }).handler(async ({ da
 
   // Then delete the user (cascade deletes will handle the rest)
   await db.prepare("DELETE FROM users WHERE id = $1").run(id);
+
+  return { success: true };
+});
+
+export const banUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { id } = data as unknown as { id: number };
+
+  // Set banned to true
+  await db.prepare("UPDATE users SET banned = true WHERE id = $1").run(id);
+
+  // Clear any sessions for this user so they are immediately logged out
+  await db.prepare("DELETE FROM sessions WHERE user_id = $1").run(id);
 
   return { success: true };
 });

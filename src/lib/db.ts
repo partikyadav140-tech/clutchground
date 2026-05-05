@@ -145,6 +145,11 @@ async function initDb() {
         EXCEPTION
           WHEN duplicate_column THEN null;
         END;
+        BEGIN
+          ALTER TABLE users ADD COLUMN banned BOOLEAN DEFAULT false;
+        EXCEPTION
+          WHEN duplicate_column THEN null;
+        END;
       END $$;
 
       CREATE TABLE IF NOT EXISTS sessions (

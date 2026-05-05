@@ -109,12 +109,13 @@ function SignupPage() {
 
             {/* Phone */}
             <Field
-              label="Phone"
+              label="Phone *"
               type="tel"
               placeholder="+91 XXXXXXXXXX"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               autoComplete="tel"
+              required
             />
 
             {/* Password */}
