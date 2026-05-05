@@ -19,6 +19,7 @@ function AdminUsersPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
+  const [filteredUsers, setFilteredUsers] = useState(users);
 
   if (loading)
     return (
@@ -125,12 +126,23 @@ function AdminUsersPage() {
     }
   };
 
-  const filteredUsers = users.filter((u: any) =>
-    searchTerm === "" ||
-    u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (u.ign && u.ign.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (u.phone && u.phone.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const handleSearch = () => {
+    if (searchTerm.trim() === "") {
+      setFilteredUsers(users);
+    } else {
+      const filtered = users.filter((u: any) =>
+        u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (u.ign && u.ign.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (u.phone && u.phone.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+      setFilteredUsers(filtered);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setFilteredUsers(users);
+  };
 
   return (
     <div className="bg-background min-h-screen pb-24">
@@ -177,13 +189,31 @@ function AdminUsersPage() {
             <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">
               Search Users
             </label>
-            <input
-              type="text"
-              placeholder="Search by username, IGN, or phone number..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-white outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold placeholder:font-semibold"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Search by username, IGN, or phone number..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="flex-1 bg-secondary/50 border border-border focus:border-primary focus:bg-white outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold placeholder:font-semibold"
+              />
+              <Button
+                onClick={handleSearch}
+                className="h-12 px-6 rounded-xl font-bold bg-primary text-white shadow-primary hover:opacity-90 active:scale-[0.98] transition-all"
+              >
+                Search
+              </Button>
+              {searchTerm && (
+                <Button
+                  onClick={handleClearSearch}
+                  variant="outline"
+                  className="h-12 px-4 rounded-xl font-bold border-border hover:bg-secondary/50"
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
