@@ -1,20 +1,20 @@
-import { useState, useEffect } from 'react';
-import { getUserFromSession, logoutUser } from '../api';
-import { useRouter } from '@tanstack/react-router';
+import { useState, useEffect } from "react";
+import { getUserFromSession, logoutUser } from "../api";
+import { useRouter } from "@tanstack/react-router";
 
 export function getSessionId() {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('sessionId');
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("sessionId");
   }
   return null;
 }
 
 export function setSessionId(id: string) {
-  localStorage.setItem('sessionId', id);
+  localStorage.setItem("sessionId", id);
 }
 
 export function clearSessionId() {
-  localStorage.removeItem('sessionId');
+  localStorage.removeItem("sessionId");
 }
 
 // Global state for live updates across components
@@ -22,7 +22,7 @@ let globalUser: any = null;
 const listeners = new Set<Function>();
 
 function notifyListeners() {
-  listeners.forEach(l => l(globalUser));
+  listeners.forEach((l) => l(globalUser));
 }
 
 let polling = false;
@@ -71,7 +71,7 @@ export function useAuth() {
       }
       setLoading(false);
     }
-    
+
     if (!globalUser) {
       fetchUser();
     } else {
@@ -93,10 +93,10 @@ export function useAuth() {
     if (sessionId) {
       (logoutUser as any)({ data: sessionId });
     }
-    localStorage.removeItem('sessionId');
+    localStorage.removeItem("sessionId");
     globalUser = null;
     notifyListeners();
-    router.navigate({ to: '/login' });
+    router.navigate({ to: "/login" });
   };
 
   return { user, loading, logout, setUser };

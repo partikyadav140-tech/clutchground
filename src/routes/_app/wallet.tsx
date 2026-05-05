@@ -1,12 +1,28 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { ArrowDownToLine, ArrowUpFromLine, Wallet as WalletIcon, ShieldAlert, TrendingUp, Info, History, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Wallet as WalletIcon,
+  ShieldAlert,
+  TrendingUp,
+  Info,
+  History,
+  ArrowDownLeft,
+  ArrowUpRight,
+} from "lucide-react";
 import { toast } from "sonner";
 import { GodCoin } from "@/components/GodCoin";
 import { useAuth } from "../../lib/auth-client";
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { processWithdrawal, getTransactions } from "../../api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { processWithdrawal, getTransactions, addDepositRazorpay } from "../../api";
 
 export const Route = createFileRoute("/_app/wallet")({
   head: () => ({ meta: [{ title: "Wallet — Professional Esports Arena" }] }),
@@ -24,13 +40,15 @@ function WalletPage() {
     if (!authLoading && !user) {
       router.navigate({ to: "/login" });
     } else if (user) {
-      getTransactions({ data: user.id }).then((txs) => {
-        setTransactions(txs);
-        setLoadingTx(false);
-      }).catch(err => {
-        console.error(err);
-        setLoadingTx(false);
-      });
+      getTransactions({ data: user.id })
+        .then((txs) => {
+          setTransactions(txs);
+          setLoadingTx(false);
+        })
+        .catch((err) => {
+          console.error(err);
+          setLoadingTx(false);
+        });
     }
   }, [user, authLoading, router]);
 
@@ -44,6 +62,76 @@ function WalletPage() {
   const [upiNumber, setUpiNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [addCashOpen, setAddCashOpen] = useState(false);
+  const [addCashAmount, setAddCashAmount] = useState("");
+  const [isAddingCash, setIsAddingCash] = useState(false);
+
+  const loadRazorpay = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleAddCashSubmit = async () => {
+    const amount = parseInt(addCashAmount, 10);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error("Invalid amount.");
+      return;
+    }
+
+    setIsAddingCash(true);
+    const res = await loadRazorpay();
+    if (!res) {
+      toast.error("Razorpay SDK failed to load. Are you online?");
+      setIsAddingCash(false);
+      return;
+    }
+
+    const options = {
+      key: "rzp_test_YourMockKeyHere", // Replace with real key
+      amount: amount * 100,
+      currency: "INR",
+      name: "ClutchGround",
+      description: "Add Cash to Wallet",
+      handler: async function (response: any) {
+        try {
+          await (addDepositRazorpay as any)({
+            data: {
+              userId: user.id,
+              amount: amount,
+              paymentId: response.razorpay_payment_id,
+            },
+          });
+          toast.success("Cash added successfully!");
+          setAddCashOpen(false);
+          setAddCashAmount("");
+          
+          const newTxs = await getTransactions({ data: user.id });
+          setTransactions(newTxs);
+          router.invalidate();
+        } catch (err: any) {
+          toast.error("Failed to add cash: " + err.message);
+        }
+      },
+      prefill: {
+        name: user.username,
+        email: user.email || "user@example.com",
+        contact: user.phone || "9999999999",
+      },
+      theme: {
+        color: "#f97316",
+      },
+    };
+
+    const paymentObject = new (window as any).Razorpay(options);
+    paymentObject.open();
+    setIsAddingCash(false);
+  };
+
   if (authLoading || !user) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
@@ -54,7 +142,9 @@ function WalletPage() {
 
   const handleWithdrawClick = () => {
     if (winningBalance <= 0) {
-      toast.error("You have no Earned Coins to withdraw! Win tournaments to earn withdrawable coins.");
+      toast.error(
+        "You have no Earned Coins to withdraw! Win tournaments to earn withdrawable coins.",
+      );
       return;
     }
     setWithdrawOpen(true);
@@ -77,15 +167,17 @@ function WalletPage() {
     setIsSubmitting(true);
     try {
       await (processWithdrawal as any)({ data: { userId: user.id, amount, upiId, upiNumber } });
-      toast.success("Withdrawal Requested!", { description: "You will receive your money within 2-3 working days." });
+      toast.success("Withdrawal Requested!", {
+        description: "You will receive your money within 2-3 working days.",
+      });
       setWithdrawOpen(false);
       setWithdrawAmount("");
       setUpiId("");
       setUpiNumber("");
-      
+
       const newTxs = await getTransactions({ data: user.id });
       setTransactions(newTxs);
-      
+
       router.invalidate();
     } catch (err: any) {
       toast.error(err.message || "Failed to process withdrawal.");
@@ -99,27 +191,35 @@ function WalletPage() {
       {/* ─── Top Header (Mobile First) ─── */}
       <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-8 px-4 relative overflow-hidden z-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-        
+
         <div className="relative z-10 flex flex-col items-center text-center">
           <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-3">
             <WalletIcon className="w-6 h-6" />
           </div>
           <h1 className="font-display text-3xl font-black text-foreground">Wallet</h1>
-          <p className="text-sm text-muted-foreground mt-1 font-semibold">Manage your funds securely</p>
+          <p className="text-sm text-muted-foreground mt-1 font-semibold">
+            Manage your funds securely
+          </p>
         </div>
 
         {/* Main Balance Card */}
         <div className="relative mt-6 z-10 bg-gradient-to-br from-primary to-[#d95a00] rounded-[1.25rem] p-6 text-white shadow-lg overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/10 rounded-full blur-xl translate-y-1/3 -translate-x-1/3" />
-          
+
           <div className="relative z-10 text-center">
-            <span className="text-xs uppercase tracking-widest text-white/80 font-bold">Total Balance</span>
+            <span className="text-xs uppercase tracking-widest text-white/80 font-bold">
+              Total Balance
+            </span>
             <div className="flex items-center justify-center gap-2 mt-2 mb-1">
               <GodCoin className="w-8 h-8 sm:w-10 sm:h-10 text-white drop-shadow-sm" />
-              <div className="font-display text-5xl sm:text-6xl font-black drop-shadow-sm">{totalBalance}</div>
+              <div className="font-display text-5xl sm:text-6xl font-black drop-shadow-sm">
+                {totalBalance}
+              </div>
             </div>
-            <span className="text-xs font-semibold text-white/90 bg-black/20 px-3 py-1 rounded-full inline-block mt-2">1 Coin = 1 INR</span>
+            <span className="text-xs font-semibold text-white/90 bg-black/20 px-3 py-1 rounded-full inline-block mt-2">
+              1 Coin = 1 INR
+            </span>
           </div>
         </div>
 
@@ -127,7 +227,7 @@ function WalletPage() {
         <div className="flex gap-3 mt-6 relative z-10">
           <Button
             className="flex-1 bg-white border border-primary text-primary hover:bg-primary/5 h-12 rounded-xl font-bold text-sm shadow-sm"
-            onClick={() => toast.info("Payment gateway integration pending.")}
+            onClick={() => setAddCashOpen(true)}
           >
             <ArrowDownToLine className="w-4 h-4 mr-2" /> Add Cash
           </Button>
@@ -142,23 +242,33 @@ function WalletPage() {
 
       <div className="px-4 mt-6">
         {/* Balance Breakdown */}
-        <h3 className="font-display font-black text-lg text-foreground mb-3 px-1">Balance Breakdown</h3>
+        <h3 className="font-display font-black text-lg text-foreground mb-3 px-1">
+          Balance Breakdown
+        </h3>
         <div className="grid grid-cols-2 gap-3 mb-6">
           <div className="bg-white rounded-[1rem] border border-border p-4 shadow-sm relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500" />
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Winnings (Withdrawable)</div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">
+              Winnings (Withdrawable)
+            </div>
             <div className="flex items-center gap-1.5 mt-2">
               <GodCoin className="w-5 h-5" />
-              <span className="font-display text-2xl font-black text-emerald-600">{winningBalance}</span>
+              <span className="font-display text-2xl font-black text-emerald-600">
+                {winningBalance}
+              </span>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-[1rem] border border-border p-4 shadow-sm relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
-            <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Deposits (Entry Only)</div>
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">
+              Deposits (Entry Only)
+            </div>
             <div className="flex items-center gap-1.5 mt-2">
               <GodCoin className="w-5 h-5" />
-              <span className="font-display text-2xl font-black text-blue-600">{depositBalance}</span>
+              <span className="font-display text-2xl font-black text-blue-600">
+                {depositBalance}
+              </span>
             </div>
           </div>
         </div>
@@ -169,7 +279,8 @@ function WalletPage() {
           <div className="text-sm text-blue-800">
             <p className="font-bold font-display tracking-wide mb-1">Important Note</p>
             <p className="text-xs leading-relaxed text-blue-700/80">
-              Deposit Coins can only be used to pay tournament entry fees. Only Winnings (Earned Coins) can be withdrawn to your UPI account.
+              Deposit Coins can only be used to pay tournament entry fees. Only Winnings (Earned
+              Coins) can be withdrawn to your UPI account.
             </p>
           </div>
         </div>
@@ -178,7 +289,7 @@ function WalletPage() {
         <div className="flex items-center justify-between mb-3 px-1">
           <h3 className="font-display font-black text-lg text-foreground">Transactions</h3>
         </div>
-        
+
         {loadingTx ? (
           <div className="flex justify-center p-8">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -186,12 +297,26 @@ function WalletPage() {
         ) : transactions.length > 0 ? (
           <div className="space-y-3">
             {transactions.map((tx) => {
-              const isPositive = ['deposit_added', 'winnings_added', 'tournament_prize', 'refund'].includes(tx.type);
+              const isPositive = [
+                "deposit_added",
+                "winnings_added",
+                "tournament_prize",
+                "refund",
+              ].includes(tx.type);
               return (
-                <div key={tx.id} className="bg-white rounded-[1rem] border border-border p-4 flex items-center justify-between shadow-sm">
+                <div
+                  key={tx.id}
+                  className="bg-white rounded-[1rem] border border-border p-4 flex items-center justify-between shadow-sm"
+                >
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                      {isPositive ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${isPositive ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}
+                    >
+                      {isPositive ? (
+                        <ArrowDownLeft className="w-5 h-5" />
+                      ) : (
+                        <ArrowUpRight className="w-5 h-5" />
+                      )}
                     </div>
                     <div>
                       <p className="font-bold text-sm text-foreground">{tx.description}</p>
@@ -200,8 +325,10 @@ function WalletPage() {
                       </p>
                     </div>
                   </div>
-                  <div className={`flex items-center gap-1 font-black ${isPositive ? 'text-emerald-600' : 'text-red-600'}`}>
-                    {isPositive ? '+' : '-'} <GodCoin className="w-3 h-3" /> {tx.amount}
+                  <div
+                    className={`flex items-center gap-1 font-black ${isPositive ? "text-emerald-600" : "text-red-600"}`}
+                  >
+                    {isPositive ? "+" : "-"} <GodCoin className="w-3 h-3" /> {tx.amount}
                   </div>
                 </div>
               );
@@ -223,7 +350,9 @@ function WalletPage() {
         <DialogContent className="w-[90vw] max-w-md bg-white border-0 rounded-[1.5rem] p-0 overflow-hidden">
           <div className="bg-primary p-6 text-white text-center relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-xl -translate-y-1/2 translate-x-1/2" />
-            <DialogTitle className="font-display text-2xl font-black tracking-tight">Withdraw Funds</DialogTitle>
+            <DialogTitle className="font-display text-2xl font-black tracking-tight">
+              Withdraw Funds
+            </DialogTitle>
             <DialogDescription className="text-white/80 text-xs uppercase tracking-widest font-bold mt-2">
               Available Winnings: {winningBalance} Coins
             </DialogDescription>
@@ -231,7 +360,9 @@ function WalletPage() {
 
           <div className="p-6 space-y-5">
             <div>
-              <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">Amount (Coins) *</label>
+              <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">
+                Amount (Coins) *
+              </label>
               <div className="relative">
                 <GodCoin className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 z-10" />
                 <input
@@ -244,9 +375,11 @@ function WalletPage() {
                 />
               </div>
             </div>
-            
+
             <div>
-              <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">UPI ID *</label>
+              <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">
+                UPI ID *
+              </label>
               <input
                 type="text"
                 placeholder="Enter UPI ID"
@@ -255,9 +388,11 @@ function WalletPage() {
                 className="w-full bg-secondary/30 border border-border focus:border-primary focus:bg-white outline-none px-4 h-12 text-sm font-semibold rounded-xl transition-all shadow-sm"
               />
             </div>
-            
+
             <div>
-              <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">UPI Mobile Number *</label>
+              <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">
+                UPI Mobile Number *
+              </label>
               <input
                 type="tel"
                 placeholder="Enter mobile number"
@@ -277,7 +412,49 @@ function WalletPage() {
                   <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   Processing...
                 </span>
-              ) : "CONFIRM WITHDRAWAL"}
+              ) : (
+                "CONFIRM WITHDRAWAL"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={addCashOpen} onOpenChange={setAddCashOpen}>
+        <DialogContent className="w-[90vw] max-w-md bg-white border-0 rounded-[1.5rem] p-0 overflow-hidden">
+          <div className="bg-primary p-6 text-white text-center relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-xl -translate-y-1/2 translate-x-1/2" />
+            <DialogTitle className="font-display text-2xl font-black tracking-tight">Add Cash</DialogTitle>
+            <DialogDescription className="text-white/80 text-xs uppercase tracking-widest font-bold mt-2">
+              Deposit Coins securely
+            </DialogDescription>
+          </div>
+
+          <div className="p-6 space-y-5">
+            <div>
+              <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">Amount (INR) *</label>
+              <div className="relative">
+                <GodCoin className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 z-10" />
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={addCashAmount}
+                  onChange={(e) => setAddCashAmount(e.target.value)}
+                  className="w-full bg-secondary/30 border border-border focus:border-primary focus:bg-white outline-none pl-12 pr-4 h-14 text-lg font-display font-black rounded-xl transition-all shadow-sm"
+                />
+              </div>
+            </div>
+
+            <Button
+              onClick={handleAddCashSubmit}
+              disabled={isAddingCash}
+              className="w-full h-14 rounded-xl font-display font-bold tracking-wider text-base bg-primary text-white shadow-lg mt-2"
+            >
+              {isAddingCash ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Processing...
+                </span>
+              ) : "PAY WITH RAZORPAY"}
             </Button>
           </div>
         </DialogContent>
@@ -285,4 +462,3 @@ function WalletPage() {
     </div>
   );
 }
-

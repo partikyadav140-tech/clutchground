@@ -14,8 +14,12 @@ export function Logo({ size = 40, withText = true }: { size?: number; withText?:
       />
       {withText && (
         <div className="hidden sm:flex items-center gap-2">
-          <span className="font-display text-lg sm:text-2xl font-black tracking-widest text-fire-gradient uppercase">CLUTCH</span>
-          <span className="font-display text-[10px] sm:text-sm font-bold tracking-[0.2em] text-muted-foreground uppercase">GROUND</span>
+          <span className="font-display text-lg sm:text-2xl font-black tracking-widest text-fire-gradient uppercase">
+            CLUTCH
+          </span>
+          <span className="font-display text-[10px] sm:text-sm font-bold tracking-[0.2em] text-muted-foreground uppercase">
+            GROUND
+          </span>
         </div>
       )}
     </Link>

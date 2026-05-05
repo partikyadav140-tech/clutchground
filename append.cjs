@@ -1,5 +1,5 @@
-const fs = require('fs');
-let content = fs.readFileSync('src/api.ts', 'utf8');
+const fs = require("fs");
+let content = fs.readFileSync("src/api.ts", "utf8");
 
 const newCode = `
 export const deleteUser = createServerFn({ method: "POST" })
@@ -32,4 +32,4 @@ export const deleteAllTournaments = createServerFn({ method: "POST" })
   });
 `;
 
-fs.writeFileSync('src/api.ts', content + '\n' + newCode);
+fs.writeFileSync("src/api.ts", content + "\n" + newCode);

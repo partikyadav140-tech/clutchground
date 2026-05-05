@@ -10,12 +10,12 @@ export function SplashScreen() {
       setVisible(false);
       return;
     }
-    
+
     const timer = setTimeout(() => {
       setVisible(false);
       sessionStorage.setItem("splashShown", "true");
     }, 3000);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -25,7 +25,7 @@ export function SplashScreen() {
     <div className="fixed inset-0 z-[9999] bg-[#050505] flex flex-col items-center justify-center animate-out fade-out duration-1000 delay-2000 fill-mode-forwards">
       {/* Background Gradient */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/10 via-[#050505] to-[#050505]" />
-      
+
       {/* Grid Pattern overlay */}
       <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
 
@@ -34,7 +34,7 @@ export function SplashScreen() {
         <div className="animate-[pulse_2s_ease-in-out_infinite] scale-125 mb-8 filter drop-shadow-[0_0_15px_rgba(236,72,153,0.5)]">
           <Logo size={120} withText={false} />
         </div>
-        
+
         {/* Cinematic Title text */}
         <h1 className="font-display font-black text-3xl sm:text-5xl text-white tracking-[0.2em] mb-2 drop-shadow-md">
           CLUTCH<span className="text-primary">GROUND</span>

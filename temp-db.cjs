@@ -1,4 +1,4 @@
-const db = require('better-sqlite3')('./arena.db');
+const db = require("better-sqlite3")("./arena.db");
 db.exec(`
   CREATE TABLE IF NOT EXISTS tournament_requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

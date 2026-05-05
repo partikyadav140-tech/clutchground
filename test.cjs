@@ -1,8 +1,12 @@
-const db = require('better-sqlite3')('./arena.db');
+const db = require("better-sqlite3")("./arena.db");
 const userId = 1;
 
-const userTeam = db.prepare('SELECT t.name, t.id FROM teams t JOIN team_members tm ON tm.team_id = t.id WHERE tm.user_id = ?').get(userId);
-const leaderTeam = db.prepare('SELECT name, id FROM teams WHERE leader_id = ?').get(userId);
+const userTeam = db
+  .prepare(
+    "SELECT t.name, t.id FROM teams t JOIN team_members tm ON tm.team_id = t.id WHERE tm.user_id = ?",
+  )
+  .get(userId);
+const leaderTeam = db.prepare("SELECT name, id FROM teams WHERE leader_id = ?").get(userId);
 
 const teamName1 = userTeam ? userTeam.name : null;
 const teamName2 = leaderTeam ? leaderTeam.name : null;
@@ -10,7 +14,9 @@ const teamId1 = userTeam ? userTeam.id : null;
 const teamId2 = leaderTeam ? leaderTeam.id : null;
 
 try {
-  const matches = db.prepare(`
+  const matches = db
+    .prepare(
+      `
     SELECT t.id, t.title as name, t.startsAt as date, t.status as match_status, t.prize, t.format, t.room_id, t.room_pass,
            r.kills, r.position, r.points, 'approved' as reg_status
     FROM registrations r
@@ -28,8 +34,10 @@ try {
     GROUP BY t.id
 
     ORDER BY 1 DESC
-  `).all(userId, teamName1, teamName2, userId, teamId1, teamId2);
+  `,
+    )
+    .all(userId, teamName1, teamName2, userId, teamId1, teamId2);
   console.log("Matches query successful, count:", matches.length);
-} catch(e) {
-  console.error('ERROR:', e.message);
+} catch (e) {
+  console.error("ERROR:", e.message);
 }

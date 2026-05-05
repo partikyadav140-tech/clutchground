@@ -1,8 +1,22 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import {
-  Home, Trophy, Crosshair, User, Bell, Wallet, Crown, Users, Shield,
-  LogOut, Settings, ChevronRight, X, Menu, Search, MessageCircle
+  Home,
+  Trophy,
+  Crosshair,
+  User,
+  Bell,
+  Wallet,
+  Crown,
+  Users,
+  Shield,
+  LogOut,
+  Settings,
+  ChevronRight,
+  X,
+  Menu,
+  Search,
+  MessageCircle,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { Button } from "./ui/button";
@@ -55,7 +69,9 @@ export function Navbar() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [scrolled, setScrolled] = useState(false);
 
-  const totalBalance = user ? ((user as any).deposit_balance || 0) + ((user as any).winning_balance || 0) : 0;
+  const totalBalance = user
+    ? ((user as any).deposit_balance || 0) + ((user as any).winning_balance || 0)
+    : 0;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -104,9 +120,15 @@ export function Navbar() {
               <span className="text-primary">Season 7 — Live Now</span>
             </div>
             <div className="flex items-center gap-4 text-muted-foreground">
-              <Link to="/rules" className="hover:text-primary transition-colors">Rules</Link>
-              <Link to="/anti-cheat" className="hover:text-primary transition-colors">Anti-Cheat</Link>
-              <Link to="/contact" className="hover:text-primary transition-colors">Support</Link>
+              <Link to="/rules" className="hover:text-primary transition-colors">
+                Rules
+              </Link>
+              <Link to="/anti-cheat" className="hover:text-primary transition-colors">
+                Anti-Cheat
+              </Link>
+              <Link to="/contact" className="hover:text-primary transition-colors">
+                Support
+              </Link>
             </div>
           </div>
         </div>
@@ -118,9 +140,15 @@ export function Navbar() {
             className="lg:hidden w-10 h-10 flex flex-col justify-center items-center gap-1.5 -ml-1 active:scale-95 transition-transform"
             aria-label="Open menu"
           >
-            <span className={`block w-6 h-0.5 bg-foreground transition-all duration-200 ${menuOpen ? "rotate-45 translate-y-2" : ""}`} />
-            <span className={`block w-5 h-0.5 bg-foreground transition-all duration-200 ${menuOpen ? "opacity-0" : ""}`} />
-            <span className={`block w-6 h-0.5 bg-foreground transition-all duration-200 ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`} />
+            <span
+              className={`block w-6 h-0.5 bg-foreground transition-all duration-200 ${menuOpen ? "rotate-45 translate-y-2" : ""}`}
+            />
+            <span
+              className={`block w-5 h-0.5 bg-foreground transition-all duration-200 ${menuOpen ? "opacity-0" : ""}`}
+            />
+            <span
+              className={`block w-6 h-0.5 bg-foreground transition-all duration-200 ${menuOpen ? "-rotate-45 -translate-y-2" : ""}`}
+            />
           </button>
 
           {/* Center/Left: Logo */}
@@ -172,7 +200,11 @@ export function Navbar() {
             <div className="hidden lg:block">
               {!user ? (
                 <Link to="/login">
-                  <Button variant="hero" size="sm" className="font-display uppercase tracking-wider h-9 px-5">
+                  <Button
+                    variant="hero"
+                    size="sm"
+                    className="font-display uppercase tracking-wider h-9 px-5"
+                  >
                     Login
                   </Button>
                 </Link>
@@ -189,7 +221,11 @@ export function Navbar() {
                   </Link>
                   {user.role === "admin" && (
                     <Link to="/admin">
-                      <Button variant="outlineFire" size="sm" className="h-9 px-3 font-display text-xs">
+                      <Button
+                        variant="outlineFire"
+                        size="sm"
+                        className="h-9 px-3 font-display text-xs"
+                      >
                         <Shield className="w-3.5 h-3.5" />
                       </Button>
                     </Link>
@@ -202,7 +238,11 @@ export function Navbar() {
             <div className="hidden xl:block">
               {!user ? (
                 <Link to="/login">
-                  <Button variant="hero" size="sm" className="font-display uppercase tracking-wider h-9">
+                  <Button
+                    variant="hero"
+                    size="sm"
+                    className="font-display uppercase tracking-wider h-9"
+                  >
                     Join Battle
                   </Button>
                 </Link>
@@ -210,7 +250,11 @@ export function Navbar() {
                 <JoinBattleDialog
                   mode="Squad"
                   trigger={
-                    <Button variant="hero" size="sm" className="font-display uppercase tracking-wider h-9">
+                    <Button
+                      variant="hero"
+                      size="sm"
+                      className="font-display uppercase tracking-wider h-9"
+                    >
                       Join Battle
                     </Button>
                   }
@@ -271,7 +315,10 @@ export function Navbar() {
                 </Button>
               </Link>
               <Link to="/signup" onClick={() => setMenuOpen(false)} className="flex-1">
-                <Button variant="outlineFire" className="w-full font-display tracking-wider text-sm h-10">
+                <Button
+                  variant="outlineFire"
+                  className="w-full font-display tracking-wider text-sm h-10"
+                >
                   Sign Up
                 </Button>
               </Link>
@@ -294,7 +341,9 @@ export function Navbar() {
                     to={item.to}
                     onClick={() => setMenuOpen(false)}
                     className="flex items-center justify-between mx-3 px-3 py-3 rounded-xl text-muted-foreground hover:bg-secondary/60 hover:text-primary transition-all active:scale-[0.98]"
-                    activeProps={{ className: "bg-primary/15 text-primary border border-primary/20" }}
+                    activeProps={{
+                      className: "bg-primary/15 text-primary border border-primary/20",
+                    }}
                   >
                     <div className="flex items-center gap-3">
                       <Icon className="w-5 h-5 shrink-0" />
@@ -310,7 +359,9 @@ export function Navbar() {
           {/* Admin link */}
           {user?.role === "admin" && (
             <div className="mb-1">
-              <div className="px-5 py-2 text-[10px] font-display uppercase tracking-[0.25em] text-primary/60">Admin</div>
+              <div className="px-5 py-2 text-[10px] font-display uppercase tracking-[0.25em] text-primary/60">
+                Admin
+              </div>
               <Link
                 to="/admin"
                 onClick={() => setMenuOpen(false)}
@@ -330,7 +381,11 @@ export function Navbar() {
         {user && (
           <div className="px-5 py-4 border-t border-border/40">
             <button
-              onClick={() => { logout(); setMenuOpen(false); toast.success("Logged out"); }}
+              onClick={() => {
+                logout();
+                setMenuOpen(false);
+                toast.success("Logged out");
+              }}
               className="w-full flex items-center justify-center gap-2 h-11 rounded-xl border border-destructive/40 text-destructive hover:bg-destructive/10 transition-all active:scale-[0.98] font-semibold text-sm"
             >
               <LogOut className="w-4 h-4" /> Logout
@@ -355,15 +410,21 @@ export function Navbar() {
                 {({ isActive }: { isActive: boolean }) => (
                   <>
                     {isActive && <span className="nav-active-bar" />}
-                    <div className={`relative w-12 h-9 flex items-center justify-center rounded-2xl transition-all duration-200 ${isActive ? "bg-primary/15" : "group-active:bg-secondary/60"}`}>
-                      <Icon className={`w-5 h-5 transition-all duration-200 ${isActive ? "scale-110" : ""}`} />
+                    <div
+                      className={`relative w-12 h-9 flex items-center justify-center rounded-2xl transition-all duration-200 ${isActive ? "bg-primary/15" : "group-active:bg-secondary/60"}`}
+                    >
+                      <Icon
+                        className={`w-5 h-5 transition-all duration-200 ${isActive ? "scale-110" : ""}`}
+                      />
                       {isNotif && unreadCount > 0 && (
                         <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] font-black grid place-items-center border-2 border-card">
                           {unreadCount > 9 ? "9+" : unreadCount}
                         </span>
                       )}
                     </div>
-                    <span className={`text-[10px] font-display tracking-wider transition-colors duration-200 ${isActive ? "text-primary font-bold" : ""}`}>
+                    <span
+                      className={`text-[10px] font-display tracking-wider transition-colors duration-200 ${isActive ? "text-primary font-bold" : ""}`}
+                    >
                       {item.label}
                     </span>
                   </>

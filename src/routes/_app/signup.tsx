@@ -28,7 +28,9 @@ function SignupPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await (signupUser as any)({ data: { username, password, ign, uid, email, phone } });
+      const res = await (signupUser as any)({
+        data: { username, password, ign, uid, email, phone },
+      });
       setSessionId(res.sessionId);
       toast.success("Welcome to the arena, warrior! 🔥");
       window.location.href = "/";
@@ -45,7 +47,7 @@ function SignupPage() {
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 pointer-events-none" />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -60,7 +62,9 @@ function SignupPage() {
             <h1 className="font-display text-2xl sm:text-3xl font-black text-foreground">
               Join The Arena
             </h1>
-            <p className="text-muted-foreground text-sm mt-1 font-semibold">120K+ warriors are waiting for you.</p>
+            <p className="text-muted-foreground text-sm mt-1 font-semibold">
+              120K+ warriors are waiting for you.
+            </p>
           </div>
         </div>
 
@@ -140,13 +144,25 @@ function SignupPage() {
 
             {/* Terms */}
             <label className="flex items-start gap-2.5 text-xs text-muted-foreground cursor-pointer px-1 mt-2">
-              <input type="checkbox" required className="accent-primary mt-0.5 shrink-0 w-3.5 h-3.5 rounded" />
+              <input
+                type="checkbox"
+                required
+                className="accent-primary mt-0.5 shrink-0 w-3.5 h-3.5 rounded"
+              />
               <span className="leading-relaxed font-semibold">
                 I accept the{" "}
-                <Link to="/rules" className="text-primary font-bold hover:underline">Rules</Link>,{" "}
-                <Link to="/terms" className="text-primary font-bold hover:underline">Terms</Link> &{" "}
-                <Link to="/privacy" className="text-primary font-bold hover:underline">Privacy Policy</Link>.
-                I confirm I am 13+ years old.
+                <Link to="/rules" className="text-primary font-bold hover:underline">
+                  Rules
+                </Link>
+                ,{" "}
+                <Link to="/terms" className="text-primary font-bold hover:underline">
+                  Terms
+                </Link>{" "}
+                &{" "}
+                <Link to="/privacy" className="text-primary font-bold hover:underline">
+                  Privacy Policy
+                </Link>
+                . I confirm I am 13+ years old.
               </span>
             </label>
 
@@ -178,18 +194,27 @@ function SignupPage() {
         </div>
 
         <div className="mt-8 flex items-center justify-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-          <Link to="/rules" className="hover:text-primary transition-colors">Rules</Link>
+          <Link to="/rules" className="hover:text-primary transition-colors">
+            Rules
+          </Link>
           <span className="w-1 h-1 rounded-full bg-border" />
-          <Link to="/anti-cheat" className="hover:text-primary transition-colors">Anti-Cheat</Link>
+          <Link to="/anti-cheat" className="hover:text-primary transition-colors">
+            Anti-Cheat
+          </Link>
           <span className="w-1 h-1 rounded-full bg-border" />
-          <Link to="/contact" className="hover:text-primary transition-colors">Support</Link>
+          <Link to="/contact" className="hover:text-primary transition-colors">
+            Support
+          </Link>
         </div>
       </motion.div>
     </div>
   );
 }
 
-function Field({ label, ...rest }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+function Field({
+  label,
+  ...rest
+}: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <div>
       <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">

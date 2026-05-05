@@ -1,9 +1,10 @@
 "use server";
-import { Pool } from 'pg';
+import { Pool } from "pg";
 
 let connString = process.env.DATABASE_URL;
-if (!connString || !connString.startsWith('postgres')) {
-  connString = 'postgresql://neondb_owner:npg_Z2IiLU7CrfqO@ep-morning-shape-a4x9wieu.us-east-1.aws.neon.tech/neondb?sslmode=require';
+if (!connString || !connString.startsWith("postgres")) {
+  connString =
+    "postgresql://neondb_owner:npg_Z2IiLU7CrfqO@ep-morning-shape-a4x9wieu.us-east-1.aws.neon.tech/neondb?sslmode=require";
 }
 
 const pool = new Pool({
@@ -16,35 +17,44 @@ export const db = {
   query: async (text: string, params: any[] = [], client: any = pool) => {
     let pgText = text;
     let i = 1;
-    while(pgText.includes('?')) {
-      pgText = pgText.replace('?', '$' + i++);
+    while (pgText.includes("?")) {
+      pgText = pgText.replace("?", "$" + i++);
     }
     return client.query(pgText, params);
   },
   transaction: async (callback: (txDb: any) => Promise<any>) => {
     const client = await pool.connect();
     try {
-      await client.query('BEGIN');
+      await client.query("BEGIN");
       const txDb = {
         query: (text: string, params?: any[]) => db.query(text, params, client),
         prepare: (text: string) => ({
-          get: async (...args: any[]) => { const { rows } = await txDb.query(text, args); return rows[0] || null; },
-          all: async (...args: any[]) => { const { rows } = await txDb.query(text, args); return rows; },
-          run: async (...args: any[]) => { 
-             let modText = text;
-             if (text.trim().toUpperCase().startsWith('INSERT') && !text.toUpperCase().includes('RETURNING')) {
-               modText = text + ' RETURNING id';
-             }
-             const { rows } = await txDb.query(modText, args);
-             return { lastInsertRowid: rows[0]?.id };
-          }
-        })
+          get: async (...args: any[]) => {
+            const { rows } = await txDb.query(text, args);
+            return rows[0] || null;
+          },
+          all: async (...args: any[]) => {
+            const { rows } = await txDb.query(text, args);
+            return rows;
+          },
+          run: async (...args: any[]) => {
+            let modText = text;
+            if (
+              text.trim().toUpperCase().startsWith("INSERT") &&
+              !text.toUpperCase().includes("RETURNING")
+            ) {
+              modText = text + " RETURNING id";
+            }
+            const { rows } = await txDb.query(modText, args);
+            return { lastInsertRowid: rows[0]?.id };
+          },
+        }),
       };
       const result = await callback(txDb);
-      await client.query('COMMIT');
+      await client.query("COMMIT");
       return result;
     } catch (e) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       throw e;
     } finally {
       client.release();
@@ -62,14 +72,17 @@ export const db = {
       },
       run: async (...args: any[]) => {
         let modText = text;
-        if (text.trim().toUpperCase().startsWith('INSERT') && !text.toUpperCase().includes('RETURNING')) {
-          modText = text + ' RETURNING id';
+        if (
+          text.trim().toUpperCase().startsWith("INSERT") &&
+          !text.toUpperCase().includes("RETURNING")
+        ) {
+          modText = text + " RETURNING id";
         }
         const { rows } = await db.query(modText, args);
         return { lastInsertRowid: rows[0]?.id };
-      }
-    }
-  }
+      },
+    };
+  },
 };
 
 async function initDb() {
@@ -264,9 +277,7 @@ async function initDb() {
         VALUES ('admin', 'admin123', 'admin')
         ON CONFLICT (username) DO NOTHING
       `);
-    } catch(e) {}
-
-
+    } catch (e) {}
   } catch (e) {
     console.error("DB Init error:", e);
   }

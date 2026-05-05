@@ -1,5 +1,12 @@
 import { useState, type ReactNode } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Crown, Users, Trophy, Check } from "lucide-react";
 import { toast } from "sonner";
@@ -21,14 +28,27 @@ interface Props {
 
 const teamSizeFor = (mode: Props["mode"]) => (mode === "Solo" ? 0 : mode === "Duo" ? 1 : 3);
 
-export function JoinBattleDialog({ trigger, tournamentId, tournamentTitle = "CLUTCHGROUND", mode = "Squad", entryFee = 0 }: Props) {
+export function JoinBattleDialog({
+  trigger,
+  tournamentId,
+  tournamentTitle = "CLUTCHGROUND",
+  mode = "Squad",
+  entryFee = 0,
+}: Props) {
   const [open, setOpen] = useState(false);
   const teamCount = teamSizeFor(mode);
   const { user } = useAuth();
   const router = useRouter();
 
   // leader
-  const [leader, setLeader] = useState({ name: "", email: "", phone: "", ign: "", uid: "", teamName: "" });
+  const [leader, setLeader] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    ign: "",
+    uid: "",
+    teamName: "",
+  });
   const [teammates, setTeammates] = useState<Teammate[]>(
     Array.from({ length: Math.max(3, teamCount) }, () => ({ name: "", ign: "", uid: "" })),
   );
@@ -41,20 +61,29 @@ export function JoinBattleDialog({ trigger, tournamentId, tournamentTitle = "CLU
         try {
           const profile = await (getProfile as any)({ data: user?.id });
           const myTeam = await (getMyTeam as any)({ data: user?.id });
-          
+
           let profileReady = false;
           if (profile) {
-            setLeader(l => ({ ...l, email: profile.email || "N/A", phone: profile.phone || "N/A", ign: profile.ign || "", uid: profile.uid || "", name: profile.username || "" }));
+            setLeader((l) => ({
+              ...l,
+              email: profile.email || "N/A",
+              phone: profile.phone || "N/A",
+              ign: profile.ign || "",
+              uid: profile.uid || "",
+              name: profile.username || "",
+            }));
             profileReady = !!(profile.ign && profile.uid);
           }
-          
+
           let teamReady = false;
           if (myTeam) {
-            setLeader(l => ({ ...l, teamName: myTeam.name }));
+            setLeader((l) => ({ ...l, teamName: myTeam.name }));
             teamReady = !!myTeam.name;
             // Fill teammates (only players, not subs, up to teamCount)
-            const activeMembers = myTeam.members.filter((m: any) => m.role === 'player').slice(0, teamCount);
-            setTeammates(current => {
+            const activeMembers = myTeam.members
+              .filter((m: any) => m.role === "player")
+              .slice(0, teamCount);
+            setTeammates((current) => {
               const newT = [...current];
               activeMembers.forEach((m: any, i: number) => {
                 if (i < newT.length) {
@@ -64,9 +93,11 @@ export function JoinBattleDialog({ trigger, tournamentId, tournamentTitle = "CLU
               return newT;
             });
           }
-          
+
           if (!profileReady || (mode !== "Solo" && !teamReady)) {
-            toast.error(`Please complete your Profile ${mode !== "Solo" ? "and Team Roster" : ""} before joining.`);
+            toast.error(
+              `Please complete your Profile ${mode !== "Solo" ? "and Team Roster" : ""} before joining.`,
+            );
             setOpen(false);
             router.navigate({ to: "/profile" });
           }
@@ -84,42 +115,42 @@ export function JoinBattleDialog({ trigger, tournamentId, tournamentTitle = "CLU
     setAgree(false);
   };
 
-
-
   const submit = async () => {
     if (!agree) return toast.error("You must accept the rules to enter the arena.");
-    
+
     // We need the tournament ID. Assuming it's passed as a prop, wait! It wasn't passed.
     // I need to update Props to include tournamentId.
     if (!tournamentId) return toast.error("Invalid tournament.");
-    
+
     if (entryFee > 0) {
       const dbBalance = (user as any)?.deposit_balance || 0;
       const winBalance = (user as any)?.winning_balance || 0;
-      
+
       if (dbBalance + winBalance < entryFee) {
         return toast.error(`Insufficient funds. You need ${entryFee} CG Coins to enter.`);
       }
-      
+
       if (dbBalance < entryFee) {
         const diff = entryFee - dbBalance;
         const yes = await confirmDialog({
           title: "Mixed Funds",
           description: `⚠️ You don't have enough Deposit Coins. This will deduct ${dbBalance} from Deposit Coins and ${diff} from your Earned Coins (Winnings). Proceed?`,
-          confirmText: "Proceed"
+          confirmText: "Proceed",
         });
         if (!yes) {
           return;
         }
       }
     }
-    
+
     try {
       const loadingToast = toast.loading("Reserving your slot...");
-      
+
       const allPlayers = [
         { name: leader.name, ign: leader.ign, uid: leader.uid },
-        ...(mode !== "Solo" ? teammates.map(t => ({ name: t.name, ign: t.ign, uid: t.uid })) : [])
+        ...(mode !== "Solo"
+          ? teammates.map((t) => ({ name: t.name, ign: t.ign, uid: t.uid }))
+          : []),
       ];
 
       await (registerForTournament as any)({
@@ -129,10 +160,10 @@ export function JoinBattleDialog({ trigger, tournamentId, tournamentTitle = "CLU
           teamName: mode === "Solo" ? leader.ign : leader.teamName,
           players: allPlayers,
           contactEmail: leader.email,
-          contactPhone: leader.phone
-        }
+          contactPhone: leader.phone,
+        },
       });
-      
+
       toast.dismiss(loadingToast);
       toast.success(`🔥 Slot reserved for ${leader.ign} in ${tournamentTitle}!`, {
         description: "Room ID will be sent to your email & in-app inbox 10 minutes before start.",
@@ -145,8 +176,6 @@ export function JoinBattleDialog({ trigger, tournamentId, tournamentTitle = "CLU
       toast.error(err.message || "Failed to register");
     }
   };
-
-
 
   const handleOpenChange = (v: boolean) => {
     if (v && !user) {
@@ -174,25 +203,40 @@ export function JoinBattleDialog({ trigger, tournamentId, tournamentTitle = "CLU
 
         {/* Confirm Step */}
         <div className="space-y-4 py-4">
-            <div className="flex items-center gap-2 text-primary"><Trophy className="w-4 h-4" /><span className="text-xs font-display uppercase tracking-widest">Confirm Entry</span></div>
-            <div className="bg-secondary/60 border border-border clip-notch p-4 space-y-2 text-sm">
-              <Row k="Tournament" v={tournamentTitle} />
-              <Row k="Mode" v={mode} />
-              {mode !== "Solo" && <Row k="Team" v={leader.teamName} />}
-              <Row k="Captain" v={`${leader.ign} (UID ${leader.uid})`} />
-              <Row k="Contact" v={`${leader.email} · ${leader.phone}`} />
-              {mode !== "Solo" && (
-                <div className="pt-2 mt-2 border-t border-border/60">
-                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Roster</div>
-                  {teammates.map((t, i) => <Row key={i} k={`P${i + 2}`} v={`${t.ign} · ${t.name} · ${t.uid}`} />)}
-                </div>
-              )}
-            </div>
-            <label className="flex items-start gap-2 text-xs text-muted-foreground">
-              <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="accent-primary mt-0.5" />
-              <span>I confirm all UIDs are accurate. I accept the rules, anti-cheat policy, and consent to screenshot verification.</span>
-            </label>
+          <div className="flex items-center gap-2 text-primary">
+            <Trophy className="w-4 h-4" />
+            <span className="text-xs font-display uppercase tracking-widest">Confirm Entry</span>
           </div>
+          <div className="bg-secondary/60 border border-border clip-notch p-4 space-y-2 text-sm">
+            <Row k="Tournament" v={tournamentTitle} />
+            <Row k="Mode" v={mode} />
+            {mode !== "Solo" && <Row k="Team" v={leader.teamName} />}
+            <Row k="Captain" v={`${leader.ign} (UID ${leader.uid})`} />
+            <Row k="Contact" v={`${leader.email} · ${leader.phone}`} />
+            {mode !== "Solo" && (
+              <div className="pt-2 mt-2 border-t border-border/60">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+                  Roster
+                </div>
+                {teammates.map((t, i) => (
+                  <Row key={i} k={`P${i + 2}`} v={`${t.ign} · ${t.name} · ${t.uid}`} />
+                ))}
+              </div>
+            )}
+          </div>
+          <label className="flex items-start gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={agree}
+              onChange={(e) => setAgree(e.target.checked)}
+              className="accent-primary mt-0.5"
+            />
+            <span>
+              I confirm all UIDs are accurate. I accept the rules, anti-cheat policy, and consent to
+              screenshot verification.
+            </span>
+          </label>
+        </div>
 
         {/* Footer */}
         <div className="flex items-center justify-end pt-4 mt-2 border-t border-border/60">
@@ -206,14 +250,31 @@ export function JoinBattleDialog({ trigger, tournamentId, tournamentTitle = "CLU
 }
 
 function Field({
-  label, value, onChange, placeholder, type = "text", maxLength, className = "", compact = false,
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  maxLength,
+  className = "",
+  compact = false,
 }: {
-  label: string; value: string; onChange: (v: string) => void;
-  placeholder?: string; type?: string; maxLength?: number; className?: string; compact?: boolean;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+  maxLength?: number;
+  className?: string;
+  compact?: boolean;
 }) {
   return (
     <div className={className}>
-      <label className={`block text-[10px] uppercase tracking-widest font-display font-bold text-muted-foreground mb-1 ${compact ? "" : ""}`}>{label}</label>
+      <label
+        className={`block text-[10px] uppercase tracking-widest font-display font-bold text-muted-foreground mb-1 ${compact ? "" : ""}`}
+      >
+        {label}
+      </label>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}

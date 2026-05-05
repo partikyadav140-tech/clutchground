@@ -6,15 +6,13 @@ import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/_app/leaderboard")({
   head: () => ({
-    meta: [
-      { title: "Global Leaderboard — Professional Esports Arena" },
-    ],
+    meta: [{ title: "Global Leaderboard — Professional Esports Arena" }],
   }),
   loader: async () => await (getGlobalLeaderboard as any)(),
   component: LeaderboardPage,
 });
 
-const tabs = ["Global", "Weekly", "Monthly", "Teams"] as const;
+const tabs = ["Weekly"] as const;
 
 function LeaderboardPage() {
   const leaderboard = Route.useLoaderData() as any[];
@@ -25,7 +23,7 @@ function LeaderboardPage() {
       {/* ─── Top Header (Mobile First) ─── */}
       <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-        
+
         <div className="relative z-10 flex flex-col items-center text-center">
           <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-3">
             <Crown className="w-6 h-6" />
@@ -54,16 +52,38 @@ function LeaderboardPage() {
 
       <div className="px-4 mt-6">
         <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest text-center mb-8 px-4 py-2 bg-secondary/50 rounded-xl border border-border/50">
-          Resets {tab === "Weekly" ? "every Sunday 11:59 PM" : tab === "Monthly" ? "on the 1st of each month" : "at season end"}
+          Resets every Sunday 11:59 PM
         </div>
 
         {/* Top 3 Podium */}
         {leaderboard.length >= 3 ? (
           <div className="mb-10 px-2 relative z-0">
             <div className="flex items-end justify-center gap-3 sm:gap-6">
-              <PodiumCard p={leaderboard[1]} rank={2} medal="🥈" height="h-28" colorClass="from-slate-200 to-white border-slate-300" textClass="text-slate-500" />
-              <PodiumCard p={leaderboard[0]} rank={1} medal="🥇" height="h-36" featured colorClass="from-amber-200 to-amber-50 border-amber-300" textClass="text-amber-600" />
-              <PodiumCard p={leaderboard[2]} rank={3} medal="🥉" height="h-24" colorClass="from-orange-200 to-orange-50 border-orange-300" textClass="text-orange-600" />
+              <PodiumCard
+                p={leaderboard[1]}
+                rank={2}
+                medal="🥈"
+                height="h-28"
+                colorClass="from-slate-200 to-white border-slate-300"
+                textClass="text-slate-500"
+              />
+              <PodiumCard
+                p={leaderboard[0]}
+                rank={1}
+                medal="🥇"
+                height="h-36"
+                featured
+                colorClass="from-amber-200 to-amber-50 border-amber-300"
+                textClass="text-amber-600"
+              />
+              <PodiumCard
+                p={leaderboard[2]}
+                rank={3}
+                medal="🥉"
+                height="h-24"
+                colorClass="from-orange-200 to-orange-50 border-orange-300"
+                textClass="text-orange-600"
+              />
             </div>
           </div>
         ) : (
@@ -86,7 +106,9 @@ function LeaderboardPage() {
           {leaderboard.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground flex flex-col items-center">
               <Trophy className="w-10 h-10 mb-3 opacity-30" />
-              <p className="text-sm font-semibold">No rankings yet. Play matches to climb the ladder!</p>
+              <p className="text-sm font-semibold">
+                No rankings yet. Play matches to climb the ladder!
+              </p>
             </div>
           ) : (
             <div className="divide-y divide-border/50">
@@ -99,12 +121,17 @@ function LeaderboardPage() {
                   className="grid grid-cols-12 gap-2 px-4 py-3.5 hover:bg-primary/5 transition-colors items-center"
                 >
                   <div className="col-span-2 sm:col-span-1 flex justify-center">
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center font-display font-black text-xs ${
-                      p.rank === 1 ? "bg-amber-100 text-amber-600" : 
-                      p.rank === 2 ? "bg-slate-100 text-slate-500" : 
-                      p.rank === 3 ? "bg-orange-100 text-orange-600" : 
-                      "bg-secondary text-muted-foreground"
-                    }`}>
+                    <span
+                      className={`w-7 h-7 rounded-full flex items-center justify-center font-display font-black text-xs ${
+                        p.rank === 1
+                          ? "bg-amber-100 text-amber-600"
+                          : p.rank === 2
+                            ? "bg-slate-100 text-slate-500"
+                            : p.rank === 3
+                              ? "bg-orange-100 text-orange-600"
+                              : "bg-secondary text-muted-foreground"
+                      }`}
+                    >
                       {p.rank}
                     </span>
                   </div>
@@ -116,8 +143,12 @@ function LeaderboardPage() {
                     <div className="min-w-0">
                       <div className="font-bold text-sm text-foreground truncate flex items-center gap-1.5">
                         {p.team || "Unknown Team"}
-                        {p.badge === "god" && <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
-                        {p.badge === "elite" && <Skull className="w-3.5 h-3.5 text-primary shrink-0" />}
+                        {p.badge === "god" && (
+                          <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        )}
+                        {p.badge === "elite" && (
+                          <Skull className="w-3.5 h-3.5 text-primary shrink-0" />
+                        )}
                       </div>
                       <div className="text-[10px] text-muted-foreground hidden sm:block font-semibold">
                         {p.wins || 0} wins
@@ -126,8 +157,12 @@ function LeaderboardPage() {
                   </div>
 
                   <div className="col-span-2 text-right">
-                    <div className="font-mono text-sm font-bold text-foreground">{p.kills || 0}</div>
-                    <div className="text-[9px] text-muted-foreground uppercase font-bold sm:hidden">{p.wins || 0} W</div>
+                    <div className="font-mono text-sm font-bold text-foreground">
+                      {p.kills || 0}
+                    </div>
+                    <div className="text-[9px] text-muted-foreground uppercase font-bold sm:hidden">
+                      {p.wins || 0} W
+                    </div>
                   </div>
 
                   <div className="col-span-2 text-right font-display font-black text-primary text-sm sm:text-base leading-none">
@@ -143,11 +178,25 @@ function LeaderboardPage() {
   );
 }
 
-function PodiumCard({ p, rank, medal, height, featured = false, colorClass, textClass }: {
-  p: any; rank: number; medal: string; height: string; featured?: boolean; colorClass: string; textClass: string;
+function PodiumCard({
+  p,
+  rank,
+  medal,
+  height,
+  featured = false,
+  colorClass,
+  textClass,
+}: {
+  p: any;
+  rank: number;
+  medal: string;
+  height: string;
+  featured?: boolean;
+  colorClass: string;
+  textClass: string;
 }) {
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: rank * 0.1 }}
@@ -157,17 +206,31 @@ function PodiumCard({ p, rank, medal, height, featured = false, colorClass, text
       {featured && <Crown className="absolute -top-7 w-6 h-6 text-amber-400 drop-shadow-sm z-20" />}
 
       {/* Avatar */}
-      <div className={`relative z-10 rounded-full bg-white border-2 flex items-center justify-center font-display font-black text-primary shadow-md mb-2 ${
-        featured ? "w-14 h-14 text-2xl border-amber-300" : rank === 2 ? "w-11 h-11 text-lg border-slate-300" : "w-11 h-11 text-lg border-orange-300"
-      }`}>
+      <div
+        className={`relative z-10 rounded-full bg-white border-2 flex items-center justify-center font-display font-black text-primary shadow-md mb-2 ${
+          featured
+            ? "w-14 h-14 text-2xl border-amber-300"
+            : rank === 2
+              ? "w-11 h-11 text-lg border-slate-300"
+              : "w-11 h-11 text-lg border-orange-300"
+        }`}
+      >
         {p.team ? p.team[0].toUpperCase() : "T"}
       </div>
 
-      <div className={`font-bold text-xs sm:text-sm truncate w-full text-center px-1 mb-0.5 text-foreground`}>{p.team || "Unknown"}</div>
-      <div className="text-[10px] text-muted-foreground font-semibold mb-2">{p.kills || 0} kills</div>
+      <div
+        className={`font-bold text-xs sm:text-sm truncate w-full text-center px-1 mb-0.5 text-foreground`}
+      >
+        {p.team || "Unknown"}
+      </div>
+      <div className="text-[10px] text-muted-foreground font-semibold mb-2">
+        {p.kills || 0} kills
+      </div>
 
       {/* Podium bar */}
-      <div className={`w-full rounded-t-xl bg-gradient-to-b border-t shadow-sm flex flex-col items-center pt-2 ${colorClass} ${height}`}>
+      <div
+        className={`w-full rounded-t-xl bg-gradient-to-b border-t shadow-sm flex flex-col items-center pt-2 ${colorClass} ${height}`}
+      >
         <span className="text-xl leading-none mb-1">{medal}</span>
         <div className={`font-display font-black text-sm sm:text-base ${textClass}`}>
           {p.points.toLocaleString()}

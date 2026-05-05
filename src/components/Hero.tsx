@@ -26,15 +26,12 @@ export function Hero() {
 
   return (
     <section className="relative w-full min-h-[100svh] overflow-hidden bg-background">
-      {/* Background Video */}
+      {/* Background Image */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-black">
-        <video
-          autoPlay
-          muted
-          playsInline
-          loop
+        <img
+          src="/hero-banner.png"
+          alt="Hero Banner"
           className="absolute inset-0 w-full h-full object-cover object-center opacity-60"
-          src="/hero.mp4"
         />
         {/* Gradient overlays for mobile readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/20 to-background z-10" />
@@ -89,7 +86,8 @@ export function Hero() {
             transition={t(0.35)}
             className="mt-4 sm:mt-6 max-w-sm sm:max-w-xl text-sm sm:text-base text-muted-foreground/90 leading-relaxed"
           >
-            India's most elite Free Fire esports platform. Compete in high-stakes tournaments &amp; win real cash prizes.
+            India's most elite Free Fire esports platform. Compete in high-stakes tournaments &amp;
+            win real cash prizes.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -103,19 +101,33 @@ export function Hero() {
               <JoinBattleDialog
                 mode="Squad"
                 trigger={
-                  <Button variant="hero" size="lg" className="w-full sm:w-auto font-display tracking-widest text-base h-13 sm:h-14 shadow-fire">
+                  <Button
+                    variant="hero"
+                    size="lg"
+                    className="w-full sm:w-auto font-display tracking-widest text-base h-13 sm:h-14 shadow-fire"
+                  >
                     <Trophy className="w-5 h-5" /> JOIN BATTLE
                   </Button>
                 }
               />
             ) : (
-              <Button asChild variant="hero" size="lg" className="w-full sm:w-auto font-display tracking-widest text-base h-13 sm:h-14 shadow-fire">
+              <Button
+                asChild
+                variant="hero"
+                size="lg"
+                className="w-full sm:w-auto font-display tracking-widest text-base h-13 sm:h-14 shadow-fire"
+              >
                 <Link to="/login">
                   <Trophy className="w-5 h-5" /> JOIN BATTLE
                 </Link>
               </Button>
             )}
-            <Button asChild variant="outlineFire" size="lg" className="w-full sm:w-auto font-display tracking-widest text-base h-13 sm:h-14 bg-background/30 backdrop-blur-md">
+            <Button
+              asChild
+              variant="outlineFire"
+              size="lg"
+              className="w-full sm:w-auto font-display tracking-widest text-base h-13 sm:h-14 bg-background/30 backdrop-blur-md"
+            >
               <Link to="/tournaments">
                 <Zap className="w-5 h-5" /> VIEW TOURNAMENTS
               </Link>
@@ -136,8 +148,12 @@ export function Hero() {
               >
                 <div className="absolute top-0 left-0 w-full h-0.5 bg-fire-gradient opacity-60" />
                 <div className="text-base sm:text-xl mb-0.5">{s.icon}</div>
-                <div className="font-display text-base sm:text-2xl font-black text-white text-glow leading-tight">{s.v}</div>
-                <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-primary/80 font-bold mt-0.5">{s.l}</div>
+                <div className="font-display text-base sm:text-2xl font-black text-white text-glow leading-tight">
+                  {s.v}
+                </div>
+                <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-primary/80 font-bold mt-0.5">
+                  {s.l}
+                </div>
               </div>
             ))}
           </motion.div>
@@ -150,7 +166,7 @@ export function Hero() {
         animate={{ opacity: 1, y: [0, 8, 0] }}
         transition={{
           opacity: { delay: 1.5, duration: 0.6 },
-          y: { duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 1.5 }
+          y: { duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 1.5 },
         }}
         className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 hidden sm:flex flex-col items-center gap-1 text-primary/60"
       >

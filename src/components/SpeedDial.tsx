@@ -1,14 +1,30 @@
 import { useState } from "react";
-import { MessageCircle, Instagram, Send, Plus } from "lucide-react";
+import { MessageCircle, Facebook, Send, Plus, Mail } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function SpeedDial() {
   const [open, setOpen] = useState(false);
 
   const links = [
-    { name: "WhatsApp", icon: MessageCircle, url: "https://wa.me/918307224756", color: "bg-[#25D366]" },
-    { name: "Instagram", icon: Instagram, url: "https://www.instagram.com/partik_yadav_140?igsh=MWwwNTh0MWdvcTJ5eQ==", color: "bg-[#E1306C]" },
-    { name: "Telegram", icon: Send, url: "https://t.me/+-98wYq2U8DpmNDM1", color: "bg-[#0088cc]" },
+    {
+      name: "WhatsApp",
+      icon: MessageCircle,
+      url: "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s",
+      color: "bg-[#25D366]",
+    },
+    {
+      name: "Facebook",
+      icon: Facebook,
+      url: "https://www.facebook.com/share/18tWtE1kW2/",
+      color: "bg-[#1877F2]",
+    },
+    { name: "Telegram", icon: Send, url: "https://t.me/clutchground", color: "bg-[#0088cc]" },
+    {
+      name: "Email",
+      icon: Mail,
+      url: "mailto:clutchgroundofficial@gmail.com",
+      color: "bg-[#D44638]",
+    },
   ];
 
   return (
@@ -17,10 +33,7 @@ export function SpeedDial() {
         onClick={() => setOpen(!open)}
         className="w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-fire transition-transform active:scale-95"
       >
-        <motion.div
-          animate={{ rotate: open ? 45 : 0 }}
-          transition={{ duration: 0.2 }}
-        >
+        <motion.div animate={{ rotate: open ? 45 : 0 }} transition={{ duration: 0.2 }}>
           <Plus className="w-8 h-8" />
         </motion.div>
       </button>

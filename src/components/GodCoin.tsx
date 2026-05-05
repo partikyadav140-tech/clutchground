@@ -2,24 +2,24 @@ import React from "react";
 
 export function GodCoin({ className = "w-5 h-5" }: { className?: string }) {
   return (
-    <svg 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      xmlns="http://www.w3.org/2000/svg" 
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
       className={`inline-block shrink-0 ${className}`}
-      style={{ filter: 'drop-shadow(0 0 6px rgba(234, 179, 8, 0.4))' }}
+      style={{ filter: "drop-shadow(0 0 6px rgba(234, 179, 8, 0.4))" }}
     >
       <circle cx="12" cy="12" r="11" fill="url(#goldOuter)" stroke="#FEF08A" strokeWidth="0.5" />
       <circle cx="12" cy="12" r="8.5" fill="url(#goldInner)" />
-      <text 
-        x="12.5" 
-        y="16.5" 
-        fontFamily="Orbitron, Impact, sans-serif" 
-        fontSize="12" 
-        fontWeight="900" 
-        fill="#451a03" 
+      <text
+        x="12.5"
+        y="16.5"
+        fontFamily="Orbitron, Impact, sans-serif"
+        fontSize="12"
+        fontWeight="900"
+        fill="#451a03"
         textAnchor="middle"
-        style={{ textShadow: '0px 1px 0px rgba(254, 240, 138, 0.8)' }}
+        style={{ textShadow: "0px 1px 0px rgba(254, 240, 138, 0.8)" }}
       >
         G
       </text>

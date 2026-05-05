@@ -9,7 +9,7 @@ export const Route = createFileRoute("/_app/rules")({
       {/* ─── Top Header (Mobile First) ─── */}
       <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-        
+
         <div className="relative z-10 flex flex-col items-center text-center">
           <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-3">
             <ScrollText className="w-6 h-6" />
@@ -33,15 +33,17 @@ export const Route = createFileRoute("/_app/rules")({
             "Prize money credited to wallet within 24 hours of admin verification.",
             "Withdrawals require KYC. Minimum 500 Coins. Processed within 48 hours.",
           ].map((r, i) => (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: i * 0.05 }}
-              key={i} 
+              key={i}
               className="flex gap-4 p-5 bg-white rounded-2xl border border-border shadow-sm items-start"
             >
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <span className="font-display font-black text-lg text-primary">{String(i + 1).padStart(2, "0")}</span>
+                <span className="font-display font-black text-lg text-primary">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
               </div>
               <p className="text-sm font-semibold text-foreground pt-0.5 leading-relaxed">{r}</p>
             </motion.div>

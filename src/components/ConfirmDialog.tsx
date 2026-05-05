@@ -1,5 +1,12 @@
 import { create } from "zustand";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 interface ConfirmOptions {
@@ -28,12 +35,15 @@ export const useConfirm = create<ConfirmState>((set, get) => ({
   resolve: null,
   inputValue: "",
   setInputValue: (val) => set({ inputValue: val }),
-  show: (opts) => new Promise((resolve) => set({ isOpen: true, options: opts, resolve, inputValue: opts.defaultValue || "" })),
+  show: (opts) =>
+    new Promise((resolve) =>
+      set({ isOpen: true, options: opts, resolve, inputValue: opts.defaultValue || "" }),
+    ),
   close: (result) => {
     const { resolve } = get();
     if (resolve) resolve(result);
     set({ isOpen: false, options: null, resolve: null });
-  }
+  },
 }));
 
 export const confirmDialog = async (options: ConfirmOptions): Promise<boolean> => {
@@ -52,25 +62,30 @@ export function ConfirmDialog() {
   if (!options) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(v) => !v && close(options.type === "prompt" ? null : false)}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(v) => !v && close(options.type === "prompt" ? null : false)}
+    >
       <DialogContent className="sm:max-w-md bg-card border-primary/40 clip-notch p-6 shadow-fire z-[99999]">
         <DialogHeader>
-          <DialogTitle className={`font-display text-xl font-black ${options.isDestructive ? 'text-destructive' : 'text-fire-gradient'}`}>
+          <DialogTitle
+            className={`font-display text-xl font-black ${options.isDestructive ? "text-destructive" : "text-fire-gradient"}`}
+          >
             {options.title}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground mt-2">
             {options.description}
           </DialogDescription>
         </DialogHeader>
-        
+
         {options.type === "prompt" && (
           <div className="py-4">
-            <input 
+            <input
               autoFocus
               className="w-full bg-background border border-border px-3 py-2 text-sm outline-none focus:border-primary"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && close(inputValue)}
+              onKeyDown={(e) => e.key === "Enter" && close(inputValue)}
             />
           </div>
         )}
@@ -79,8 +94,8 @@ export function ConfirmDialog() {
           <Button variant="ghost" onClick={() => close(options.type === "prompt" ? null : false)}>
             {options.cancelText || "Cancel"}
           </Button>
-          <Button 
-            variant={options.isDestructive ? "destructive" : "hero"} 
+          <Button
+            variant={options.isDestructive ? "destructive" : "hero"}
             onClick={() => close(options.type === "prompt" ? inputValue : true)}
           >
             {options.confirmText || "Confirm"}

@@ -9,9 +9,7 @@ import { GodCoin } from "@/components/GodCoin";
 
 export const Route = createFileRoute("/_app/tournaments/")({
   head: () => ({
-    meta: [
-      { title: "Tournaments — Professional Esports Arena" },
-    ],
+    meta: [{ title: "Tournaments — Professional Esports Arena" }],
   }),
   loader: async () => await getTournaments(),
   component: TournamentsPage,
@@ -48,13 +46,15 @@ function TournamentsPage() {
       {/* ─── Top Header (Mobile First) ─── */}
       <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-        
+
         <div className="relative z-10 flex flex-col items-center text-center">
           <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-3">
             <Trophy className="w-6 h-6" />
           </div>
           <h1 className="font-display text-3xl font-black text-foreground">Arena Battles</h1>
-          <p className="text-sm text-muted-foreground mt-1 font-semibold">Find your match. Secure the bag.</p>
+          <p className="text-sm text-muted-foreground mt-1 font-semibold">
+            Find your match. Secure the bag.
+          </p>
         </div>
 
         {/* Search */}
@@ -107,10 +107,15 @@ function TournamentsPage() {
               <Filter className="w-6 h-6" />
             </div>
             <p className="text-foreground font-display font-black text-lg">No matches found</p>
-            <p className="text-sm text-muted-foreground mt-1 text-center px-4">Try adjusting your search or filters to find more tournaments.</p>
+            <p className="text-sm text-muted-foreground mt-1 text-center px-4">
+              Try adjusting your search or filters to find more tournaments.
+            </p>
             <Button
               variant="outline"
-              onClick={() => { setFilter("All"); setQ(""); }}
+              onClick={() => {
+                setFilter("All");
+                setQ("");
+              }}
               className="mt-6 rounded-full font-bold"
             >
               Clear Filters
@@ -137,7 +142,7 @@ function TournamentCard({ t, i }: { t: any; i: number }) {
       <div className="relative h-40 w-full overflow-hidden">
         <img src={poster} alt={t.title} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-        
+
         <div className="absolute top-3 left-3 flex gap-2">
           {t.status === "live" && (
             <span className="px-2 py-0.5 rounded bg-red-500 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm">
@@ -159,38 +164,70 @@ function TournamentCard({ t, i }: { t: any; i: number }) {
           </div>
         )}
       </div>
-      
+
       <div className="p-4 flex flex-col flex-1 relative">
         <div className="absolute right-4 -top-6 bg-white rounded-xl shadow-md border border-border px-3 py-1.5 flex flex-col items-center">
           <span className="text-[9px] font-bold uppercase text-muted-foreground">Entry</span>
-          <span className="font-display font-black text-primary text-sm leading-none mt-0.5 flex items-center gap-1">{t.entry === 0 ? "FREE" : <><GodCoin className="w-3.5 h-3.5" /> {t.entry}</>}</span>
+          <span className="font-display font-black text-primary text-sm leading-none mt-0.5 flex items-center gap-1">
+            {t.entry === 0 ? (
+              "FREE"
+            ) : (
+              <>
+                <GodCoin className="w-3.5 h-3.5" /> {t.entry}
+              </>
+            )}
+          </span>
         </div>
 
         <div className="flex justify-between items-start gap-2 mb-2 pr-16">
-          <h4 className="font-display font-black text-base sm:text-lg leading-tight line-clamp-2">{t.title}</h4>
+          <h4 className="font-display font-black text-base sm:text-lg leading-tight line-clamp-2">
+            {t.title}
+          </h4>
         </div>
-        
+
         <div className="flex items-center gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-4">
-          <div className="flex items-center gap-1"><Trophy className="w-3.5 h-3.5 text-primary" /> <GodCoin className="w-3.5 h-3.5" /> {t.prize}</div>
-          <div className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {t.format}</div>
-          <div className="flex items-center gap-1"><Crosshair className="w-3.5 h-3.5" /> {t.mode}</div>
+          <div className="flex items-center gap-1">
+            <Trophy className="w-3.5 h-3.5 text-primary" /> <GodCoin className="w-3.5 h-3.5" />{" "}
+            {t.prize}
+          </div>
+          <div className="flex items-center gap-1">
+            <Users className="w-3.5 h-3.5" /> {t.format}
+          </div>
+          <div className="flex items-center gap-1">
+            <Crosshair className="w-3.5 h-3.5" /> {t.mode}
+          </div>
         </div>
 
         <div className="mt-auto">
           <div className="flex justify-between text-[10px] font-bold text-muted-foreground mb-1.5">
-            <span>{t.filled}/{t.slots} Joined</span>
+            <span>
+              {t.filled}/{t.slots} Joined
+            </span>
             <span className="text-primary">{t.startsAt}</span>
           </div>
           <div className="h-2 w-full bg-secondary rounded-full overflow-hidden mb-4">
-            <div className={`h-full rounded-full transition-all ${isFull ? 'bg-muted-foreground' : 'bg-primary'}`} style={{ width: `${fillPct}%` }} />
+            <div
+              className={`h-full rounded-full transition-all ${isFull ? "bg-muted-foreground" : "bg-primary"}`}
+              style={{ width: `${fillPct}%` }}
+            />
           </div>
-          
+
           <div className="grid grid-cols-2 gap-2">
             <Link to="/tournaments/$id" params={{ id: String(t.id) }} className="w-full">
-              <Button variant="outline" className="w-full h-11 rounded-xl font-bold text-xs bg-white border-border shadow-sm">Details</Button>
+              <Button
+                variant="outline"
+                className="w-full h-11 rounded-xl font-bold text-xs bg-white border-border shadow-sm"
+              >
+                Details
+              </Button>
             </Link>
             {isFull ? (
-              <Button disabled className="w-full h-11 rounded-xl font-bold text-xs bg-muted text-muted-foreground">Full</Button>
+              <Button
+                disabled
+                className="w-full h-11 rounded-xl font-bold text-xs bg-muted text-muted-foreground"
+              >
+                Full
+              </Button>
             ) : (
               <JoinBattleDialog
                 tournamentId={t.id}
@@ -198,7 +235,9 @@ function TournamentCard({ t, i }: { t: any; i: number }) {
                 mode={t.mode as any}
                 entryFee={t.entry}
                 trigger={
-                  <Button className="w-full h-11 rounded-xl font-bold text-xs bg-primary text-white shadow-primary">Join</Button>
+                  <Button className="w-full h-11 rounded-xl font-bold text-xs bg-primary text-white shadow-primary">
+                    Join
+                  </Button>
                 }
               />
             )}

@@ -45,7 +45,7 @@ function LoginPage() {
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 pointer-events-none" />
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -60,7 +60,9 @@ function LoginPage() {
             <h1 className="font-display text-2xl sm:text-3xl font-black text-foreground">
               Welcome Back
             </h1>
-            <p className="text-muted-foreground text-sm mt-1 font-semibold">Enter the battlefield, warrior.</p>
+            <p className="text-muted-foreground text-sm mt-1 font-semibold">
+              Enter the battlefield, warrior.
+            </p>
           </div>
         </div>
 
@@ -141,7 +143,9 @@ function LoginPage() {
           {/* Divider */}
           <div className="mt-6 flex items-center gap-3">
             <div className="flex-1 h-px bg-border/80" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">OR</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              OR
+            </span>
             <div className="flex-1 h-px bg-border/80" />
           </div>
 
@@ -156,11 +160,17 @@ function LoginPage() {
 
         {/* Bottom links */}
         <div className="mt-8 flex items-center justify-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-          <Link to="/rules" className="hover:text-primary transition-colors">Rules</Link>
+          <Link to="/rules" className="hover:text-primary transition-colors">
+            Rules
+          </Link>
           <span className="w-1 h-1 rounded-full bg-border" />
-          <Link to="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
+          <Link to="/privacy" className="hover:text-primary transition-colors">
+            Privacy
+          </Link>
           <span className="w-1 h-1 rounded-full bg-border" />
-          <Link to="/contact" className="hover:text-primary transition-colors">Support</Link>
+          <Link to="/contact" className="hover:text-primary transition-colors">
+            Support
+          </Link>
         </div>
       </motion.div>
     </div>
