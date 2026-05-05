@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Mail, MessageCircle, Send, HeadphonesIcon, Facebook } from "lucide-react";
+import { Mail, MessageCircle, Send, HeadphonesIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -81,12 +81,12 @@ function ContactPage() {
                 bg: "bg-sky-50",
               },
               {
-                icon: Facebook,
-                t: "Facebook Page",
-                v: "ClutchGround",
-                href: "https://www.facebook.com/share/18tWtE1kW2/",
-                color: "text-blue-600",
-                bg: "bg-blue-50",
+                icon: Send,
+                t: "Discord Server",
+                v: "ClutchGround Community",
+                href: "https://discord.gg/uYXFJswHdg",
+                color: "text-indigo-500",
+                bg: "bg-indigo-50",
               },
             ].map((c, i) => (
               <motion.a
