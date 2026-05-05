@@ -142,7 +142,7 @@ export const addTournament = createServerFn({ method: "POST" }).handler(async ({
     for (const user of users as any[]) {
       await insertNotif.run(
         user.id,
-        `📣 New tournament announced: ${title}. Register now and secure your squad spot!`,
+        `📣 New tournament announced: ${title} (${mode} / ${format}) — ${slots} slots, entry ${entry} CG, prize pool ${prize} CG. Open Arena to register now!`,
       );
     }
   }
@@ -243,7 +243,7 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
 
     // Check if tournament exists and has slots
     const t = (await db
-      .prepare("SELECT filled, slots, entry FROM tournaments WHERE id = ?")
+      .prepare("SELECT title, startsAt, mode, format, entry, filled, slots FROM tournaments WHERE id = ?")
       .get(tournamentId)) as any;
     if (!t) throw new Error("Tournament not found");
     if (t.filled >= t.slots) throw new Error("Tournament is full");
@@ -292,6 +292,7 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
       let needsApproval = false;
       let teamId = null;
       let leaderId = null;
+      let requester: any = null;
 
       if (teamName) {
         const teamInfo = (await tx
@@ -363,7 +364,7 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
           .prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")
           .run(
             userId,
-            `✅ Registration confirmed for ${t.title}. Check your upcoming match details and get ready to compete!`,
+            `✅ Registration confirmed for ${t.title} (${t.mode}). Entry fee ${t.entry} CG. See your Upcoming Matches and prepare to compete!`,
           );
 
         // Give notification to team members
@@ -371,6 +372,8 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
           .prepare("SELECT id FROM teams WHERE leader_id = ?")
           .get(userId)) as any;
         if (team) {
+          requester = requester ||
+            (await tx.prepare("SELECT username FROM users WHERE id = ?").get(userId));
           const members = (await tx
             .prepare("SELECT user_id FROM team_members WHERE team_id = ? AND user_id IS NOT NULL")
             .all(team.id)) as any[];
@@ -381,7 +384,7 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
             if (m.user_id !== userId) {
               await insertNotif.run(
                 m.user_id,
-                `🏆 Your Captain has registered your team for a new tournament! Check your matches.`,
+                `🏆 ${requester.username} registered your team for ${t.title} (${t.mode}). Check Upcoming Matches for date and room details.`,
               );
             }
           }
@@ -898,17 +901,17 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
           if (oldPrize === 0 && awardedPrize > 0) {
             await insertNotif.run(
               r.user_id,
-              `💰 PRIZE WON! You received ${awardedPrize} CG Coins for placing #${rankForPrize} in ${tourney.title}!`,
+              `💰 Prize earned for ${tourney.title}: ${awardedPrize} CG Coins awarded for finishing #${rankForPrize}. Points: ${r.calculatedPoints} (${r.killsNum} kills, position ${r.matchPosition}).`,
             );
           } else if (prizeDiff > 0) {
             await insertNotif.run(
               r.user_id,
-              `💰 PRIZE INCREASED! Admin updated results for ${tourney.title}. You received an additional ${prizeDiff} CG Coins (Total: ${awardedPrize})!`,
+              `💰 Prize updated for ${tourney.title}: your prize increased by ${prizeDiff} CG Coins to ${awardedPrize}. Points remain ${r.calculatedPoints}.`,
             );
           } else if (prizeDiff < 0) {
             await insertNotif.run(
               r.user_id,
-              `📉 PRIZE ADJUSTED: Admin updated results for ${tourney.title}. ${Math.abs(prizeDiff)} CG Coins were deducted. Your total prize is now ${awardedPrize}.`,
+              `📉 Prize updated for ${tourney.title}: your prize decreased by ${Math.abs(prizeDiff)} CG Coins to ${awardedPrize}. Points remain ${r.calculatedPoints}.`,
             );
           }
         }
@@ -917,13 +920,13 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
         if (oldPoints === 0 && r.calculatedPoints > 0) {
           await insertNotif.run(
             r.user_id,
-            `🏆 Match Results! You scored ${r.calculatedPoints} points (${r.killsNum} kills, Match Position ${r.matchPosition}) and finished Rank #${overallRank} in your recent tournament.`,
+            `🏆 Match scored for ${tourney.title}: ${r.calculatedPoints} points earned with ${r.killsNum} kills and position ${r.matchPosition}. Final rank #${overallRank}.`,
           );
         } else if (pointsDiff !== 0) {
           const dir = pointsDiff > 0 ? "increased" : "decreased";
           await insertNotif.run(
             r.user_id,
-            `📊 SCORE ADJUSTED: Admin updated your score for ${tourney.title}. Your points ${dir} by ${Math.abs(pointsDiff)} to a new total of ${r.calculatedPoints}.`,
+            `📊 Score updated for ${tourney.title}: points ${dir} by ${Math.abs(pointsDiff)} to ${r.calculatedPoints}.`,
           );
         }
       }
@@ -1138,7 +1141,7 @@ export const processWithdrawal = createServerFn({ method: "POST" }).handler(asyn
       .prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")
       .run(
         userId,
-        `💸 Withdrawal of ${amount} CG Coins initiated! You will receive your money to UPI ID ${upiId} within 2-3 working days.`,
+        `💸 Withdrawal requested: ${amount} CG Coins to UPI ${upiId}. Processing time 2-3 working days.`,
       );
   });
   return { success: true };
@@ -1175,7 +1178,7 @@ export const updatePayoutStatus = createServerFn({ method: "POST" }).handler(asy
         .prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")
         .run(
           userId,
-          `✅ Your withdrawal of ${amount} CG Coins has been successfully processed and sent to your UPI!`,
+          `✅ Withdrawal completed: ${amount} CG Coins has been sent to your UPI. Please check your bank statement.`,
         );
     } else if (status === "rejected") {
       // Refund the coins
