@@ -52,13 +52,16 @@ function NotificationsPage() {
   }, []);
 
   const requestBrowserAlerts = async () => {
-    requestBrowserNotificationPermission();
+    const permission = await requestBrowserNotificationPermission();
     if (typeof window !== "undefined" && "Notification" in window) {
-      setBrowserPermission(Notification.permission);
-      if (Notification.permission === "granted") {
+      const currentPermission = permission ?? Notification.permission;
+      setBrowserPermission(currentPermission);
+      if (currentPermission === "granted") {
         toast.success("Browser alerts enabled — new notifications will appear on mobile and desktop.");
-      } else {
+      } else if (currentPermission === "denied") {
         toast.error("Browser alerts disabled. Please allow notifications in your browser settings.");
+      } else {
+        toast.error("Notification permission not granted yet. Please try again.");
       }
     }
   };

@@ -1,8 +1,10 @@
-export function requestBrowserNotificationPermission() {
+export async function requestBrowserNotificationPermission(): Promise<NotificationPermission | undefined> {
   if (typeof window === "undefined" || !("Notification" in window)) return;
   if (Notification.permission === "default") {
-    Notification.requestPermission().catch(() => {});
+    return Notification.requestPermission().catch(() => "denied");
   }
+
+  return Notification.permission;
 }
 
 export function showBrowserNotification(title: string, body: string) {
