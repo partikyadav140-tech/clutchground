@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useAuth } from "../../lib/auth-client";
 import { getGlobalLeaderboard } from "../../api";
 import { Crown, Skull, Trophy, TrendingUp, Medal } from "lucide-react";
 import { motion } from "framer-motion";
@@ -12,11 +13,14 @@ export const Route = createFileRoute("/_app/leaderboard")({
   component: LeaderboardPage,
 });
 
-const tabs = ["Weekly"] as const;
+const tabs = ["Global"] as const;
 
 function LeaderboardPage() {
   const leaderboard = Route.useLoaderData() as any[];
-  const [tab, setTab] = useState<(typeof tabs)[number]>("Global");
+  const { user } = useAuth();
+  const [tab, setTab] = useState<(typeof tabs)[number]>(tabs[0]);
+  const currentUser = user ? leaderboard.find((p: any) => p.user_id === user.id) : null;
+
 
   return (
     <div className="bg-background min-h-screen pb-24">
@@ -91,6 +95,35 @@ function LeaderboardPage() {
             More match data required to build the Hall of Fame.
           </div>
         )}
+
+        {currentUser ? (
+          <div className="mb-8 bg-slate-950/95 border border-slate-800 rounded-[1.75rem] p-5 text-white shadow-[0_20px_60px_-30px_rgba(15,23,42,0.8)]">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.35em] text-slate-400 font-semibold mb-2">
+                  Your Hall of Fame Position
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-amber-500/15 text-amber-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em]">
+                    #{currentUser.rank}
+                  </span>
+                  <span className="text-lg font-black tracking-tight">{currentUser.team || "Your Team"}</span>
+                </div>
+                <p className="text-sm text-slate-300 mt-2">
+                  {currentUser.points.toLocaleString()} points · {currentUser.kills || 0} kills · {currentUser.wins || 0} wins
+                </p>
+              </div>
+              <div className="rounded-3xl bg-white/10 px-4 py-3 text-right">
+                <div className="text-[10px] uppercase tracking-[0.3em] text-slate-400 font-semibold">
+                  Current Score
+                </div>
+                <div className="text-3xl font-black text-white mt-1">
+                  {currentUser.points.toLocaleString()}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {/* Full leaderboard table */}
         <h3 className="font-display font-black text-lg text-foreground mb-3 px-1">Top Rankings</h3>

@@ -60,8 +60,12 @@ function HomePage() {
   const { ts: allTournaments, lb: leaderboard } = Route.useLoaderData();
   const { user } = useAuth();
 
+  const isCompleted = (t: any) =>
+    String(t.status || "").trim().toLowerCase() === "completed";
+
   const displayTournaments = allTournaments.filter(
     (t: any) =>
+      !isCompleted(t) &&
       Boolean(t.is_hero) &&
       t.is_hero !== "0" &&
       t.is_hero !== 0 &&
@@ -71,11 +75,12 @@ function HomePage() {
 
   const upcomingTournaments = allTournaments.filter(
     (t: any) =>
-      !Boolean(t.is_hero) ||
-      t.is_hero === "0" ||
-      t.is_hero === 0 ||
-      t.is_hero === "false" ||
-      t.is_hero === "f",
+      !isCompleted(t) &&
+      (!Boolean(t.is_hero) ||
+        t.is_hero === "0" ||
+        t.is_hero === 0 ||
+        t.is_hero === "false" ||
+        t.is_hero === "f"),
   );
 
   const totalBalance = user
@@ -415,72 +420,84 @@ function FeaturedTournamentCard({ t, i }: { t: any; i: number }) {
 function CompactTournamentCard({ t, i }: { t: any; i: number }) {
   const poster = POSTERS[t.id % POSTERS.length];
   const fillPct = Math.min(100, (t.filled / t.slots) * 100);
+  const startsAt = t.startsAt || t.startsat || "TBA";
 
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.3, delay: i * 0.1 }}
-      className="shrink-0 w-[85vw] max-w-[320px] snap-center bg-white rounded-[1rem] border border-x-border border-t-border border-b-4 border-b-primary/30 p-3 flex flex-col gap-3 shadow-sm hover:-translate-y-1 hover:border-b-[6px] hover:shadow-md active:border-b-2 active:translate-y-1 transition-all duration-200"
+      transition={{ duration: 0.3, delay: i * 0.06 }}
+      className="shrink-0 w-[86vw] max-w-[340px] snap-center overflow-hidden rounded-[1.75rem] bg-slate-950 shadow-[0_26px_60px_-30px_rgba(15,23,42,0.9)] ring-1 ring-white/10"
     >
-      <div className="flex gap-3">
-        <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 relative">
-          <img src={poster} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-          <span className="absolute bottom-1 left-1 text-white text-[8px] font-black uppercase bg-primary px-1.5 py-0.5 rounded flex items-center gap-1">
-            {t.entry === 0 ? (
-              "FREE"
-            ) : (
-              <>
-                <GodCoin className="w-2.5 h-2.5" /> {t.entry}
-              </>
-            )}
-          </span>
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <h4 className="font-display font-black text-sm truncate leading-tight">{t.title}</h4>
-          <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase mt-1 mb-2">
-            <span className="bg-secondary px-1.5 py-0.5 rounded text-[9px]">{t.mode}</span>
-            <span className="bg-secondary px-1.5 py-0.5 rounded text-[9px]">{t.format}</span>
+      <div className="relative h-40 overflow-hidden">
+        <img src={poster} alt="Upcoming match" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/20 to-transparent" />
+        <div className="absolute left-4 bottom-4 right-4 rounded-3xl bg-slate-900/95 border border-white/10 p-3 shadow-lg">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[9px] uppercase tracking-[0.3em] text-slate-400 font-semibold mb-1">
+                {t.format} • {t.mode}
+              </p>
+              <h4 className="text-base font-display font-black text-white leading-tight line-clamp-2">
+                {t.title}
+              </h4>
+            </div>
+            <span className="rounded-full border border-emerald-300/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-200">
+              {t.entry === 0 ? "FREE" : "PAID"}
+            </span>
           </div>
-          <div className="text-[10px] font-bold text-primary flex items-center gap-1">
-            <Clock className="w-3 h-3" /> {t.startsAt || t.startsat}
+          <div className="grid grid-cols-2 gap-2 mt-3 text-[9px] uppercase tracking-[0.2em] text-slate-400 font-semibold">
+            <div className="rounded-3xl bg-slate-950/80 px-3 py-2">
+              <div className="text-[8px]">Starts</div>
+              <div className="mt-1 text-sm text-white font-black">{startsAt}</div>
+            </div>
+            <div className="rounded-3xl bg-slate-950/80 px-3 py-2">
+              <div className="text-[8px]">Slots</div>
+              <div className="mt-1 text-sm text-white font-black">{t.filled}/{t.slots}</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/50">
-        <div className="flex-1">
-          <div className="flex justify-between text-[8px] font-bold text-muted-foreground mb-1">
-            <span>
-              {t.filled}/{t.slots} Joined
-            </span>
-            <span className="text-primary font-black flex items-center gap-1">
-              {t.mode === "Solo" ? (
-                <>
-                  {t.per_kill_coin}/Kill <GodCoin className="w-2.5 h-2.5" />
-                </>
-              ) : (
-                <>
-                  Prize: <GodCoin className="w-2.5 h-2.5" /> {t.prize}
-                </>
-              )}
-            </span>
+      <div className="px-4 py-4 bg-slate-950">
+        <div className="flex flex-col gap-4 mb-4">
+          <div className="grid grid-cols-[1.4fr_1fr] gap-3">
+            <div className="rounded-3xl bg-slate-900/75 p-3">
+              <p className="text-[9px] uppercase tracking-[0.26em] text-slate-400 font-semibold">
+                Prize
+              </p>
+              <p className="mt-1 text-sm font-black text-white flex items-center gap-2">
+                {t.mode === "Solo" ? (
+                  <>
+                    <GodCoin className="w-4 h-4" />
+                    {t.entry === 0 ? "Free Battle" : `${t.entry} entry`}
+                  </>
+                ) : (
+                  <>
+                    <GodCoin className="w-4 h-4" />
+                    {t.prize || "TBD"}
+                  </>
+                )}
+              </p>
+            </div>
+            <div className="rounded-3xl bg-slate-900/75 p-3">
+              <p className="text-[9px] uppercase tracking-[0.26em] text-slate-400 font-semibold">
+                Fill Rate
+              </p>
+              <p className="mt-1 text-sm font-black text-primary">{fillPct}%</p>
+            </div>
           </div>
-          <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+          <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
             <div
-              className="h-full bg-primary rounded-full transition-all"
+              className="h-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 transition-all"
               style={{ width: `${fillPct}%` }}
             />
           </div>
         </div>
+
         <Link to="/tournaments/$id" params={{ id: String(t.id) }}>
-          <Button
-            size="sm"
-            className="h-8 rounded-lg bg-primary text-white font-bold text-[10px] shrink-0"
-          >
-            View
+          <Button className="w-full rounded-3xl bg-primary text-white font-black h-11 shadow-[0_18px_45px_-20px_rgba(56,189,248,0.8)]">
+            View Match
           </Button>
         </Link>
       </div>

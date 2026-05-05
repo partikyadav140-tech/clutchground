@@ -76,6 +76,9 @@ function TournamentDetailPage() {
     }
   }, [user, t.id]);
 
+  const canViewRoom = isJoined;
+
+
   useEffect(() => {
     const hasSeen = localStorage.getItem("god_esports_tour_detail_seen");
     if (!hasSeen) {
@@ -230,10 +233,7 @@ function TournamentDetailPage() {
         {/* ─── Main Content ─── */}
         <div className="container mx-auto px-4 lg:px-8 pb-8">
           {/* Join Card (shows first on mobile) */}
-          <div
-            id="join-section-tour"
-            className="lg:hidden mt-5 rounded-2xl border border-primary/30 bg-card-gradient p-5 shadow-fire"
-          >
+          <div className="lg:hidden mt-5 rounded-2xl border border-primary/30 bg-card-gradient p-5 shadow-fire">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -341,10 +341,7 @@ function TournamentDetailPage() {
           </div>
 
           {/* Room Card (mobile) */}
-          <div
-            id="room-details-tour"
-            className="lg:hidden mt-4 rounded-2xl border border-border/60 bg-card-gradient p-4"
-          >
+          <div className="lg:hidden mt-4 rounded-2xl border border-border/60 bg-card-gradient p-4">
             <div className="text-xs font-display uppercase tracking-widest text-primary mb-3">
               Match Room
             </div>
@@ -353,7 +350,7 @@ function TournamentDetailPage() {
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
                   Room ID
                 </div>
-                {t.room_id ? (
+                {canViewRoom && t.room_id ? (
                   <div className="font-mono text-lg font-bold text-primary">{t.room_id}</div>
                 ) : (
                   <div className="flex items-center gap-2 text-muted-foreground">
@@ -366,7 +363,7 @@ function TournamentDetailPage() {
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
                   Password
                 </div>
-                {t.room_pass ? (
+                {canViewRoom && t.room_pass ? (
                   <div className="font-mono text-lg font-bold text-primary">{t.room_pass}</div>
                 ) : (
                   <div className="flex items-center gap-2 text-muted-foreground">
@@ -376,9 +373,9 @@ function TournamentDetailPage() {
                 )}
               </div>
             </div>
-            {!t.room_id && !t.room_pass && (
+            {!canViewRoom && (
               <p className="text-[10px] text-muted-foreground mt-3 text-center uppercase tracking-widest">
-                🔒 Released 10 min before start time
+                🔒 Only registered players can unlock room details.
               </p>
             )}
           </div>
@@ -819,7 +816,7 @@ function TournamentDetailPage() {
                     <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
                       Room ID
                     </div>
-                    {t.room_id ? (
+                    {canViewRoom && t.room_id ? (
                       <div className="font-mono text-xl font-bold text-primary">{t.room_id}</div>
                     ) : (
                       <div className="flex items-center gap-2 text-muted-foreground">
@@ -832,7 +829,7 @@ function TournamentDetailPage() {
                     <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
                       Password
                     </div>
-                    {t.room_pass ? (
+                    {canViewRoom && t.room_pass ? (
                       <div className="font-mono text-xl font-bold text-primary">{t.room_pass}</div>
                     ) : (
                       <div className="flex items-center gap-2 text-muted-foreground">
@@ -841,9 +838,9 @@ function TournamentDetailPage() {
                       </div>
                     )}
                   </div>
-                  {!t.room_id && !t.room_pass && (
+                  {!canViewRoom && (
                     <p className="text-[10px] text-muted-foreground text-center uppercase tracking-widest">
-                      🔒 Released 10 min before start
+                      🔒 Only registered players can unlock room details.
                     </p>
                   )}
                 </div>

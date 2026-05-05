@@ -135,6 +135,18 @@ export const addTournament = createServerFn({ method: "POST" }).handler(async ({
     per_kill_coin || 0,
     first_place_coin || 0,
   );
+
+  if (status === "upcoming") {
+    const users = await db.prepare("SELECT id FROM users WHERE role = 'user'").all();
+    const insertNotif = db.prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)");
+    for (const user of users as any[]) {
+      await insertNotif.run(
+        user.id,
+        `📣 New tournament announced: ${title}. Register now and secure your squad spot!`,
+      );
+    }
+  }
+
   return { success: true };
 });
 
@@ -346,6 +358,13 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
         await tx
           .prepare("UPDATE tournaments SET filled = filled + 1 WHERE id = ?")
           .run(tournamentId);
+
+        await tx
+          .prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")
+          .run(
+            userId,
+            `✅ Registration confirmed for ${t.title}. Check your upcoming match details and get ready to compete!`,
+          );
 
         // Give notification to team members
         const team = (await tx
@@ -807,7 +826,9 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
         }
         // Solo & Duo don't get posPoints
 
-        r.calculatedPoints = Number(r.kills || 0) + posPoints;
+        const manualPoints = typeof r.manualPoints !== "undefined" && r.manualPoints !== null ? Number(r.manualPoints) : undefined;
+        const useManualPoints = manualPoints !== undefined && !Number.isNaN(manualPoints);
+        r.calculatedPoints = useManualPoints ? manualPoints : Number(r.kills || 0) + posPoints;
         r.matchPosition = pos;
         r.killsNum = Number(r.kills || 0);
       }

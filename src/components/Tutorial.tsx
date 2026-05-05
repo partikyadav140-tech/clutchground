@@ -11,7 +11,8 @@ export function Tutorial() {
     if (!hasSeen) {
       // Small delay to let animations finish and DOM settle
       const timer = setTimeout(() => {
-        const isMobile = window.innerWidth < 1024;
+        const isMobile = window.innerWidth <= 900;
+        const stepTarget = (selector: string) => (isMobile ? undefined : selector);
 
         const steps = [
           {
@@ -24,7 +25,7 @@ export function Tutorial() {
             },
           },
           {
-            element: isMobile ? undefined : 'a[href="/tournaments"]',
+            element: stepTarget('a[href="/tournaments"]'),
             popover: {
               title: "🏆 Tournaments",
               description:
@@ -34,7 +35,7 @@ export function Tutorial() {
             },
           },
           {
-            element: isMobile ? undefined : 'a[href="/teams"]',
+            element: stepTarget('a[href="/teams"]'),
             popover: {
               title: "🛡️ Teams & Squads",
               description:
@@ -44,21 +45,21 @@ export function Tutorial() {
             },
           },
           {
-            element: isMobile ? undefined : 'a[href="/wallet"]',
+            element: stepTarget('a[href="/wallet"]'),
             popover: {
               title: "💰 Your Wallet",
               description:
-                "Manage your funds here. Add money to pay entry fees, and securely withdraw all your massive tournament winnings!",
+                "Manage your funds here. Add money to pay entry fees, and securely withdraw your tournament winnings with confidence.",
               side: isMobile ? "over" : "bottom",
               align: isMobile ? "center" : "start",
             },
           },
           {
-            element: isMobile ? undefined : 'a[href="/leaderboard"]',
+            element: stepTarget('a[href="/leaderboard"]'),
             popover: {
               title: "👑 Global Leaderboard",
               description:
-                "Every kill and placement earns you ELO points. Dominate your matches to climb the ranks and see your name etched here!",
+                "Every kill and placement earns you ELO points. Dominate matches to climb the ranks and see your name etched in the Hall of Fame.",
               side: isMobile ? "over" : "bottom",
               align: isMobile ? "center" : "start",
             },
@@ -79,6 +80,8 @@ export function Tutorial() {
           animate: true,
           allowClose: true,
           popoverClass: "driverjs-theme",
+          stageBackground: "rgba(0,0,0,0.72)",
+          topOffset: 64,
           steps: steps as any,
           onDestroyStarted: async () => {
             if (!driverObj.hasNextStep()) {

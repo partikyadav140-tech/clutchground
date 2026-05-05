@@ -1,5 +1,5 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Home,
   Trophy,
@@ -24,6 +24,12 @@ import { JoinBattleDialog } from "./JoinBattleDialog";
 import { toast } from "sonner";
 import { useAuth } from "../lib/auth-client";
 import { getNotifications } from "../api";
+import {
+  requestBrowserNotificationPermission,
+  showBrowserNotification,
+  playNotificationTone,
+  vibrateNotification,
+} from "../lib/notification-utils";
 import { GodCoin } from "./GodCoin";
 
 const bottomNavItems = [
@@ -68,6 +74,7 @@ export function Navbar() {
   const router = useRouter();
   const [unreadCount, setUnreadCount] = useState(0);
   const [scrolled, setScrolled] = useState(false);
+  const latestNotificationIdsRef = useRef<string[]>([]);
 
   const totalBalance = user
     ? ((user as any).deposit_balance || 0) + ((user as any).winning_balance || 0)
@@ -80,17 +87,36 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
-    if (user) {
-      async function load() {
-        try {
-          const notifs = await (getNotifications as any)({ data: user?.id });
-          setUnreadCount(notifs.filter((n: any) => !n.is_read).length);
-        } catch {}
-      }
-      load();
-      const id = setInterval(load, 5000);
-      return () => clearInterval(id);
+    if (!user) return;
+
+    requestBrowserNotificationPermission();
+
+    async function load() {
+      try {
+        const notifs = await (getNotifications as any)({ data: user.id });
+        setUnreadCount(notifs.filter((n: any) => !n.is_read).length);
+
+        const currentIds = notifs.map((n: any) => n.id);
+        const previousIds = latestNotificationIdsRef.current;
+        const newlyAdded = notifs.filter(
+          (n: any) => !previousIds.includes(n.id) && !n.is_read,
+        );
+
+        if (previousIds.length > 0 && newlyAdded.length > 0) {
+          newlyAdded.slice(-3).forEach((notification: any) => {
+            showBrowserNotification("CLUTCHGROUND Alert", notification.message || "You have a new notification.");
+            playNotificationTone();
+            vibrateNotification();
+          });
+        }
+
+        latestNotificationIdsRef.current = currentIds;
+      } catch {}
     }
+
+    load();
+    const id = setInterval(load, 5000);
+    return () => clearInterval(id);
   }, [user]);
 
   // Close menu on route change

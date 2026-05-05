@@ -24,7 +24,7 @@ const POSTERS = [
   "/posters/poster6.jpg",
 ];
 
-const filters = ["All", "Live", "Upcoming", "Free", "Paid"] as const;
+const filters = ["All", "Solo", "Duo", "Squad", "Free"] as const;
 
 function TournamentsPage() {
   const tournaments = Route.useLoaderData();
@@ -34,10 +34,10 @@ function TournamentsPage() {
   const filtered = tournaments.filter((t: any) => {
     if (t.status === "completed") return false;
     if (q && !t.title.toLowerCase().includes(q.toLowerCase())) return false;
-    if (filter === "Live") return t.status === "live";
-    if (filter === "Upcoming") return t.status === "upcoming";
+    if (filter === "Solo") return t.mode === "Solo";
+    if (filter === "Duo") return t.mode === "Duo";
+    if (filter === "Squad") return t.mode === "Squad";
     if (filter === "Free") return t.entry === 0;
-    if (filter === "Paid") return t.entry > 0;
     return true;
   });
 

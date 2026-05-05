@@ -767,6 +767,7 @@ function AdminTournamentsPage() {
                           <th className="px-4 py-3 font-bold">Squad</th>
                           <th className="px-4 py-3 font-bold text-center">Kills</th>
                           <th className="px-4 py-3 font-bold text-center">Pos</th>
+                          <th className="px-4 py-3 font-bold text-center">Manual Pts</th>
                           <th className="px-4 py-3 font-bold text-right text-primary">Points</th>
                         </tr>
                       </thead>
@@ -784,6 +785,11 @@ function AdminTournamentsPage() {
                             </td>
                             <td className="px-4 py-3.5 text-center font-mono font-semibold">
                               {r.position || "-"}
+                            </td>
+                            <td className="px-4 py-3.5 text-center font-mono font-semibold">
+                              {typeof r.manualPoints !== "undefined" && r.manualPoints !== null
+                                ? r.manualPoints
+                                : "—"}
                             </td>
                             <td className="px-4 py-3.5 text-right font-display font-black text-primary text-lg">
                               {r.points || 0}
