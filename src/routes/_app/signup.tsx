@@ -113,9 +113,15 @@ function SignupPage() {
               type="tel"
               placeholder="+91 XXXXXXXXXX"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, ''); // Only allow digits
+                if (value.length <= 10) {
+                  setPhone(value);
+                }
+              }}
               autoComplete="tel"
               required
+              maxLength={10}
             />
 
             {/* Password */}

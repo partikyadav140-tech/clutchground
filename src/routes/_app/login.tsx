@@ -78,9 +78,15 @@ function LoginPage() {
                 type="tel"
                 placeholder="Enter your phone number"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, ''); // Only allow digits
+                  if (value.length <= 10) {
+                    setPhone(value);
+                  }
+                }}
                 required
                 autoComplete="tel"
+                maxLength={10}
                 className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-white outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold placeholder:font-semibold"
               />
             </div>

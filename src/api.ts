@@ -6,6 +6,11 @@ export const loginUser = createServerFn({ method: "POST" }).handler(async ({ dat
   const { db } = await import("./lib/db");
   const { phone, password } = data as unknown as { phone: string; password: string };
   const normalizedPhone = typeof phone === "string" ? phone.trim() : phone;
+
+  if (!normalizedPhone || !/^\d{10}$/.test(normalizedPhone)) {
+    throw new Error("Phone number must be exactly 10 digits");
+  }
+
   const userStmt = db.prepare("SELECT * FROM users WHERE phone = ?");
   const user = (await userStmt.get(normalizedPhone)) as any;
 
@@ -38,6 +43,10 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
 
   if (!normalizedPhone) {
     throw new Error("Phone number is required");
+  }
+
+  if (!/^\d{10}$/.test(normalizedPhone)) {
+    throw new Error("Phone number must be exactly 10 digits");
   }
 
   const checkStmt = db.prepare("SELECT id FROM users WHERE username = ?");
