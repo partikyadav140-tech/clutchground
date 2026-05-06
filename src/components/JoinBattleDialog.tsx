@@ -8,13 +8,21 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Crown, Users, Trophy, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crown, Users, Trophy, Check, Download } from "lucide-react";
 import { toast } from "sonner";
 import { confirmDialog } from "./ConfirmDialog";
 import { useAuth } from "../lib/auth-client";
 import { useRouter } from "@tanstack/react-router";
 import { registerForTournament, getProfile, getMyTeam, checkUserRegistration } from "../api";
 import { useEffect } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type Teammate = { name: string; ign: string; uid: string };
 
@@ -36,9 +44,21 @@ export function JoinBattleDialog({
   entryFee = 0,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<"team-input" | "team-preview" | "confirm">("team-input");
+  const [loadingTeam, setLoadingTeam] = useState(false);
+  const [teamFetched, setTeamFetched] = useState(false);
   const teamCount = teamSizeFor(mode);
   const { user } = useAuth();
   const router = useRouter();
+
+  // For Solo tournaments, start at confirm step
+  useEffect(() => {
+    if (mode === "Solo") {
+      setStep("confirm");
+    } else {
+      setStep("team-input");
+    }
+  }, [mode]);
 
   // leader
   const [leader, setLeader] = useState({
@@ -60,9 +80,7 @@ export function JoinBattleDialog({
       async function fetchProfileData() {
         try {
           const profile = await (getProfile as any)({ data: user?.id });
-          const myTeam = await (getMyTeam as any)({ data: user?.id });
 
-          let profileReady = false;
           if (profile) {
             setLeader((l) => ({
               ...l,
@@ -72,38 +90,6 @@ export function JoinBattleDialog({
               uid: profile.uid || "",
               name: profile.username || "",
             }));
-            profileReady = !!(profile.ign && profile.uid);
-          }
-
-          let teamReady = false;
-          if (myTeam) {
-            setLeader((l) => ({ ...l, teamName: myTeam.name }));
-            teamReady = !!myTeam.name;
-            // Fill teammates in role-priority order: caption/captain first, then players
-            const activeMembers = myTeam.members
-              .filter((m: any) => (m.role === "player" || m.role === "caption" || m.role === "captain") && m.user_id !== user.id)
-              .sort((a: any, b: any) => {
-                const priority = (role: string) => (role === "caption" || role === "captain" ? 0 : 1);
-                return priority(a.role) - priority(b.role);
-              })
-              .slice(0, teamCount);
-            setTeammates((current) => {
-              const newT = [...current];
-              activeMembers.forEach((m: any, i: number) => {
-                if (i < newT.length) {
-                  newT[i] = { name: m.ign, ign: m.ign, uid: m.uid };
-                }
-              });
-              return newT;
-            });
-          }
-
-          if (!profileReady || (mode !== "Solo" && !teamReady)) {
-            toast.error(
-              `Please complete your Profile ${mode !== "Solo" ? "and Team Roster" : ""} before joining.`,
-            );
-            setOpen(false);
-            router.navigate({ to: "/profile" });
           }
         } catch (e) {
           console.error("Failed to auto-fill", e);
@@ -113,10 +99,67 @@ export function JoinBattleDialog({
     }
   }, [open, user, teamCount, mode]);
 
+  const fetchTeamDetails = async () => {
+    if (mode === "Solo") {
+      toast.error("Solo tournaments don't require team details.");
+      return;
+    }
+
+    setLoadingTeam(true);
+    try {
+      const myTeam = await (getMyTeam as any)({ data: user?.id });
+
+      if (!myTeam) {
+        setLoadingTeam(false);
+        toast.error("You don't have a team. Please create or join one first.");
+        router.navigate({ to: "/teams" });
+        return;
+      }
+
+      setLeader((l) => ({ ...l, teamName: myTeam.name }));
+
+      // Fill teammates in role-priority order: caption/captain first, then players
+      const activeMembers = myTeam.members
+        .filter((m: any) => (m.role === "player" || m.role === "caption" || m.role === "captain") && m.user_id !== user.id)
+        .sort((a: any, b: any) => {
+          const priority = (role: string) => (role === "caption" || role === "captain" ? 0 : 1);
+          return priority(a.role) - priority(b.role);
+        })
+        .slice(0, teamCount);
+
+      if (activeMembers.length < teamCount) {
+        setLoadingTeam(false);
+        toast.error(`Your team doesn't have enough members. You need ${teamCount} teammates.`);
+        return;
+      }
+
+      setTeammates((current) => {
+        const newT = [...current];
+        activeMembers.forEach((m: any, i: number) => {
+          if (i < newT.length) {
+            newT[i] = { name: m.ign, ign: m.ign, uid: m.uid };
+          }
+        });
+        return newT;
+      });
+
+      setTeamFetched(true);
+      setStep("team-preview");
+      toast.success("Team details loaded successfully!");
+    } catch (e: any) {
+      console.error("Failed to fetch team", e);
+      toast.error(e.message || "Failed to fetch team details");
+    } finally {
+      setLoadingTeam(false);
+    }
+  };
+
   const reset = () => {
     setLeader({ name: "", email: "", phone: "", ign: "", uid: "", teamName: "" });
     setTeammates(Array.from({ length: teamCount }, () => ({ name: "", ign: "", uid: "" })));
     setAgree(false);
+    setStep("team-input");
+    setTeamFetched(false);
   };
 
   const submit = async () => {
@@ -194,6 +237,21 @@ export function JoinBattleDialog({
     }
   };
 
+  const handleNextStep = () => {
+    if (step === "team-preview") {
+      setStep("confirm");
+    }
+  };
+
+  const handlePreviousStep = () => {
+    if (step === "team-preview") {
+      setStep("team-input");
+      setTeamFetched(false);
+    } else if (step === "confirm") {
+      setStep("team-preview");
+    }
+  };
+
   const handleOpenChange = (v: boolean) => {
     if (v && !user) {
       toast.error("You must be logged in to join battles.");
@@ -218,48 +276,150 @@ export function JoinBattleDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Confirm Step */}
-        <div className="space-y-4 py-4">
-          <div className="flex items-center gap-2 text-primary">
-            <Trophy className="w-4 h-4" />
-            <span className="text-xs font-display uppercase tracking-widest">Confirm Entry</span>
-          </div>
-          <div className="bg-secondary/60 border border-border clip-notch p-4 space-y-2 text-sm">
-            <Row k="Tournament" v={tournamentTitle} />
-            <Row k="Mode" v={mode} />
-            {mode !== "Solo" && <Row k="Team" v={leader.teamName} />}
-            <Row k="Captain" v={`${leader.ign} (UID ${leader.uid})`} />
-            <Row k="Contact" v={`${leader.email} · ${leader.phone}`} />
-            {mode !== "Solo" && (
-              <div className="pt-2 mt-2 border-t border-border/60">
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
-                  Roster
-                </div>
-                {teammates.map((t, i) => (
-                  <Row key={i} k={`P${i + 2}`} v={`${t.ign} · ${t.name} · ${t.uid}`} />
-                ))}
+        {/* Team Input Step */}
+        {step === "team-input" && mode !== "Solo" && (
+          <div className="space-y-4 py-4">
+            <div className="flex items-center gap-2 text-primary">
+              <Users className="w-4 h-4" />
+              <span className="text-xs font-display uppercase tracking-widest">Team Details</span>
+            </div>
+            <div className="bg-secondary/60 border border-border clip-notch p-4 space-y-3">
+              <div className="text-sm font-display font-bold text-foreground mb-4">
+                Enter your team details or fetch from your registered team
               </div>
-            )}
+              <Field
+                label="Team Name (Optional)"
+                value={leader.teamName}
+                onChange={(v) => setLeader((l) => ({ ...l, teamName: v }))}
+                placeholder="Enter team name or leave blank to fetch from your team"
+                compact
+              />
+              <div className="pt-2">
+                <Button
+                  onClick={fetchTeamDetails}
+                  disabled={loadingTeam}
+                  className="w-full bg-primary text-white font-display"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {loadingTeam ? "Fetching..." : "Fetch Team Details"}
+                </Button>
+              </div>
+            </div>
           </div>
-          <label className="flex items-start gap-2 text-xs text-muted-foreground">
-            <input
-              type="checkbox"
-              checked={agree}
-              onChange={(e) => setAgree(e.target.checked)}
-              className="accent-primary mt-0.5"
-            />
-            <span>
-              I confirm all UIDs are accurate. I accept the rules, anti-cheat policy, and consent to
-              screenshot verification.
-            </span>
-          </label>
-        </div>
+        )}
+
+        {/* Team Preview Step */}
+        {step === "team-preview" && mode !== "Solo" && teamFetched && (
+          <div className="space-y-4 py-4">
+            <div className="flex items-center gap-2 text-primary">
+              <Users className="w-4 h-4" />
+              <span className="text-xs font-display uppercase tracking-widest">Team Roster</span>
+            </div>
+            <div className="bg-secondary/60 border border-border clip-notch overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/60 hover:bg-secondary/40">
+                    <TableHead className="text-[10px] uppercase font-display font-bold">Position</TableHead>
+                    <TableHead className="text-[10px] uppercase font-display font-bold">IGN</TableHead>
+                    <TableHead className="text-[10px] uppercase font-display font-bold">UID</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow className="border-border/60 hover:bg-secondary/40">
+                    <TableCell className="text-xs font-display font-bold">
+                      <Crown className="w-4 h-4 inline mr-2 text-amber-500" />
+                      Captain
+                    </TableCell>
+                    <TableCell className="text-xs">{leader.ign}</TableCell>
+                    <TableCell className="text-xs font-mono">{leader.uid}</TableCell>
+                  </TableRow>
+                  {teammates.slice(0, teamCount).map((t, i) => (
+                    <TableRow key={i} className="border-border/60 hover:bg-secondary/40">
+                      <TableCell className="text-xs font-display font-bold">Player {i + 2}</TableCell>
+                      <TableCell className="text-xs">{t.ign}</TableCell>
+                      <TableCell className="text-xs font-mono">{t.uid}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
+              <p className="text-xs text-foreground/80">
+                <Check className="w-3 h-3 inline mr-2 text-primary" />
+                Team details locked for this registration
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Confirm Step */}
+        {step === "confirm" && (
+          <div className="space-y-4 py-4">
+            <div className="flex items-center gap-2 text-primary">
+              <Trophy className="w-4 h-4" />
+              <span className="text-xs font-display uppercase tracking-widest">Confirm Entry</span>
+            </div>
+            <div className="bg-secondary/60 border border-border clip-notch p-4 space-y-2 text-sm">
+              <Row k="Tournament" v={tournamentTitle} />
+              <Row k="Mode" v={mode} />
+              {mode !== "Solo" && <Row k="Team" v={leader.teamName} />}
+              <Row k="Captain" v={`${leader.ign} (UID ${leader.uid})`} />
+              <Row k="Contact" v={`${leader.email} · ${leader.phone}`} />
+              {mode !== "Solo" && (
+                <div className="pt-2 mt-2 border-t border-border/60">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+                    Roster
+                  </div>
+                  {teammates.slice(0, teamCount).map((t, i) => (
+                    <Row key={i} k={`P${i + 2}`} v={`${t.ign} · ${t.uid}`} />
+                  ))}
+                </div>
+              )}
+            </div>
+            <label className="flex items-start gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={agree}
+                onChange={(e) => setAgree(e.target.checked)}
+                className="accent-primary mt-0.5"
+              />
+              <span>
+                I confirm all UIDs are accurate. I accept the rules, anti-cheat policy, and consent to
+                screenshot verification.
+              </span>
+            </label>
+          </div>
+        )}
 
         {/* Footer */}
-        <div className="flex items-center justify-end pt-4 mt-2 border-t border-border/60">
-          <Button variant="hero" onClick={submit} className="font-display tracking-wider">
-            <Trophy className="w-4 h-4" /> LOCK MY SLOT
-          </Button>
+        <div className="flex items-center justify-between pt-4 mt-2 border-t border-border/60">
+          {step !== "team-input" && (
+            <Button
+              variant="outline"
+              onClick={handlePreviousStep}
+              className="rounded-lg"
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" /> Back
+            </Button>
+          )}
+          <div className="flex-1" />
+          {step === "team-input" && mode !== "Solo" ? null : step === "team-preview" ? (
+            <Button
+              variant="hero"
+              onClick={handleNextStep}
+              className="font-display tracking-wider"
+            >
+              Next <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
+          ) : (
+            <Button
+              variant="hero"
+              onClick={submit}
+              className="font-display tracking-wider"
+            >
+              <Trophy className="w-4 h-4" /> LOCK MY SLOT
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
