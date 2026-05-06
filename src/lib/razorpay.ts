@@ -2,9 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { createHmac } from "crypto";
 
 // Razorpay Payment Functions
-export const createRazorpayOrder = createServerFn({ method: "POST" }).handler(
+export const createRazorpayOrder = createServerFn<{
+  userId: number;
+  amount: number;
+  description?: string;
+}>({ method: "POST" }).handler(
   async ({ data }) => {
-    const { userId, amount, description } = data as any;
+    const { userId, amount, description } = data;
     const { db } = await import("./lib/db");
 
     try {
@@ -62,9 +66,14 @@ export const createRazorpayOrder = createServerFn({ method: "POST" }).handler(
   },
 );
 
-export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
+export const verifyRazorpayPayment = createServerFn<{
+  userId: number;
+  orderId: string;
+  paymentId: string;
+  signature: string;
+}>({ method: "POST" }).handler(
   async ({ data }) => {
-    const { userId, orderId, paymentId, signature } = data as any;
+    const { userId, orderId, paymentId, signature } = data;
     const { db } = await import("./lib/db");
 
     try {
@@ -129,10 +138,10 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
   },
 );
 
-export const getWalletBalance = createServerFn({ method: "POST" }).handler(
+export const getWalletBalance = createServerFn<number>({ method: "POST" }).handler(
   async ({ data }) => {
     const { db } = await import("./lib/db");
-    const userId = data as any;
+    const userId = data;
 
     const user = (await db
       .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
@@ -150,10 +159,14 @@ export const getWalletBalance = createServerFn({ method: "POST" }).handler(
   },
 );
 
-export const getTransactionHistory = createServerFn({ method: "POST" }).handler(
+export const getTransactionHistory = createServerFn<{
+  userId: number;
+  limit?: number;
+  offset?: number;
+}>({ method: "POST" }).handler(
   async ({ data }) => {
     const { db } = await import("./lib/db");
-    const { userId, limit = 10, offset = 0 } = data as any;
+    const { userId, limit = 10, offset = 0 } = data;
 
     const transactions = (await db
       .prepare(

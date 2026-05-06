@@ -41,12 +41,12 @@ function WalletPage() {
     if (!authLoading && !user) {
       router.navigate({ to: "/login" });
     } else if (user) {
-      getTransactionHistory({ data: { userId: user.id, limit: 20, offset: 0 } })
+      (getTransactionHistory as any)({ data: { userId: user.id, limit: 20, offset: 0 } })
         .then((res: any) => {
           setTransactions(res.transactions || []);
           setLoadingTx(false);
         })
-        .catch((err) => {
+        .catch((err: any) => {
           console.error(err);
           setLoadingTx(false);
         });
@@ -65,11 +65,11 @@ function WalletPage() {
 
   const handleRefreshTransactions = () => {
     if (user) {
-      getTransactionHistory({ data: { userId: user.id, limit: 20, offset: 0 } })
+      (getTransactionHistory as any)({ data: { userId: user.id, limit: 20, offset: 0 } })
         .then((res: any) => {
           setTransactions(res.transactions || []);
         })
-        .catch((err) => console.error(err));
+        .catch((err: any) => console.error(err));
     }
   };
 
@@ -116,8 +116,8 @@ function WalletPage() {
       setUpiId("");
       setUpiNumber("");
 
-      const newTxs = await getTransactions({ data: user.id });
-      setTransactions(newTxs);
+      const newTxs = await (getTransactionHistory as any)({ data: { userId: user.id, limit: 20, offset: 0 } });
+      setTransactions(newTxs.transactions || []);
 
       router.invalidate();
     } catch (err: any) {
