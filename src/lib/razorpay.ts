@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createHmac } from "crypto";
-import { db } from "./lib/db";
+import { db } from "./db";
 
 // Razorpay Payment Functions
 export const createRazorpayOrder = createServerFn<{
