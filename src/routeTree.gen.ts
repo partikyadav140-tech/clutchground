@@ -29,6 +29,7 @@ import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
 import { Route as AppTournamentsIdRouteImport } from './routes/_app/tournaments/$id'
 import { Route as AppAdminUsersRouteImport } from './routes/_app/admin/users'
 import { Route as AppAdminTournamentsRouteImport } from './routes/_app/admin/tournaments'
+import { Route as AppAdminSetupRouteImport } from './routes/_app/admin/setup'
 import { Route as AppAdminRegistrationsRouteImport } from './routes/_app/admin/registrations'
 import { Route as AppAdminPayoutsRouteImport } from './routes/_app/admin/payouts'
 import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin/messages'
@@ -133,6 +134,11 @@ const AppAdminTournamentsRoute = AppAdminTournamentsRouteImport.update({
   path: '/admin/tournaments',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminSetupRoute = AppAdminSetupRouteImport.update({
+  id: '/admin/setup',
+  path: '/admin/setup',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminRegistrationsRoute = AppAdminRegistrationsRouteImport.update({
   id: '/admin/registrations',
   path: '/admin/registrations',
@@ -173,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/admin/messages': typeof AppAdminMessagesRoute
   '/admin/payouts': typeof AppAdminPayoutsRoute
   '/admin/registrations': typeof AppAdminRegistrationsRoute
+  '/admin/setup': typeof AppAdminSetupRoute
   '/admin/tournaments': typeof AppAdminTournamentsRoute
   '/admin/users': typeof AppAdminUsersRoute
   '/tournaments/$id': typeof AppTournamentsIdRoute
@@ -198,6 +205,7 @@ export interface FileRoutesByTo {
   '/admin/messages': typeof AppAdminMessagesRoute
   '/admin/payouts': typeof AppAdminPayoutsRoute
   '/admin/registrations': typeof AppAdminRegistrationsRoute
+  '/admin/setup': typeof AppAdminSetupRoute
   '/admin/tournaments': typeof AppAdminTournamentsRoute
   '/admin/users': typeof AppAdminUsersRoute
   '/tournaments/$id': typeof AppTournamentsIdRoute
@@ -225,6 +233,7 @@ export interface FileRoutesById {
   '/_app/admin/messages': typeof AppAdminMessagesRoute
   '/_app/admin/payouts': typeof AppAdminPayoutsRoute
   '/_app/admin/registrations': typeof AppAdminRegistrationsRoute
+  '/_app/admin/setup': typeof AppAdminSetupRoute
   '/_app/admin/tournaments': typeof AppAdminTournamentsRoute
   '/_app/admin/users': typeof AppAdminUsersRoute
   '/_app/tournaments/$id': typeof AppTournamentsIdRoute
@@ -252,6 +261,7 @@ export interface FileRouteTypes {
     | '/admin/messages'
     | '/admin/payouts'
     | '/admin/registrations'
+    | '/admin/setup'
     | '/admin/tournaments'
     | '/admin/users'
     | '/tournaments/$id'
@@ -277,6 +287,7 @@ export interface FileRouteTypes {
     | '/admin/messages'
     | '/admin/payouts'
     | '/admin/registrations'
+    | '/admin/setup'
     | '/admin/tournaments'
     | '/admin/users'
     | '/tournaments/$id'
@@ -303,6 +314,7 @@ export interface FileRouteTypes {
     | '/_app/admin/messages'
     | '/_app/admin/payouts'
     | '/_app/admin/registrations'
+    | '/_app/admin/setup'
     | '/_app/admin/tournaments'
     | '/_app/admin/users'
     | '/_app/tournaments/$id'
@@ -456,6 +468,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminTournamentsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/setup': {
+      id: '/_app/admin/setup'
+      path: '/admin/setup'
+      fullPath: '/admin/setup'
+      preLoaderRoute: typeof AppAdminSetupRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/registrations': {
       id: '/_app/admin/registrations'
       path: '/admin/registrations'
@@ -506,6 +525,7 @@ interface AppRouteChildren {
   AppAdminMessagesRoute: typeof AppAdminMessagesRoute
   AppAdminPayoutsRoute: typeof AppAdminPayoutsRoute
   AppAdminRegistrationsRoute: typeof AppAdminRegistrationsRoute
+  AppAdminSetupRoute: typeof AppAdminSetupRoute
   AppAdminTournamentsRoute: typeof AppAdminTournamentsRoute
   AppAdminUsersRoute: typeof AppAdminUsersRoute
   AppTournamentsIdRoute: typeof AppTournamentsIdRoute
@@ -532,6 +552,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminMessagesRoute: AppAdminMessagesRoute,
   AppAdminPayoutsRoute: AppAdminPayoutsRoute,
   AppAdminRegistrationsRoute: AppAdminRegistrationsRoute,
+  AppAdminSetupRoute: AppAdminSetupRoute,
   AppAdminTournamentsRoute: AppAdminTournamentsRoute,
   AppAdminUsersRoute: AppAdminUsersRoute,
   AppTournamentsIdRoute: AppTournamentsIdRoute,

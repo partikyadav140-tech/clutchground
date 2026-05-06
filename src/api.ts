@@ -1092,7 +1092,7 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
   await db.prepare(
     `
       CREATE TABLE IF NOT EXISTS leaderboard_overrides (
-        id INTEGER PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL,
         week_start TIMESTAMP NOT NULL,
         points INTEGER NOT NULL,
@@ -1102,6 +1102,34 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
     `,
   ).run();
 
+  // Migration: Fix existing table if it has wrong id column type
+  try {
+    const tableInfo = await db.prepare(`
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns
+      WHERE table_name = 'leaderboard_overrides' AND column_name = 'id'
+    `).get();
+    
+    if (tableInfo && tableInfo.data_type === 'integer' && !tableInfo.column_default?.includes('nextval')) {
+      // Table exists with wrong schema, recreate it
+      await db.prepare(`DROP TABLE leaderboard_overrides`).run();
+      await db.prepare(
+        `
+          CREATE TABLE leaderboard_overrides (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            week_start TIMESTAMP NOT NULL,
+            points INTEGER NOT NULL,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, week_start)
+          )
+        `,
+      ).run();
+    }
+  } catch (e) {
+    // Ignore migration errors, table might not exist yet
+  }
+
   const rows = (await db
     .prepare(
       `
@@ -1109,12 +1137,12 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
         u.id as user_id,
         u.username as ign,
         COALESCE(SUM(r.kills), 0) as kills,
-        COALESCE(lo.points, COALESCE(SUM(r.points), 0)) as points,
+        COALESCE(MAX(lo.points), COALESCE(SUM(r.points), 0)) as points,
         SUM(CASE WHEN r.position = 1 THEN 1 ELSE 0 END) as wins
       FROM users u
       LEFT JOIN registrations r ON r.user_id = u.id AND r.created_at >= date_trunc('week', CURRENT_TIMESTAMP)
       LEFT JOIN leaderboard_overrides lo ON lo.user_id = u.id AND lo.week_start = date_trunc('week', CURRENT_TIMESTAMP)
-      GROUP BY u.id, u.username, lo.points
+      GROUP BY u.id, u.username
       HAVING COALESCE(lo.points, COALESCE(SUM(r.points), 0)) > 0
       ORDER BY points DESC, kills DESC
     `,
@@ -1162,7 +1190,7 @@ export const updateLeaderboardPoints = createServerFn({ method: "POST" }).handle
     await db.prepare(
       `
         CREATE TABLE IF NOT EXISTS leaderboard_overrides (
-          id INTEGER PRIMARY KEY,
+          id SERIAL PRIMARY KEY,
           user_id INTEGER NOT NULL,
           week_start TIMESTAMP NOT NULL,
           points INTEGER NOT NULL,
@@ -1171,6 +1199,34 @@ export const updateLeaderboardPoints = createServerFn({ method: "POST" }).handle
         )
       `,
     ).run();
+
+    // Migration: Fix existing table if it has wrong id column type
+    try {
+      const tableInfo = await db.prepare(`
+        SELECT column_name, data_type, is_nullable, column_default
+        FROM information_schema.columns
+        WHERE table_name = 'leaderboard_overrides' AND column_name = 'id'
+      `).get();
+      
+      if (tableInfo && tableInfo.data_type === 'integer' && !tableInfo.column_default?.includes('nextval')) {
+        // Table exists with wrong schema, recreate it
+        await db.prepare(`DROP TABLE leaderboard_overrides`).run();
+        await db.prepare(
+          `
+            CREATE TABLE leaderboard_overrides (
+              id SERIAL PRIMARY KEY,
+              user_id INTEGER NOT NULL,
+              week_start TIMESTAMP NOT NULL,
+              points INTEGER NOT NULL,
+              updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              UNIQUE(user_id, week_start)
+            )
+          `,
+        ).run();
+      }
+    } catch (e) {
+      // Ignore migration errors, table might not exist yet
+    }
 
     const weekRow = (await db
       .prepare("SELECT date_trunc('week', CURRENT_TIMESTAMP) as week_start")
