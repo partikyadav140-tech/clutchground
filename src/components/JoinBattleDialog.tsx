@@ -144,7 +144,6 @@ export function JoinBattleDialog({
       });
 
       setTeamFetched(true);
-      setStep("team-preview");
       toast.success("Team details loaded successfully!");
     } catch (e: any) {
       console.error("Failed to fetch team", e);
@@ -238,13 +237,39 @@ export function JoinBattleDialog({
   };
 
   const handleNextStep = () => {
-    if (step === "team-preview") {
+    if (step === "team-input") {
+      // Validate all player details are filled
+      if (mode === "Solo") {
+        setStep("confirm");
+        return;
+      }
+
+      const requiredFields = [leader.ign, leader.uid];
+      const missingLeader = requiredFields.some((f) => !f || f.trim() === "");
+
+      if (missingLeader) {
+        toast.error("Please fill in Captain's IGN and UID");
+        return;
+      }
+
+      for (let i = 0; i < teamCount; i++) {
+        const t = teammates[i];
+        if (!t.ign?.trim() || !t.uid?.trim()) {
+          toast.error(`Please fill in Player ${i + 2}'s IGN and UID`);
+          return;
+        }
+      }
+
+      setStep("team-preview");
+    } else if (step === "team-preview") {
       setStep("confirm");
     }
   };
 
   const handlePreviousStep = () => {
-    if (step === "team-preview") {
+    if (step === "team-input") {
+      return;
+    } else if (step === "team-preview") {
       setStep("team-input");
       setTeamFetched(false);
     } else if (step === "confirm") {
@@ -283,33 +308,108 @@ export function JoinBattleDialog({
               <Users className="w-4 h-4" />
               <span className="text-xs font-display uppercase tracking-widest">Team Details</span>
             </div>
+            
+            {/* Team Name */}
             <div className="bg-secondary/60 border border-border clip-notch p-4 space-y-3">
-              <div className="text-sm font-display font-bold text-foreground mb-4">
-                Enter your team details or fetch from your registered team
+              <div className="text-xs font-display font-bold text-muted-foreground uppercase tracking-widest mb-3">
+                Team Information
               </div>
               <Field
-                label="Team Name (Optional)"
+                label="Team Name"
                 value={leader.teamName}
                 onChange={(v) => setLeader((l) => ({ ...l, teamName: v }))}
-                placeholder="Enter team name or leave blank to fetch from your team"
+                placeholder="Enter your team name"
                 compact
               />
-              <div className="pt-2">
-                <Button
-                  onClick={fetchTeamDetails}
-                  disabled={loadingTeam}
-                  className="w-full bg-primary text-white font-display"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  {loadingTeam ? "Fetching..." : "Fetch Team Details"}
-                </Button>
+            </div>
+
+            {/* Captain Details */}
+            <div className="bg-secondary/60 border border-border clip-notch p-4 space-y-3">
+              <div className="flex items-center gap-2 mb-3">
+                <Crown className="w-4 h-4 text-amber-500" />
+                <span className="text-xs font-display font-bold text-muted-foreground uppercase tracking-widest">
+                  Captain (You)
+                </span>
               </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Field
+                  label="IGN"
+                  value={leader.ign}
+                  onChange={(v) => setLeader((l) => ({ ...l, ign: v }))}
+                  placeholder="In-game name"
+                  compact
+                />
+                <Field
+                  label="UID"
+                  value={leader.uid}
+                  onChange={(v) => setLeader((l) => ({ ...l, uid: v }))}
+                  placeholder="UID"
+                  compact
+                />
+              </div>
+            </div>
+
+            {/* Teammates Details */}
+            <div className="bg-secondary/60 border border-border clip-notch p-4 space-y-3">
+              <div className="text-xs font-display font-bold text-muted-foreground uppercase tracking-widest mb-3">
+                Team Members
+              </div>
+              {teammates.slice(0, teamCount).map((t, i) => (
+                <div key={i} className="pb-3 border-b border-border/40 last:border-b-0 last:pb-0">
+                  <div className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest mb-2">
+                    Player {i + 2}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Field
+                      label="IGN"
+                      value={t.ign}
+                      onChange={(v) => {
+                        setTeammates((curr) => {
+                          const newT = [...curr];
+                          newT[i] = { ...t, ign: v };
+                          return newT;
+                        });
+                      }}
+                      placeholder="In-game name"
+                      compact
+                    />
+                    <Field
+                      label="UID"
+                      value={t.uid}
+                      onChange={(v) => {
+                        setTeammates((curr) => {
+                          const newT = [...curr];
+                          newT[i] = { ...t, uid: v };
+                          return newT;
+                        });
+                      }}
+                      placeholder="UID"
+                      compact
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Fetch Team Details Button */}
+            <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
+              <Button
+                onClick={fetchTeamDetails}
+                disabled={loadingTeam}
+                className="w-full bg-primary text-white font-display"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {loadingTeam ? "Fetching..." : "Auto-fill From Registered Team"}
+              </Button>
+              <p className="text-[10px] text-muted-foreground mt-2">
+                Click to automatically fill all player details from your registered team
+              </p>
             </div>
           </div>
         )}
 
         {/* Team Preview Step */}
-        {step === "team-preview" && mode !== "Solo" && teamFetched && (
+        {step === "team-preview" && mode !== "Solo" && (
           <div className="space-y-4 py-4">
             <div className="flex items-center gap-2 text-primary">
               <Users className="w-4 h-4" />
@@ -346,7 +446,7 @@ export function JoinBattleDialog({
             <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
               <p className="text-xs text-foreground/80">
                 <Check className="w-3 h-3 inline mr-2 text-primary" />
-                Team details locked for this registration
+                Review your team roster. Click "Next" to confirm registration details.
               </p>
             </div>
           </div>
@@ -393,7 +493,7 @@ export function JoinBattleDialog({
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 mt-2 border-t border-border/60">
-          {step !== "team-input" && (
+          {(step === "team-preview" || step === "confirm") && (
             <Button
               variant="outline"
               onClick={handlePreviousStep}
@@ -403,21 +503,22 @@ export function JoinBattleDialog({
             </Button>
           )}
           <div className="flex-1" />
-          {step === "team-input" && mode !== "Solo" ? null : step === "team-preview" ? (
-            <Button
-              variant="hero"
-              onClick={handleNextStep}
-              className="font-display tracking-wider"
-            >
-              Next <ChevronRight className="w-4 h-4 ml-2" />
-            </Button>
-          ) : (
+          {step === "confirm" ? (
             <Button
               variant="hero"
               onClick={submit}
               className="font-display tracking-wider"
             >
-              <Trophy className="w-4 h-4" /> LOCK MY SLOT
+              <Trophy className="w-4 h-4 mr-2" /> LOCK MY SLOT
+            </Button>
+          ) : (
+            <Button
+              variant="hero"
+              onClick={handleNextStep}
+              className="font-display tracking-wider"
+              disabled={step === "team-input" && mode === "Solo"}
+            >
+              Next <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
           )}
         </div>
