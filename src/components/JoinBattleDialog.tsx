@@ -118,27 +118,41 @@ export function JoinBattleDialog({
 
       setLeader((l) => ({ ...l, teamName: myTeam.name }));
 
-      // Fill teammates in role-priority order: caption/captain first, then players
-      const activeMembers = myTeam.members
-        .filter((m: any) => (m.role === "player" || m.role === "caption" || m.role === "captain") && m.user_id !== user.id)
-        .sort((a: any, b: any) => {
-          const priority = (role: string) => (role === "caption" || role === "captain" ? 0 : 1);
-          return priority(a.role) - priority(b.role);
-        })
-        .slice(0, teamCount);
+      // Get valid members (with ign and uid, excluding current user if they're in the list)
+      let activeMembers = [];
+      
+      if (myTeam.members && Array.isArray(myTeam.members)) {
+        activeMembers = myTeam.members
+          .filter((m: any) => {
+            // Include if has ign and uid
+            if (!m.ign || !m.uid) return false;
+            // Exclude only if user_id explicitly matches current user
+            if (m.user_id && m.user_id === user.id) return false;
+            return true;
+          })
+          .sort((a: any, b: any) => {
+            const priority = (role: string) => (role === "caption" || role === "captain" ? 0 : 1);
+            return priority(a.role) - priority(b.role);
+          });
+      }
+
+      console.log("Team name:", myTeam.name);
+      console.log("Team members count:", activeMembers.length);
+      console.log("Members needed:", teamCount);
+      console.log("Full members list:", activeMembers);
 
       if (activeMembers.length < teamCount) {
         setLoadingTeam(false);
-        toast.error(`Your team doesn't have enough members. You need ${teamCount} teammates.`);
+        toast.error(
+          `Your team has ${activeMembers.length} available member${activeMembers.length !== 1 ? "s" : ""}, but you need ${teamCount} teammates for ${mode} mode.`,
+        );
         return;
       }
 
       setTeammates((current) => {
         const newT = [...current];
-        activeMembers.forEach((m: any, i: number) => {
-          if (i < newT.length) {
-            newT[i] = { name: m.ign, ign: m.ign, uid: m.uid };
-          }
+        activeMembers.slice(0, teamCount).forEach((m: any, i: number) => {
+          newT[i] = { name: m.ign, ign: m.ign, uid: m.uid };
         });
         return newT;
       });
