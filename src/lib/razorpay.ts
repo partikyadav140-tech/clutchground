@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createHmac } from "crypto";
+import { db } from "./lib/db";
 
 // Razorpay Payment Functions
 export const createRazorpayOrder = createServerFn<{
@@ -9,7 +10,6 @@ export const createRazorpayOrder = createServerFn<{
 }>({ method: "POST" }).handler(
   async ({ data }) => {
     const { userId, amount, description } = data;
-    const { db } = await import("./lib/db");
 
     try {
       const keyId = process.env.RAZORPAY_KEY_ID;
@@ -74,7 +74,6 @@ export const verifyRazorpayPayment = createServerFn<{
 }>({ method: "POST" }).handler(
   async ({ data }) => {
     const { userId, orderId, paymentId, signature } = data;
-    const { db } = await import("./lib/db");
 
     try {
       const keySecret = process.env.RAZORPAY_KEY_SECRET;
@@ -140,7 +139,6 @@ export const verifyRazorpayPayment = createServerFn<{
 
 export const getWalletBalance = createServerFn<number>({ method: "POST" }).handler(
   async ({ data }) => {
-    const { db } = await import("./lib/db");
     const userId = data;
 
     const user = (await db
@@ -165,7 +163,6 @@ export const getTransactionHistory = createServerFn<{
   offset?: number;
 }>({ method: "POST" }).handler(
   async ({ data }) => {
-    const { db } = await import("./lib/db");
     const { userId, limit = 10, offset = 0 } = data;
 
     const transactions = (await db
@@ -193,9 +190,8 @@ export const getTransactionHistory = createServerFn<{
   },
 );
 
-export const initializeRazorpayTables = createServerFn({ method: "POST" }).handler(
+export const initializeRazorpayTables = createServerFn<void>({ method: "POST" }).handler(
   async () => {
-    const { db } = await import("./lib/db");
 
     await db
       .prepare(
