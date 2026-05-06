@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { GodCoin } from "@/components/GodCoin";
 import { useAuth } from "../../lib/auth-client";
 import { useState, useEffect } from "react";
+import { WalletDepositDialog } from "@/components/WalletDepositDialog";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +23,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { processWithdrawal, getTransactions, addDepositRazorpay } from "../../api";
+import { processWithdrawal, getTransactionHistory } from "../../api";
 
 export const Route = createFileRoute("/_app/wallet")({
   head: () => ({ meta: [{ title: "Wallet — Professional Esports Arena" }] }),
@@ -40,9 +41,9 @@ function WalletPage() {
     if (!authLoading && !user) {
       router.navigate({ to: "/login" });
     } else if (user) {
-      getTransactions({ data: user.id })
-        .then((txs) => {
-          setTransactions(txs);
+      getTransactionHistory({ data: { userId: user.id, limit: 20, offset: 0 } })
+        .then((res: any) => {
+          setTransactions(res.transactions || []);
           setLoadingTx(false);
         })
         .catch((err) => {
@@ -62,74 +63,14 @@ function WalletPage() {
   const [upiNumber, setUpiNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [addCashOpen, setAddCashOpen] = useState(false);
-  const [addCashAmount, setAddCashAmount] = useState("");
-  const [isAddingCash, setIsAddingCash] = useState(false);
-
-  const loadRazorpay = () => {
-    return new Promise((resolve) => {
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-
-  const handleAddCashSubmit = async () => {
-    const amount = parseInt(addCashAmount, 10);
-    if (isNaN(amount) || amount <= 0) {
-      toast.error("Invalid amount.");
-      return;
+  const handleRefreshTransactions = () => {
+    if (user) {
+      getTransactionHistory({ data: { userId: user.id, limit: 20, offset: 0 } })
+        .then((res: any) => {
+          setTransactions(res.transactions || []);
+        })
+        .catch((err) => console.error(err));
     }
-
-    setIsAddingCash(true);
-    const res = await loadRazorpay();
-    if (!res) {
-      toast.error("Razorpay SDK failed to load. Are you online?");
-      setIsAddingCash(false);
-      return;
-    }
-
-    const options = {
-      key: "rzp_test_YourMockKeyHere", // Replace with real key
-      amount: amount * 100,
-      currency: "INR",
-      name: "ClutchGround",
-      description: "Add Cash to Wallet",
-      handler: async function (response: any) {
-        try {
-          await (addDepositRazorpay as any)({
-            data: {
-              userId: user.id,
-              amount: amount,
-              paymentId: response.razorpay_payment_id,
-            },
-          });
-          toast.success("Cash added successfully!");
-          setAddCashOpen(false);
-          setAddCashAmount("");
-          
-          const newTxs = await getTransactions({ data: user.id });
-          setTransactions(newTxs);
-          router.invalidate();
-        } catch (err: any) {
-          toast.error("Failed to add cash: " + err.message);
-        }
-      },
-      prefill: {
-        name: user.username,
-        email: user.email || "user@example.com",
-        contact: user.phone || "9999999999",
-      },
-      theme: {
-        color: "#f97316",
-      },
-    };
-
-    const paymentObject = new (window as any).Razorpay(options);
-    paymentObject.open();
-    setIsAddingCash(false);
   };
 
   if (authLoading || !user) {
@@ -225,12 +166,14 @@ function WalletPage() {
 
         {/* Action Buttons */}
         <div className="flex gap-3 mt-6 relative z-10">
-          <Button
-            className="flex-1 bg-white border border-primary text-primary hover:bg-primary/5 h-12 rounded-xl font-bold text-sm shadow-sm"
-            onClick={() => setAddCashOpen(true)}
-          >
-            <ArrowDownToLine className="w-4 h-4 mr-2" /> Add Cash
-          </Button>
+          <WalletDepositDialog
+            trigger={
+              <Button className="flex-1 bg-white border border-primary text-primary hover:bg-primary/5 h-12 rounded-xl font-bold text-sm shadow-sm">
+                <ArrowDownToLine className="w-4 h-4 mr-2" /> Add Cash
+              </Button>
+            }
+            onSuccess={handleRefreshTransactions}
+          />
           <Button
             className="flex-1 bg-primary text-white hover:bg-primary/90 h-12 rounded-xl font-bold text-sm shadow-md"
             onClick={handleWithdrawClick}
@@ -415,46 +358,6 @@ function WalletPage() {
               ) : (
                 "CONFIRM WITHDRAWAL"
               )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={addCashOpen} onOpenChange={setAddCashOpen}>
-        <DialogContent className="w-[90vw] max-w-md bg-white border-0 rounded-[1.5rem] p-0 overflow-hidden">
-          <div className="bg-primary p-6 text-white text-center relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-xl -translate-y-1/2 translate-x-1/2" />
-            <DialogTitle className="font-display text-2xl font-black tracking-tight">Add Cash</DialogTitle>
-            <DialogDescription className="text-white/80 text-xs uppercase tracking-widest font-bold mt-2">
-              Deposit Coins securely
-            </DialogDescription>
-          </div>
-
-          <div className="p-6 space-y-5">
-            <div>
-              <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">Amount (INR) *</label>
-              <div className="relative">
-                <GodCoin className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 z-10" />
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={addCashAmount}
-                  onChange={(e) => setAddCashAmount(e.target.value)}
-                  className="w-full bg-secondary/30 border border-border focus:border-primary focus:bg-white outline-none pl-12 pr-4 h-14 text-lg font-sans font-semibold rounded-xl transition-all shadow-sm tabular-nums"
-                />
-              </div>
-            </div>
-
-            <Button
-              onClick={handleAddCashSubmit}
-              disabled={isAddingCash}
-              className="w-full h-14 rounded-xl font-display font-bold tracking-wider text-base bg-primary text-white shadow-lg mt-2"
-            >
-              {isAddingCash ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Processing...
-                </span>
-              ) : "PAY WITH RAZORPAY"}
             </Button>
           </div>
         </DialogContent>

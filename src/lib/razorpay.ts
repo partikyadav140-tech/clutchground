@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { createHmac } from "crypto";
 
 // Razorpay Payment Functions
 export const createRazorpayOrder = createServerFn({ method: "POST" }).handler(
@@ -73,8 +74,7 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
       }
 
       // Verify signature
-      const crypto = require("crypto");
-      const hmac = crypto.createHmac("sha256", keySecret);
+      const hmac = createHmac("sha256", keySecret);
       hmac.update(`${orderId}|${paymentId}`);
       const generatedSignature = hmac.digest("hex");
 
