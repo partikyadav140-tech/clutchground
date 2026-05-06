@@ -1,6 +1,7 @@
 "use server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+export { createRazorpayOrder, verifyRazorpayPayment, getWalletBalance, getTransactionHistory, initializeRazorpayTables } from "./lib/razorpay";
 
 export const loginUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");

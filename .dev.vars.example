@@ -1,0 +1,6 @@
+# Razorpay API Keys
+RAZORPAY_KEY_ID=rzp_test_Sm3Sp3JBeZAHZo
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret_here
+
+# Database
+DATABASE_URL=postgresql://neondb_owner:npg_Z2IiLU7CrfqO@ep-morning-shape-a4x9wieu.us-east-1.aws.neon.tech/neondb?sslmode=require
