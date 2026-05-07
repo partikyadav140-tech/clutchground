@@ -94,8 +94,8 @@ export function Footer() {
       </div>
 
       {/* Copyright Section - Always Visible */}
-      <div className="pt-4 lg:pt-0 border-t lg:border-t-0 border-border/40">
-        <div className="container mx-auto px-4 lg:px-8 pb-4 lg:pb-12">
+      <div className="lg:relative fixed bottom-0 left-0 right-0 z-[55] pt-4 lg:pt-0 border-t lg:border-t-0 border-border/40 bg-card/95 lg:bg-transparent backdrop-blur-2xl lg:backdrop-blur-none">
+        <div className="container mx-auto px-4 lg:px-8 pb-20 lg:pb-4 lg:pb-12">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-2 lg:gap-4">
             <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
               <span className="flex items-center gap-2">
