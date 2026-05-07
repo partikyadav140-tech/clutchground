@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 
 export function Logo({ size = 40, withText = true }: { size?: number; withText?: boolean }) {
   return (
-    <Link to="/" className="flex items-center gap-3 group">
+    <a href="/" className="flex items-center gap-3 group">
       <img
         src={logo}
         alt="CLUTCHGROUND"
@@ -22,6 +22,6 @@ export function Logo({ size = 40, withText = true }: { size?: number; withText?:
           </span>
         </div>
       )}
-    </Link>
+    </a>
   );
 }

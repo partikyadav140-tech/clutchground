@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 
 import { Trophy, ListChecks, Download, Calendar, Crosshair, Map, Swords, Info } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -119,11 +119,11 @@ function MatchesPage() {
               <p className="text-sm text-muted-foreground mt-1 mb-6">
                 You haven't joined any active tournaments.
               </p>
-              <Link to="/tournaments" className="w-full">
+              <a href="/tournaments" className="w-full">
                 <Button className="w-full rounded-xl font-bold bg-primary text-white h-12 shadow-primary">
                   Find Tournaments
                 </Button>
-              </Link>
+              </a>
             </div>
           ) : (
             upcomingMatches.map((m, i) => (
@@ -133,9 +133,8 @@ function MatchesPage() {
                 transition={{ duration: 0.3, delay: i * 0.05 }}
                 key={i}
               >
-                <Link
-                  to="/tournaments/$id"
-                  params={{ id: String(m.id) }}
+                <a
+                  href={`/tournaments/${String(m.id)}`}
                   className="block bg-white rounded-2xl border border-border shadow-sm overflow-hidden active:scale-[0.99] transition-transform"
                 >
                   <div
@@ -225,7 +224,7 @@ function MatchesPage() {
                       )}
                     </span>
                   </div>
-                </Link>
+                </a>
               </motion.div>
             ))
           )}
@@ -249,9 +248,8 @@ function MatchesPage() {
                 key={i}
               >
                 <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
-                  <Link
-                    to="/tournaments/$id"
-                    params={{ id: String(m.id) }}
+                  <a
+                    href={`/tournaments/${String(m.id)}`}
                     className="block p-4 border-b border-border/50 hover:bg-secondary/20 transition-colors active:bg-secondary/40"
                   >
                     <div className="flex justify-between items-start mb-2">
@@ -265,7 +263,7 @@ function MatchesPage() {
                     <div className="text-xs font-semibold text-muted-foreground">
                       {new Date(m.date).toLocaleDateString()}
                     </div>
-                  </Link>
+                  </a>
 
                   {/* Results Section */}
                   <div className="p-4 bg-secondary/10 flex items-center justify-between gap-4">

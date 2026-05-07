@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { useState } from "react";
@@ -158,25 +158,25 @@ function LoginPage() {
           {/* Sign up link */}
           <p className="mt-6 text-center text-sm text-muted-foreground font-semibold">
             New to the arena?{" "}
-            <Link to="/signup" className="text-primary font-black hover:underline">
+            <a href="/signup" className="text-primary font-black hover:underline">
               Create account
-            </Link>
+            </a>
           </p>
         </div>
 
         {/* Bottom links */}
         <div className="mt-8 flex items-center justify-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-          <Link to="/rules" className="hover:text-primary transition-colors">
+          <a href="/rules" className="hover:text-primary transition-colors">
             Rules
-          </Link>
+          </a>
           <span className="w-1 h-1 rounded-full bg-border" />
-          <Link to="/privacy" className="hover:text-primary transition-colors">
+          <a href="/privacy" className="hover:text-primary transition-colors">
             Privacy
-          </Link>
+          </a>
           <span className="w-1 h-1 rounded-full bg-border" />
-          <Link to="/contact" className="hover:text-primary transition-colors">
+          <a href="/contact" className="hover:text-primary transition-colors">
             Support
-          </Link>
+          </a>
         </div>
       </motion.div>
     </div>

@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { getTournaments } from "../../../api";
 import { Button } from "@/components/ui/button";
@@ -213,14 +213,14 @@ function TournamentCard({ t, i }: { t: any; i: number }) {
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <Link to="/tournaments/$id" params={{ id: String(t.id) }} className="w-full">
+            <a href={`/tournaments/${String(t.id)}`} className="w-full">
               <Button
                 variant="outline"
                 className="w-full h-11 rounded-xl font-bold text-xs bg-white border-border shadow-sm"
               >
                 Details
               </Button>
-            </Link>
+            </a>
             {isFull ? (
               <Button
                 disabled

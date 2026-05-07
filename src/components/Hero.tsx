@@ -1,7 +1,6 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { Link } from "@tanstack/react-router";
 import { Trophy, Zap, ChevronDown, Flame, Star } from "lucide-react";
 import { JoinBattleDialog } from "./JoinBattleDialog";
 import { useAuth } from "../lib/auth-client";
@@ -117,9 +116,9 @@ export function Hero() {
                 size="lg"
                 className="w-full sm:w-auto font-display tracking-widest text-base h-13 sm:h-14 shadow-fire"
               >
-                <Link to="/login">
+                <a href="/login">
                   <Trophy className="w-5 h-5" /> JOIN BATTLE
-                </Link>
+                </a>
               </Button>
             )}
             <Button
@@ -128,9 +127,9 @@ export function Hero() {
               size="lg"
               className="w-full sm:w-auto font-display tracking-widest text-base h-13 sm:h-14 bg-background/30 backdrop-blur-md"
             >
-              <Link to="/tournaments">
+              <a href="/tournaments">
                 <Zap className="w-5 h-5" /> VIEW TOURNAMENTS
-              </Link>
+              </a>
             </Button>
           </motion.div>
 

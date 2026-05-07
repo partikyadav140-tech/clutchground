@@ -371,7 +371,7 @@ function ProfilePage() {
         </motion.div>
 
         {/* ─── Wallet Quick Link ─── */}
-        <Link to="/wallet" className="block">
+        <a href="/wallet" className="block">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -393,7 +393,7 @@ function ProfilePage() {
               <ChevronRight className="w-5 h-5" />
             </div>
           </motion.div>
-        </Link>
+        </a>
 
         {/* ─── Team Panel ─── */}
         <motion.div

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { getTournaments, getTournamentResults, getMyMatches } from "../../../api";
 import { Button } from "@/components/ui/button";
@@ -27,9 +27,9 @@ export const Route = createFileRoute("/_app/tournaments/$id")({
   notFoundComponent: () => (
     <div className="container mx-auto px-4 py-20 text-center">
       <h1 className="font-display text-4xl mb-4">Tournament Not Found</h1>
-      <Link to="/tournaments">
+      <a href="/tournaments">
         <Button variant="hero">Back to Tournaments</Button>
-      </Link>
+      </a>
     </div>
   ),
   loader: async ({ params }) => {
@@ -140,12 +140,12 @@ function TournamentDetailPage() {
           <div className="absolute inset-0 grid-bg opacity-[0.06]" />
 
           <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-            <Link
-              to="/tournaments"
+            <a
+              href="/tournaments"
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-background/70 backdrop-blur-md border border-border/60 text-sm font-display uppercase tracking-wider text-foreground hover:border-primary/50 transition-all active:scale-95"
             >
               <ArrowLeft className="w-4 h-4" /> Back
-            </Link>
+            </a>
             {t.status === "live" && (
               <div className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-red-500/90 backdrop-blur-sm text-white text-xs font-display font-bold uppercase tracking-widest">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live

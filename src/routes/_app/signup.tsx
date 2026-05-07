@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { useState } from "react";
@@ -162,17 +162,17 @@ function SignupPage() {
               />
               <span className="leading-relaxed font-semibold">
                 I accept the{" "}
-                <Link to="/rules" className="text-primary font-bold hover:underline">
+                <a href="/rules" className="text-primary font-bold hover:underline">
                   Rules
-                </Link>
+                </a>
                 ,{" "}
-                <Link to="/terms" className="text-primary font-bold hover:underline">
+                <a href="/terms" className="text-primary font-bold hover:underline">
                   Terms
-                </Link>{" "}
+                </a>{" "}
                 &{" "}
-                <Link to="/privacy" className="text-primary font-bold hover:underline">
+                <a href="/privacy" className="text-primary font-bold hover:underline">
                   Privacy Policy
-                </Link>
+                </a>
                 . I confirm I am 13+ years old.
               </span>
             </label>
@@ -198,24 +198,24 @@ function SignupPage() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground font-semibold">
             Already a warrior?{" "}
-            <Link to="/login" className="text-primary font-black hover:underline">
+            <a href="/login" className="text-primary font-black hover:underline">
               Log in
-            </Link>
+            </a>
           </p>
         </div>
 
         <div className="mt-8 flex items-center justify-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-          <Link to="/rules" className="hover:text-primary transition-colors">
+          <a href="/rules" className="hover:text-primary transition-colors">
             Rules
-          </Link>
+          </a>
           <span className="w-1 h-1 rounded-full bg-border" />
-          <Link to="/anti-cheat" className="hover:text-primary transition-colors">
+          <a href="/anti-cheat" className="hover:text-primary transition-colors">
             Anti-Cheat
-          </Link>
+          </a>
           <span className="w-1 h-1 rounded-full bg-border" />
-          <Link to="/contact" className="hover:text-primary transition-colors">
+          <a href="/contact" className="hover:text-primary transition-colors">
             Support
-          </Link>
+          </a>
         </div>
       </motion.div>
     </div>

@@ -31,21 +31,21 @@ export function Footer() {
           <div className="lg:col-span-1">
             <h4 className="font-display font-bold text-foreground mb-4 uppercase tracking-wider text-sm">Quick Links</h4>
             <div className="space-y-3">
-              <Link to="/tournaments" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a href="/tournaments" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                 Tournaments
-              </Link>
-              <Link to="/leaderboard" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              </a>
+              <a href="/leaderboard" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                 Leaderboard
-              </Link>
-              <Link to="/teams" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              </a>
+              <a href="/teams" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                 Teams
-              </Link>
-              <Link to="/matches" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              </a>
+              <a href="/matches" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                 My Matches
-              </Link>
-              <Link to="/wallet" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              </a>
+              <a href="/wallet" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                 Wallet
-              </Link>
+              </a>
             </div>
           </div>
 
@@ -53,21 +53,21 @@ export function Footer() {
           <div className="lg:col-span-1">
             <h4 className="font-display font-bold text-foreground mb-4 uppercase tracking-wider text-sm">Support</h4>
             <div className="space-y-3">
-              <Link to="/rules" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a href="/rules" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                 Rules & Regulations
-              </Link>
-              <Link to="/anti-cheat" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              </a>
+              <a href="/anti-cheat" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                 Anti-Cheat Policy
-              </Link>
-              <Link to="/contact" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              </a>
+              <a href="/contact" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                 Contact Support
-              </Link>
-              <Link to="/privacy" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              </a>
+              <a href="/privacy" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                 Privacy Policy
-              </Link>
-              <Link to="/terms" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              </a>
+              <a href="/terms" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
                 Terms of Service
-              </Link>
+              </a>
             </div>
           </div>
 
