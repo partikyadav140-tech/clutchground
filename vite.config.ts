@@ -6,7 +6,16 @@ import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  plugins: [TanStackRouterVite(), tanstackStart(), react(), tailwindcss(), tsconfigPaths()],
+  plugins: [
+    TanStackRouterVite({
+      routesDirectory: './src/routes',
+      generatedRouteTree: './src/routeTree.gen.ts',
+    }),
+    tanstackStart(),
+    react(),
+    tailwindcss(),
+    tsconfigPaths()
+  ],
   preview: {
     host: true,
     port: parseInt(process.env.PORT || "4173"),
