@@ -13,9 +13,8 @@ jobs:
     steps:
       - name: Ping Render App
         run: |
-          # Replace YOUR-RENDER-APP-URL with your actual Render app URL
-          # Example: curl -f https://your-app-name.onrender.com/
-          curl -f https://YOUR-RENDER-APP-URL.onrender.com/ || curl -f https://YOUR-RENDER-APP-URL.onrender.com
+          # Ping the main site to keep it active
+          curl -f https://clutchground-1.onrender.com/ || curl -f https://clutchground-1.onrender.com
 
       - name: Ping Alternative URL (if needed)
         run: |
