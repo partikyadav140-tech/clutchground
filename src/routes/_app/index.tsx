@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { getTournaments, getGlobalLeaderboard } from "../../api";
 import {
   Trophy,
@@ -181,7 +181,7 @@ function HomePage() {
                 </h1>
                 <p className="text-sm lg:text-base text-muted-foreground">Join India's premium esports arena.</p>
               </div>
-              <Link to="/login">
+              <a href="/login">
                 <Button
                   variant="hero"
                   size="sm"
@@ -189,7 +189,7 @@ function HomePage() {
                 >
                   LOGIN
                 </Button>
-              </Link>
+              </a>
             </div>
           )}
 
@@ -241,9 +241,9 @@ function HomePage() {
               <h3 className="font-display font-black text-lg lg:text-2xl text-foreground flex items-center gap-2">
                 <Flame className="w-5 h-5 lg:w-6 lg:h-6 text-primary" /> Featured Tournaments
               </h3>
-              <Link to="/tournaments" className="text-xs lg:text-sm font-bold text-primary flex items-center hover:text-primary/80 transition-colors">
+              <a href="/tournaments" className="text-xs lg:text-sm font-bold text-primary flex items-center hover:text-primary/80 transition-colors">
                 See All <ChevronRight className="w-3 h-3 lg:w-4 lg:h-4 ml-0.5" />
-              </Link>
+              </a>
             </div>
             {/* Desktop: Grid Layout */}
             <div className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
@@ -274,9 +274,9 @@ function HomePage() {
             <h3 className="font-display font-black text-lg lg:text-2xl text-foreground flex items-center gap-2">
               <Gamepad2 className="w-5 h-5 lg:w-6 lg:h-6 text-purple" /> Upcoming Matches
             </h3>
-            <Link to="/tournaments" className="text-xs lg:text-sm font-bold text-purple flex items-center hover:text-purple/80 transition-colors">
+            <a href="/tournaments" className="text-xs lg:text-sm font-bold text-purple flex items-center hover:text-purple/80 transition-colors">
               View More <ChevronRight className="w-3 h-3 lg:w-4 lg:h-4 ml-0.5" />
-            </Link>
+            </a>
           </div>
           {/* Desktop: Grid Layout */}
           <div className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
@@ -324,7 +324,7 @@ function QuickAction({
   color: string;
 }) {
   return (
-    <Link to={to} className="flex flex-col items-center gap-2 active:scale-95 transition-transform">
+    <a href={to} className="flex flex-col items-center gap-2 active:scale-95 transition-transform">
       <div
         className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${color} shadow-sm`}
       >
@@ -333,7 +333,7 @@ function QuickAction({
       <span className="text-[10px] font-bold text-foreground tracking-wide text-center">
         {label}
       </span>
-    </Link>
+    </a>
   );
 }
 
@@ -414,14 +414,14 @@ function FeaturedTournamentCard({ t, i }: { t: any; i: number }) {
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <Link to="/tournaments/$id" params={{ id: String(t.id) }} className="w-full">
+            <a href={`/tournaments/${t.id}`} className="w-full">
               <Button
                 variant="outline"
                 className="w-full h-9 rounded-xl font-bold text-xs bg-white border-border"
               >
                 Details
               </Button>
-            </Link>
+            </a>
             {t.filled >= t.slots ? (
               <Button
                 disabled
@@ -528,14 +528,14 @@ function DesktopTournamentCard({ t, i }: { t: any; i: number }) {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Link to="/tournaments/$id" params={{ id: String(t.id) }}>
+          <a href={`/tournaments/${t.id}`}>
             <Button
               variant="outline"
               className="w-full h-11 rounded-xl font-bold text-sm bg-white border-border hover:bg-secondary/50 transition-colors"
             >
               Details
             </Button>
-          </Link>
+          </a>
           {t.filled >= t.slots ? (
             <Button
               disabled
@@ -633,11 +633,11 @@ function CompactTournamentCard({ t, i }: { t: any; i: number }) {
           </div>
         </div>
 
-        <Link to="/tournaments/$id" params={{ id: String(t.id) }}>
+        <a href={`/tournaments/${t.id}`}>
           <Button className="mt-4 w-full h-11 rounded-3xl bg-primary text-white font-black shadow-primary">
             View Match
           </Button>
-        </Link>
+        </a>
       </div>
     </motion.div>
   );
