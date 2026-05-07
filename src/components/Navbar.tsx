@@ -178,12 +178,12 @@ export function Navbar() {
           </button>
 
           {/* Center/Left: Logo */}
-          <div className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0">
+          <div className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0 lg:flex-1">
             <Logo size={80} withText={false} />
           </div>
 
           {/* Desktop nav links */}
-          <div className="hidden lg:flex items-center gap-1 ml-6">
+          <div className="hidden lg:flex items-center gap-2 xl:gap-4 ml-6">
             {bottomNavItems.map((item) => (
               <Link
                 key={item.to}
@@ -198,7 +198,7 @@ export function Navbar() {
           </div>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-2 lg:gap-3">
+          <div className="flex items-center gap-2 lg:gap-3 lg:flex-1 lg:justify-end">
             {/* Wallet chip */}
             <Link
               to="/wallet"

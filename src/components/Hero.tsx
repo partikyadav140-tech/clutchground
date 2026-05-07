@@ -46,7 +46,7 @@ export function Hero() {
 
       {/* Content */}
       <div className="relative z-20 container mx-auto px-4 lg:px-8 min-h-[100svh] flex flex-col justify-end pb-28 sm:pb-24 sm:justify-center sm:pt-28 pt-24">
-        <div className="max-w-3xl w-full">
+        <div className="max-w-4xl w-full mx-auto lg:mx-0">
           {/* Live Season Badge */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -68,13 +68,13 @@ export function Hero() {
             transition={t(0.2)}
             className="font-display font-black leading-[0.9] tracking-tighter"
           >
-            <span className="block text-4xl sm:text-6xl lg:text-7xl xl:text-8xl text-foreground drop-shadow-lg">
+            <span className="block text-4xl sm:text-5xl lg:text-6xl xl:text-7xl 2xl:text-8xl text-foreground drop-shadow-lg">
               BECOME A
             </span>
-            <span className="block text-5xl sm:text-7xl lg:text-8xl xl:text-9xl text-fire-gradient filter drop-shadow-[0_0_20px_oklch(0.65_0.28_320/0.4)]">
+            <span className="block text-5xl sm:text-6xl lg:text-7xl xl:text-8xl 2xl:text-9xl text-fire-gradient filter drop-shadow-[0_0_20px_oklch(0.65_0.28_320/0.4)]">
               LEGEND
             </span>
-            <span className="block text-3xl sm:text-5xl lg:text-6xl xl:text-7xl text-foreground/90 drop-shadow-lg">
+            <span className="block text-3xl sm:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl text-foreground/90 drop-shadow-lg">
               OF THE ARENA
             </span>
           </motion.h1>
@@ -84,7 +84,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={t(0.35)}
-            className="mt-4 sm:mt-6 max-w-sm sm:max-w-xl text-sm sm:text-base text-muted-foreground/90 leading-relaxed"
+            className="mt-4 sm:mt-6 max-w-sm sm:max-w-xl lg:max-w-2xl text-sm sm:text-base lg:text-lg text-muted-foreground/90 leading-relaxed"
           >
             India's most elite Free Fire esports platform. Compete in high-stakes tournaments &amp;
             win real cash prizes.
@@ -139,7 +139,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={t(0.7)}
-            className="mt-10 grid grid-cols-4 gap-2 sm:gap-4 max-w-sm sm:max-w-lg"
+            className="mt-10 grid grid-cols-4 gap-2 sm:gap-4 max-w-sm sm:max-w-lg lg:max-w-xl mx-auto lg:mx-0"
           >
             {stats.map((s, i) => (
               <div

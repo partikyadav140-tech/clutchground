@@ -42,33 +42,33 @@ function LoginPage() {
   return (
     <div className="min-h-[100svh] flex flex-col items-center justify-center px-4 py-8 mb-safe lg:mb-0 bg-background relative overflow-hidden">
       {/* Background decorations */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-64 h-64 lg:w-96 lg:h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-64 h-64 lg:w-96 lg:h-96 bg-primary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="relative w-full max-w-md z-10"
+        className="relative w-full max-w-md lg:max-w-lg z-10"
       >
         {/* Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-20 h-20 bg-white rounded-[1.5rem] shadow-sm border border-border flex items-center justify-center mb-4">
-            <Logo size={48} withText={false} />
+        <div className="flex flex-col items-center mb-6 lg:mb-8">
+          <div className="w-16 h-16 lg:w-20 lg:h-20 bg-white rounded-[1.25rem] shadow-sm border border-border flex items-center justify-center mb-3 lg:mb-4">
+            <Logo size={40} withText={false} />
           </div>
           <div className="text-center">
-            <h1 className="font-display text-2xl sm:text-3xl font-black text-foreground">
+            <h1 className="font-display text-2xl lg:text-3xl font-black text-foreground">
               Welcome Back
             </h1>
-            <p className="text-muted-foreground text-sm mt-1 font-semibold">
+            <p className="text-muted-foreground text-sm lg:text-base mt-1 font-semibold">
               Enter the battlefield, warrior.
             </p>
           </div>
         </div>
 
         {/* Form card */}
-        <div className="rounded-[1.5rem] border border-border bg-white p-6 sm:p-8 shadow-sm">
-          <form onSubmit={handleLogin} className="space-y-4">
+        <div className="rounded-[1.5rem] lg:rounded-[2rem] border border-border bg-white p-6 lg:p-8 shadow-sm">
+          <form onSubmit={handleLogin} className="space-y-4 lg:space-y-5">
             {/* Phone */}
             <div>
               <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">
