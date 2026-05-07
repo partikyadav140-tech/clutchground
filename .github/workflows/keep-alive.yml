@@ -5,12 +5,23 @@ on:
     # Run every 10 minutes (adjust as needed, but keep under 15 minutes)
     - cron: '*/10 * * * *'
   workflow_dispatch: # Allow manual triggering
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/keep-alive.yml'
 
 jobs:
   ping:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Debug Info
+        run: |
+          echo "Workflow triggered at: $(date)"
+          echo "Trigger type: ${{ github.event_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Is scheduled: ${{ github.event.schedule != '' }}"
+
       - name: Ping Render App
         run: |
           echo "Pinging Render app at $(date)"
