@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_app")({
   component: () => (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <Navbar />
-      <main className="flex-1 pt-16 lg:pt-20">
+      <main className="flex-1 pt-16 lg:pt-20 pb-16 lg:pb-0">
         <Outlet />
       </main>
       <Footer />
