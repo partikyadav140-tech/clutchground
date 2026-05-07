@@ -417,7 +417,7 @@ export function Navbar() {
       </div>
 
       {/* ─── Mobile Bottom Navigation ─── */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-card/95 backdrop-blur-2xl border-t border-border/60">
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-card/95 backdrop-blur-2xl border-t border-border/60 pb-16">
         <div className="flex items-center justify-around pb-safe pt-1 px-1">
           {bottomNavItems.map((item) => {
             const Icon = item.icon;

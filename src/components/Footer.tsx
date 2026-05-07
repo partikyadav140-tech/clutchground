@@ -3,7 +3,8 @@ export function Footer() {
     <footer className="relative border-t border-border/60 bg-card/40 mt-24">
       <div className="absolute inset-x-0 top-0 h-px bg-fire-gradient opacity-50" />
 
-      <div className="container mx-auto px-4 lg:px-8 pt-12 lg:pt-16 pb-8 lg:pb-12">
+      {/* Desktop Footer Content - Hidden on Mobile */}
+      <div className="hidden lg:block container mx-auto px-4 lg:px-8 pt-12 lg:pt-16 pb-8 lg:pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:gap-12 mb-8 lg:mb-12">
           {/* Brand Section */}
           <div className="lg:col-span-1">
@@ -90,16 +91,18 @@ export function Footer() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Bottom Section */}
-        <div className="pt-8 border-t border-border/40">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
+      {/* Copyright Section - Always Visible */}
+      <div className="pt-4 lg:pt-0 border-t lg:border-t-0 border-border/40">
+        <div className="container mx-auto px-4 lg:px-8 pb-4 lg:pb-12">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-2 lg:gap-4">
             <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
               <span className="flex items-center gap-2">
                 <span className="text-primary">⚔ FORGED IN FIRE ⚔</span>
               </span>
             </div>
-            <div className="flex flex-col lg:flex-row items-center gap-4 text-xs text-muted-foreground/80">
+            <div className="flex flex-col lg:flex-row items-center gap-2 lg:gap-4 text-xs text-muted-foreground/80 text-center lg:text-left">
               <p className="font-semibold">
                 © 2026 CLUTCHGROUND. All rights reserved.
               </p>
