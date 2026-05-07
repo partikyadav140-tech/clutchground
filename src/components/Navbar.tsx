@@ -1,4 +1,4 @@
-import { Link, useRouter } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import {
   Home,
@@ -146,15 +146,15 @@ export function Navbar() {
               <span className="text-primary">Season 7 — Live Now</span>
             </div>
             <div className="flex items-center gap-4 text-muted-foreground">
-              <Link to="/rules" className="hover:text-primary transition-colors">
+              <a href="/rules" className="hover:text-primary transition-colors">
                 Rules
-              </Link>
-              <Link to="/anti-cheat" className="hover:text-primary transition-colors">
+              </a>
+              <a href="/anti-cheat" className="hover:text-primary transition-colors">
                 Anti-Cheat
-              </Link>
-              <Link to="/contact" className="hover:text-primary transition-colors">
+              </a>
+              <a href="/contact" className="hover:text-primary transition-colors">
                 Support
-              </Link>
+              </a>
             </div>
           </div>
         </div>
@@ -185,32 +185,31 @@ export function Navbar() {
           {/* Desktop nav links */}
           <div className="hidden lg:flex items-center gap-2 xl:gap-4 ml-6">
             {bottomNavItems.map((item) => (
-              <Link
+              <a
                 key={item.to}
-                to={item.to}
+                href={item.to}
                 className="px-4 py-2 text-sm font-semibold tracking-wide uppercase text-muted-foreground hover:text-primary transition-colors relative group"
-                activeProps={{ className: "text-primary" }}
               >
                 {item.label}
                 <span className="absolute inset-x-4 bottom-1 h-px bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
-              </Link>
+              </a>
             ))}
           </div>
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 lg:gap-3 lg:flex-1 lg:justify-end">
             {/* Wallet chip */}
-            <Link
-              to="/wallet"
+            <a
+              href="/wallet"
               className="flex items-center gap-1.5 px-3 h-9 rounded-full bg-secondary/80 border border-border hover:border-primary/50 transition-all active:scale-95 group"
             >
               <GodCoin className="w-4 h-4 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-bold font-display">{totalBalance}</span>
-            </Link>
+            </a>
 
             {/* Notifications */}
-            <Link
-              to="/notifications"
+            <a
+              href="/notifications"
               className="relative w-9 h-9 flex items-center justify-center rounded-full bg-secondary/80 border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95"
               aria-label="Notifications"
             >
@@ -220,12 +219,12 @@ export function Navbar() {
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
-            </Link>
+            </a>
 
             {/* Desktop: Profile pill / auth */}
             <div className="hidden lg:block">
               {!user ? (
-                <Link to="/login">
+                <a href="/login">
                   <Button
                     variant="hero"
                     size="sm"
@@ -233,20 +232,20 @@ export function Navbar() {
                   >
                     Login
                   </Button>
-                </Link>
+                </a>
               ) : (
                 <div className="flex items-center gap-2">
-                  <Link
-                    to="/profile"
+                  <a
+                    href="/profile"
                     className="flex items-center gap-2 px-3 h-9 rounded-full bg-secondary/80 border border-border hover:border-primary/50 transition-all"
                   >
                     <div className="w-6 h-6 rounded-full bg-fire-gradient grid place-items-center text-[10px] font-display font-black text-white">
                       {user.username[0].toUpperCase()}
                     </div>
                     <span className="text-sm font-bold max-w-[80px] truncate">{user.username}</span>
-                  </Link>
+                  </a>
                   {user.role === "admin" && (
-                    <Link to="/admin">
+                    <a href="/admin">
                       <Button
                         variant="outlineFire"
                         size="sm"
@@ -254,7 +253,7 @@ export function Navbar() {
                       >
                         <Shield className="w-3.5 h-3.5" />
                       </Button>
-                    </Link>
+                    </a>
                   )}
                 </div>
               )}
@@ -263,7 +262,7 @@ export function Navbar() {
             {/* Desktop: Join Battle CTA */}
             <div className="hidden xl:block">
               {!user ? (
-                <Link to="/login">
+                <a href="/login">
                   <Button
                     variant="hero"
                     size="sm"
@@ -271,7 +270,7 @@ export function Navbar() {
                   >
                     Join Battle
                   </Button>
-                </Link>
+                </a>
               ) : (
                 <JoinBattleDialog
                   mode="Squad"
@@ -335,19 +334,19 @@ export function Navbar() {
             </div>
           ) : (
             <div className="flex gap-2">
-              <Link to="/login" onClick={() => setMenuOpen(false)} className="flex-1">
+              <a href="/login" onClick={() => setMenuOpen(false)} className="flex-1">
                 <Button variant="hero" className="w-full font-display tracking-wider text-sm h-10">
                   Login
                 </Button>
-              </Link>
-              <Link to="/signup" onClick={() => setMenuOpen(false)} className="flex-1">
+              </a>
+              <a href="/signup" onClick={() => setMenuOpen(false)} className="flex-1">
                 <Button
                   variant="outlineFire"
                   className="w-full font-display tracking-wider text-sm h-10"
                 >
                   Sign Up
                 </Button>
-              </Link>
+              </a>
             </div>
           )}
         </div>
@@ -362,21 +361,18 @@ export function Navbar() {
               {section.items.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <Link
+                  <a
                     key={item.to}
-                    to={item.to}
+                    href={item.to}
                     onClick={() => setMenuOpen(false)}
                     className="flex items-center justify-between mx-3 px-3 py-3 rounded-xl text-muted-foreground hover:bg-secondary/60 hover:text-primary transition-all active:scale-[0.98]"
-                    activeProps={{
-                      className: "bg-primary/15 text-primary border border-primary/20",
-                    }}
                   >
                     <div className="flex items-center gap-3">
                       <Icon className="w-5 h-5 shrink-0" />
                       <span className="font-semibold text-base">{item.label}</span>
                     </div>
                     <ChevronRight className="w-4 h-4 opacity-40" />
-                  </Link>
+                  </a>
                 );
               })}
             </div>
@@ -388,8 +384,8 @@ export function Navbar() {
               <div className="px-5 py-2 text-[10px] font-display uppercase tracking-[0.25em] text-primary/60">
                 Admin
               </div>
-              <Link
-                to="/admin"
+              <a
+                href="/admin"
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center justify-between mx-3 px-3 py-3 rounded-xl text-primary hover:bg-primary/10 transition-all"
               >
@@ -398,7 +394,7 @@ export function Navbar() {
                   <span className="font-semibold text-base">Admin Panel</span>
                 </div>
                 <ChevronRight className="w-4 h-4 opacity-60" />
-              </Link>
+              </a>
             </div>
           )}
         </div>
@@ -426,36 +422,32 @@ export function Navbar() {
           {bottomNavItems.map((item) => {
             const Icon = item.icon;
             const isNotif = false; // notifications badge is on its own link in top bar
+            const isActive = router.state.location.pathname === item.to;
             return (
-              <Link
+              <a
                 key={item.to}
-                to={item.to}
-                className="relative flex flex-col items-center justify-center gap-1 flex-1 py-2 text-muted-foreground transition-all duration-200 active:scale-90 group"
-                activeProps={{ className: "text-primary" }}
+                href={item.to}
+                className={`relative flex flex-col items-center justify-center gap-1 flex-1 py-2 text-muted-foreground transition-all duration-200 active:scale-90 group ${isActive ? "text-primary" : ""}`}
               >
-                {({ isActive }: { isActive: boolean }) => (
-                  <>
-                    {isActive && <span className="nav-active-bar" />}
-                    <div
-                      className={`relative w-12 h-9 flex items-center justify-center rounded-2xl transition-all duration-200 ${isActive ? "bg-primary/15" : "group-active:bg-secondary/60"}`}
-                    >
-                      <Icon
-                        className={`w-5 h-5 transition-all duration-200 ${isActive ? "scale-110" : ""}`}
-                      />
-                      {isNotif && unreadCount > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] font-black grid place-items-center border-2 border-card">
-                          {unreadCount > 9 ? "9+" : unreadCount}
-                        </span>
-                      )}
-                    </div>
-                    <span
-                      className={`text-[10px] font-display tracking-wider transition-colors duration-200 ${isActive ? "text-primary font-bold" : ""}`}
-                    >
-                      {item.label}
+                {isActive && <span className="nav-active-bar" />}
+                <div
+                  className={`relative w-12 h-9 flex items-center justify-center rounded-2xl transition-all duration-200 ${isActive ? "bg-primary/15" : "group-active:bg-secondary/60"}`}
+                >
+                  <Icon
+                    className={`w-5 h-5 transition-all duration-200 ${isActive ? "scale-110" : ""}`}
+                  />
+                  {isNotif && unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] font-black grid place-items-center border-2 border-card">
+                      {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
-                  </>
-                )}
-              </Link>
+                  )}
+                </div>
+                <span
+                  className={`text-[10px] font-display tracking-wider transition-colors duration-200 ${isActive ? "text-primary font-bold" : ""}`}
+                >
+                  {item.label}
+                </span>
+              </a>
             );
           })}
         </div>
