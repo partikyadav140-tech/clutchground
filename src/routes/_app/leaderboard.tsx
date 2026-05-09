@@ -56,7 +56,7 @@ function LeaderboardPage() {
 
       <div className="px-4 mt-6">
         <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest text-center mb-8 px-4 py-2 bg-secondary/50 rounded-xl border border-border/50">
-          Resets every Sunday 11:59 PM
+          Squad Tournaments Only • Resets every Sunday 11:59 PM
         </div>
 
         {/* Top 3 Podium */}

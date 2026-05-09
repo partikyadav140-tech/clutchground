@@ -1220,7 +1220,8 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
         COALESCE(MAX(lo.points), COALESCE(SUM(r.points), 0)) as points,
         SUM(CASE WHEN r.position = 1 THEN 1 ELSE 0 END) as wins
       FROM users u
-      LEFT JOIN registrations r ON r.user_id = u.id AND r.created_at >= date_trunc('week', CURRENT_TIMESTAMP)
+      INNER JOIN registrations r ON r.user_id = u.id AND r.created_at >= date_trunc('week', CURRENT_TIMESTAMP)
+      INNER JOIN tournaments t ON t.id = r.tournament_id AND t.mode = 'Squad'
       LEFT JOIN leaderboard_overrides lo ON lo.user_id = u.id AND lo.week_start = date_trunc('week', CURRENT_TIMESTAMP)
       GROUP BY u.id, u.username
       HAVING COALESCE(MAX(lo.points), COALESCE(SUM(r.points), 0)) > 0
