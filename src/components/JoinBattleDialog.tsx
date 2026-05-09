@@ -116,7 +116,13 @@ export function JoinBattleDialog({
         return;
       }
 
-      setLeader((l) => ({ ...l, teamName: myTeam.name }));
+      setLeader((l) => ({ 
+        ...l, 
+        teamName: myTeam.name,
+        name: myTeam.leader.username || myTeam.leader.ign || "",
+        ign: myTeam.leader.ign || "",
+        uid: myTeam.leader.uid || "",
+      }));
 
       // Get valid members (with ign and uid, excluding current user if they're in the list)
       let activeMembers = [];
@@ -137,6 +143,7 @@ export function JoinBattleDialog({
       }
 
       console.log("Team name:", myTeam.name);
+      console.log("Team leader:", myTeam.leader);
       console.log("Team members count:", activeMembers.length);
       console.log("Members needed:", teamCount);
       console.log("Full members list:", activeMembers);
