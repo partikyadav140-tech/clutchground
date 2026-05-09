@@ -286,6 +286,15 @@ async function initDb() {
         paid_at TIMESTAMP,
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
       );
+
+      DO $$ 
+      BEGIN 
+        BEGIN
+          ALTER TABLE notifications ADD COLUMN redirect_url TEXT;
+        EXCEPTION
+          WHEN duplicate_column THEN null;
+        END;
+      END $$;
     `);
 
     // Seed Admin

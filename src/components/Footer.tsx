@@ -146,7 +146,7 @@ export function Footer() {
               <p className="hidden lg:block">|</p>
               <p>
                 Designed & Developed by{" "}
-                <span className="font-bold text-primary">Pratikk Yadav</span>
+                <span className="font-bold text-primary">Pratikk Yadav | +91 8307224756</span>
               </p>
             </div>
           </div>

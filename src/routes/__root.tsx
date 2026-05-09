@@ -84,6 +84,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <ConfirmDialog />
         <Toaster
           theme="light"
+          position="top-center"
           toastOptions={{
             className:
               "bg-background border border-primary/50 text-foreground font-display clip-notch shadow-fire",
