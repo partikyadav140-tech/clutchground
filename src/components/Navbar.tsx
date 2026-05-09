@@ -1,4 +1,4 @@
-import { useRouter } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import {
   Home,
@@ -146,15 +146,15 @@ export function Navbar() {
               <span className="text-primary">Season 7 — Live Now</span>
             </div>
             <div className="flex items-center gap-4 text-muted-foreground">
-              <a href="/rules" className="hover:text-primary transition-colors">
+              <Link to="/rules" className="hover:text-primary transition-colors">
                 Rules
-              </a>
-              <a href="/anti-cheat" className="hover:text-primary transition-colors">
+              </Link>
+              <Link to="/anti-cheat" className="hover:text-primary transition-colors">
                 Anti-Cheat
-              </a>
-              <a href="/contact" className="hover:text-primary transition-colors">
+              </Link>
+              <Link to="/contact" className="hover:text-primary transition-colors">
                 Support
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -185,31 +185,31 @@ export function Navbar() {
           {/* Desktop nav links */}
           <div className="hidden lg:flex items-center gap-2 xl:gap-4 ml-6">
             {bottomNavItems.map((item) => (
-              <a
+              <Link
                 key={item.to}
-                href={item.to}
+                to={item.to}
                 className="px-4 py-2 text-sm font-semibold tracking-wide uppercase text-muted-foreground hover:text-primary transition-colors relative group active:scale-95 duration-75"
               >
                 {item.label}
                 <span className="absolute inset-x-4 bottom-1 h-px bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-75" />
-              </a>
+              </Link>
             ))}
           </div>
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 lg:gap-3 lg:flex-1 lg:justify-end">
             {/* Wallet chip */}
-            <a
-              href="/wallet"
+            <Link
+              to="/wallet"
               className="flex items-center gap-1.5 px-3 h-9 rounded-full bg-secondary/80 border border-border hover:border-primary/50 transition-all active:scale-95 group"
             >
               <GodCoin className="w-4 h-4 group-hover:scale-110 transition-transform" />
               <span className="text-sm font-bold font-display">{totalBalance}</span>
-            </a>
+            </Link>
 
             {/* Notifications */}
-            <a
-              href="/notifications"
+            <Link
+              to="/notifications"
               className="relative w-9 h-9 flex items-center justify-center rounded-full bg-secondary/80 border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95"
               aria-label="Notifications"
             >
@@ -219,12 +219,12 @@ export function Navbar() {
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
-            </a>
+            </Link>
 
             {/* Desktop: Profile pill / auth */}
             <div className="hidden lg:block">
               {!user ? (
-                <a href="/login">
+                <Link to="/login">
                   <Button
                     variant="hero"
                     size="sm"
@@ -232,20 +232,20 @@ export function Navbar() {
                   >
                     Login
                   </Button>
-                </a>
+                </Link>
               ) : (
                 <div className="flex items-center gap-2">
-                  <a
-                    href="/profile"
+                  <Link
+                    to="/profile"
                     className="flex items-center gap-2 px-3 h-9 rounded-full bg-secondary/80 border border-border hover:border-primary/50 transition-all"
                   >
                     <div className="w-6 h-6 rounded-full bg-fire-gradient grid place-items-center text-[10px] font-display font-black text-white">
                       {user.username[0].toUpperCase()}
                     </div>
                     <span className="text-sm font-bold max-w-[80px] truncate">{user.username}</span>
-                  </a>
+                  </Link>
                   {user.role === "admin" && (
-                    <a href="/admin">
+                    <Link to="/admin">
                       <Button
                         variant="outlineFire"
                         size="sm"
@@ -253,7 +253,7 @@ export function Navbar() {
                       >
                         <Shield className="w-3.5 h-3.5" />
                       </Button>
-                    </a>
+                    </Link>
                   )}
                 </div>
               )}
@@ -262,7 +262,7 @@ export function Navbar() {
             {/* Desktop: Join Battle CTA */}
             <div className="hidden xl:block">
               {!user ? (
-                <a href="/login">
+                <Link to="/login">
                   <Button
                     variant="hero"
                     size="sm"
@@ -270,7 +270,7 @@ export function Navbar() {
                   >
                     Join Battle
                   </Button>
-                </a>
+                </Link>
               ) : (
                 <JoinBattleDialog
                   mode="Squad"
@@ -334,19 +334,19 @@ export function Navbar() {
             </div>
           ) : (
             <div className="flex gap-2">
-              <a href="/login" onClick={() => setMenuOpen(false)} className="flex-1">
+              <Link to="/login" onClick={() => setMenuOpen(false)} className="flex-1">
                 <Button variant="hero" className="w-full font-display tracking-wider text-sm h-10">
                   Login
                 </Button>
-              </a>
-              <a href="/signup" onClick={() => setMenuOpen(false)} className="flex-1">
+              </Link>
+              <Link to="/signup" onClick={() => setMenuOpen(false)} className="flex-1">
                 <Button
                   variant="outlineFire"
                   className="w-full font-display tracking-wider text-sm h-10"
                 >
                   Sign Up
                 </Button>
-              </a>
+              </Link>
             </div>
           )}
         </div>
@@ -361,9 +361,9 @@ export function Navbar() {
               {section.items.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <a
+                  <Link
                     key={item.to}
-                    href={item.to}
+                    to={item.to}
                     onClick={() => setMenuOpen(false)}
                     className="flex items-center justify-between mx-3 px-3 py-3 rounded-xl text-muted-foreground hover:bg-secondary/60 hover:text-primary transition-all active:scale-[0.98] duration-75"
                   >
@@ -372,7 +372,7 @@ export function Navbar() {
                       <span className="font-semibold text-base">{item.label}</span>
                     </div>
                     <ChevronRight className="w-4 h-4 opacity-40" />
-                  </a>
+                  </Link>
                 );
               })}
             </div>
@@ -384,8 +384,8 @@ export function Navbar() {
               <div className="px-5 py-2 text-[10px] font-display uppercase tracking-[0.25em] text-primary/60">
                 Admin
               </div>
-              <a
-                href="/admin"
+              <Link
+                to="/admin"
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center justify-between mx-3 px-3 py-3 rounded-xl text-primary hover:bg-primary/10 transition-all"
               >
@@ -394,7 +394,7 @@ export function Navbar() {
                   <span className="font-semibold text-base">Admin Panel</span>
                 </div>
                 <ChevronRight className="w-4 h-4 opacity-60" />
-              </a>
+              </Link>
             </div>
           )}
         </div>
@@ -424,9 +424,9 @@ export function Navbar() {
             const isNotif = false; // notifications badge is on its own link in top bar
             const isActive = router.state.location.pathname === item.to;
             return (
-              <a
+              <Link
                 key={item.to}
-                href={item.to}
+                to={item.to}
                 className={`relative flex flex-col items-center justify-center gap-1 flex-1 py-2 text-muted-foreground transition-all duration-75 active:scale-90 group ${isActive ? "text-primary" : ""}`}
               >
                 {isActive && <span className="nav-active-bar" />}
@@ -447,7 +447,7 @@ export function Navbar() {
                 >
                   {item.label}
                 </span>
-              </a>
+              </Link>
             );
           })}
         </div>

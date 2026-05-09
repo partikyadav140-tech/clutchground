@@ -271,6 +271,13 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
     .prepare("SELECT room_id, room_pass FROM tournaments WHERE id = ?")
     .get(id)) as any;
 
+  const finalStatus =
+    status === "completed"
+      ? "completed"
+      : room_id && room_pass
+      ? "locked"
+      : status;
+
   const stmt = db.prepare(`
       UPDATE tournaments 
       SET title=?, game=?, mode=?, format=?, entry=?, prize=?, slots=?, filled=?, startsAt=?, status=?, banner=?, room_id=?, room_pass=?, hosted_by=?, per_kill_coin=?, first_place_coin=?
@@ -286,8 +293,7 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
     slots,
     filled,
     startsAt,
-    // Auto-lock tournament when room details are provided
-    (room_id && room_pass) ? "locked" : status,
+    finalStatus,
     banner,
     room_id || null,
     room_pass || null,
