@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/_app/leaderboard")({
   head: () => ({
-    meta: [{ title: "Global Leaderboard — Professional Esports Arena" }],
+    meta: [{ title: "Global Leaderboard — CLUTCHGROUND" }],
   }),
   loader: async () => await (getGlobalLeaderboard as any)(),
   component: LeaderboardPage,

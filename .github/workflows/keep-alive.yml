@@ -26,17 +26,17 @@ jobs:
         run: |
           echo "Pinging Render app at $(date)"
           # Ping the main site to keep it active - load full page content
-          if curl -f --max-time 30 --retry 3 --retry-delay 5 -A "GitHub-Actions-KeepAlive/1.0" https://clutchground-1.onrender.com/; then
+          if curl -f --max-time 30 --retry 3 --retry-delay 5 -A "GitHub-Actions-KeepAlive/1.0" https://clutchground.onrender.com/; then
             echo "✅ Main site ping successful"
           else
             echo "❌ Main site ping failed, trying alternative..."
-            curl -f --max-time 30 -A "GitHub-Actions-KeepAlive/1.0" https://clutchground-1.onrender.com/ || echo "Both pings failed"
+            curl -f --max-time 30 -A "GitHub-Actions-KeepAlive/1.0" https://clutchground.onrender.com/ || echo "Both pings failed"
           fi
 
       - name: Verify App Response
         run: |
           # Check if the app returns a proper HTML response
-          response=$(curl -s -w "%{http_code}" https://clutchground-1.onrender.com/ -o /dev/null)
+          response=$(curl -s -w "%{http_code}" https://clutchground.onrender.com/ -o /dev/null)
           if [ "$response" -eq 200 ]; then
             echo "✅ App responded with HTTP 200"
           else

@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { GodCoin } from "@/components/GodCoin";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 export const Route = createFileRoute("/_app/matches")({
-  head: () => ({ meta: [{ title: "My Matches — Professional Esports Arena" }] }),
+  head: () => ({ meta: [{ title: "My Matches — CLUTCHGROUND" }] }),
   component: MatchesPage,
 });
 
@@ -311,60 +312,164 @@ function MatchesPage() {
 
       {/* Standings Modal */}
       <Dialog open={!!standingsModal} onOpenChange={(v) => !v && setStandingsModal(null)}>
-        <DialogContent className="w-[90vw] max-w-lg bg-white border-0 rounded-[1.5rem] p-0 overflow-hidden max-h-[85vh] flex flex-col">
-          <div className="bg-primary p-5 text-white relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-xl -translate-y-1/2 translate-x-1/2" />
-            <DialogTitle className="font-display text-xl font-black tracking-tight leading-tight pr-10">
-              Results: {standingsModal?.name}
+        <DialogContent className="w-[95vw] max-w-4xl bg-gradient-to-br from-orange-900 via-red-900 to-yellow-900 border-0 rounded-[1.5rem] p-0 overflow-hidden max-h-[90vh] flex flex-col shadow-2xl">
+          <div className="bg-gradient-to-r from-orange-600 to-red-600 p-6 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-yellow-400/20 rounded-full blur-xl translate-y-1/2 -translate-x-1/2" />
+            <DialogTitle className="font-display text-2xl font-black tracking-tight leading-tight pr-12 relative z-10">
+              🏆 Tournament Standings: {standingsModal?.name}
             </DialogTitle>
-            <Button
-              size="sm"
-              onClick={downloadExcel}
-              className="absolute top-4 right-4 h-8 w-8 p-0 rounded-lg bg-white/20 text-white hover:bg-white/30"
-              title="Download Excel"
-            >
-              <Download className="w-4 h-4" />
-            </Button>
+            <p className="text-orange-100 mt-1 text-sm font-medium relative z-10">
+              Professional Rankings & Performance Chart
+            </p>
+            {user?.role === "admin" && (
+              <Button
+                size="sm"
+                onClick={downloadExcel}
+                className="absolute top-4 right-4 h-9 w-9 p-0 rounded-lg bg-white/20 text-white hover:bg-white/30 border border-white/30 shadow-lg"
+                title="Download Standings CSV"
+              >
+                <Download className="w-4 h-4" />
+              </Button>
+            )}
           </div>
 
-          <div className="overflow-y-auto flex-1 bg-secondary/10">
+          <div className="overflow-y-auto flex-1 bg-gradient-to-b from-gray-50 to-white p-6">
             {loadingStandings ? (
-              <div className="p-10 flex justify-center">
-                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <div className="p-16 flex justify-center">
+                <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : standingsData.length === 0 ? (
-              <div className="p-10 text-center text-muted-foreground font-semibold text-sm">
-                No standings published yet.
+              <div className="p-16 text-center text-gray-500 font-semibold text-lg bg-white rounded-xl shadow-sm border">
+                No standings published yet for this tournament.
               </div>
             ) : (
-              <div className="divide-y divide-border/50">
-                {standingsData.map((r: any, idx: number) => (
-                  <div
-                    key={r.id}
-                    className="p-4 flex items-center bg-white hover:bg-primary/5 transition-colors"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center font-display font-black text-sm text-muted-foreground mr-3">
-                      {idx + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-bold text-foreground truncate">
-                        {r.team_name || r.username}
+              <div className="space-y-6">
+                {/* Top 3 Podium */}
+                <div className="bg-white rounded-xl shadow-lg p-6 border border-orange-200">
+                  <h3 className="text-xl font-display font-black text-center text-gray-800 mb-6 flex items-center justify-center gap-2">
+                    <Trophy className="w-6 h-6 text-yellow-500" />
+                    Top Performers
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    {standingsData.slice(0, 3).map((r: any, idx: number) => (
+                      <div key={r.id} className={`text-center p-4 rounded-lg ${
+                        idx === 0 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-lg' :
+                        idx === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white' :
+                        'bg-gradient-to-br from-orange-600 to-red-600 text-white'
+                      }`}>
+                        <div className="text-3xl font-black mb-2">
+                          {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
+                        </div>
+                        <div className="font-bold text-sm truncate mb-1">
+                          {r.team_name || r.username}
+                        </div>
+                        <div className="text-xs opacity-90">
+                          {r.points || 0} pts
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-0.5 flex gap-3">
-                        <span>Kills: {r.kills || 0}</span>
-                        <span>Pos: #{r.position || "-"}</span>
-                      </div>
-                    </div>
-                    <div className="ml-3 text-right">
-                      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                        Points
-                      </div>
-                      <div className="font-display font-black text-primary text-xl leading-none">
-                        {r.points || 0}
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                {/* Performance Chart */}
+                <div className="bg-white rounded-xl shadow-lg p-6 border border-orange-200">
+                  <h3 className="text-xl font-display font-black text-center text-gray-800 mb-6 flex items-center justify-center gap-2">
+                    <Crosshair className="w-6 h-6 text-red-500" />
+                    Points Distribution Chart
+                  </h3>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={standingsData.slice(0, 10)} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis 
+                          dataKey={(entry, index) => `${index + 1}. ${entry.team_name || entry.username}`}
+                          angle={-45}
+                          textAnchor="end"
+                          height={80}
+                          fontSize={10}
+                          stroke="#666"
+                        />
+                        <YAxis stroke="#666" />
+                        <Tooltip 
+                          contentStyle={{
+                            backgroundColor: '#fff',
+                            border: '1px solid #ddd',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                          }}
+                          formatter={(value, name) => [value, 'Points']}
+                          labelFormatter={(label) => `Rank: ${label}`}
+                        />
+                        <Bar dataKey="points" fill="#f97316" radius={[4, 4, 0, 0]}>
+                          {standingsData.slice(0, 10).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={
+                              index === 0 ? '#fbbf24' : // gold
+                              index === 1 ? '#9ca3af' : // silver
+                              index === 2 ? '#dc2626' : // bronze
+                              '#f97316' // orange
+                            } />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Detailed Standings Table */}
+                <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-orange-200">
+                  <div className="bg-gradient-to-r from-orange-500 to-red-500 p-4">
+                    <h3 className="text-lg font-display font-black text-white flex items-center gap-2">
+                      <ListChecks className="w-5 h-5" />
+                      Complete Standings
+                    </h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Rank</th>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Player/Team</th>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Kills</th>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Position</th>
+                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Points</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {standingsData.map((r: any, idx: number) => (
+                          <tr key={r.id} className={`hover:bg-orange-50 transition-colors ${
+                            idx < 3 ? 'bg-gradient-to-r from-orange-50 to-transparent' : ''
+                          }`}>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-display font-black text-sm ${
+                                  idx === 0 ? 'bg-yellow-400 text-white' :
+                                  idx === 1 ? 'bg-gray-400 text-white' :
+                                  idx === 2 ? 'bg-orange-600 text-white' :
+                                  'bg-gray-200 text-gray-600'
+                                }`}>
+                                  {idx + 1}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap font-bold text-gray-900">
+                              {r.team_name || r.username}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-gray-600">
+                              {r.kills || 0}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-gray-600">
+                              #{r.position || "-"}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap font-bold text-orange-600">
+                              {r.points || 0}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             )}
           </div>
