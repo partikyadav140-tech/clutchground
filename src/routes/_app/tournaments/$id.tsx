@@ -79,14 +79,18 @@ function TournamentDetailPage() {
 
   const downloadStandings = () => {
     if (!results || results.length === 0) return;
-    const headers = ["Rank", "Team / Player", "Kills", "Position", "Points"];
-    const rows = results.map((r: any, i: number) => [
-      i + 1,
-      `"${(r.team_name || r.username).replace(/"/g, '""')}"`,
-      r.kills || 0,
-      r.position || "-",
-      r.points || 0,
-    ]);
+    const headers = t.mode === "Duo" 
+      ? ["Rank", "Team / Player", "Kills", "Position"]
+      : ["Rank", "Team / Player", "Kills", "Position", "Points"];
+    const rows = results.map((r: any, i: number) => {
+      const baseRow = [
+        i + 1,
+        `"${(r.team_name || r.username).replace(/"/g, '""')}"`,
+        r.kills || 0,
+        r.position || "-",
+      ];
+      return t.mode === "Duo" ? baseRow : [...baseRow, r.points || 0];
+    });
     const csvContent = [headers.join(","), ...rows.map((r: any) => r.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -593,7 +597,9 @@ function TournamentDetailPage() {
                             <th className="px-4 py-3 font-display">Team / Player</th>
                             <th className="px-4 py-3 font-display text-center">Kills</th>
                             <th className="px-4 py-3 font-display text-center">Pos</th>
-                            <th className="px-4 py-3 font-display text-right text-primary">Pts</th>
+                            {t.mode !== "Duo" && (
+                              <th className="px-4 py-3 font-display text-right text-primary">Pts</th>
+                            )}
                           </tr>
                         </thead>
                         <tbody>
@@ -616,9 +622,11 @@ function TournamentDetailPage() {
                               </td>
                               <td className="px-4 py-3 text-center">{r.kills || 0}</td>
                               <td className="px-4 py-3 text-center">{r.position || "-"}</td>
-                              <td className="px-4 py-3 text-right font-display font-black text-fire-gradient text-base">
-                                {r.points || 0}
-                              </td>
+                              {t.mode !== "Duo" && (
+                                <td className="px-4 py-3 text-right font-display font-black text-fire-gradient text-base">
+                                  {r.points || 0}
+                                </td>
+                              )}
                             </tr>
                           ))}
                         </tbody>

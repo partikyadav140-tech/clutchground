@@ -992,7 +992,12 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
 
         const manualPoints = typeof r.manualPoints !== "undefined" && r.manualPoints !== null ? Number(r.manualPoints) : undefined;
         const useManualPoints = manualPoints !== undefined && !Number.isNaN(manualPoints);
-        r.calculatedPoints = useManualPoints ? manualPoints : Number(r.kills || 0) + posPoints;
+        // Duo mode: don't calculate points, use position only for ranking and prizes
+        if (tourney.mode === "Duo") {
+          r.calculatedPoints = 0;
+        } else {
+          r.calculatedPoints = useManualPoints ? manualPoints : Number(r.kills || 0) + posPoints;
+        }
         r.matchPosition = pos;
         r.killsNum = Number(r.kills || 0);
       }
@@ -1060,27 +1065,36 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
               prizeDiff > 0 ? `Prize Won: ${tourney.title}` : `Prize Adjusted: ${tourney.title}`,
             );
           if (oldPrize === 0 && awardedPrize > 0) {
+            const pointsMsg = tourney.mode === "Duo" 
+              ? `Match Position: ${r.matchPosition}`
+              : `Points: ${r.calculatedPoints} (${r.killsNum} kills, position ${r.matchPosition})`;
             await tx
               .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
               .run(
                 r.user_id,
-                `💰 Prize earned for ${tourney.title}: ${awardedPrize} CG Coins awarded for finishing #${rankForPrize}. Points: ${r.calculatedPoints} (${r.killsNum} kills, position ${r.matchPosition}).`,
+                `💰 Prize earned for ${tourney.title}: ${awardedPrize} CG Coins awarded for finishing #${rankForPrize}. ${pointsMsg}.`,
                 "/wallet",
               );
           } else if (prizeDiff > 0) {
+            const msg = tourney.mode === "Duo"
+              ? `your new prize is ${awardedPrize}.`
+              : `your points remain ${r.calculatedPoints}.`;
             await tx
               .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
               .run(
                 r.user_id,
-                `💰 Prize updated for ${tourney.title}: your prize increased by ${prizeDiff} CG Coins to ${awardedPrize}. Points remain ${r.calculatedPoints}.`,
+                `💰 Prize updated for ${tourney.title}: your prize increased by ${prizeDiff} CG Coins to ${awardedPrize}. ${msg}`,
                 "/wallet",
               );
           } else if (prizeDiff < 0) {
+            const msg = tourney.mode === "Duo"
+              ? `your new prize is ${awardedPrize}.`
+              : `your points remain ${r.calculatedPoints}.`;
             await tx
               .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
               .run(
                 r.user_id,
-                `📉 Prize updated for ${tourney.title}: your prize decreased by ${Math.abs(prizeDiff)} CG Coins to ${awardedPrize}. Points remain ${r.calculatedPoints}.`,
+                `📉 Prize updated for ${tourney.title}: your prize decreased by ${Math.abs(prizeDiff)} CG Coins to ${awardedPrize}. ${msg}`,
                 "/wallet",
               );
           }
