@@ -227,6 +227,7 @@ async function initDb() {
         message TEXT NOT NULL,
         action_type TEXT,
         action_data TEXT,
+        redirect_url TEXT,
         is_read BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

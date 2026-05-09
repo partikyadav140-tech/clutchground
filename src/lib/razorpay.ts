@@ -116,8 +116,8 @@ export const verifyRazorpayPayment = createServerFn<{
           .run(orderId);
 
         await tx
-          .prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")
-          .run(userId, `💰 Wallet deposit of ${order.amount} CG Coins completed successfully!`);
+          .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+          .run(userId, `💰 Wallet deposit of ${order.amount} CG Coins completed successfully!`, "/wallet");
       });
 
       return { success: true, amount: order.amount };

@@ -14,6 +14,7 @@ import {
   Trash,
   LogOut,
   User,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -21,12 +22,15 @@ import {
   requestJoinTeam,
   getProfile,
   getMyTeam,
+  getMyTeamRequest,
   saveMyTeam,
   leaveTeam,
-  deleteTeam
+  deleteTeam,
+  getTeamRequests,
+  resolveTeamRequest,
 } from "../../api";
 import { useAuth } from "../../lib/auth-client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { confirmDialog } from "@/components/ConfirmDialog";
 
@@ -43,6 +47,7 @@ function TeamsPage() {
 
   const [q, setQ] = useState("");
   const [myTeam, setMyTeam] = useState<any>(null);
+  const [myTeamRequest, setMyTeamRequest] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isEditingTeam, setIsEditingTeam] = useState(false);
   const [teamData, setTeamData] = useState({
@@ -50,6 +55,8 @@ function TeamsPage() {
     logo: "",
     members: Array(3).fill({ ign: "", uid: "", role: "player" }),
   });
+  const [teamRequests, setTeamRequests] = useState<any[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
 
   const filteredTeams = teams.filter((t) => {
     if (q && !t.name.toLowerCase().includes(q.toLowerCase())) return false;
@@ -58,6 +65,69 @@ function TeamsPage() {
     return true;
   });
 
+  const loadTeamRequests = useCallback(async () => {
+    if (!user) return;
+    setRequestsLoading(true);
+    try {
+      const requests = await (getTeamRequests as any)({ data: user.id });
+      setTeamRequests(requests);
+    } catch (err) {
+      console.error(err);
+      setTeamRequests([]);
+    } finally {
+      setRequestsLoading(false);
+    }
+  }, [user]);
+
+  const refreshMyTeam = useCallback(async () => {
+    if (!user) return;
+    try {
+      const t = await (getMyTeam as any)({ data: user.id });
+      if (t) {
+        setMyTeam(t);
+        setMyTeamRequest(null);
+        setTeamData({
+          name: t.name,
+          logo: t.logo || "",
+          members: [
+            ...t.members,
+            ...Array(3 - t.members.length).fill({ ign: "", uid: "", role: "player" }),
+          ].slice(0, 3),
+        });
+        if (t.leader_id === user.id) {
+          await loadTeamRequests();
+        } else {
+          setTeamRequests([]);
+          setRequestsLoading(false);
+        }
+      } else {
+        setMyTeam(null);
+        setMyTeamRequest(null);
+        setTeamData({
+          name: "",
+          logo: "",
+          members: Array(3).fill({ ign: "", uid: "", role: "player" }),
+        });
+        setTeamRequests([]);
+        setRequestsLoading(false);
+
+        try {
+          const request = await (getMyTeamRequest as any)({ data: user.id });
+          setMyTeamRequest(request);
+        } catch (err) {
+          console.error(err);
+          setMyTeamRequest(null);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setTeamRequests([]);
+      setRequestsLoading(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, loadTeamRequests]);
+
   useEffect(() => {
     if (!authLoading && !user) {
       router.navigate({ to: "/login" });
@@ -65,27 +135,8 @@ function TeamsPage() {
     }
     if (!user) return;
 
-    async function loadMyTeam() {
-      try {
-        const t = await (getMyTeam as any)({ data: user.id });
-        if (t) {
-          setMyTeam(t);
-          setTeamData({
-            name: t.name,
-            logo: t.logo || "",
-            members: [
-              ...t.members,
-              ...Array(3 - t.members.length).fill({ ign: "", uid: "", role: "player" }),
-            ].slice(0, 3),
-          });
-        }
-      } catch (err) {
-        console.error(err);
-      }
-      setLoading(false);
-    }
-    loadMyTeam();
-  }, [user, authLoading, router]);
+    refreshMyTeam();
+  }, [user, authLoading, router, refreshMyTeam]);
 
   const handleOpenJoin = async (tId: number) => {
     if (!user) {
@@ -103,6 +154,7 @@ function TeamsPage() {
       await (requestJoinTeam as any)({
         data: { teamId: tId, userId: user.id, ign: p.ign, uid: p.uid },
       });
+      await refreshMyTeam();
       toast.dismiss(loadingToast);
       toast.success("Request sent to the Squad Captain!");
     } catch (err: any) {
@@ -175,6 +227,21 @@ function TeamsPage() {
       router.invalidate();
     } catch (err: any) {
       toast.error(err.message || "Failed to delete squad");
+    }
+  };
+
+  const handleResolveTeamRequest = async (requestId: number, status: "approved" | "rejected") => {
+    const loadingToast = toast.loading(
+      status === "approved" ? "Approving request..." : "Rejecting request...",
+    );
+    try {
+      await (resolveTeamRequest as any)({ data: { requestId, status } });
+      toast.dismiss(loadingToast);
+      toast.success(status === "approved" ? "Request approved." : "Request rejected.");
+      await refreshMyTeam();
+    } catch (err: any) {
+      toast.dismiss(loadingToast);
+      toast.error(err.message || "Failed to update request.");
     }
   };
 
@@ -369,9 +436,75 @@ function TeamsPage() {
 
               <div className="p-5">
                 <div className="space-y-4">
-                  <div className="font-display text-2xl font-black text-foreground mb-4">
-                    {myTeam.name}
+                  <div className="font-display text-2xl font-black text-foreground mb-4 flex items-center justify-between gap-3">
+                    <span>{myTeam.name}</span>
+                    {myTeam.leader_id === user.id && teamRequests.length > 0 && (
+                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-[0.2em]">
+                        <span>{teamRequests.length}</span>
+                        Pending Request{teamRequests.length !== 1 ? "s" : ""}
+                      </span>
+                    )}
                   </div>
+
+                  {myTeam.leader_id === user.id && (
+                    <div className="bg-secondary/50 border border-border rounded-[1.5rem] p-5">
+                      <div className="flex items-center justify-between gap-3 mb-4">
+                        <div>
+                          <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
+                            Pending Join Requests
+                          </div>
+                          <div className="font-display font-black text-lg text-foreground">
+                            Review requests from players
+                          </div>
+                        </div>
+                        {requestsLoading && (
+                          <div className="text-sm text-muted-foreground">Loading requests…</div>
+                        )}
+                      </div>
+
+                      {teamRequests.length === 0 ? (
+                        <div className="rounded-2xl bg-white border border-border p-6 text-sm text-muted-foreground text-center">
+                          No pending join requests at the moment.
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {teamRequests.map((req) => (
+                            <div
+                              key={req.id}
+                              className="rounded-3xl border border-border bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                            >
+                              <div className="min-w-0">
+                                <div className="font-bold text-sm text-foreground">
+                                  {req.ign} {req.username ? `(@${req.username})` : ""}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground font-mono mt-1">
+                                  UID: {req.uid}
+                                </div>
+                                <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mt-2">
+                                  Requested {new Date(req.created_at).toLocaleString()}
+                                </div>
+                              </div>
+                              <div className="flex gap-2 flex-wrap">
+                                <Button
+                                  onClick={() => handleResolveTeamRequest(req.id, "approved")}
+                                  className="h-10 rounded-xl bg-primary text-white font-bold"
+                                >
+                                  <Check className="w-4 h-4 mr-1" /> Approve
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => handleResolveTeamRequest(req.id, "rejected")}
+                                  className="h-10 rounded-xl font-bold border-border"
+                                >
+                                  <X className="w-4 h-4 mr-1" /> Reject
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div>
                     <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">
@@ -416,9 +549,13 @@ function TeamsPage() {
                               P{i + 2}
                             </div>
                             <div>
-                              <div className="font-bold text-sm text-foreground">{m.ign || m.username}</div>
+                              <div className="font-bold text-sm text-foreground">
+                                {m.ign || m.username}
+                              </div>
                               {m.username && m.ign && (
-                                <div className="text-[10px] text-muted-foreground">@{m.username}</div>
+                                <div className="text-[10px] text-muted-foreground">
+                                  @{m.username}
+                                </div>
                               )}
                               <div className="text-[10px] font-mono text-muted-foreground">
                                 UID: {m.uid}
@@ -436,6 +573,61 @@ function TeamsPage() {
               </div>
             </motion.div>
           </>
+        )}
+
+        {!myTeam && myTeamRequest && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-[1.5rem] border border-border shadow-sm overflow-hidden"
+          >
+            <div className="p-5 border-b border-border/50 flex items-center gap-3 bg-secondary/10">
+              <Shield className="w-5 h-5 text-primary" />
+              <div>
+                <h3 className="font-display font-black text-lg text-foreground">
+                  Join Request Status
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Your latest squad join request is being tracked here.
+                </p>
+              </div>
+            </div>
+            <div className="p-5 space-y-4">
+              <div className="text-sm text-muted-foreground">
+                Squad:{" "}
+                <span className="font-bold text-foreground">
+                  {myTeamRequest.team_name || "Unknown team"}
+                </span>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Requested on:{" "}
+                <span className="font-bold text-foreground">
+                  {new Date(myTeamRequest.created_at).toLocaleString()}
+                </span>
+              </div>
+              <div
+                className={
+                  "inline-flex items-center gap-2 rounded-2xl px-3 py-2 text-xs font-bold uppercase tracking-[0.2em] text-white shadow-sm " +
+                  (myTeamRequest.status === "approved"
+                    ? "bg-primary"
+                    : myTeamRequest.status === "rejected"
+                    ? "bg-destructive"
+                    : "bg-secondary")
+                }
+              >
+                {myTeamRequest.status === "pending"
+                  ? "Pending"
+                  : myTeamRequest.status === "approved"
+                  ? "Approved"
+                  : "Rejected"}
+              </div>
+              {myTeamRequest.status === "rejected" && (
+                <p className="text-sm text-muted-foreground">
+                  Your join request was rejected. You can try another squad or create your own.
+                </p>
+              )}
+            </div>
+          </motion.div>
         )}
 
         {/* ─── Available Teams Section ─── */}
@@ -465,7 +657,9 @@ function TeamsPage() {
                 <div className="w-16 h-16 rounded-full bg-secondary text-muted-foreground flex items-center justify-center mb-4 mx-auto">
                   <Users className="w-6 h-6" />
                 </div>
-                <p className="font-display font-bold text-lg text-foreground">No squads available</p>
+                <p className="font-display font-bold text-lg text-foreground">
+                  No squads available
+                </p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {q ? "Try adjusting your search" : "Check back later for new squads"}
                 </p>

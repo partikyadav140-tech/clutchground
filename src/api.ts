@@ -220,11 +220,12 @@ export const addTournament = createServerFn({ method: "POST" }).handler(async ({
 
   if (status === "upcoming") {
     const users = await db.prepare("SELECT id FROM users WHERE role = 'user'").all();
-    const insertNotif = db.prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)");
+    const insertNotif = db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)");
     for (const user of users as any[]) {
       await insertNotif.run(
         user.id,
         `📣 New tournament announced: ${title} (${mode} / ${format}) — ${slots} slots, entry ${entry} CG, prize pool ${prize} CG. Open Arena to register now!`,
+        "/tournaments",
       );
     }
   }
@@ -288,13 +289,13 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
     const registrations = (await db
       .prepare("SELECT user_id FROM registrations WHERE tournament_id = ?")
       .all(id)) as any[];
-    const insertNotif = db.prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)");
+    const insertNotif = db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)");
     const notifMsg =
       `🔑 Room details for ${title} updated! ` +
       (room_id ? `ID: ${room_id} ` : "") +
       (room_pass ? `Pass: ${room_pass}` : "");
     for (const r of registrations) {
-      await insertNotif.run(r.user_id, notifMsg.trim());
+      await insertNotif.run(r.user_id, notifMsg.trim(), `/tournaments/${id}`);
     }
   }
 
@@ -427,13 +428,14 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
 
         await tx
           .prepare(
-            "INSERT INTO notifications (user_id, message, action_type, action_data) VALUES (?, ?, ?, ?)",
+            "INSERT INTO notifications (user_id, message, action_type, action_data, redirect_url) VALUES (?, ?, ?, ?, ?)",
           )
           .run(
             leaderId,
             `⚠️ Your team member ${requester.username} wants to register your team for ${tourney.title}. Do you approve?`,
             "tournament_request",
             reqId.toString(),
+            `/tournaments/${tournamentId}`,
           );
       } else {
         // Insert registration immediately
@@ -452,10 +454,11 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
           .run(tournamentId);
 
         await tx
-          .prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")
+          .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
           .run(
             userId,
             `✅ Registration confirmed for ${t.title} (${t.mode}). Entry fee ${t.entry} CG. See your Upcoming Matches and prepare to compete!`,
+            "/matches",
           );
 
         // Give notification to team members
@@ -469,13 +472,14 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
             .prepare("SELECT user_id FROM team_members WHERE team_id = ? AND user_id IS NOT NULL")
             .all(team.id)) as any[];
           const insertNotif = tx.prepare(
-            "INSERT INTO notifications (user_id, message) VALUES (?, ?)",
+            "INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)",
           );
           for (const m of members) {
             if (m.user_id !== userId) {
               await insertNotif.run(
                 m.user_id,
                 `🏆 ${requester.username} registered your team for ${t.title} (${t.mode}). Check Upcoming Matches for date and room details.`,
+                "/matches",
               );
             }
           }
@@ -648,10 +652,10 @@ export const saveMyTeam = createServerFn({ method: "POST" }).handler(async ({ da
 
     // Notify removed members
     if (existingMembers.length > 0) {
-      const insertNotif = tx.prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)");
+      const insertNotif = tx.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)");
       for (const ex of existingMembers) {
         if (!newUids.has(ex.uid)) {
-          await insertNotif.run(ex.user_id, `❌ You have been removed from the team ${teamName}.`);
+          await insertNotif.run(ex.user_id, `❌ You have been removed from the team ${teamName}.`, "/teams");
         }
       }
     }
@@ -677,8 +681,8 @@ export const leaveTeam = createServerFn({ method: "POST" }).handler(async ({ dat
       .prepare("DELETE FROM team_members WHERE team_id = ? AND user_id = ?")
       .run(teamId, userId);
     await tx
-      .prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")
-      .run(team.leader_id, `⚠️ ${user.ign || user.username} has left your team ${team.name}.`);
+      .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+      .run(team.leader_id, `⚠️ ${user.ign || user.username} has left your team ${team.name}.`, "/teams");
   });
   return { success: true };
 });
@@ -702,12 +706,13 @@ export const deleteTeam = createServerFn({ method: "POST" }).handler(async ({ da
     await tx.prepare("DELETE FROM team_members WHERE team_id = ?").run(teamId);
     await tx.prepare("DELETE FROM teams WHERE id = ?").run(teamId);
 
-    const insertNotif = tx.prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)");
+    const insertNotif = tx.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)");
     for (const m of members) {
       if (m.user_id !== userId) {
         await insertNotif.run(
           m.user_id,
           `⚠️ The team ${team.name} has been deleted by the captain.`,
+          "/teams",
         );
       }
     }
@@ -752,10 +757,11 @@ export const requestJoinTeam = createServerFn({ method: "POST" }).handler(async 
 
   if (team) {
     await db
-      .prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")
+      .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
       .run(
         team.leader_id,
         `📩 ${ign} has requested to join your team ${team.name}. Go to your Profile to review.`,
+        "/teams",
       );
   }
 
@@ -779,6 +785,24 @@ export const getTeamRequests = createServerFn({ method: "POST" }).handler(async 
     `,
     )
     .all(team.id);
+});
+
+export const getMyTeamRequest = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const userId = data as unknown as number;
+
+  return db
+    .prepare(
+      `
+      SELECT r.*, t.name AS team_name
+      FROM team_requests r
+      LEFT JOIN teams t ON r.team_id = t.id
+      WHERE r.user_id = ?
+      ORDER BY r.created_at DESC
+      LIMIT 1
+    `,
+    )
+    .get(userId);
 });
 
 export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(async ({ data }) => {
@@ -809,12 +833,12 @@ export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(asy
         .run(req.team_id, req.user_id, req.ign, req.uid, "player");
 
       await tx
-        .prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")
-        .run(req.user_id, "🎉 Your request to join the team has been approved!");
+        .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+        .run(req.user_id, "🎉 Your request to join the team has been approved!", "/teams");
     } else {
       await tx
-        .prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")
-        .run(req.user_id, "❌ Your request to join the team was declined.");
+        .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+        .run(req.user_id, "❌ Your request to join the team was declined.", "/teams");
     }
   });
   return { success: true };
@@ -1018,35 +1042,50 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
               prizeDiff > 0 ? `Prize Won: ${tourney.title}` : `Prize Adjusted: ${tourney.title}`,
             );
           if (oldPrize === 0 && awardedPrize > 0) {
-            await insertNotif.run(
-              r.user_id,
-              `💰 Prize earned for ${tourney.title}: ${awardedPrize} CG Coins awarded for finishing #${rankForPrize}. Points: ${r.calculatedPoints} (${r.killsNum} kills, position ${r.matchPosition}).`,
-            );
+            await tx
+              .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+              .run(
+                r.user_id,
+                `💰 Prize earned for ${tourney.title}: ${awardedPrize} CG Coins awarded for finishing #${rankForPrize}. Points: ${r.calculatedPoints} (${r.killsNum} kills, position ${r.matchPosition}).`,
+                "/wallet",
+              );
           } else if (prizeDiff > 0) {
-            await insertNotif.run(
-              r.user_id,
-              `💰 Prize updated for ${tourney.title}: your prize increased by ${prizeDiff} CG Coins to ${awardedPrize}. Points remain ${r.calculatedPoints}.`,
-            );
+            await tx
+              .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+              .run(
+                r.user_id,
+                `💰 Prize updated for ${tourney.title}: your prize increased by ${prizeDiff} CG Coins to ${awardedPrize}. Points remain ${r.calculatedPoints}.`,
+                "/wallet",
+              );
           } else if (prizeDiff < 0) {
-            await insertNotif.run(
-              r.user_id,
-              `📉 Prize updated for ${tourney.title}: your prize decreased by ${Math.abs(prizeDiff)} CG Coins to ${awardedPrize}. Points remain ${r.calculatedPoints}.`,
-            );
+            await tx
+              .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+              .run(
+                r.user_id,
+                `📉 Prize updated for ${tourney.title}: your prize decreased by ${Math.abs(prizeDiff)} CG Coins to ${awardedPrize}. Points remain ${r.calculatedPoints}.`,
+                "/wallet",
+              );
           }
         }
 
         const pointsDiff = r.calculatedPoints - oldPoints;
         if (oldPoints === 0 && r.calculatedPoints > 0) {
-          await insertNotif.run(
-            r.user_id,
-            `🏆 Match scored for ${tourney.title}: ${r.calculatedPoints} points earned with ${r.killsNum} kills and position ${r.matchPosition}. Final rank #${overallRank}.`,
-          );
+          await tx
+            .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+            .run(
+              r.user_id,
+              `🏆 Match scored for ${tourney.title}: ${r.calculatedPoints} points earned with ${r.killsNum} kills and position ${r.matchPosition}. Final rank #${overallRank}.`,
+              "/leaderboard",
+            );
         } else if (pointsDiff !== 0) {
           const dir = pointsDiff > 0 ? "increased" : "decreased";
-          await insertNotif.run(
-            r.user_id,
-            `📊 Score updated for ${tourney.title}: points ${dir} by ${Math.abs(pointsDiff)} to ${r.calculatedPoints}.`,
-          );
+          await tx
+            .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+            .run(
+              r.user_id,
+              `📊 Score updated for ${tourney.title}: points ${dir} by ${Math.abs(pointsDiff)} to ${r.calculatedPoints}.`,
+              "/leaderboard",
+            );
         }
       }
 
@@ -1387,10 +1426,11 @@ export const processWithdrawal = createServerFn({ method: "POST" }).handler(asyn
       .run(userId, amount, upiId, upiNumber);
 
     await tx
-      .prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")
+      .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
       .run(
         userId,
         `💸 Withdrawal requested: ${amount} CG Coins to UPI ${upiId}. Processing time 2-3 working days.`,
+        "/wallet",
       );
   });
   return { success: true };

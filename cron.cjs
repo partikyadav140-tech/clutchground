@@ -40,7 +40,7 @@ cron.schedule('59 23 * * 0', async () => {
       // Add 500 winning coins
       await client.query('UPDATE users SET winning_balance = winning_balance + 500 WHERE id = $1', [captainId]);
       await client.query('INSERT INTO transactions (user_id, amount, type, description) VALUES ($1, 500, $2, $3)', [captainId, 'winnings_added', 'Weekly Leaderboard Top Captain Reward']);
-      await client.query('INSERT INTO notifications (user_id, message) VALUES ($1, $2)', [captainId, '🎉 You received 500 Coins for your team topping the Weekly Leaderboard!']);
+      await client.query('INSERT INTO notifications (user_id, message, redirect_url) VALUES ($1, $2, $3)', [captainId, '🎉 You received 500 Coins for your team topping the Weekly Leaderboard!', '/wallet']);
       console.log(`Awarded 500 points to user ${captainId}`);
     }
   } catch (err) {

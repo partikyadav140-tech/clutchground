@@ -57,9 +57,13 @@ function NotificationsPage() {
       const currentPermission = permission ?? Notification.permission;
       setBrowserPermission(currentPermission);
       if (currentPermission === "granted") {
-        toast.success("Browser alerts enabled — new notifications will appear on mobile and desktop.");
+        toast.success(
+          "Browser alerts enabled — new notifications will appear on mobile and desktop.",
+        );
       } else if (currentPermission === "denied") {
-        toast.error("Browser alerts disabled. Please allow notifications in your browser settings.");
+        toast.error(
+          "Browser alerts disabled. Please allow notifications in your browser settings.",
+        );
       } else {
         toast.error("Notification permission not granted yet. Please try again.");
       }
@@ -106,7 +110,8 @@ function NotificationsPage() {
           <div>
             <div className="text-sm font-semibold text-foreground">Enable browser alerts</div>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              If you allow browser notifications, new alerts will appear even when you are on mobile or when the app is backgrounded. This is more than the bell icon.
+              If you allow browser notifications, new alerts will appear even when you are on mobile
+              or when the app is backgrounded. This is more than the bell icon.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -141,14 +146,22 @@ function NotificationsPage() {
             </div>
           ) : (
             notifications.map((n, i) => {
-              const isImportant = n.action_type === "tournament_request" || n.message?.startsWith("❌") || n.message?.startsWith("⚠️");
+              const isImportant =
+                n.action_type === "tournament_request" ||
+                n.message?.startsWith("❌") ||
+                n.message?.startsWith("⚠️");
               return (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: i * 0.05 }}
                   key={n.id}
-                  className={`p-5 rounded-[1.5rem] border ${n.is_read ? "bg-white border-border shadow-sm" : "bg-primary/5 border-primary/30 shadow-md"} flex flex-col sm:flex-row gap-4 items-start sm:items-center transition-all`}
+                  className={`p-5 rounded-[1.5rem] border ${n.is_read ? "bg-white border-border shadow-sm" : "bg-primary/5 border-primary/30 shadow-md"} flex flex-col sm:flex-row gap-4 items-start sm:items-center transition-all ${n.redirect_url ? "cursor-pointer hover:shadow-lg" : ""}`}
+                  onClick={() => {
+                    if (n.redirect_url) {
+                      router.navigate({ to: n.redirect_url });
+                    }
+                  }}
                 >
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
@@ -159,22 +172,29 @@ function NotificationsPage() {
                           : "bg-primary text-white"
                     }`}
                   >
-                    {isImportant ? <AlertTriangle className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
+                    {isImportant ? (
+                      <AlertTriangle className="w-5 h-5" />
+                    ) : (
+                      <ShieldCheck className="w-5 h-5" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0 w-full">
-                    <div className={`text-sm ${n.is_read ? "text-muted-foreground" : "text-foreground font-bold"}`}>
+                    <div
+                      className={`text-sm ${n.is_read ? "text-muted-foreground" : "text-foreground font-bold"}`}
+                    >
                       {n.message}
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
                         {n.is_read ? "Read" : "New"}
                       </span>
-                      <span className="text-right">
-                        {new Date(n.created_at).toLocaleString()}
-                      </span>
+                      <span className="text-right">{new Date(n.created_at).toLocaleString()}</span>
                     </div>
                     {n.action_type === "tournament_request" && (
-                      <div className="mt-4 flex gap-2 w-full sm:w-auto">
+                      <div
+                        className="mt-4 flex gap-2 w-full sm:w-auto"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Button
                           onClick={() => handleResolve(n.action_data, "approved")}
                           className="flex-1 sm:flex-none h-10 rounded-xl font-bold bg-primary text-white shadow-primary"
