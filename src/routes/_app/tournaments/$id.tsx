@@ -56,7 +56,7 @@ const POSTERS = [
   "/posters/poster6.jpg",
 ];
 
-type TabType = "info" | "rules" | "prizes" | "standings";
+type TabType = "info" | "registered" | "rules" | "prizes" | "standings";
 
 function TournamentDetailPage() {
   const { t, results, allRegistrations } = Route.useLoaderData();
@@ -103,7 +103,7 @@ function TournamentDetailPage() {
 
   const tabs: { key: TabType; label: string }[] = [
     { key: "info", label: "Info" },
-    { key: "rules", label: "Rules" },
+    { key: "registered", label: "Registered Teams" },
     { key: "prizes", label: "Prizes" },
     ...(t.status === "completed" ? [{ key: "standings" as TabType, label: "Standings" }] : []),
   ];
@@ -429,41 +429,7 @@ function TournamentDetailPage() {
                   </div>
                 </div>
 
-                {/* Registered teams */}
-                {t.status !== "completed" && allRegistrations && allRegistrations.length > 0 && (
-                  <div className="rounded-2xl border border-border/60 bg-card-gradient p-5">
-                    <div className="text-xs font-display uppercase tracking-widest text-primary mb-3">
-                      Registered Teams ({allRegistrations.length})
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {allRegistrations.map((r: any, idx: number) => (
-                        <div
-                          key={r.id}
-                          className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40 border border-border/40"
-                        >
-                          <div className="w-7 h-7 rounded-full bg-fire-gradient grid place-items-center font-display font-black text-xs text-white shrink-0">
-                            {(r.team_name || r.username)?.[0]?.toUpperCase() || "?"}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="font-bold text-sm truncate">
-                              {r.team_name || r.username}
-                            </div>
-                          </div>
-                          <span className="text-[10px] text-muted-foreground font-display">
-                            #{idx + 1}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Rules Tab */}
-              <div
-                id="results-rules-tour"
-                className={`space-y-4 ${activeTab !== "rules" ? "hidden lg:block" : ""}`}
-              >
+                {/* Rules in Info */}
                 <div className="rounded-2xl border border-border/60 bg-card-gradient p-5">
                   <div className="text-xs font-display uppercase tracking-widest text-primary mb-4">
                     Tournament Rules
@@ -485,6 +451,39 @@ function TournamentDetailPage() {
                       </li>
                     ))}
                   </ul>
+                </div>
+              </div>
+
+              {/* Registered Teams Tab */}
+              <div className={`space-y-4 ${activeTab !== "registered" ? "hidden lg:block" : ""}`}>
+                <div className="rounded-2xl border border-border/60 bg-card-gradient p-5">
+                  <div className="text-xs font-display uppercase tracking-widest text-primary mb-3">
+                    Registered Teams ({allRegistrations?.length || 0})
+                  </div>
+                  {allRegistrations && allRegistrations.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {allRegistrations.map((r: any, idx: number) => (
+                        <div
+                          key={r.id}
+                          className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40 border border-border/40"
+                        >
+                          <div className="w-7 h-7 rounded-full bg-fire-gradient grid place-items-center font-display font-black text-xs text-white shrink-0">
+                            {(r.team_name || r.username)?.[0]?.toUpperCase() || "?"}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-bold text-sm truncate">
+                              {r.team_name || r.username}
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground font-display">
+                            #{idx + 1}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No teams have registered yet. Be the first to join this tournament!</p>
+                  )}
                 </div>
               </div>
 
