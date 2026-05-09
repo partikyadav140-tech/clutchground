@@ -124,7 +124,7 @@ export function JoinBattleDialog({
         uid: myTeam.leader.uid || "",
       }));
 
-      // Get valid members (with ign and uid, excluding current user if they're in the list)
+      // Get valid members (with ign and uid)
       let activeMembers = [];
       
       if (myTeam.members && Array.isArray(myTeam.members)) {
@@ -132,8 +132,6 @@ export function JoinBattleDialog({
           .filter((m: any) => {
             // Include if has ign and uid
             if (!m.ign || !m.uid) return false;
-            // Exclude only if user_id explicitly matches current user
-            if (m.user_id && m.user_id === user.id) return false;
             return true;
           })
           .sort((a: any, b: any) => {
