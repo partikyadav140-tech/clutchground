@@ -242,6 +242,10 @@ export const addTournament = createServerFn({ method: "POST" }).handler(async ({
     }
   }
 
+  // Clear tournaments cache to ensure new tournament appears
+  const { apiCache } = await import("./lib/cache");
+  apiCache.delete('tournaments');
+
   return { success: true };
 });
 
@@ -317,6 +321,10 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
     }
   }
 
+  // Clear tournaments cache to ensure updated data is fetched
+  const { apiCache } = await import("./lib/cache");
+  apiCache.delete('tournaments');
+
   return { success: true };
 });
 
@@ -327,6 +335,11 @@ export const deleteTournament = createServerFn({ method: "POST" }).handler(async
     await tx.prepare("DELETE FROM registrations WHERE tournament_id = ?").run(id);
     await tx.prepare("DELETE FROM tournaments WHERE id = ?").run(id);
   });
+
+  // Clear tournaments cache to ensure deleted tournament is removed
+  const { apiCache } = await import("./lib/cache");
+  apiCache.delete('tournaments');
+
   return { success: true };
 });
 
@@ -335,6 +348,11 @@ export const toggleHeroTournament = createServerFn({ method: "POST" }).handler(a
   const id = data as unknown as number;
   const current = (await db.prepare("SELECT is_hero FROM tournaments WHERE id = ?").get(id)) as any;
   await db.prepare("UPDATE tournaments SET is_hero = ? WHERE id = ?").run(!current.is_hero, id);
+
+  // Clear tournaments cache to ensure hero status update is reflected
+  const { apiCache } = await import("./lib/cache");
+  apiCache.delete('tournaments');
+
   return { success: true };
 });
 
@@ -504,6 +522,11 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
         }
       }
     });
+
+    // Clear tournaments cache to ensure filled count is updated
+    const { apiCache } = await import("./lib/cache");
+    apiCache.delete('tournaments');
+
     return { success: true };
   },
 );
@@ -1163,6 +1186,11 @@ export const rescheduleTournament = createServerFn({ method: "POST" }).handler(a
       await insertNotif.run(r.user_id, notifMsg);
     }
   });
+
+  // Clear tournaments cache to ensure updated data is fetched
+  const { apiCache } = await import("./lib/cache");
+  apiCache.delete('tournaments');
+
   return { success: true };
 });
 
