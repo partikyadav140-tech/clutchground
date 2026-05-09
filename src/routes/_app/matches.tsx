@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { GodCoin } from "@/components/GodCoin";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 export const Route = createFileRoute("/_app/matches")({
   head: () => ({ meta: [{ title: "My Matches — CLUTCHGROUND" }] }),
@@ -312,162 +311,133 @@ function MatchesPage() {
 
       {/* Standings Modal */}
       <Dialog open={!!standingsModal} onOpenChange={(v) => !v && setStandingsModal(null)}>
-        <DialogContent className="w-[95vw] max-w-4xl bg-gradient-to-br from-orange-900 via-red-900 to-yellow-900 border-0 rounded-[1.5rem] p-0 overflow-hidden max-h-[90vh] flex flex-col shadow-2xl">
-          <div className="bg-gradient-to-r from-orange-600 to-red-600 p-6 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-yellow-400/20 rounded-full blur-xl translate-y-1/2 -translate-x-1/2" />
-            <DialogTitle className="font-display text-2xl font-black tracking-tight leading-tight pr-12 relative z-10">
-              🏆 Tournament Standings: {standingsModal?.name}
+        <DialogContent className="w-[95vw] max-w-md bg-white border-0 rounded-[1.5rem] p-0 overflow-hidden max-h-[85vh] flex flex-col">
+          <div className="bg-gradient-to-r from-orange-500 to-red-500 p-4 text-white relative">
+            <DialogTitle className="font-display text-lg font-black tracking-tight leading-tight pr-10">
+              🏆 {standingsModal?.name}
             </DialogTitle>
-            <p className="text-orange-100 mt-1 text-sm font-medium relative z-10">
-              Professional Rankings & Performance Chart
+            <p className="text-orange-100 text-xs mt-1">
+              Tournament Standings
             </p>
             {user?.role === "admin" && (
               <Button
                 size="sm"
                 onClick={downloadExcel}
-                className="absolute top-4 right-4 h-9 w-9 p-0 rounded-lg bg-white/20 text-white hover:bg-white/30 border border-white/30 shadow-lg"
-                title="Download Standings CSV"
+                className="absolute top-3 right-3 h-7 w-7 p-0 rounded-md bg-white/20 text-white hover:bg-white/30"
+                title="Download CSV"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-3 h-3" />
               </Button>
             )}
           </div>
 
-          <div className="overflow-y-auto flex-1 bg-gradient-to-b from-gray-50 to-white p-6">
+          <div className="overflow-y-auto flex-1 bg-gray-50">
             {loadingStandings ? (
-              <div className="p-16 flex justify-center">
-                <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+              <div className="p-8 flex justify-center">
+                <div className="w-6 h-6 border-3 border-orange-500 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : standingsData.length === 0 ? (
-              <div className="p-16 text-center text-gray-500 font-semibold text-lg bg-white rounded-xl shadow-sm border">
-                No standings published yet for this tournament.
+              <div className="p-8 text-center text-gray-500 font-medium text-sm">
+                No standings published yet.
               </div>
             ) : (
-              <div className="space-y-6">
-                {/* Top 3 Podium */}
-                <div className="bg-white rounded-xl shadow-lg p-6 border border-orange-200">
-                  <h3 className="text-xl font-display font-black text-center text-gray-800 mb-6 flex items-center justify-center gap-2">
-                    <Trophy className="w-6 h-6 text-yellow-500" />
-                    Top Performers
+              <div className="p-4 space-y-4">
+                {/* Top 3 Podium - Mobile Optimized */}
+                <div className="bg-white rounded-xl p-4 shadow-sm border">
+                  <h3 className="text-sm font-display font-black text-center text-gray-800 mb-4 flex items-center justify-center gap-1">
+                    <Trophy className="w-4 h-4 text-yellow-500" />
+                    Top 3
                   </h3>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
                     {standingsData.slice(0, 3).map((r: any, idx: number) => (
-                      <div key={r.id} className={`text-center p-4 rounded-lg ${
-                        idx === 0 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white shadow-lg' :
-                        idx === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400 text-white' :
-                        'bg-gradient-to-br from-orange-600 to-red-600 text-white'
-                      }`}>
-                        <div className="text-3xl font-black mb-2">
-                          {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
+                      <div key={r.id} className="flex items-center bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-3 border">
+                        <div className="flex-shrink-0 mr-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-display font-black text-sm ${
+                            idx === 0 ? 'bg-yellow-400 text-white' :
+                            idx === 1 ? 'bg-gray-400 text-white' :
+                            'bg-orange-600 text-white'
+                          }`}>
+                            {idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉'}
+                          </div>
                         </div>
-                        <div className="font-bold text-sm truncate mb-1">
-                          {r.team_name || r.username}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-gray-900 truncate text-sm">
+                            {r.team_name || r.username}
+                          </div>
+                          <div className="text-xs text-gray-600 flex items-center gap-2 mt-1">
+                            <span>Kills: {r.kills || 0}</span>
+                            <span>•</span>
+                            <span>Pos: #{r.position || "-"}</span>
+                          </div>
                         </div>
-                        <div className="text-xs opacity-90">
-                          {r.points || 0} pts
+                        <div className="flex-shrink-0 ml-3 text-right">
+                          <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                            Points
+                          </div>
+                          <div className="font-display font-black text-orange-600 text-lg">
+                            {r.points || 0}
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Performance Chart */}
-                <div className="bg-white rounded-xl shadow-lg p-6 border border-orange-200">
-                  <h3 className="text-xl font-display font-black text-center text-gray-800 mb-6 flex items-center justify-center gap-2">
-                    <Crosshair className="w-6 h-6 text-red-500" />
-                    Points Distribution Chart
-                  </h3>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={standingsData.slice(0, 10)} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                        <XAxis 
-                          dataKey={(entry, index) => `${index + 1}. ${entry.team_name || entry.username}`}
-                          angle={-45}
-                          textAnchor="end"
-                          height={80}
-                          fontSize={10}
-                          stroke="#666"
-                        />
-                        <YAxis stroke="#666" />
-                        <Tooltip 
-                          contentStyle={{
-                            backgroundColor: '#fff',
-                            border: '1px solid #ddd',
-                            borderRadius: '8px',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                          }}
-                          formatter={(value, name) => [value, 'Points']}
-                          labelFormatter={(label) => `Rank: ${label}`}
-                        />
-                        <Bar dataKey="points" fill="#f97316" radius={[4, 4, 0, 0]}>
-                          {standingsData.slice(0, 10).map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={
-                              index === 0 ? '#fbbf24' : // gold
-                              index === 1 ? '#9ca3af' : // silver
-                              index === 2 ? '#dc2626' : // bronze
-                              '#f97316' // orange
-                            } />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                {/* Detailed Standings Table */}
-                <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-orange-200">
-                  <div className="bg-gradient-to-r from-orange-500 to-red-500 p-4">
-                    <h3 className="text-lg font-display font-black text-white flex items-center gap-2">
-                      <ListChecks className="w-5 h-5" />
-                      Complete Standings
+                {/* All Standings - Mobile Card Layout */}
+                <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+                  <div className="bg-gradient-to-r from-gray-100 to-gray-200 p-3">
+                    <h3 className="text-sm font-display font-black text-gray-800 flex items-center gap-1">
+                      <ListChecks className="w-4 h-4" />
+                      Full Standings
                     </h3>
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Rank</th>
-                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Player/Team</th>
-                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Kills</th>
-                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Position</th>
-                          <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Points</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {standingsData.map((r: any, idx: number) => (
-                          <tr key={r.id} className={`hover:bg-orange-50 transition-colors ${
-                            idx < 3 ? 'bg-gradient-to-r from-orange-50 to-transparent' : ''
-                          }`}>
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-display font-black text-sm ${
-                                  idx === 0 ? 'bg-yellow-400 text-white' :
-                                  idx === 1 ? 'bg-gray-400 text-white' :
-                                  idx === 2 ? 'bg-orange-600 text-white' :
-                                  'bg-gray-200 text-gray-600'
-                                }`}>
-                                  {idx + 1}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap font-bold text-gray-900">
+                  <div className="divide-y divide-gray-100">
+                    {standingsData.map((r: any, idx: number) => (
+                      <div
+                        key={r.id}
+                        className={`p-4 hover:bg-orange-50 transition-colors ${
+                          idx < 3 ? 'bg-gradient-to-r from-orange-50/50 to-transparent' : ''
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 mr-3">
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center font-display font-black text-xs ${
+                              idx === 0 ? 'bg-yellow-400 text-white' :
+                              idx === 1 ? 'bg-gray-400 text-white' :
+                              idx === 2 ? 'bg-orange-600 text-white' :
+                              'bg-gray-200 text-gray-600'
+                            }`}>
+                              {idx + 1}
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-bold text-gray-900 truncate text-sm">
                               {r.team_name || r.username}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-gray-600">
-                              {r.kills || 0}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-gray-600">
-                              #{r.position || "-"}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap font-bold text-orange-600">
-                              {r.points || 0}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                            </div>
+                            <div className="text-xs text-gray-600 flex items-center gap-3 mt-1">
+                              <span className="flex items-center gap-1">
+                                <Crosshair className="w-3 h-3" />
+                                {r.kills || 0}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Trophy className="w-3 h-3" />
+                                #{r.position || "-"}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex-shrink-0 ml-3">
+                            <div className="text-right">
+                              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Points
+                              </div>
+                              <div className="font-display font-black text-orange-600 text-base">
+                                {r.points || 0}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
