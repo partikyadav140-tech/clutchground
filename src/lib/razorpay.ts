@@ -211,6 +211,11 @@ export const initializeRazorpayTables = createServerFn<void>({ method: "POST" })
       )
       .run();
 
+    // Create performance indexes
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_razorpay_orders_user_id ON razorpay_orders(user_id)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_razorpay_orders_status ON razorpay_orders(status)`).run();
+    await db.prepare(`CREATE INDEX IF NOT EXISTS idx_razorpay_orders_created_at ON razorpay_orders(created_at)`).run();
+
     return { success: true };
   },
 );

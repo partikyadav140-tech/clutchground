@@ -172,7 +172,19 @@ export const getUsers = createServerFn({ method: "GET" }).handler(async () => {
 
 export const getTournaments = createServerFn({ method: "GET" }).handler(async () => {
   const { db } = await import("./lib/db");
-  return await db.prepare("SELECT * FROM tournaments").all();
+  const { apiCache } = await import("./lib/cache");
+
+  const cacheKey = 'tournaments';
+  const cached = apiCache.get(cacheKey);
+
+  if (cached) {
+    return cached;
+  }
+
+  const tournaments = await db.prepare("SELECT * FROM tournaments ORDER BY startsAt ASC").all();
+  apiCache.set(cacheKey, tournaments, 2 * 60 * 1000); // Cache for 2 minutes
+
+  return tournaments;
 });
 
 export const addTournament = createServerFn({ method: "POST" }).handler(async ({ data }) => {
@@ -1128,6 +1140,14 @@ export const rescheduleTournament = createServerFn({ method: "POST" }).handler(a
 
 export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(async () => {
   const { db } = await import("./lib/db");
+  const { apiCache } = await import("./lib/cache");
+
+  const cacheKey = 'global-leaderboard';
+  const cached = apiCache.get(cacheKey);
+
+  if (cached) {
+    return cached;
+  }
 
   await db.prepare(
     `
@@ -1149,7 +1169,7 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
       FROM information_schema.columns
       WHERE table_name = 'leaderboard_overrides' AND column_name = 'id'
     `).get();
-    
+
     if (tableInfo && tableInfo.data_type === 'integer' && !tableInfo.column_default?.includes('nextval')) {
       // Table exists with wrong schema, recreate it
       await db.prepare(`DROP TABLE leaderboard_overrides`).run();
@@ -1173,7 +1193,7 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
   const rows = (await db
     .prepare(
       `
-      SELECT 
+      SELECT
         u.id as user_id,
         u.username as ign,
         COALESCE(SUM(r.kills), 0) as kills,
@@ -1193,9 +1213,9 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
     const t = (await db
       .prepare(
         `
-        SELECT t.name 
-        FROM team_members tm 
-        JOIN teams t ON t.id = tm.team_id 
+        SELECT t.name
+        FROM team_members tm
+        JOIN teams t ON t.id = tm.team_id
         WHERE tm.user_id = ?
       `,
       )
@@ -1214,6 +1234,8 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
     else if (rows[i].rank <= 3) rows[i].badge = "elite";
     else rows[i].badge = "none";
   }
+
+  apiCache.set(cacheKey, rows, 5 * 60 * 1000); // Cache for 5 minutes
 
   return rows;
 });

@@ -2,6 +2,8 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import { Toaster } from "@/components/ui/sonner";
 import { SplashScreen } from "@/components/SplashScreen";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { useEffect } from "react";
+import { trackWebVitals } from "@/lib/performance";
 
 import appCss from "../styles.css?url";
 
@@ -48,30 +50,21 @@ export const Route = createRootRoute({
         name: "robots",
         content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
       },
-      { name: "author", content: "ClutchGround Esports" },
-      { property: "og:title", content: "ClutchGround | Elite Free Fire Tournaments" },
-      {
-        property: "og:description",
-        content:
-          "India's most fierce Free Fire esports league. Play, Win, and become a God of the Arena.",
-      },
-      { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "ClutchGround" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "ClutchGround Free Fire Tournaments" },
-      {
-        name: "twitter:description",
-        content: "Compete in daily Free Fire tournaments for real cash prizes on ClutchGround.",
-      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      // Preload critical fonts
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap",
       },
+      // Preload critical images
+      { rel: "preload", href: "/hero-video.mp4", as: "video", type: "video/mp4" },
+      // DNS prefetch for external resources
+      { rel: "dns-prefetch", href: "//api.clutchground.com" },
+      { rel: "dns-prefetch", href: "//fonts.googleapis.com" },
     ],
   }),
   shellComponent: RootShell,
@@ -104,5 +97,29 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useEffect(() => {
+    // Track web vitals on mount
+    trackWebVitals();
+
+    // Performance monitoring
+    if (typeof window !== 'undefined' && 'performance' in window) {
+      // Log performance metrics
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          const perfData = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+          if (perfData) {
+            console.log('Page Load Performance:', {
+              'DNS Lookup': perfData.domainLookupEnd - perfData.domainLookupStart,
+              'TCP Connect': perfData.connectEnd - perfData.connectStart,
+              'Server Response': perfData.responseStart - perfData.requestStart,
+              'Page Load': perfData.loadEventEnd - perfData.navigationStart,
+              'DOM Ready': perfData.domContentLoadedEventEnd - perfData.navigationStart,
+            });
+          }
+        }, 0);
+      });
+    }
+  }, []);
+
   return <Outlet />;
 }

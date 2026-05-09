@@ -1,7 +1,9 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { lazy, Suspense } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { SpeedDial } from "@/components/SpeedDial";
+
+const SpeedDial = lazy(() => import("@/components/SpeedDial").then(module => ({ default: module.SpeedDial })));
 
 export const Route = createFileRoute("/_app")({
   component: () => (
@@ -11,7 +13,9 @@ export const Route = createFileRoute("/_app")({
         <Outlet />
       </main>
       <Footer />
-      <SpeedDial />
+      <Suspense fallback={null}>
+        <SpeedDial />
+      </Suspense>
     </div>
   ),
 });

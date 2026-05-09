@@ -21,30 +21,84 @@ import {
   Gamepad2,
   Clock,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { useAuth } from "../../lib/auth-client";
 import { GodCoin } from "@/components/GodCoin";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, lazy, Suspense } from "react";
+
+// Lazy load heavy components
+const HeroVideo = lazy(() => import("../../components/Hero").then(module => ({ default: module.Hero })));
+
+// Image lazy loading component
+const LazyImage = ({ src, alt, className, ...props }: any) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (imgRef.current) {
+      observer.observe(imgRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <img
+      ref={imgRef}
+      src={isInView ? src : undefined}
+      alt={alt}
+      className={`${className} ${isLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+      onLoad={() => setIsLoaded(true)}
+      loading="lazy"
+      {...props}
+    />
+  );
+};
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
     meta: [{ title: "CLUTCHGROUND — Professional Esports Arena" }],
   }),
   loader: async () => {
-    try {
-      const ts = await getTournaments();
-      const lb = await (getGlobalLeaderboard as any)();
-      return { ts, lb };
-    } catch (e: any) {
-      return {
-        ts: [],
-        lb: [],
-      };
-    }
+    // Parallel data fetching for better performance
+    const [ts, lb] = await Promise.allSettled([
+      getTournaments(),
+      (getGlobalLeaderboard as any)(),
+    ]);
+
+    return {
+      ts: ts.status === 'fulfilled' ? ts.value : [],
+      lb: lb.status === 'fulfilled' ? lb.value : [],
+    };
   },
   component: HomePage,
+  pendingComponent: () => (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  ),
+  errorComponent: ({ error }: any) => (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-destructive mb-4">Something went wrong</h2>
+        <p className="text-muted-foreground mb-4">{error?.message || 'Failed to load page'}</p>
+        <Button onClick={() => window.location.reload()}>Try Again</Button>
+      </div>
+    </div>
+  ),
 });
 
 const POSTERS = [
