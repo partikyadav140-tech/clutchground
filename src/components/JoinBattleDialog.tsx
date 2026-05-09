@@ -47,6 +47,9 @@ export function JoinBattleDialog({
   const [step, setStep] = useState<"team-input" | "team-preview" | "confirm">("team-input");
   const [loadingTeam, setLoadingTeam] = useState(false);
   const [teamFetched, setTeamFetched] = useState(false);
+  const [showPlayerSelection, setShowPlayerSelection] = useState(false);
+  const [availableMembers, setAvailableMembers] = useState<any[]>([]);
+  const [selectedPlayers, setSelectedPlayers] = useState<Set<number>>(new Set());
   const teamCount = teamSizeFor(mode);
   const { user } = useAuth();
   const router = useRouter();
@@ -116,8 +119,8 @@ export function JoinBattleDialog({
         return;
       }
 
-      setLeader((l) => ({ 
-        ...l, 
+      setLeader((l) => ({
+        ...l,
         teamName: myTeam.name,
         name: myTeam.leader.username || myTeam.leader.ign || "",
         ign: myTeam.leader.ign || "",
@@ -126,7 +129,7 @@ export function JoinBattleDialog({
 
       // Get valid members (with ign and uid)
       let activeMembers = [];
-      
+
       if (myTeam.members && Array.isArray(myTeam.members)) {
         activeMembers = myTeam.members
           .filter((m: any) => {
@@ -149,15 +152,25 @@ export function JoinBattleDialog({
       if (activeMembers.length < teamCount) {
         setLoadingTeam(false);
         toast.error(
-          `Your team has ${activeMembers.length} available member${activeMembers.length !== 1 ? "s" : ""}, but you need ${teamCount} teammates for ${mode} mode.`,
+          `Your team has ${activeMembers.length} available member${activeMembers.length !== 1 ? "s" : ""}, but you need ${teamCount} teammate${teamCount !== 1 ? "s" : ""} for ${mode} mode.`,
         );
         return;
       }
 
+      // If the team has more available members than needed, ask which players should play
+      if (activeMembers.length > teamCount) {
+        setAvailableMembers(activeMembers);
+        setSelectedPlayers(new Set(Array.from({ length: teamCount }, (_, i) => i)));
+        setShowPlayerSelection(true);
+        setLoadingTeam(false);
+        return;
+      }
+
+      // Auto-fill when there are exactly enough members available
       setTeammates((current) => {
         const newT = [...current];
         activeMembers.slice(0, teamCount).forEach((m: any, i: number) => {
-          newT[i] = { name: m.ign, ign: m.ign, uid: m.uid };
+          newT[i] = { name: m.username || m.ign, ign: m.ign, uid: m.uid };
         });
         return newT;
       });
@@ -172,12 +185,53 @@ export function JoinBattleDialog({
     }
   };
 
+  const handleSelectPlayers = () => {
+    if (selectedPlayers.size !== teamCount) {
+      toast.error(
+        `Please select exactly ${teamCount} player${teamCount !== 1 ? "s" : ""} for ${mode} mode.`,
+      );
+      return;
+    }
+
+    const selected = Array.from(selectedPlayers).sort((a, b) => a - b);
+    setTeammates((current) => {
+      const newT = [...current];
+      selected.forEach((idx: number, i: number) => {
+        const m = availableMembers[idx];
+        newT[i] = { name: m.username || m.ign, ign: m.ign, uid: m.uid };
+      });
+      return newT;
+    });
+
+    setShowPlayerSelection(false);
+    setTeamFetched(true);
+    toast.success("Players selected successfully!");
+  };
+
+  const togglePlayerSelection = (idx: number) => {
+    const newSelected = new Set(selectedPlayers);
+    if (newSelected.has(idx)) {
+      newSelected.delete(idx);
+    } else if (newSelected.size < teamCount) {
+      newSelected.add(idx);
+    } else {
+      toast.error(
+        `You can only select ${teamCount} player${teamCount !== 1 ? "s" : ""} for ${mode} mode.`,
+      );
+      return;
+    }
+    setSelectedPlayers(newSelected);
+  };
+
   const reset = () => {
     setLeader({ name: "", email: "", phone: "", ign: "", uid: "", teamName: "" });
     setTeammates(Array.from({ length: teamCount }, () => ({ name: "", ign: "", uid: "" })));
     setAgree(false);
     setStep("team-input");
     setTeamFetched(false);
+    setShowPlayerSelection(false);
+    setAvailableMembers([]);
+    setSelectedPlayers(new Set());
   };
 
   const submit = async () => {
@@ -320,6 +374,78 @@ export function JoinBattleDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {/* Player Selection from registered team */}
+        {showPlayerSelection && mode !== "Solo" && (
+          <div className="space-y-4 py-4">
+            <div className="flex items-center gap-2 text-primary">
+              <Users className="w-4 h-4" />
+              <span className="text-xs font-display uppercase tracking-widest">
+                {mode === "Duo"
+                  ? "Select your Duo partner"
+                  : `Select ${teamCount} players for ${mode}`}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Your team has {availableMembers.length} member
+              {availableMembers.length !== 1 ? "s" : ""}. Please select {teamCount} player
+              {teamCount !== 1 ? "s" : ""} for this {mode} match.
+            </p>
+            <div className="bg-secondary/60 border border-border clip-notch p-4 space-y-2 max-h-64 overflow-y-auto">
+              {availableMembers.map((m, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => togglePlayerSelection(idx)}
+                  className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
+                    selectedPlayers.has(idx)
+                      ? "bg-primary/10 border-primary text-primary"
+                      : "bg-white border-border hover:border-primary/50"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 text-left">
+                    <div
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                        selectedPlayers.has(idx) ? "bg-primary border-primary" : "border-border"
+                      }`}
+                    >
+                      {selectedPlayers.has(idx) && <Check className="w-3 h-3 text-white" />}
+                    </div>
+                    <div>
+                      <div className="font-bold text-sm text-foreground">{m.ign}</div>
+                      <div className="text-[10px] text-muted-foreground font-mono">
+                        UID: {m.uid}
+                      </div>
+                    </div>
+                  </div>
+                  {selectedPlayers.has(idx) && (
+                    <span className="text-[10px] font-bold uppercase px-2 py-1 bg-primary text-white rounded">
+                      Selected
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPlayerSelection(false);
+                  setAvailableMembers([]);
+                  setSelectedPlayers(new Set());
+                }}
+                className="flex-1 rounded-lg"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSelectPlayers}
+                className="flex-1 bg-primary text-white rounded-lg font-bold"
+              >
+                <Check className="w-4 h-4 mr-2" /> Confirm Selection
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Team Input Step */}
         {step === "team-input" && mode !== "Solo" && (
           <div className="space-y-4 py-4">
@@ -327,7 +453,7 @@ export function JoinBattleDialog({
               <Users className="w-4 h-4" />
               <span className="text-xs font-display uppercase tracking-widest">Team Details</span>
             </div>
-            
+
             {/* Team Name */}
             <div className="bg-secondary/60 border border-border clip-notch p-4 space-y-3">
               <div className="text-xs font-display font-bold text-muted-foreground uppercase tracking-widest mb-3">
@@ -438,9 +564,15 @@ export function JoinBattleDialog({
               <Table>
                 <TableHeader>
                   <TableRow className="border-border/60 hover:bg-secondary/40">
-                    <TableHead className="text-[10px] uppercase font-display font-bold">Position</TableHead>
-                    <TableHead className="text-[10px] uppercase font-display font-bold">IGN</TableHead>
-                    <TableHead className="text-[10px] uppercase font-display font-bold">UID</TableHead>
+                    <TableHead className="text-[10px] uppercase font-display font-bold">
+                      Position
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase font-display font-bold">
+                      IGN
+                    </TableHead>
+                    <TableHead className="text-[10px] uppercase font-display font-bold">
+                      UID
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -454,7 +586,9 @@ export function JoinBattleDialog({
                   </TableRow>
                   {teammates.slice(0, teamCount).map((t, i) => (
                     <TableRow key={i} className="border-border/60 hover:bg-secondary/40">
-                      <TableCell className="text-xs font-display font-bold">Player {i + 2}</TableCell>
+                      <TableCell className="text-xs font-display font-bold">
+                        Player {i + 2}
+                      </TableCell>
                       <TableCell className="text-xs">{t.ign}</TableCell>
                       <TableCell className="text-xs font-mono">{t.uid}</TableCell>
                     </TableRow>
@@ -503,8 +637,8 @@ export function JoinBattleDialog({
                 className="accent-primary mt-0.5"
               />
               <span>
-                I confirm all UIDs are accurate. I accept the rules, anti-cheat policy, and consent to
-                screenshot verification.
+                I confirm all UIDs are accurate. I accept the rules, anti-cheat policy, and consent
+                to screenshot verification.
               </span>
             </label>
           </div>
@@ -513,21 +647,13 @@ export function JoinBattleDialog({
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 mt-2 border-t border-border/60">
           {(step === "team-preview" || step === "confirm") && (
-            <Button
-              variant="outline"
-              onClick={handlePreviousStep}
-              className="rounded-lg"
-            >
+            <Button variant="outline" onClick={handlePreviousStep} className="rounded-lg">
               <ChevronLeft className="w-4 h-4 mr-2" /> Back
             </Button>
           )}
           <div className="flex-1" />
           {step === "confirm" ? (
-            <Button
-              variant="hero"
-              onClick={submit}
-              className="font-display tracking-wider"
-            >
+            <Button variant="hero" onClick={submit} className="font-display tracking-wider">
               <Trophy className="w-4 h-4 mr-2" /> LOCK MY SLOT
             </Button>
           ) : (
