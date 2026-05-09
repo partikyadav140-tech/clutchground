@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Mail, MessageCircle, Send, HeadphonesIcon } from "lucide-react";
+import { Mail, MessageCircle, Send, HeadphonesIcon, Hash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -81,7 +81,7 @@ function ContactPage() {
                 bg: "bg-sky-50",
               },
               {
-                icon: Send,
+                icon: Hash,
                 t: "Discord Server",
                 v: "ClutchGround Community",
                 href: "https://discord.gg/uYXFJswHdg",
