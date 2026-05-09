@@ -119,6 +119,23 @@ function RootComponent() {
         }, 0);
       });
     }
+
+    // Prefetch all navigation links on page load for instant navigation
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      requestIdleCallback(() => {
+        const links = document.querySelectorAll('a[href^="/"]');
+        links.forEach(link => {
+          const href = link.getAttribute('href');
+          if (href && !href.startsWith('http')) {
+            // Pre-create link element to trigger prefetch if available
+            const prefetchLink = document.createElement('link');
+            prefetchLink.rel = 'prefetch';
+            prefetchLink.href = href;
+            document.head.appendChild(prefetchLink);
+          }
+        });
+      });
+    }
   }, []);
 
   return <Outlet />;

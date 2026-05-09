@@ -188,10 +188,10 @@ export function Navbar() {
               <a
                 key={item.to}
                 href={item.to}
-                className="px-4 py-2 text-sm font-semibold tracking-wide uppercase text-muted-foreground hover:text-primary transition-colors relative group"
+                className="px-4 py-2 text-sm font-semibold tracking-wide uppercase text-muted-foreground hover:text-primary transition-colors relative group active:scale-95 duration-75"
               >
                 {item.label}
-                <span className="absolute inset-x-4 bottom-1 h-px bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+                <span className="absolute inset-x-4 bottom-1 h-px bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-75" />
               </a>
             ))}
           </div>
@@ -365,7 +365,7 @@ export function Navbar() {
                     key={item.to}
                     href={item.to}
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center justify-between mx-3 px-3 py-3 rounded-xl text-muted-foreground hover:bg-secondary/60 hover:text-primary transition-all active:scale-[0.98]"
+                    className="flex items-center justify-between mx-3 px-3 py-3 rounded-xl text-muted-foreground hover:bg-secondary/60 hover:text-primary transition-all active:scale-[0.98] duration-75"
                   >
                     <div className="flex items-center gap-3">
                       <Icon className="w-5 h-5 shrink-0" />
@@ -427,11 +427,11 @@ export function Navbar() {
               <a
                 key={item.to}
                 href={item.to}
-                className={`relative flex flex-col items-center justify-center gap-1 flex-1 py-2 text-muted-foreground transition-all duration-200 active:scale-90 group ${isActive ? "text-primary" : ""}`}
+                className={`relative flex flex-col items-center justify-center gap-1 flex-1 py-2 text-muted-foreground transition-all duration-75 active:scale-90 group ${isActive ? "text-primary" : ""}`}
               >
                 {isActive && <span className="nav-active-bar" />}
                 <div
-                  className={`relative w-12 h-9 flex items-center justify-center rounded-2xl transition-all duration-200 ${isActive ? "bg-primary/15" : "group-active:bg-secondary/60"}`}
+                  className={`relative w-12 h-9 flex items-center justify-center rounded-2xl transition-all duration-75 ${isActive ? "bg-primary/15" : "group-active:bg-secondary/60"}`}
                 >
                   <Icon
                     className={`w-5 h-5 transition-all duration-200 ${isActive ? "scale-110" : ""}`}
