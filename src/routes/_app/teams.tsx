@@ -206,8 +206,8 @@ function TeamsPage() {
       </div>
 
       <div className="px-4 mt-6 space-y-6">
-        {/* ─── My Team Section ─── */}
-        {myTeam ? (
+        {/* ─── My Team Section / Create Team Form ─── */}
+        {isEditingTeam || !myTeam ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -216,131 +216,158 @@ function TeamsPage() {
             <div className="p-5 border-b border-border/50 flex items-center justify-between bg-secondary/10">
               <div className="flex items-center gap-2.5">
                 <Users className="w-5 h-5 text-primary" />
-                <h3 className="font-display font-black text-lg text-foreground">My Squad</h3>
-              </div>
-              <div className="flex gap-2">
-                {myTeam.leader_id === user.id && !isEditingTeam && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleDeleteTeam}
-                    className="h-8 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive text-xs font-bold rounded-lg"
-                  >
-                    <Trash className="w-4 h-4 mr-1" /> Delete
-                  </Button>
-                )}
-                {myTeam.leader_id !== user.id && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleLeaveTeam}
-                    className="h-8 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive text-xs font-bold rounded-lg"
-                  >
-                    <LogOut className="w-4 h-4 mr-1" /> Leave
-                  </Button>
-                )}
-                {(myTeam.leader_id === user.id) && !isEditingTeam && (
-                  <Button
-                    size="sm"
-                    onClick={() => setIsEditingTeam(true)}
-                    className="h-8 text-xs font-bold bg-primary text-white rounded-lg px-3 shadow-sm"
-                  >
-                    <Edit3 className="w-3.5 h-3.5 mr-1" /> Edit Squad
-                  </Button>
-                )}
+                <h3 className="font-display font-black text-lg text-foreground">
+                  {myTeam ? "Edit Squad" : "Create Your Squad"}
+                </h3>
               </div>
             </div>
 
             <div className="p-5">
-              {isEditingTeam ? (
-                <div className="space-y-5">
-                  <div>
-                    <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">
-                      Squad Name
-                    </label>
-                    <input
-                      className="w-full bg-secondary/50 border border-border focus:border-primary outline-none px-4 py-3 text-sm font-bold rounded-xl shadow-sm"
-                      value={teamData.name}
-                      onChange={(e) => setTeamData({ ...teamData, name: e.target.value })}
-                      placeholder="Enter squad name"
-                    />
-                  </div>
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">
+                    Squad Name
+                  </label>
+                  <input
+                    className="w-full bg-secondary/50 border border-border focus:border-primary outline-none px-4 py-3 text-sm font-bold rounded-xl shadow-sm"
+                    value={teamData.name}
+                    onChange={(e) => setTeamData({ ...teamData, name: e.target.value })}
+                    placeholder="Enter squad name"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">
-                      Roster (up to 3 teammates + You)
-                    </label>
-                    <div className="space-y-3">
-                      {teamData.members.map((m, i) => (
-                        <div
-                          key={i}
-                          className="flex gap-2 items-center p-3 rounded-xl border border-border/50 bg-secondary/20"
-                        >
-                          <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary">
-                            P{i + 2}
-                          </div>
-                          <input
-                            className="flex-1 bg-white border border-border focus:border-primary outline-none px-3 py-2 text-xs font-bold rounded-lg shadow-sm"
-                            placeholder="IGN"
-                            value={m.ign}
-                            onChange={(e) =>
-                              setTeamData({
-                                ...teamData,
-                                members: teamData.members.map((x, j) =>
-                                  j === i ? { ...x, ign: e.target.value } : x,
-                                ),
-                              })
-                            }
-                          />
-                          <input
-                            className="w-24 bg-white border border-border focus:border-primary outline-none px-3 py-2 text-xs font-mono rounded-lg shadow-sm"
-                            placeholder="UID"
-                            value={m.uid}
-                            onChange={(e) =>
-                              setTeamData({
-                                ...teamData,
-                                members: teamData.members.map((x, j) =>
-                                  j === i ? { ...x, uid: e.target.value } : x,
-                                ),
-                              })
-                            }
-                          />
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setTeamData({
-                                ...teamData,
-                                members: teamData.members.map((x, j) =>
-                                  j === i ? { ign: "", uid: "", role: "player" } : x,
-                                ),
-                              })
-                            }
-                            className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                          >
-                            <Trash className="w-4 h-4" />
-                          </button>
+                <div>
+                  <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">
+                    Roster (up to 3 teammates + You)
+                  </label>
+                  <div className="space-y-3">
+                    {teamData.members.map((m, i) => (
+                      <div
+                        key={i}
+                        className="flex gap-2 items-center p-3 rounded-xl border border-border/50 bg-secondary/20"
+                      >
+                        <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary">
+                          P{i + 2}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsEditingTeam(false)}
-                      className="flex-1 h-12 rounded-xl font-bold border-border shadow-sm"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleSaveTeam}
-                      className="flex-1 h-12 rounded-xl font-bold bg-primary text-white shadow-primary"
-                    >
-                      <Save className="w-4 h-4 mr-2" /> Save Squad
-                    </Button>
+                        <input
+                          className="flex-1 bg-white border border-border focus:border-primary outline-none px-3 py-2 text-xs font-bold rounded-lg shadow-sm"
+                          placeholder="IGN"
+                          value={m.ign}
+                          onChange={(e) =>
+                            setTeamData({
+                              ...teamData,
+                              members: teamData.members.map((x, j) =>
+                                j === i ? { ...x, ign: e.target.value } : x,
+                              ),
+                            })
+                          }
+                        />
+                        <input
+                          className="w-24 bg-white border border-border focus:border-primary outline-none px-3 py-2 text-xs font-mono rounded-lg shadow-sm"
+                          placeholder="UID"
+                          value={m.uid}
+                          onChange={(e) =>
+                            setTeamData({
+                              ...teamData,
+                              members: teamData.members.map((x, j) =>
+                                j === i ? { ...x, uid: e.target.value } : x,
+                              ),
+                            })
+                          }
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setTeamData({
+                              ...teamData,
+                              members: teamData.members.map((x, j) =>
+                                j === i ? { ign: "", uid: "", role: "player" } : x,
+                              ),
+                            })
+                          }
+                          className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                        >
+                          <Trash className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ) : (
+
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditingTeam(false);
+                      if (!myTeam) {
+                        setTeamData({
+                          name: "",
+                          logo: "",
+                          members: Array(3).fill({ ign: "", uid: "", role: "player" }),
+                        });
+                      }
+                    }}
+                    className="flex-1 h-12 rounded-xl font-bold border-border shadow-sm"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSaveTeam}
+                    className="flex-1 h-12 rounded-xl font-bold bg-primary text-white shadow-primary"
+                  >
+                    <Save className="w-4 h-4 mr-2" /> {myTeam ? "Save Squad" : "Create Squad"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <>
+            {/* My Team View */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-[1.5rem] border border-border shadow-sm overflow-hidden"
+            >
+              <div className="p-5 border-b border-border/50 flex items-center justify-between bg-secondary/10">
+                <div className="flex items-center gap-2.5">
+                  <Users className="w-5 h-5 text-primary" />
+                  <h3 className="font-display font-black text-lg text-foreground">My Squad</h3>
+                </div>
+                <div className="flex gap-2">
+                  {myTeam.leader_id === user.id && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleDeleteTeam}
+                      className="h-8 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive text-xs font-bold rounded-lg"
+                    >
+                      <Trash className="w-4 h-4 mr-1" /> Delete
+                    </Button>
+                  )}
+                  {myTeam.leader_id !== user.id && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleLeaveTeam}
+                      className="h-8 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive text-xs font-bold rounded-lg"
+                    >
+                      <LogOut className="w-4 h-4 mr-1" /> Leave
+                    </Button>
+                  )}
+                  {myTeam.leader_id === user.id && (
+                    <Button
+                      size="sm"
+                      onClick={() => setIsEditingTeam(true)}
+                      className="h-8 text-xs font-bold bg-primary text-white rounded-lg px-3 shadow-sm"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 mr-1" /> Edit Squad
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-5">
                 <div className="space-y-4">
                   <div className="font-display text-2xl font-black text-foreground mb-4">
                     {myTeam.name}
@@ -406,32 +433,9 @@ function TeamsPage() {
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-          </motion.div>
-        ) : (
-          /* Create Team CTA */
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-r from-primary to-[#d95a00] rounded-2xl p-6 shadow-lg text-white"
-          >
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                <Users className="w-6 h-6" />
               </div>
-              <div>
-                <h3 className="font-display text-xl font-black">Create Your Squad</h3>
-                <p className="text-orange-100 text-sm">Build a team and dominate tournaments</p>
-              </div>
-            </div>
-            <Button
-              className="w-full h-12 rounded-xl font-bold bg-white text-primary shadow-lg hover:bg-orange-50"
-              onClick={() => setIsEditingTeam(true)}
-            >
-              <Plus className="w-5 h-5 mr-2" /> Create Squad
-            </Button>
-          </motion.div>
+            </motion.div>
+          </>
         )}
 
         {/* ─── Available Teams Section ─── */}
