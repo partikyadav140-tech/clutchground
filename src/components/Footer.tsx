@@ -14,11 +14,14 @@ export function Footer() {
               </div>
               <div>
                 <h3 className="font-display font-black text-lg text-foreground">CLUTCHGROUND</h3>
-                <p className="text-xs text-muted-foreground uppercase tracking-widest">Esports Arena</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-widest">
+                  Esports Arena
+                </p>
               </div>
             </div>
             <p className="text-sm text-muted-foreground/80 leading-relaxed mb-4">
-              India's premier Free Fire esports platform. Compete in tournaments, win prizes, and become a legend.
+              India's premier Free Fire esports platform. Compete in tournaments, win prizes, and
+              become a legend.
             </p>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1.5">
@@ -30,21 +33,38 @@ export function Footer() {
 
           {/* Quick Links */}
           <div className="lg:col-span-1">
-            <h4 className="font-display font-bold text-foreground mb-4 uppercase tracking-wider text-sm">Quick Links</h4>
+            <h4 className="font-display font-bold text-foreground mb-4 uppercase tracking-wider text-sm">
+              Quick Links
+            </h4>
             <div className="space-y-3">
-              <a href="/tournaments" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="/tournaments"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 Tournaments
               </a>
-              <a href="/leaderboard" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="/leaderboard"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 Leaderboard
               </a>
-              <a href="/teams" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="/teams"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 Teams
               </a>
-              <a href="/matches" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="/matches"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 My Matches
               </a>
-              <a href="/wallet" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="/wallet"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 Wallet
               </a>
             </div>
@@ -52,21 +72,38 @@ export function Footer() {
 
           {/* Support */}
           <div className="lg:col-span-1">
-            <h4 className="font-display font-bold text-foreground mb-4 uppercase tracking-wider text-sm">Support</h4>
+            <h4 className="font-display font-bold text-foreground mb-4 uppercase tracking-wider text-sm">
+              Support
+            </h4>
             <div className="space-y-3">
-              <a href="/rules" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="/rules"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 Rules & Regulations
               </a>
-              <a href="/anti-cheat" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="/anti-cheat"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 Anti-Cheat Policy
               </a>
-              <a href="/contact" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="/contact"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 Contact Support
               </a>
-              <a href="/privacy" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="/privacy"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 Privacy Policy
               </a>
-              <a href="/terms" className="block text-sm text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="/terms"
+                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
                 Terms of Service
               </a>
             </div>
@@ -74,7 +111,9 @@ export function Footer() {
 
           {/* Contact Info */}
           <div className="lg:col-span-1">
-            <h4 className="font-display font-bold text-foreground mb-4 uppercase tracking-wider text-sm">Contact</h4>
+            <h4 className="font-display font-bold text-foreground mb-4 uppercase tracking-wider text-sm">
+              Contact
+            </h4>
             <div className="space-y-3 text-sm text-muted-foreground">
               <p>
                 <span className="block font-semibold text-foreground">Email</span>
@@ -94,7 +133,7 @@ export function Footer() {
       </div>
 
       {/* Copyright Section - Always Visible */}
-      <div className="lg:relative lg:z-auto z-[45] pt-4 lg:pt-0 border-t lg:border-t-0 border-border/40">
+      <div className="lg:relative lg:z-auto z-[45] pt-4 lg:pt-0 border-t lg:border-t-0 border-border/40 pb-20 lg:pb-0">
         <div className="container mx-auto px-4 lg:px-8 pb-4 lg:pb-12">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-2 lg:gap-4">
             <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
@@ -103,12 +142,11 @@ export function Footer() {
               </span>
             </div>
             <div className="flex flex-col lg:flex-row items-center gap-2 lg:gap-4 text-xs text-muted-foreground/80 text-center lg:text-left">
-              <p className="font-semibold">
-                © 2026 CLUTCHGROUND. All rights reserved.
-              </p>
+              <p className="font-semibold">© 2026 CLUTCHGROUND. All rights reserved.</p>
               <p className="hidden lg:block">|</p>
               <p>
-                Designed & Developed by <span className="font-bold text-primary">Pratikk Yadav</span>
+                Designed & Developed by{" "}
+                <span className="font-bold text-primary">Pratikk Yadav</span>
               </p>
             </div>
           </div>
