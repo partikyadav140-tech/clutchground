@@ -122,25 +122,37 @@ export function JoinBattleDialog({
       setLeader((l) => ({
         ...l,
         teamName: myTeam.name,
-        name: myTeam.leader.username || myTeam.leader.ign || "",
-        ign: myTeam.leader.ign || "",
-        uid: myTeam.leader.uid || "",
+        ...(mode === "Squad" ? {
+          name: myTeam.leader.username || myTeam.leader.ign || "",
+          ign: myTeam.leader.ign || "",
+          uid: myTeam.leader.uid || "",
+        } : {})
       }));
 
-      // Get valid members (with ign and uid)
-      let activeMembers = [];
+      let activeMembers: any[] = [];
 
-      if (myTeam.members && Array.isArray(myTeam.members)) {
-        activeMembers = myTeam.members
-          .filter((m: any) => {
-            // Include if has ign and uid
-            if (!m.ign || !m.uid) return false;
-            return true;
-          })
-          .sort((a: any, b: any) => {
-            const priority = (role: string) => (role === "caption" || role === "captain" ? 0 : 1);
-            return priority(a.role) - priority(b.role);
+      if (mode === "Duo") {
+        const allTeamPlayers: any[] = [];
+        if (myTeam.leader?.ign && myTeam.leader?.uid && myTeam.leader_id !== user?.id) {
+          allTeamPlayers.push({ ...myTeam.leader, role: "captain" });
+        }
+        if (myTeam.members && Array.isArray(myTeam.members)) {
+          myTeam.members.forEach((m: any) => {
+            if (m.ign && m.uid && m.user_id !== user?.id) {
+              allTeamPlayers.push(m);
+            }
           });
+        }
+        activeMembers = allTeamPlayers;
+      } else {
+        if (myTeam.members && Array.isArray(myTeam.members)) {
+          activeMembers = myTeam.members
+            .filter((m: any) => m.ign && m.uid)
+            .sort((a: any, b: any) => {
+              const priority = (role: string) => (role === "caption" || role === "captain" ? 0 : 1);
+              return priority(a.role) - priority(b.role);
+            });
+        }
       }
 
       console.log("Team name:", myTeam.name);

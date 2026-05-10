@@ -430,7 +430,7 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
         if (teamInfo) {
           teamId = teamInfo.id;
           leaderId = teamInfo.leader_id;
-          if (teamInfo.leader_id !== userId) {
+          if (teamInfo.leader_id !== userId && t.mode !== "Duo") {
             needsApproval = true;
           }
         }
