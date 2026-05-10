@@ -25,7 +25,7 @@ import {
 } from "../../../api";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { confirmDialog } from "@/components/ConfirmDialog";
@@ -39,7 +39,8 @@ export const Route = createFileRoute("/_app/admin/tournaments")({
 });
 
 function AdminTournamentsPage() {
-  const tournaments = Route.useLoaderData();
+  const initialTournaments = Route.useLoaderData() ?? [];
+  const [tournaments, setTournaments] = useState<any[]>(initialTournaments);
   const router = useRouter();
   const { user, loading } = useAuth();
 
@@ -51,6 +52,19 @@ function AdminTournamentsPage() {
   const [loadingResults, setLoadingResults] = useState(false);
   const [isEditingResults, setIsEditingResults] = useState(false);
   const [q, setQ] = useState("");
+
+  useEffect(() => {
+    setTournaments(initialTournaments);
+  }, [initialTournaments]);
+
+  const refreshTournaments = async () => {
+    try {
+      const fresh = await getTournaments();
+      setTournaments(fresh);
+    } catch (err: any) {
+      console.error("Failed to refresh tournaments:", err);
+    }
+  };
 
   const filteredTournaments = tournaments.filter(
     (t: any) =>
@@ -165,6 +179,7 @@ function AdminTournamentsPage() {
         await (addTournament as any)({ data: formData });
         toast.success("Tournament added!");
       }
+      await refreshTournaments();
       setShowForm(false);
       setEditingT(null);
       router.invalidate();
@@ -184,6 +199,7 @@ function AdminTournamentsPage() {
       try {
         await (deleteTournament as any)({ data: id });
         toast.success("Tournament deleted!");
+        await refreshTournaments();
         router.invalidate();
       } catch (err: any) {
         toast.error("Failed to delete.");
@@ -203,6 +219,7 @@ function AdminTournamentsPage() {
       try {
         await (deleteAllTournaments as any)({});
         toast.success("All tournaments deleted!");
+        await refreshTournaments();
         router.invalidate();
       } catch (err: any) {
         toast.error("Failed to delete all tournaments.");
@@ -214,6 +231,7 @@ function AdminTournamentsPage() {
     try {
       await (toggleHeroTournament as any)({ data: id });
       toast.success("Hero status updated!");
+      await refreshTournaments();
       router.invalidate();
     } catch (err: any) {
       toast.error("Failed to update hero status.");
@@ -231,6 +249,7 @@ function AdminTournamentsPage() {
       try {
         await (rescheduleTournament as any)({ data: id });
         toast.success("Tournament rescheduled!");
+        await refreshTournaments();
         router.invalidate();
       } catch (err: any) {
         toast.error("Failed to reschedule.");
