@@ -49,6 +49,7 @@ function AdminTournamentsPage() {
 
   const [resultsTId, setResultsTId] = useState<any>(null);
   const [resultsData, setResultsData] = useState<any[]>([]);
+  const [resultsError, setResultsError] = useState<string | null>(null);
   const [loadingResults, setLoadingResults] = useState(false);
   const [isEditingResults, setIsEditingResults] = useState(false);
   const [q, setQ] = useState("");
@@ -99,13 +100,16 @@ function AdminTournamentsPage() {
 
   const openResults = async (t: any) => {
     setResultsTId(t);
+    setResultsData([]);
+    setResultsError(null);
     setLoadingResults(true);
     try {
       const data = await (getTournamentResults as any)({ data: t.id });
       setResultsData(data || []);
       setIsEditingResults(t.status !== "completed"); // Default to view if completed
     } catch (err: any) {
-      toast.error(err.message);
+      setResultsError(err.message || "Failed to load tournament results.");
+      toast.error(err.message || "Failed to load tournament results.");
     }
     setLoadingResults(false);
   };
@@ -220,6 +224,7 @@ function AdminTournamentsPage() {
       toast.success(editingT ? "Tournament updated!" : "Tournament added!");
       setShowForm(false);
       setEditingT(null);
+      await refreshTournaments();
       router.invalidate();
     } catch (err: any) {
       toast.error("Failed: " + err.message);
@@ -242,6 +247,7 @@ function AdminTournamentsPage() {
           (fresh) => !fresh.some((t: any) => t.id === id),
         );
         toast.success("Tournament deleted!");
+        await refreshTournaments();
         router.invalidate();
       } catch (err: any) {
         toast.error("Failed to delete.");
@@ -266,6 +272,7 @@ function AdminTournamentsPage() {
           (fresh) => fresh.length === 0,
         );
         toast.success("All tournaments deleted!");
+        await refreshTournaments();
         router.invalidate();
       } catch (err: any) {
         toast.error("Failed to delete all tournaments.");
@@ -282,6 +289,7 @@ function AdminTournamentsPage() {
         (fresh) => fresh.some((t: any) => t.id === id),
       );
       toast.success("Hero status updated!");
+      await refreshTournaments();
       router.invalidate();
     } catch (err: any) {
       toast.error("Failed to update hero status.");
@@ -304,6 +312,7 @@ function AdminTournamentsPage() {
           (fresh) => fresh.some((t: any) => t.id === id && t.status === "upcoming"),
         );
         toast.success("Tournament rescheduled!");
+        await refreshTournaments();
         router.invalidate();
       } catch (err: any) {
         toast.error("Failed to reschedule.");
@@ -732,9 +741,13 @@ function AdminTournamentsPage() {
                 <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
                 <p className="text-muted-foreground font-semibold">Loading team data...</p>
               </div>
+            ) : resultsError ? (
+              <div className="py-12 text-center text-destructive font-semibold bg-white rounded-xl border border-destructive/20 shadow-sm">
+                {resultsError}
+              </div>
             ) : resultsData.length === 0 ? (
               <div className="py-12 text-center text-muted-foreground font-semibold bg-white rounded-xl border border-border shadow-sm">
-                No teams registered for this tournament.
+                No confirmed registrations found for this tournament.
               </div>
             ) : isEditingResults ? (
               <div className="space-y-3">
@@ -772,7 +785,7 @@ function AdminTournamentsPage() {
                         Squad
                       </div>
                       <div className="font-bold text-foreground truncate">
-                        {r.team_name || r.username}
+                        {r.display_name || r.team_name || r.username}
                       </div>
                     </div>
 
@@ -883,7 +896,7 @@ function AdminTournamentsPage() {
                               {i + 1}
                             </td>
                             <td className="px-4 py-3.5 font-bold text-foreground">
-                              {r.team_name || r.username}
+                              {r.display_name || r.team_name || r.username}
                             </td>
                             <td className="px-4 py-3.5 text-center font-mono font-semibold">
                               {r.kills || 0}
