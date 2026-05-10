@@ -140,8 +140,8 @@ function TournamentDetailPage() {
             backgroundPosition: "center",
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-          <div className="absolute inset-0 grid-bg opacity-[0.06]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 grid-bg opacity-[0.06] pointer-events-none" />
 
           <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
             <a

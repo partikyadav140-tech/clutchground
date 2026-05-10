@@ -485,8 +485,8 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
           )
           .run(userId, tournamentId, teamName, JSON.stringify(players), contactEmail, contactPhone);
 
-        // Increment filled slots by the number of players registering
-        const filledIncrement = Array.isArray(players) && players.length > 0 ? players.length : 1;
+        // Increment filled slots by 1 slot per registration
+        const filledIncrement = 1;
         await tx
           .prepare("UPDATE tournaments SET filled = filled + ? WHERE id = ?")
           .run(filledIncrement, tournamentId);
@@ -1434,14 +1434,7 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" }).handl
             req.contact_phone,
           );
 
-        const requestPlayers = (() => {
-          try {
-            const list = JSON.parse(req.players_json || "[]");
-            return Array.isArray(list) && list.length > 0 ? list.length : 1;
-          } catch {
-            return 1;
-          }
-        })();
+        const requestPlayers = 1; // 1 registration = 1 slot filled
         await tx
           .prepare("UPDATE tournaments SET filled = filled + ? WHERE id = ?")
           .run(requestPlayers, req.tournament_id);
