@@ -178,7 +178,7 @@ function TournamentDetailPage() {
                 </div>
                 {t.mode === "Solo" ? (
                   <div className="font-display text-lg sm:text-xl font-black text-fire-gradient flex items-center gap-1">
-                    {t.per_kill_coin}/Kill | {t.first_place_coin} MVP{" "}
+                    {t.per_kill_coin}/Kill | {t.first_place_coin} Booyah Points{" "}
                     <GodCoin className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                 ) : (
@@ -357,7 +357,7 @@ function TournamentDetailPage() {
                       label: "Prize Pool",
                       value:
                         t.mode === "Solo" ? (
-                          `${t.per_kill_coin}/Kill | ${t.first_place_coin} MVP`
+                          `${t.per_kill_coin}/Kill | ${t.first_place_coin} Booyah Points`
                         ) : (
                           <span className="flex items-center gap-1">
                             <GodCoin className="w-4 h-4" /> {t.prize.toLocaleString()}
@@ -504,7 +504,7 @@ function TournamentDetailPage() {
                       <p>
                         In <strong>Solo</strong> mode, players are rewarded primarily for their
                         aggressive gameplay. Prizes are given based directly on your total Kills and
-                        an extra bonus for being the Match MVP. Match placement still matters for
+                        an extra bonus for earning Booyah Points. Match placement still matters for
                         your overall ranking, but coins are earned directly through combat
                         performance!
                       </p>
@@ -521,7 +521,7 @@ function TournamentDetailPage() {
                   {t.mode === "Solo" ? (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between p-4 rounded-xl border border-primary/40 bg-primary/5">
-                        <span className="font-display font-bold tracking-wide text-sm">🥇 MVP</span>
+                        <span className="font-display font-bold tracking-wide text-sm">🥇 Booyah Points</span>
                         <span className="font-display font-black text-fire-gradient text-lg flex items-center gap-1">
                           <GodCoin className="w-5 h-5" /> {t.first_place_coin}
                         </span>
@@ -651,7 +651,7 @@ function TournamentDetailPage() {
                     </div>
                     {t.mode === "Solo" ? (
                       <div className="font-display text-lg sm:text-xl font-black text-fire-gradient flex items-center gap-1">
-                        {t.per_kill_coin}/Kill | {t.first_place_coin} MVP{" "}
+                        {t.per_kill_coin}/Kill | {t.first_place_coin} Booyah Points{" "}
                         <GodCoin className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
                     ) : (

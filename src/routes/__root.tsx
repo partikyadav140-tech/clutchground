@@ -60,8 +60,6 @@ export const Route = createRootRoute({
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap",
       },
-      // Preload critical images
-      { rel: "preload", href: "/hero-video.mp4", as: "video", type: "video/mp4" },
       // DNS prefetch for external resources
       { rel: "dns-prefetch", href: "//api.clutchground.com" },
       { rel: "dns-prefetch", href: "//fonts.googleapis.com" },

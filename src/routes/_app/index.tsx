@@ -438,7 +438,7 @@ function FeaturedTournamentCard({ t, i }: { t: any; i: number }) {
             <Trophy className="w-3 h-3 text-primary" />{" "}
             {t.mode === "Solo" ? (
               <span className="flex items-center gap-1">
-                {t.per_kill_coin}/Kill | {t.first_place_coin} MVP <GodCoin className="w-3 h-3" />
+                {t.per_kill_coin}/Kill | {t.first_place_coin} Booyah Points <GodCoin className="w-3 h-3" />
               </span>
             ) : (
               <span className="flex items-center gap-1">
@@ -550,7 +550,7 @@ function DesktopTournamentCard({ t, i }: { t: any; i: number }) {
               <Trophy className="w-4 h-4 text-primary" />{" "}
               {t.mode === "Solo" ? (
                 <span className="flex items-center gap-1">
-                  {t.per_kill_coin}/Kill | {t.first_place_coin} MVP <GodCoin className="w-3.5 h-3.5" />
+                  {t.per_kill_coin}/Kill | {t.first_place_coin} Booyah Points <GodCoin className="w-3.5 h-3.5" />
                 </span>
               ) : (
                 <span className="flex items-center gap-1">

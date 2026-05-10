@@ -2,9 +2,8 @@
 import { Pool } from "pg";
 
 let connString = process.env.DATABASE_URL;
-if (!connString || !connString.startsWith("postgres")) {
-  connString =
-    "postgresql://neondb_owner:npg_Z2IiLU7CrfqO@ep-morning-shape-a4x9wieu.us-east-1.aws.neon.tech/neondb?sslmode=require";
+if (!connString) {
+  throw new Error("DATABASE_URL environment variable is required");
 }
 
 const pool = new Pool({
@@ -99,7 +98,8 @@ async function initDb() {
         ign TEXT,
         uid TEXT,
         email TEXT,
-        phone TEXT
+        phone TEXT,
+        banned BOOLEAN DEFAULT false
       );
 
       CREATE TABLE IF NOT EXISTS tournaments (
@@ -122,35 +122,6 @@ async function initDb() {
         per_kill_coin INTEGER DEFAULT 0,
         first_place_coin INTEGER DEFAULT 0
       );
-
-      DO $$ 
-      BEGIN 
-        BEGIN
-          ALTER TABLE tournaments ADD COLUMN is_hero BOOLEAN DEFAULT false;
-        EXCEPTION
-          WHEN duplicate_column THEN null;
-        END;
-        BEGIN
-          ALTER TABLE tournaments ADD COLUMN hosted_by TEXT;
-        EXCEPTION
-          WHEN duplicate_column THEN null;
-        END;
-        BEGIN
-          ALTER TABLE tournaments ADD COLUMN per_kill_coin INTEGER DEFAULT 0;
-        EXCEPTION
-          WHEN duplicate_column THEN null;
-        END;
-        BEGIN
-          ALTER TABLE tournaments ADD COLUMN first_place_coin INTEGER DEFAULT 0;
-        EXCEPTION
-          WHEN duplicate_column THEN null;
-        END;
-        BEGIN
-          ALTER TABLE users ADD COLUMN banned BOOLEAN DEFAULT false;
-        EXCEPTION
-          WHEN duplicate_column THEN null;
-        END;
-      END $$;
 
       CREATE TABLE IF NOT EXISTS sessions (
         id TEXT PRIMARY KEY,
@@ -194,22 +165,6 @@ async function initDb() {
         role TEXT DEFAULT 'player',
         FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
       );
-
-      DO $$ 
-      BEGIN 
-        BEGIN
-          ALTER TABLE team_members ADD COLUMN id SERIAL PRIMARY KEY;
-        EXCEPTION
-          WHEN duplicate_column THEN null;
-          WHEN others THEN null;
-        END;
-        BEGIN
-          ALTER TABLE registrations ADD COLUMN awarded_prize INTEGER DEFAULT 0;
-        EXCEPTION
-          WHEN duplicate_column THEN null;
-          WHEN others THEN null;
-        END;
-      END $$;
 
       CREATE TABLE IF NOT EXISTS team_requests (
         id SERIAL PRIMARY KEY,
@@ -286,28 +241,21 @@ async function initDb() {
         paid_at TIMESTAMP,
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
       );
-
-      DO $$ 
-      BEGIN 
-        BEGIN
-          ALTER TABLE notifications ADD COLUMN redirect_url TEXT;
-        EXCEPTION
-          WHEN duplicate_column THEN null;
-        END;
-      END $$;
     `);
 
     // Seed Admin
     try {
       // First delete any existing admin account
       await pool.query(`DELETE FROM users WHERE username = 'admin'`);
-      
+
       // Then create new admin account
       await pool.query(`
-        INSERT INTO users (username, password, role, phone) 
+        INSERT INTO users (username, password, role, phone)
         VALUES ('admin', 'admin123', 'admin', '8307224756')
       `);
-    } catch (e) {}
+    } catch (e) {
+      console.error("Admin seeding error:", e);
+    }
   } catch (e) {
     console.error("DB Init error:", e);
   }

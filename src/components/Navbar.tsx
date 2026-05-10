@@ -418,18 +418,27 @@ export function Navbar() {
 
       {/* ─── Mobile Bottom Navigation ─── */}
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 bg-card/95 backdrop-blur-2xl border-t border-border/60">
-        <div className="flex items-center justify-around pb-safe pt-1 px-1">
+        <div className="relative flex items-center justify-around pb-safe pt-1 px-1">
+          <span
+            className="mobile-nav-indicator"
+            style={{
+              left: `calc(${10 + Math.max(0, bottomNavItems.findIndex((item) => {
+                const current = router.state.location.pathname;
+                return current === item.to || (item.to !== "/" && current.startsWith(item.to));
+              })) * 20}% - 14px)`,
+            }}
+          />
           {bottomNavItems.map((item) => {
             const Icon = item.icon;
             const isNotif = false; // notifications badge is on its own link in top bar
-            const isActive = router.state.location.pathname === item.to;
+            const currentPath = router.state.location.pathname;
+            const isActive = currentPath === item.to || (item.to !== "/" && currentPath.startsWith(item.to));
             return (
               <Link
                 key={item.to}
                 to={item.to}
                 className={`relative flex flex-col items-center justify-center gap-1 flex-1 py-2 text-muted-foreground transition-all duration-75 active:scale-90 group ${isActive ? "text-primary" : ""}`}
               >
-                {isActive && <span className="nav-active-bar" />}
                 <div
                   className={`relative w-12 h-9 flex items-center justify-center rounded-2xl transition-all duration-75 ${isActive ? "bg-primary/15" : "group-active:bg-secondary/60"}`}
                 >

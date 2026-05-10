@@ -282,6 +282,17 @@
     border-radius: 0 0 3px 3px;
   }
 
+  .mobile-nav-indicator {
+    position: absolute;
+    bottom: 0.75rem;
+    width: 28px;
+    height: 3px;
+    border-radius: 9999px;
+    background: var(--gradient-fire);
+    transition: left 220ms ease, opacity 220ms ease;
+    pointer-events: none;
+  }
+
   /* ── Glass card ── */
   .glass-card {
     background: oklch(1 0 0 / 0.92);

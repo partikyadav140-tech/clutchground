@@ -214,7 +214,7 @@ function MatchesPage() {
                       <Trophy className="w-3.5 h-3.5" />{" "}
                       {m.mode === "Solo" ? (
                         <>
-                          {m.per_kill_coin}/Kill | {m.first_place_coin} MVP{" "}
+                          {m.per_kill_coin}/Kill | {m.first_place_coin} Booyah Points{" "}
                           <GodCoin className="w-3.5 h-3.5" />
                         </>
                       ) : (

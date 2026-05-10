@@ -485,7 +485,7 @@ function AdminTournamentsPage() {
                       }
                     />
                     <Input
-                      label="MVP Coins"
+                      label="Booyah Points"
                       type="number"
                       value={formData.first_place_coin}
                       onChange={(e) =>
@@ -630,7 +630,7 @@ function AdminTournamentsPage() {
                                 {t.mode === "Solo" ? (
                                   <>
                                     <GodCoin className="w-4 h-4" /> {t.per_kill_coin}/Kill |{" "}
-                                    <GodCoin className="w-4 h-4" /> {t.first_place_coin} MVP
+                                    <GodCoin className="w-4 h-4" /> {t.first_place_coin} Booyah Points
                                   </>
                                 ) : (
                                   <>

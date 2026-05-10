@@ -484,10 +484,11 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
           )
           .run(userId, tournamentId, teamName, JSON.stringify(players), contactEmail, contactPhone);
 
-        // Increment filled slots
+        // Increment filled slots by the number of players registering
+        const filledIncrement = Array.isArray(players) && players.length > 0 ? players.length : 1;
         await tx
-          .prepare("UPDATE tournaments SET filled = filled + 1 WHERE id = ?")
-          .run(tournamentId);
+          .prepare("UPDATE tournaments SET filled = filled + ? WHERE id = ?")
+          .run(filledIncrement, tournamentId);
 
         await tx
           .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
@@ -961,14 +962,13 @@ export const getTournamentResults = createServerFn({ method: "POST" }).handler(a
       JOIN tournaments t ON r.tournament_id = t.id
       WHERE r.tournament_id = ? 
       ORDER BY 
-        CASE WHEN t.mode = 'Duo' THEN (CASE WHEN r.position > 0 THEN r.position ELSE 99999 END) ELSE 0 END ASC,
-        r.points DESC, 
+        CASE WHEN t.mode IN ('Duo', 'Solo') THEN (CASE WHEN r.position > 0 THEN r.position ELSE 99999 END) ELSE 0 END ASC,
+        CASE WHEN t.mode = 'Squad' THEN r.points ELSE NULL END DESC,
         r.kills DESC
     `,
     )
     .all(id)) as any[];
   
-  // Zero out points for Duo and Solo tournaments (only Squad shows points)
   return results.map((r: any) => {
     if (r.tourney_mode === 'Duo' || r.tourney_mode === 'Solo') {
       r.points = 0;
@@ -1019,21 +1019,20 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
           else if (pos === 9) posPoints = 2;
           else if (pos === 10) posPoints = 1;
         }
-        // Solo & Duo don't get posPoints
 
         const manualPoints = typeof r.manualPoints !== "undefined" && r.manualPoints !== null ? Number(r.manualPoints) : undefined;
         const useManualPoints = manualPoints !== undefined && !Number.isNaN(manualPoints);
-        // Duo mode: don't calculate points, use position only for ranking and prizes
-        if (tourney.mode === "Duo") {
-          r.calculatedPoints = 0;
-        } else {
+
+        if (tourney.mode === "Squad") {
           r.calculatedPoints = useManualPoints ? manualPoints : Number(r.kills || 0) + posPoints;
+        } else {
+          r.calculatedPoints = 0;
         }
         r.matchPosition = pos;
         r.killsNum = Number(r.kills || 0);
       }
 
-      if (tourney.mode === "Duo") {
+      if (tourney.mode === "Duo" || tourney.mode === "Solo") {
         results.sort((a: any, b: any) => {
           const posA = a.matchPosition > 0 ? a.matchPosition : 99999;
           const posB = b.matchPosition > 0 ? b.matchPosition : 99999;
@@ -1060,7 +1059,7 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
         const oldPoints = oldReg ? oldReg.points || 0 : 0;
 
         let awardedPrize = 0;
-        let rankForPrize = tourney.mode === "Duo" ? r.matchPosition : overallRank;
+        let rankForPrize = tourney.mode === "Duo" || tourney.mode === "Solo" ? r.matchPosition : overallRank;
 
         if (tourney.mode === "Solo") {
           awardedPrize =
@@ -1096,20 +1095,24 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
               prizeDiff > 0 ? `Prize Won: ${tourney.title}` : `Prize Adjusted: ${tourney.title}`,
             );
           if (oldPrize === 0 && awardedPrize > 0) {
-            const pointsMsg = tourney.mode === "Duo" 
-              ? `Match Position: ${r.matchPosition}`
-              : `Points: ${r.calculatedPoints} (${r.killsNum} kills, position ${r.matchPosition})`;
+            const positionMsg = tourney.mode === "Solo"
+              ? `Position: ${r.matchPosition}`
+              : tourney.mode === "Duo"
+                ? `Match Position: ${r.matchPosition}`
+                : `Points: ${r.calculatedPoints} (${r.killsNum} kills, position ${r.matchPosition})`;
             await tx
               .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
               .run(
                 r.user_id,
-                `💰 Prize earned for ${tourney.title}: ${awardedPrize} CG Coins awarded for finishing #${rankForPrize}. ${pointsMsg}.`,
+                `💰 Prize earned for ${tourney.title}: ${awardedPrize} CG Coins awarded for finishing #${rankForPrize}. ${positionMsg}.`,
                 "/wallet",
               );
           } else if (prizeDiff > 0) {
             const msg = tourney.mode === "Duo"
               ? `your new prize is ${awardedPrize}.`
-              : `your points remain ${r.calculatedPoints}.`;
+              : tourney.mode === "Solo"
+                ? `your rank is ${r.matchPosition}.`
+                : `your points remain ${r.calculatedPoints}.`;
             await tx
               .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
               .run(
@@ -1120,7 +1123,9 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
           } else if (prizeDiff < 0) {
             const msg = tourney.mode === "Duo"
               ? `your new prize is ${awardedPrize}.`
-              : `your points remain ${r.calculatedPoints}.`;
+              : tourney.mode === "Solo"
+                ? `your rank is ${r.matchPosition}.`
+                : `your points remain ${r.calculatedPoints}.`;
             await tx
               .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
               .run(
@@ -1428,9 +1433,17 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" }).handl
             req.contact_phone,
           );
 
+        const requestPlayers = (() => {
+          try {
+            const list = JSON.parse(req.players_json || "[]");
+            return Array.isArray(list) && list.length > 0 ? list.length : 1;
+          } catch {
+            return 1;
+          }
+        })();
         await tx
-          .prepare("UPDATE tournaments SET filled = filled + 1 WHERE id = ?")
-          .run(req.tournament_id);
+          .prepare("UPDATE tournaments SET filled = filled + ? WHERE id = ?")
+          .run(requestPlayers, req.tournament_id);
 
         await insertNotif.run(
           req.requested_by,
