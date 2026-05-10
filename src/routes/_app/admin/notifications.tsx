@@ -71,7 +71,7 @@ function AdminNotificationsPage() {
 
   return (
     <div className="bg-background min-h-screen pb-24">
-      <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
+      <div className="bg-card rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="relative z-10 flex items-center justify-between">
           <div>
@@ -81,7 +81,7 @@ function AdminNotificationsPage() {
             <h1 className="font-display text-2xl font-black text-foreground">Broadcast Center</h1>
           </div>
           <a href="/admin">
-            <Button variant="outline" size="sm" className="rounded-xl font-bold h-9 bg-white shadow-sm">
+            <Button variant="outline" size="sm" className="rounded-xl font-bold h-9 bg-card shadow-sm">
               Back
             </Button>
           </a>
@@ -89,7 +89,7 @@ function AdminNotificationsPage() {
       </div>
 
       <div className="px-4 mt-6 max-w-2xl mx-auto">
-        <form onSubmit={handleSend} className="bg-white rounded-[1.5rem] border border-border shadow-sm p-6 space-y-6">
+        <form onSubmit={handleSend} className="bg-card rounded-[1.5rem] border border-border shadow-sm p-6 space-y-6">
           
           <div className="space-y-3">
             <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Target Audience</label>
@@ -176,7 +176,7 @@ function AdminNotificationsPage() {
                 <><Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> BROADCAST NOW</>
               )}
             </span>
-            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+            <div className="absolute inset-0 bg-card/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
           </Button>
 
         </form>

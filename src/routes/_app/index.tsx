@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { getTournaments, getGlobalLeaderboard } from "../../api";
+import useEmblaCarousel from "embla-carousel-react";
+import Autoplay from "embla-carousel-autoplay";
 import {
   Trophy,
   Users,
@@ -58,6 +60,10 @@ const POSTERS = [
 function HomePage() {
   const { ts: allTournaments } = Route.useLoaderData();
   const { user } = useAuth();
+  
+  const [emblaRef] = useEmblaCarousel({ loop: true, align: "center" }, [
+    Autoplay({ delay: 2000, stopOnInteraction: true }),
+  ]);
 
   const isCompleted = (t: any) => String(t.status || "").trim().toLowerCase() === "completed";
   const isLocked = (t: any) => String(t.status || "").trim().toLowerCase() === "locked";
@@ -123,10 +129,14 @@ function HomePage() {
               See All <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
-          <div className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar px-4 pb-4 gap-4 -mx-4 w-[calc(100%+2rem)] ml-0">
-            {displayTournaments.map((t: any, i: number) => (
-              <AppTournamentCard key={`hero-${t.id}-${i}`} t={t} i={i} />
-            ))}
+          <div className="overflow-hidden px-4 -mx-4 w-[calc(100%+2rem)]" ref={emblaRef}>
+            <div className="flex gap-4 pb-4">
+              {displayTournaments.map((t: any, i: number) => (
+                <div key={`hero-${t.id}-${i}`} className="flex-[0_0_85%] min-w-0 max-w-[320px]">
+                  <AppTournamentCard t={t} i={i} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -167,98 +177,84 @@ function QuickAction({ icon: Icon, label, to, color }: { icon: any; label: strin
   );
 }
 
-// Mobile-first horizontal scroll card
 function AppTournamentCard({ t, i }: { t: any; i: number }) {
   const poster = POSTERS[t.id % POSTERS.length];
   const fillPct = Math.min(100, (t.filled / t.slots) * 100);
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.4, delay: i * 0.05, ease: "easeOut" }}
-      className="shrink-0 w-[85vw] max-w-[320px] snap-center group relative p-[1px] rounded-[2rem] overflow-hidden mt-2 mb-2"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3, delay: i * 0.05 }}
+      className="group relative p-[1px] rounded-[1.5rem] overflow-hidden shadow-xl w-full"
     >
       {/* Animated Glowing Border */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-500 to-blue-500 opacity-40 group-hover:opacity-100 transition-opacity duration-700" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-500 to-blue-500 opacity-30 group-hover:opacity-100 transition-opacity duration-700" />
       
-      <div className="relative h-full bg-[#0a0a0f]/95 backdrop-blur-3xl rounded-[2rem] flex flex-col overflow-hidden shadow-2xl">
-        
+      <div className="relative h-full bg-[#0a0a0f]/95 backdrop-blur-3xl rounded-[1.5rem] flex flex-col overflow-hidden">
         {/* Banner Section */}
-        <div className="relative h-[160px] w-full overflow-hidden">
-          <img src={poster} alt={t.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out opacity-90" />
-          
-          {/* Gradient Overlay for smooth transition */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/30 to-transparent" />
+        <div className="relative h-[110px] w-full overflow-hidden">
+          <img src={poster} alt={t.title} className="w-full h-full object-cover opacity-90" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] to-transparent" />
           
           {/* Badges */}
-          <div className="absolute top-4 left-4 flex gap-2">
+          <div className="absolute top-3 left-3 flex gap-1.5">
             {t.status === "live" && (
-              <span className="px-3 py-1 rounded-full bg-red-500/20 backdrop-blur-md border border-red-500/50 text-red-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.5)]">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Live
+              <span className="px-2 py-0.5 rounded-sm bg-red-500/90 text-white text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live
               </span>
             )}
-            <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-white/90 text-[10px] font-black uppercase tracking-widest border border-white/10">
+            <span className="px-2 py-0.5 rounded-sm bg-black/60 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-widest border border-white/10">
               {t.mode}
             </span>
           </div>
 
-          {/* Floating Game Name */}
-          <div className="absolute bottom-3 left-5 flex items-center gap-1.5 text-primary text-[10px] font-black uppercase tracking-widest text-glow z-10">
-             <Gamepad2 className="w-3.5 h-3.5" /> {t.game || "Free Fire"}
+          <div className="absolute bottom-2 left-4 text-primary text-[9px] font-black uppercase tracking-widest text-glow flex items-center gap-1">
+             <Gamepad2 className="w-3 h-3" /> {t.game || "Free Fire"}
           </div>
         </div>
 
         {/* Content Section */}
-        <div className="p-5 flex flex-col flex-1 relative z-10 -mt-2">
-          <h4 className="font-display font-black text-xl text-white leading-tight line-clamp-1 drop-shadow-md mb-4">
+        <div className="p-4 flex flex-col flex-1 relative z-10 -mt-1">
+          <h4 className="font-display font-black text-lg text-white leading-tight line-clamp-1 mb-3">
             {t.title}
           </h4>
 
           {/* Highlighted Prize & Entry Box */}
-          <div className="grid grid-cols-2 gap-3 mb-5">
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-3 border border-white/10 flex flex-col items-center justify-center transition-colors group-hover:bg-white/10">
-              <span className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-1.5">Entry</span>
-              <span className="text-sm font-black text-white flex items-center gap-1.5">
-                {t.entry === 0 ? "FREE" : <><GodCoin className="w-4 h-4 text-primary"/> {t.entry}</>}
+          <div className="flex items-center gap-2 mb-4">
+            <div className="flex-1 bg-white/5 rounded-xl p-2.5 border border-white/5 flex justify-between items-center">
+              <span className="text-[8px] text-muted-foreground uppercase font-black tracking-widest">Entry</span>
+              <span className="text-xs font-black text-white flex items-center gap-1">
+                {t.entry === 0 ? "FREE" : <><GodCoin className="w-3.5 h-3.5 text-primary"/> {t.entry}</>}
               </span>
             </div>
-            <div className="bg-gradient-to-br from-primary/10 to-purple-500/10 backdrop-blur-sm rounded-2xl p-3 border border-primary/30 flex flex-col items-center justify-center relative overflow-hidden shadow-[0_0_20px_rgba(255,0,85,0.1)] group-hover:shadow-[0_0_25px_rgba(255,0,85,0.2)] transition-shadow">
-              <div className="absolute top-0 right-0 w-16 h-16 bg-primary/20 blur-xl rounded-full translate-x-1/2 -translate-y-1/2" />
-              <span className="text-[9px] text-primary uppercase font-black tracking-widest mb-1.5 relative z-10">Prize Pool</span>
-              <span className="text-sm font-black text-white flex items-center gap-1.5 relative z-10">
-                <GodCoin className="w-4 h-4 text-amber-400"/> {t.mode === 'Solo' ? t.per_kill_coin || 0 : t.prize}
+            <div className="flex-[1.5] bg-gradient-to-r from-primary/10 to-purple-500/10 rounded-xl p-2.5 border border-primary/20 flex justify-between items-center shadow-[inset_0_0_10px_rgba(255,0,85,0.05)]">
+              <span className="text-[8px] text-primary uppercase font-black tracking-widest">Prize Pool</span>
+              <span className="text-xs font-black text-white flex items-center gap-1">
+                <GodCoin className="w-3.5 h-3.5 text-amber-400"/> {t.mode === 'Solo' ? t.per_kill_coin || 0 : t.prize}
               </span>
             </div>
           </div>
 
-          <div className="mt-auto">
-             <div className="flex justify-between items-end mb-2.5">
-                <div className="flex flex-col gap-1">
-                   <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Starts In</span>
-                   <span className="text-xs font-bold text-white/90 flex items-center gap-1.5">
-                     <Clock className="w-3 h-3 text-primary" /> {t.startsAt || t.startsat}
+          <div className="mt-auto flex items-center justify-between gap-3">
+             <div className="flex-1">
+                <div className="flex justify-between items-end mb-1.5">
+                   <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Slots {t.filled}/{t.slots}</span>
+                   <span className="text-[9px] font-bold text-white/90 flex items-center gap-1">
+                     <Clock className="w-2.5 h-2.5 text-primary" /> {t.startsAt || t.startsat}
                    </span>
                 </div>
-                <div className="text-right">
-                   <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest block mb-1">Slots</span>
-                   <span className="text-xs font-black text-white/90">{t.filled} / <span className="text-muted-foreground">{t.slots}</span></span>
+                <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary-gradient rounded-full" 
+                    style={{ width: `${fillPct}%` }}
+                  />
                 </div>
              </div>
 
-            {/* Premium Progress Bar */}
-            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-5 border border-white/5 shadow-inner">
-              <div 
-                className="h-full bg-gradient-to-r from-primary to-purple-500 rounded-full relative shadow-[0_0_15px_rgba(255,0,85,0.6)]" 
-                style={{ width: `${fillPct}%` }}
-              >
-                {fillPct < 100 && <div className="absolute right-0 top-0 bottom-0 w-6 bg-white/40 blur-[3px]" />}
-              </div>
-            </div>
-
-            <Link to={`/tournaments/${t.id}` as any} className="block">
-              <Button className="w-full rounded-2xl font-black uppercase tracking-widest text-xs bg-white text-black hover:bg-gray-200 h-12 shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:scale-[1.02] transition-transform duration-300">
-                View Details
+            <Link to={`/tournaments/${t.id}` as any} className="shrink-0">
+              <Button size="sm" className="h-8 rounded-lg font-black uppercase tracking-widest text-[9px] bg-white text-black hover:bg-gray-200 shadow-[0_0_10px_rgba(255,255,255,0.1)] px-4">
+                Join
               </Button>
             </Link>
           </div>

@@ -91,7 +91,7 @@ function NotificationsPage() {
   return (
     <div className="bg-background min-h-screen pb-24">
       {/* ─── Top Header (Mobile First) ─── */}
-      <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
+      <div className="bg-card border-b border-white/5 shadow-2xl pt-6 pb-6 px-4 relative overflow-hidden z-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
         <div className="relative z-10 flex flex-col items-center text-center">
@@ -106,7 +106,7 @@ function NotificationsPage() {
       </div>
 
       <div className="px-4 mt-6 space-y-4">
-        <div className="bg-white rounded-[1.75rem] border border-border shadow-sm p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="bg-card rounded-[1.75rem] border border-white/10 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="text-sm font-semibold text-foreground">Enable browser alerts</div>
             <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
@@ -137,7 +137,7 @@ function NotificationsPage() {
         </div>
         <div className="space-y-3">
           {notifications.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-[1.5rem] border border-border shadow-sm">
+            <div className="text-center py-20 bg-card rounded-[1.5rem] border border-white/10 shadow-sm">
               <div className="w-16 h-16 rounded-full bg-secondary text-muted-foreground flex items-center justify-center mx-auto mb-4">
                 <Bell className="w-8 h-8" />
               </div>
@@ -156,7 +156,7 @@ function NotificationsPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: i * 0.05 }}
                   key={n.id}
-                  className={`p-5 rounded-[1.5rem] border ${n.is_read ? "bg-white border-border shadow-sm" : "bg-primary/5 border-primary/30 shadow-md"} flex flex-col sm:flex-row gap-4 items-start sm:items-center transition-all ${n.redirect_url ? "cursor-pointer hover:shadow-lg" : ""}`}
+                  className={`p-5 rounded-[1.5rem] border ${n.is_read ? "bg-card border-white/10 shadow-sm" : "bg-primary/5 border-primary/30 shadow-md"} flex flex-col sm:flex-row gap-4 items-start sm:items-center transition-all ${n.redirect_url ? "cursor-pointer hover:shadow-lg" : ""}`}
                   onClick={() => {
                     if (n.redirect_url) {
                       router.navigate({ to: n.redirect_url });

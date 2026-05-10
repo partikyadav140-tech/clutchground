@@ -38,7 +38,7 @@ function AdminTicketsPage() {
 
   return (
     <div className="bg-background min-h-screen pb-24">
-      <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
+      <div className="bg-card rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="relative z-10 flex items-center justify-between max-w-4xl mx-auto">
           <div>
@@ -48,7 +48,7 @@ function AdminTicketsPage() {
             <h1 className="font-display text-2xl font-black text-foreground">Support Tickets</h1>
           </div>
           <Link to="/admin">
-            <Button variant="outline" size="sm" className="rounded-xl font-bold h-9 bg-white shadow-sm">
+            <Button variant="outline" size="sm" className="rounded-xl font-bold h-9 bg-card shadow-sm">
               Back
             </Button>
           </Link>
@@ -58,7 +58,7 @@ function AdminTicketsPage() {
       <div className="px-4 mt-6 max-w-4xl mx-auto">
         <div className="space-y-4">
           {tickets.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-border shadow-sm p-10 text-center">
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-10 text-center">
               <div className="w-16 h-16 rounded-full bg-secondary text-muted-foreground flex items-center justify-center mb-4 mx-auto">
                 <LifeBuoy className="w-6 h-6" />
               </div>
@@ -67,7 +67,7 @@ function AdminTicketsPage() {
           ) : (
             tickets.map((t) => (
               <Link key={t.id} to={`/admin/tickets/${t.id}`} className="block">
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[1.5rem] border border-border hover:border-primary/40 hover:shadow-md transition-all p-5 flex items-center justify-between">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-card rounded-[1.5rem] border border-border hover:border-primary/40 hover:shadow-md transition-all p-5 flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-sm font-mono text-muted-foreground font-bold">#{t.id}</span>

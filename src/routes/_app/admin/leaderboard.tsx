@@ -76,7 +76,7 @@ function AdminLeaderboardPage() {
 
   return (
     <div className="bg-background min-h-screen pb-24">
-      <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
+      <div className="bg-card rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
         <div className="relative z-10 flex flex-col items-center text-center">
@@ -104,7 +104,7 @@ function AdminLeaderboardPage() {
 
       <div className="px-4 mt-6 space-y-4">
         {leaderboard.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-[1.5rem] border border-border shadow-sm">
+          <div className="text-center py-12 bg-card rounded-[1.5rem] border border-border shadow-sm">
             <Trophy className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
             <p className="text-foreground font-semibold">No leaderboard records found for this week.</p>
           </div>
@@ -116,7 +116,7 @@ function AdminLeaderboardPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.25 }}
-                className="bg-white rounded-[1.5rem] border border-border shadow-sm overflow-hidden"
+                className="bg-card rounded-[1.5rem] border border-border shadow-sm overflow-hidden"
               >
                 <div className="p-5 sm:p-6 grid gap-3 sm:grid-cols-[auto_1fr_auto] items-center">
                   <div className="flex items-center gap-3">

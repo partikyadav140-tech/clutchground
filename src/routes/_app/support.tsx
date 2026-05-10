@@ -62,7 +62,7 @@ function SupportPage() {
 
   return (
     <div className="bg-background min-h-screen pb-24">
-      <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
+      <div className="bg-card border-b border-white/5 shadow-2xl pt-6 pb-6 px-4 relative overflow-hidden z-10 rounded-b-[2rem]">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="relative z-10 flex items-center justify-between">
           <div>
@@ -84,7 +84,7 @@ function SupportPage() {
           <motion.form 
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             onSubmit={handleCreate} 
-            className="bg-white rounded-[1.5rem] border border-border shadow-sm p-6 space-y-4"
+            className="bg-card rounded-[1.5rem] border border-white/10 shadow-sm p-6 space-y-4"
           >
             <h2 className="font-display font-black text-xl text-foreground mb-2">Create New Ticket</h2>
             <div>
@@ -117,7 +117,7 @@ function SupportPage() {
         ) : (
           <div className="space-y-4">
             {tickets.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-border shadow-sm p-10 text-center">
+              <div className="bg-card rounded-[1.5rem] border border-white/10 shadow-sm p-10 text-center">
                 <div className="w-16 h-16 rounded-full bg-secondary text-muted-foreground flex items-center justify-center mb-4 mx-auto">
                   <LifeBuoy className="w-6 h-6" />
                 </div>
@@ -129,8 +129,8 @@ function SupportPage() {
               </div>
             ) : (
               tickets.map((t) => (
-                <Link key={t.id} to={`/support/${t.id}`} className="block">
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[1.5rem] border border-border hover:border-primary/40 hover:shadow-md transition-all p-5">
+                <Link key={t.id} to={`/support/${t.id}` as any} className="block">
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-card rounded-[1.5rem] border border-white/10 hover:border-primary/40 hover:shadow-md transition-all p-5">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-mono text-muted-foreground font-bold">#{t.id}</span>

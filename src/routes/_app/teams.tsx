@@ -280,7 +280,7 @@ function TeamsPage() {
   return (
     <div className="bg-background min-h-screen pb-24">
       {/* ─── Top Header (Mobile First) ─── */}
-      <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
+      <div className="bg-card border-b border-white/5 shadow-2xl pt-6 pb-6 px-4 relative overflow-hidden z-10 rounded-b-[2rem]">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
         <div className="relative z-10 flex flex-col items-center text-center">
@@ -300,7 +300,7 @@ function TeamsPage() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-[1.5rem] border border-border shadow-sm overflow-hidden"
+            className="bg-card rounded-[1.5rem] border border-white/10 shadow-sm overflow-hidden"
           >
             <div className="p-5 border-b border-border/50 flex items-center justify-between bg-secondary/10">
               <div className="flex items-center gap-2.5">
@@ -353,7 +353,7 @@ function TeamsPage() {
                           P{i + 2}
                         </div>
                         <input
-                          className="flex-1 bg-white border border-border focus:border-primary outline-none px-3 py-2 text-xs font-bold rounded-lg shadow-sm"
+                          className="flex-1 bg-card border border-white/10 focus:border-primary outline-none px-3 py-2 text-xs font-bold rounded-lg shadow-sm"
                           placeholder="IGN"
                           value={m.ign}
                           onChange={(e) =>
@@ -366,7 +366,7 @@ function TeamsPage() {
                           }
                         />
                         <input
-                          className="w-24 bg-white border border-border focus:border-primary outline-none px-3 py-2 text-xs font-mono rounded-lg shadow-sm"
+                          className="w-24 bg-card border border-white/10 focus:border-primary outline-none px-3 py-2 text-xs font-mono rounded-lg shadow-sm"
                           placeholder="UID"
                           value={m.uid}
                           onChange={(e) =>
@@ -430,7 +430,7 @@ function TeamsPage() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-[1.5rem] border border-border shadow-sm overflow-hidden"
+              className="bg-card rounded-[1.5rem] border border-white/10 shadow-sm overflow-hidden"
             >
               <div className="p-5 border-b border-border/50 flex items-center justify-between bg-secondary/10">
                 <div className="flex items-center gap-2.5">
@@ -508,7 +508,7 @@ function TeamsPage() {
                       </div>
 
                       {teamRequests.length === 0 ? (
-                        <div className="rounded-2xl bg-white border border-border p-6 text-sm text-muted-foreground text-center">
+                        <div className="rounded-2xl bg-card border border-white/10 p-6 text-sm text-muted-foreground text-center">
                           No pending join requests at the moment.
                         </div>
                       ) : (
@@ -516,7 +516,7 @@ function TeamsPage() {
                           {teamRequests.map((req) => (
                             <div
                               key={req.id}
-                              className="rounded-3xl border border-border bg-white p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                              className="rounded-3xl border border-white/10 bg-card p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
                             >
                               <div className="min-w-0">
                                 <div className="font-bold text-sm text-foreground">
@@ -587,7 +587,7 @@ function TeamsPage() {
                       {myTeam.members.map((m: any, i: number) => (
                         <div
                           key={i}
-                          className="flex items-center justify-between p-3.5 rounded-xl bg-white border border-border shadow-sm"
+                          className="flex items-center justify-between p-3.5 rounded-xl bg-card border border-white/10 shadow-sm"
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground font-black text-xs">
@@ -624,7 +624,7 @@ function TeamsPage() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-[1.5rem] border border-border shadow-sm overflow-hidden"
+            className="bg-card rounded-[1.5rem] border border-white/10 shadow-sm overflow-hidden"
           >
             <div className="p-5 border-b border-border/50 flex items-center gap-3 bg-secondary/10">
               <Shield className="w-5 h-5 text-cta" />
@@ -692,13 +692,13 @@ function TeamsPage() {
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Search squads..."
-                  className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-white outline-none pl-10 pr-4 h-9 text-sm rounded-lg transition-all"
+                  className="w-full bg-secondary/50 border border-white/10 focus:border-primary focus:bg-card outline-none pl-10 pr-4 h-9 text-sm rounded-lg transition-all"
                 />
               </div>
             </div>
 
             {filteredTeams.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-border shadow-sm p-10 text-center">
+              <div className="bg-card rounded-2xl border border-white/10 shadow-sm p-10 text-center">
                 <div className="w-16 h-16 rounded-full bg-secondary text-muted-foreground flex items-center justify-center mb-4 mx-auto">
                   <Users className="w-6 h-6" />
                 </div>
@@ -717,7 +717,7 @@ function TeamsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: i * 0.05 }}
                     key={t.id}
-                    className="bg-white rounded-[1.5rem] border border-border hover:border-primary/40 hover:shadow-lg transition-all p-5 flex flex-col relative overflow-hidden group"
+                    className="bg-card rounded-[1.5rem] border border-white/10 hover:border-primary/40 hover:shadow-lg transition-all p-5 flex flex-col relative overflow-hidden group"
                   >
                     <div className="absolute top-0 right-0 p-4 font-display font-black text-xl text-secondary group-hover:text-cta/10 transition-colors z-0">
                       #{t.id}
@@ -767,7 +767,7 @@ function TeamsPage() {
 
                     <Button
                       variant="outline"
-                      className="w-full mt-auto rounded-xl font-bold bg-white shadow-sm border-border hover:border-primary/30 hover:bg-primary/5 hover:text-cta"
+                      className="w-full mt-auto rounded-xl font-bold bg-card shadow-sm border-white/10 hover:border-primary/30 hover:bg-primary/5 hover:text-cta"
                       onClick={() => handleOpenJoin(t.id)}
                     >
                       Request to Join

@@ -23,7 +23,10 @@ function TicketChatPage() {
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!loading && !user) return router.navigate({ to: "/login" });
+    if (!loading && !user) {
+      router.navigate({ to: "/login" });
+      return;
+    }
     if (user) loadTicket();
   }, [user, loading, ticketId]);
 
@@ -55,7 +58,7 @@ function TicketChatPage() {
 
   return (
     <div className="bg-background min-h-screen pb-24 flex flex-col">
-      <div className="bg-white border-b border-border p-4 sticky top-0 z-20 flex items-center gap-3">
+      <div className="bg-card border-b border-white/5 p-4 sticky top-0 z-20 flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => router.history.back()} className="rounded-full w-10 h-10 shrink-0">
           <ArrowLeft className="w-5 h-5" />
         </Button>
@@ -85,7 +88,7 @@ function TicketChatPage() {
               </div>
               <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm font-semibold whitespace-pre-wrap ${
                 isAdmin ? 'bg-primary/10 text-cta border border-primary/20 rounded-tl-sm' : 
-                isMe ? 'bg-foreground text-background rounded-tr-sm' : 'bg-white border border-border text-foreground rounded-tl-sm'
+                isMe ? 'bg-foreground text-background rounded-tr-sm' : 'bg-card border border-white/10 text-foreground rounded-tl-sm'
               }`}>
                 {r.message}
               </div>
@@ -98,7 +101,7 @@ function TicketChatPage() {
         <div ref={endRef} />
       </div>
 
-      <div className="fixed bottom-0 sm:bottom-0 left-0 sm:left-64 right-0 bg-white border-t border-border p-3 z-20 pb-safe">
+      <div className="fixed bottom-0 sm:bottom-0 left-0 sm:left-64 right-0 bg-card border-t border-white/5 p-3 z-20 pb-safe">
         {ticket.status === 'resolved' ? (
           <div className="bg-emerald-50 text-emerald-600 rounded-xl p-3 flex items-center justify-center gap-2 font-bold text-sm">
             <CheckCircle2 className="w-5 h-5" /> This ticket has been resolved

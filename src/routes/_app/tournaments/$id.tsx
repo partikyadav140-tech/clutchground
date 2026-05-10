@@ -65,6 +65,11 @@ function TournamentDetailPage() {
   const [activeTab, setActiveTab] = useState<TabType>("info");
 
   useEffect(() => {
+    // Ensure we scroll to the top of the page when this route is visited
+    window.scrollTo(0, 0);
+    const scrollContainer = document.getElementById("app-scroll-container");
+    if (scrollContainer) scrollContainer.scrollTo(0, 0);
+
     if (user) {
       (getMyMatches as any)({ data: user.id })
         .then((matches: any[]) => {

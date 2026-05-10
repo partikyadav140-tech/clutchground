@@ -62,7 +62,7 @@ function AdminRegistrationsPage() {
   return (
     <div className="bg-background min-h-screen pb-24">
       {/* ─── Top Header (Mobile First) ─── */}
-      <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
+      <div className="bg-card rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
         <Link
@@ -90,13 +90,13 @@ function AdminRegistrationsPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search tournaments..."
-                className="w-full bg-white border border-border focus:border-primary outline-none pl-10 pr-4 h-12 text-sm rounded-xl transition-all shadow-sm font-semibold"
+                className="w-full bg-card border border-border focus:border-primary outline-none pl-10 pr-4 h-12 text-sm rounded-xl transition-all shadow-sm font-semibold"
               />
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {displayedTournaments.length === 0 ? (
-                <div className="col-span-full text-center py-12 bg-white rounded-[1.5rem] border border-border shadow-sm">
+                <div className="col-span-full text-center py-12 bg-card rounded-[1.5rem] border border-border shadow-sm">
                   <Trophy className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
                   <p className="text-foreground font-semibold">No tournaments found.</p>
                 </div>
@@ -115,7 +115,7 @@ function AdminRegistrationsPage() {
                         setSelectedTournamentId(t.id);
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }}
-                      className="bg-white rounded-[1.5rem] border border-border shadow-sm hover:shadow-md transition-all p-5 text-left group flex flex-col h-full active:scale-[0.98]"
+                      className="bg-card rounded-[1.5rem] border border-border shadow-sm hover:shadow-md transition-all p-5 text-left group flex flex-col h-full active:scale-[0.98]"
                     >
                       <div className="font-display font-black text-lg text-foreground group-hover:text-cta transition-colors line-clamp-1 mb-1.5">
                         {t.title}
@@ -146,7 +146,7 @@ function AdminRegistrationsPage() {
           </>
         ) : (
           <div className="space-y-6">
-            <div className="bg-white rounded-[1.5rem] border border-border shadow-sm p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="bg-card rounded-[1.5rem] border border-border shadow-sm p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="font-display text-2xl font-black text-foreground">
                   {selectedTournament?.title}
@@ -166,7 +166,7 @@ function AdminRegistrationsPage() {
 
             <div className="space-y-4">
               {filteredRegistrations.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-[1.5rem] border border-border shadow-sm">
+                <div className="text-center py-12 bg-card rounded-[1.5rem] border border-border shadow-sm">
                   <ClipboardList className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
                   <p className="text-foreground font-semibold">
                     No teams or players registered yet.
@@ -185,7 +185,7 @@ function AdminRegistrationsPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2, delay: i * 0.05 }}
                       key={r.id}
-                      className="bg-white rounded-[1.5rem] border border-border shadow-sm overflow-hidden"
+                      className="bg-card rounded-[1.5rem] border border-border shadow-sm overflow-hidden"
                     >
                       <div className="p-5 border-b border-border/50 bg-secondary/20">
                         <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
@@ -197,7 +197,7 @@ function AdminRegistrationsPage() {
                               Registered by: <span className="text-foreground">{r.username}</span>
                             </div>
                           </div>
-                          <div className="bg-white px-3 py-1.5 rounded-lg border border-border shadow-sm text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                          <div className="bg-card px-3 py-1.5 rounded-lg border border-border shadow-sm text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                             {new Date(r.created_at).toLocaleString()}
                           </div>
                         </div>
@@ -230,7 +230,7 @@ function AdminRegistrationsPage() {
                             {players.map((p: any, idx: number) => (
                               <div
                                 key={idx}
-                                className="flex gap-3 items-center bg-white rounded-xl p-2.5 border border-border shadow-sm"
+                                className="flex gap-3 items-center bg-card rounded-xl p-2.5 border border-border shadow-sm"
                               >
                                 <span className="w-8 h-8 rounded-lg bg-primary/10 text-cta flex items-center justify-center font-display font-black text-xs shrink-0">
                                   P{idx + 1}

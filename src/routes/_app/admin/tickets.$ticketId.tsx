@@ -65,7 +65,7 @@ function AdminTicketChatPage() {
 
   return (
     <div className="bg-background min-h-screen pb-24 flex flex-col">
-      <div className="bg-white border-b border-border p-4 sticky top-0 z-20 flex items-center gap-3">
+      <div className="bg-card border-b border-border p-4 sticky top-0 z-20 flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => router.history.back()} className="rounded-full w-10 h-10 shrink-0">
           <ArrowLeft className="w-5 h-5" />
         </Button>
@@ -102,7 +102,7 @@ function AdminTicketChatPage() {
                 {isAdmin && <ShieldAlert className="w-3 h-3 text-cta" />}
               </div>
               <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm font-semibold whitespace-pre-wrap ${
-                isAdmin ? 'bg-primary text-white rounded-tr-sm' : 'bg-white border border-border text-foreground rounded-tl-sm'
+                isAdmin ? 'bg-primary text-white rounded-tr-sm' : 'bg-card border border-border text-foreground rounded-tl-sm'
               }`}>
                 {r.message}
               </div>
@@ -115,7 +115,7 @@ function AdminTicketChatPage() {
         <div ref={endRef} />
       </div>
 
-      <div className="fixed bottom-0 sm:bottom-0 left-0 sm:left-64 right-0 bg-white border-t border-border p-3 z-20 pb-safe">
+      <div className="fixed bottom-0 sm:bottom-0 left-0 sm:left-64 right-0 bg-card border-t border-border p-3 z-20 pb-safe">
         <form onSubmit={handleReply} className="flex items-end gap-2 max-w-4xl mx-auto w-full">
           <textarea
             value={message}

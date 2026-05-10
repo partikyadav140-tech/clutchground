@@ -73,7 +73,7 @@ function AdminPayoutsPage() {
   return (
     <div className="bg-background min-h-screen pb-24">
       {/* ─── Top Header (Mobile First) ─── */}
-      <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
+      <div className="bg-card rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
         <Link
@@ -105,7 +105,7 @@ function AdminPayoutsPage() {
 
       <div className="px-4 mt-6">
         {payouts.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-[1.5rem] border border-border shadow-sm">
+          <div className="text-center py-12 bg-card rounded-[1.5rem] border border-border shadow-sm">
             <Banknote className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
             <p className="text-foreground font-semibold">No withdrawal requests found.</p>
           </div>
@@ -117,7 +117,7 @@ function AdminPayoutsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: i * 0.05 }}
                 key={p.id}
-                className={`bg-white rounded-[1.5rem] border ${p.status === "pending" ? "border-amber-200 shadow-md" : "border-border shadow-sm"} overflow-hidden group`}
+                className={`bg-card rounded-[1.5rem] border ${p.status === "pending" ? "border-amber-200 shadow-md" : "border-border shadow-sm"} overflow-hidden group`}
               >
                 <div className="p-5">
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5">
@@ -206,7 +206,7 @@ function AdminPayoutsPage() {
                           </Button>
                           <Button
                             variant="outline"
-                            className="rounded-xl font-bold h-10 bg-white text-destructive border-destructive/20 hover:bg-destructive/10 w-full"
+                            className="rounded-xl font-bold h-10 bg-card text-destructive border-destructive/20 hover:bg-destructive/10 w-full"
                             onClick={() => handleResolve(p.id, p.user_id, p.amount, "rejected")}
                           >
                             <XCircle className="w-4 h-4 mr-2" /> Reject & Refund

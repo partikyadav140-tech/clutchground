@@ -148,7 +148,7 @@ function AdminUsersPage() {
   return (
     <div className="bg-background min-h-screen pb-24">
       {/* ─── Top Header (Mobile First) ─── */}
-      <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
+      <div className="bg-card border-b border-white/5 shadow-2xl pt-6 pb-6 px-4 relative overflow-hidden z-10 rounded-b-[2rem]">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
         <Link
@@ -186,7 +186,7 @@ function AdminUsersPage() {
       <div className="px-4 mt-6">
         {/* Search */}
         <div className="mb-6">
-          <div className="bg-white rounded-[1.5rem] border border-border shadow-sm p-4">
+          <div className="bg-card rounded-[1.5rem] border border-white/10 shadow-sm p-4">
             <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">
               Search Users
             </label>
@@ -197,7 +197,7 @@ function AdminUsersPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                className="flex-1 bg-secondary/50 border border-border focus:border-primary focus:bg-white outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold placeholder:font-semibold"
+                className="flex-1 bg-secondary/50 border border-white/10 focus:border-primary focus:bg-card outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold placeholder:font-semibold"
               />
               <Button
                 onClick={handleSearch}
@@ -219,7 +219,7 @@ function AdminUsersPage() {
         </div>
 
         {filteredUsers.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-[1.5rem] border border-border shadow-sm">
+          <div className="text-center py-12 bg-card rounded-[1.5rem] border border-white/10 shadow-sm">
             <Users className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
             <p className="text-foreground font-semibold">No users registered yet.</p>
           </div>
@@ -231,7 +231,7 @@ function AdminUsersPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: i * 0.05 }}
                 key={u.id}
-                className="bg-white rounded-[1.5rem] border border-border shadow-sm overflow-hidden group"
+                className="bg-card rounded-[1.5rem] border border-white/10 shadow-sm overflow-hidden group"
               >
                 <div className="p-5">
                   <div className="flex items-center gap-3 mb-4">
@@ -297,7 +297,7 @@ function AdminUsersPage() {
                     </div>
 
                     <div className="space-y-2.5">
-                      <div className="flex items-center justify-between bg-white border border-border rounded-xl p-2 pl-3 shadow-sm">
+                      <div className="flex items-center justify-between bg-card border border-white/10 rounded-xl p-2 pl-3 shadow-sm">
                         <div className="flex items-center gap-2">
                           <span className="w-16 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                             Deposit
@@ -323,7 +323,7 @@ function AdminUsersPage() {
                         </Button>
                       </div>
 
-                      <div className="flex items-center justify-between bg-white border border-border rounded-xl p-2 pl-3 shadow-sm">
+                      <div className="flex items-center justify-between bg-card border border-white/10 rounded-xl p-2 pl-3 shadow-sm">
                         <div className="flex items-center gap-2">
                           <span className="w-16 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                             Earned

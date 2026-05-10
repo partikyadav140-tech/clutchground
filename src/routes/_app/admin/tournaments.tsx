@@ -340,7 +340,7 @@ function AdminTournamentsPage() {
   return (
     <div className="bg-background min-h-screen pb-24">
       {/* ─── Top Header (Mobile First) ─── */}
-      <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
+      <div className="bg-card rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
         <Link
@@ -409,7 +409,7 @@ function AdminTournamentsPage() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-[1.5rem] border border-border shadow-md p-5 sm:p-6 mb-8"
+            className="bg-card rounded-[1.5rem] border border-border shadow-md p-5 sm:p-6 mb-8"
           >
             <div className="flex justify-between items-center mb-5 pb-4 border-b border-border/50">
               <h4 className="font-display font-black text-xl text-foreground flex items-center gap-2">
@@ -451,7 +451,7 @@ function AdminTournamentsPage() {
                   <select
                     value={formData.mode}
                     onChange={(e) => setFormData({ ...formData, mode: e.target.value })}
-                    className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-white outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold"
+                    className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-card outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold"
                   >
                     <option value="Solo">Solo</option>
                     <option value="Duo">Duo</option>
@@ -522,7 +522,7 @@ function AdminTournamentsPage() {
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-white outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold"
+                    className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-card outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold"
                   >
                     <option value="open">Open</option>
                     <option value="upcoming">Upcoming</option>
@@ -572,7 +572,7 @@ function AdminTournamentsPage() {
                   className={`px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-colors ${
                     activeTab === tab
                       ? "bg-primary text-white"
-                      : "bg-white text-muted-foreground hover:bg-secondary border border-border shadow-sm"
+                      : "bg-card text-muted-foreground hover:bg-secondary border border-border shadow-sm"
                   }`}
                 >
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -586,13 +586,13 @@ function AdminTournamentsPage() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search tournaments..."
-                className="w-full bg-white border border-border focus:border-primary outline-none pl-10 pr-4 h-12 text-sm rounded-xl transition-all shadow-sm font-semibold"
+                className="w-full bg-card border border-border focus:border-primary outline-none pl-10 pr-4 h-12 text-sm rounded-xl transition-all shadow-sm font-semibold"
               />
             </div>
 
             <div className="space-y-4">
               {filteredTournaments.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-[1.5rem] border border-border shadow-sm">
+                <div className="text-center py-12 bg-card rounded-[1.5rem] border border-border shadow-sm">
                   <Trophy className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
                   <p className="text-foreground font-semibold">No tournaments found.</p>
                 </div>
@@ -603,7 +603,7 @@ function AdminTournamentsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: i * 0.05 }}
                     key={t.id}
-                    className="bg-white rounded-[1.5rem] border border-border shadow-sm overflow-hidden group"
+                    className="bg-card rounded-[1.5rem] border border-border shadow-sm overflow-hidden group"
                   >
                     <div className="p-5">
                       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -682,7 +682,7 @@ function AdminTournamentsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleToggleHero(t.id)}
-                            className={`rounded-xl font-bold h-9 whitespace-nowrap ${t.is_hero ? "bg-amber-50 text-amber-600 border-amber-200" : "bg-white text-muted-foreground border-border"}`}
+                            className={`rounded-xl font-bold h-9 whitespace-nowrap ${t.is_hero ? "bg-amber-50 text-amber-600 border-amber-200" : "bg-card text-muted-foreground border-border"}`}
                           >
                             <Star
                               className={`w-4 h-4 mr-1.5 ${t.is_hero ? "fill-amber-500" : ""}`}
@@ -715,7 +715,7 @@ function AdminTournamentsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => openEdit(t)}
-                            className="rounded-xl font-bold h-9 bg-white border-border text-foreground hover:bg-secondary whitespace-nowrap"
+                            className="rounded-xl font-bold h-9 bg-card border-border text-foreground hover:bg-secondary whitespace-nowrap"
                           >
                             <Settings className="w-4 h-4 mr-1.5" /> Edit
                           </Button>
@@ -754,7 +754,7 @@ function AdminTournamentsPage() {
                   variant="outline"
                   size="sm"
                   onClick={downloadResultsExcel}
-                  className="h-9 rounded-xl font-bold bg-white shadow-sm"
+                  className="h-9 rounded-xl font-bold bg-card shadow-sm"
                 >
                   <Download className="w-4 h-4 mr-2" /> Export
                 </Button>
@@ -769,11 +769,11 @@ function AdminTournamentsPage() {
                 <p className="text-muted-foreground font-semibold">Loading team data...</p>
               </div>
             ) : resultsError ? (
-              <div className="py-12 text-center text-destructive font-semibold bg-white rounded-xl border border-destructive/20 shadow-sm">
+              <div className="py-12 text-center text-destructive font-semibold bg-card rounded-xl border border-destructive/20 shadow-sm">
                 {resultsError}
               </div>
             ) : resultsData.length === 0 ? (
-              <div className="py-12 text-center text-muted-foreground font-semibold bg-white rounded-xl border border-border shadow-sm">
+              <div className="py-12 text-center text-muted-foreground font-semibold bg-card rounded-xl border border-border shadow-sm">
                 No confirmed registrations found for this tournament.
               </div>
             ) : isEditingResults ? (
@@ -801,7 +801,7 @@ function AdminTournamentsPage() {
                 {resultsData.map((r, i) => (
                   <div
                     key={r.id}
-                    className="grid grid-cols-2 sm:grid-cols-12 gap-3 sm:gap-2 items-center bg-white p-4 sm:p-3 rounded-xl border border-border shadow-sm"
+                    className="grid grid-cols-2 sm:grid-cols-12 gap-3 sm:gap-2 items-center bg-card p-4 sm:p-3 rounded-xl border border-border shadow-sm"
                   >
                     <div className="hidden sm:block col-span-1 text-center font-black text-muted-foreground">
                       #{i + 1}
@@ -903,7 +903,7 @@ function AdminTournamentsPage() {
                     <Edit className="w-3 h-3 mr-1" /> Edit Mode
                   </Button>
                 </div>
-                <div className="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
+                <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
                       <thead className="text-[10px] uppercase tracking-widest text-muted-foreground bg-secondary/50 border-b border-border">
@@ -948,10 +948,10 @@ function AdminTournamentsPage() {
               </div>
             )}
           </div>
-          <div className="flex justify-end gap-3 p-4 sm:p-6 border-t border-border bg-white">
+          <div className="flex justify-end gap-3 p-4 sm:p-6 border-t border-border bg-card">
             <Button
               variant="outline"
-              className="rounded-xl font-bold h-11 px-6 bg-white shadow-sm"
+              className="rounded-xl font-bold h-11 px-6 bg-card shadow-sm"
               onClick={() => setResultsTId(null)}
             >
               Cancel
@@ -982,7 +982,7 @@ function Input({
       </label>
       <input
         {...rest}
-        className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-white outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold placeholder:font-semibold"
+        className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-card outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold placeholder:font-semibold"
       />
     </div>
   );

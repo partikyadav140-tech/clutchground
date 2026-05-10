@@ -45,7 +45,10 @@ function ChatPage() {
   const [view, setView] = useState<'chats' | 'friends' | 'requests'>('chats');
 
   useEffect(() => {
-    if (!loading && !user) return router.navigate({ to: "/login" });
+    if (!loading && !user) {
+      router.navigate({ to: "/login" });
+      return;
+    }
     if (user) {
       loadInitialData();
     }
@@ -162,7 +165,7 @@ function ChatPage() {
   if (activeChat) {
     return (
       <div className="bg-background fixed inset-0 z-50 flex flex-col pb-safe">
-        <div className="bg-white border-b border-border p-4 flex items-center gap-3">
+        <div className="bg-card border-b border-white/5 p-4 flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => setActiveChat(null)} className="rounded-full w-10 h-10 shrink-0">
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -186,7 +189,7 @@ function ChatPage() {
                   <div className="text-[10px] font-bold text-muted-foreground ml-1 mb-1">{m.ign || m.username}</div>
                 )}
                 <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm font-semibold whitespace-pre-wrap ${
-                  isMe ? 'bg-primary text-white rounded-br-sm shadow-primary/20 shadow-md' : 'bg-white border border-border text-foreground rounded-bl-sm shadow-sm'
+                  isMe ? 'bg-primary text-white rounded-br-sm shadow-primary/20 shadow-md' : 'bg-card border border-white/10 text-foreground rounded-bl-sm shadow-sm'
                 }`}>
                   {m.message}
                 </div>
@@ -196,7 +199,7 @@ function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="bg-white border-t border-border p-3">
+        <div className="bg-card border-t border-white/5 p-3">
           <form onSubmit={handleSendMessage} className="flex items-end gap-2">
             <textarea
               value={messageInput}
@@ -222,7 +225,7 @@ function ChatPage() {
 
   return (
     <div className="bg-background min-h-screen pb-24">
-      <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-4 px-4 relative overflow-hidden z-10">
+      <div className="bg-card border-b border-white/5 shadow-2xl pt-6 pb-4 px-4 relative overflow-hidden z-10 rounded-b-[2rem]">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-cta font-bold mb-2">
@@ -242,7 +245,7 @@ function ChatPage() {
               key={tab.id}
               onClick={() => setView(tab.id as any)}
               className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-lg transition-all ${
-                view === tab.id ? 'bg-white shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                view === tab.id ? 'bg-primary/20 shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <tab.icon className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{tab.label}</span>
@@ -270,14 +273,14 @@ function ChatPage() {
             )}
 
             {friends.length === 0 ? (
-              <div className="bg-white border border-border rounded-[1.5rem] p-8 text-center mt-4">
+              <div className="bg-card border border-white/10 rounded-[1.5rem] p-8 text-center mt-4">
                 <Users className="w-8 h-8 text-muted-foreground mx-auto mb-3 opacity-50" />
                 <p className="font-bold text-muted-foreground">No friends yet.</p>
                 <Button variant="link" onClick={() => setView('friends')} className="text-cta mt-2">Find players</Button>
               </div>
             ) : (
-              <div className="bg-white border border-border rounded-[1.5rem] overflow-hidden">
-                <div className="bg-secondary/20 px-5 py-3 border-b border-border/50 text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
+              <div className="bg-card border border-white/10 rounded-[1.5rem] overflow-hidden">
+                <div className="bg-secondary/20 px-5 py-3 border-b border-white/5 text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
                   Direct Messages
                 </div>
                 {friends.map((f, i) => (
@@ -307,7 +310,7 @@ function ChatPage() {
               <input
                 value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search by IGN or UID..."
-                className="w-full h-14 bg-white border border-border focus:border-primary outline-none rounded-2xl pl-12 pr-4 font-bold shadow-sm"
+                className="w-full h-14 bg-card border border-white/10 focus:border-primary outline-none rounded-2xl pl-12 pr-4 font-bold shadow-sm"
               />
               <Button type="submit" className="absolute right-2 top-2 h-10 rounded-xl" disabled={isSearching || !searchQuery}>
                 Search
@@ -316,7 +319,7 @@ function ChatPage() {
 
             <div className="space-y-3">
               {searchResults.map(u => (
-                <div key={u.id} className="bg-white border border-border p-4 rounded-[1.5rem] flex items-center justify-between">
+                <div key={u.id} className="bg-card border border-white/10 p-4 rounded-[1.5rem] flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center font-display font-black text-muted-foreground">
                       {u.avatar_url ? <img src={u.avatar_url} className="w-full h-full object-cover rounded-lg" /> : (u.ign ? u.ign[0].toUpperCase() : u.username[0].toUpperCase())}
@@ -341,13 +344,13 @@ function ChatPage() {
         {view === 'requests' && (
           <div className="space-y-3">
             {requests.length === 0 ? (
-               <div className="bg-white border border-border rounded-[1.5rem] p-8 text-center mt-4">
+               <div className="bg-card border border-white/10 rounded-[1.5rem] p-8 text-center mt-4">
                <Shield className="w-8 h-8 text-muted-foreground mx-auto mb-3 opacity-50" />
                <p className="font-bold text-muted-foreground">No pending requests.</p>
              </div>
             ) : (
               requests.map(r => (
-                <div key={r.id} className="bg-white border border-border p-4 rounded-[1.5rem] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div key={r.id} className="bg-card border border-white/10 p-4 rounded-[1.5rem] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center font-display font-black text-muted-foreground">
                       {r.avatar_url ? <img src={r.avatar_url} className="w-full h-full object-cover rounded-xl" /> : (r.ign ? r.ign[0].toUpperCase() : r.username[0].toUpperCase())}
