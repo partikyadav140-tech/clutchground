@@ -27,15 +27,23 @@ function TicketChatPage() {
       router.navigate({ to: "/login" });
       return;
     }
-    if (user) loadTicket();
+    if (user) {
+      loadTicket();
+      const interval = setInterval(loadTicket, 3000); // Poll every 3 seconds for real-time feel
+      return () => clearInterval(interval);
+    }
   }, [user, loading, ticketId]);
 
   const loadTicket = async () => {
     try {
       const data = await (getTicket as any)({ data: { ticketId } });
       if (!data) return router.navigate({ to: "/support" });
-      setTicket(data);
-      setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+      setTicket((prev: any) => {
+        if (!prev || prev.replies?.length !== data.replies?.length) {
+          setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+        }
+        return data;
+      });
     } catch(e) {}
   };
 
