@@ -1,7 +1,7 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import {
-  Home, Trophy, Crosshair, User, Bell, Wallet, MessageCircle, Crown
+  Home, Trophy, Crosshair, User, Bell, Wallet, MessageCircle, Crown, ChevronLeft
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { GodCoin } from "./GodCoin";
@@ -22,9 +22,13 @@ const bottomNavItems = [
   { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
+// Pages that should show the main global top header
+const MAIN_TABS = ["/", "/tournaments", "/matches", "/leaderboard", "/profile", "/wallet"];
+
 export function Navbar() {
   const { user } = useAuth();
   const router = useRouter();
+  const currentPath = router.state.location.pathname;
   const [unreadCount, setUnreadCount] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const latestNotificationIdsRef = useRef<string[]>([]);
@@ -34,9 +38,12 @@ export function Navbar() {
     : 0;
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
+    // We bind to the main scroll container in _app.tsx instead of window
+    const mainEl = document.getElementById("app-scroll-container");
+    if (!mainEl) return;
+    const handleScroll = () => setScrolled(mainEl.scrollTop > 10);
+    mainEl.addEventListener("scroll", handleScroll, { passive: true });
+    return () => mainEl.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
@@ -70,64 +77,66 @@ export function Navbar() {
     return () => clearInterval(id);
   }, [user]);
 
+  const isMainTab = MAIN_TABS.includes(currentPath) || currentPath === "";
+  const isDeepPage = !isMainTab;
+
   return (
     <>
-      {/* ─── Minimal App Header ─── */}
-      <header
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-background/90 backdrop-blur-2xl border-b border-white/5"
-            : "bg-background/80 backdrop-blur-md"
-        }`}
-      >
-        <nav className="container mx-auto px-4 h-16 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-2">
-            <Logo size={40} withText={false} />
-            <span className="font-display font-black text-lg text-foreground uppercase tracking-widest hidden sm:inline-block">ClutchGround</span>
-          </div>
+      {/* ─── Dynamic Top Header ─── */}
+      {isMainTab && (
+        <header
+          className={`absolute top-0 inset-x-0 z-50 transition-all duration-300 ${
+            scrolled
+              ? "bg-background/90 backdrop-blur-2xl border-b border-white/5"
+              : "bg-background/80 backdrop-blur-md"
+          }`}
+        >
+          <nav className="container mx-auto px-4 h-16 flex items-center justify-between">
+            {/* Logo */}
+            <div className="flex items-center gap-2">
+              <Logo size={40} withText={false} />
+              <span className="font-display font-black text-lg text-foreground uppercase tracking-widest hidden sm:inline-block">ClutchGround</span>
+            </div>
 
-          {/* Right Actions */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Wallet Chip */}
-            <Link
-              to="/wallet"
-              className="flex items-center gap-1.5 px-3 h-9 rounded-full bg-secondary border border-border hover:border-primary/50 transition-all active:scale-95"
-            >
-              <GodCoin className="w-4 h-4" />
-              <span className="text-sm font-bold font-display text-white">{totalBalance}</span>
-            </Link>
+            {/* Right Actions */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <Link
+                to="/wallet"
+                className="flex items-center gap-1.5 px-3 h-9 rounded-full bg-secondary border border-border hover:border-primary/50 transition-all active:scale-95"
+              >
+                <GodCoin className="w-4 h-4" />
+                <span className="text-sm font-bold font-display text-white">{totalBalance}</span>
+              </Link>
 
-            {/* Chat */}
-            <Link
-              to={"/chat" as any}
-              className="w-9 h-9 flex items-center justify-center rounded-full bg-secondary border border-border hover:border-primary/50 text-muted-foreground hover:text-white transition-all active:scale-95"
-            >
-              <MessageCircle className="w-4 h-4" />
-            </Link>
+              <Link
+                to={"/chat" as any}
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-secondary border border-border hover:border-primary/50 text-muted-foreground hover:text-white transition-all active:scale-95"
+              >
+                <MessageCircle className="w-4 h-4" />
+              </Link>
 
-            {/* Notifications */}
-            <Link
-              to="/notifications"
-              className="relative w-9 h-9 flex items-center justify-center rounded-full bg-secondary border border-border hover:border-primary/50 text-muted-foreground hover:text-white transition-all active:scale-95"
-            >
-              <Bell className="w-4 h-4" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[9px] font-black grid place-items-center shadow-md">
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              )}
-            </Link>
-          </div>
-        </nav>
-      </header>
+              <Link
+                to="/notifications"
+                className="relative w-9 h-9 flex items-center justify-center rounded-full bg-secondary border border-border hover:border-primary/50 text-muted-foreground hover:text-white transition-all active:scale-95"
+              >
+                <Bell className="w-4 h-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[9px] font-black grid place-items-center shadow-md">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </Link>
+            </div>
+          </nav>
+        </header>
+      )}
 
       {/* ─── iOS-Style Bottom Tab Bar ─── */}
-      <nav className="fixed bottom-0 inset-x-0 z-50 bg-background/80 backdrop-blur-2xl border-t border-white/10 pb-safe">
+      {/* On very deep pages (like chat), we can hide bottom tab too if wanted. For now, kept global */}
+      <nav className="absolute bottom-0 inset-x-0 z-50 bg-background/80 backdrop-blur-2xl border-t border-white/10 pb-safe">
         <div className="flex items-center justify-around h-16 px-2">
           {bottomNavItems.map((item) => {
             const Icon = item.icon;
-            const currentPath = router.state.location.pathname;
             const isActive = currentPath === item.to || (item.to !== "/" && currentPath.startsWith(item.to));
             
             return (
@@ -135,12 +144,11 @@ export function Navbar() {
                 key={item.to}
                 to={item.to}
                 className={`relative flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-200 active:scale-90 ${
-                  isActive ? "text-primary" : "text-muted-foreground hover:text-white"
+                  isActive ? "text-cta" : "text-muted-foreground hover:text-white"
                 }`}
               >
                 <div className="relative">
                   <Icon className={`w-6 h-6 transition-transform duration-200 ${isActive ? "scale-110" : ""}`} />
-                  {/* Subtle active glow under icon */}
                   {isActive && <div className="absolute inset-0 bg-primary/40 blur-md rounded-full -z-10" />}
                 </div>
                 <span className={`text-[10px] font-bold tracking-wide transition-colors ${isActive ? "text-white" : ""}`}>

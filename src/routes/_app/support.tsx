@@ -66,7 +66,7 @@ function SupportPage() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="relative z-10 flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2 text-primary font-bold mb-2">
+            <div className="flex items-center gap-2 text-cta font-bold mb-2">
               <LifeBuoy className="w-5 h-5" /> Help Center
             </div>
             <h1 className="font-display text-2xl font-black text-foreground">Support Tickets</h1>
@@ -142,8 +142,8 @@ function SupportPage() {
                         <Clock className="w-3 h-3" /> {new Date(t.updated_at).toLocaleDateString()}
                       </div>
                     </div>
-                    <h3 className="font-display font-black text-lg text-foreground mb-1 group-hover:text-primary transition-colors line-clamp-1">{t.subject}</h3>
-                    <div className="flex items-center gap-1 text-sm font-semibold text-primary">
+                    <h3 className="font-display font-black text-lg text-foreground mb-1 group-hover:text-cta transition-colors line-clamp-1">{t.subject}</h3>
+                    <div className="flex items-center gap-1 text-sm font-semibold text-cta">
                       <MessageCircle className="w-4 h-4" /> View Chat
                     </div>
                   </motion.div>

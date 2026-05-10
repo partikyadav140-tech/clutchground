@@ -153,7 +153,7 @@ function AdminUsersPage() {
 
         <Link
           to="/admin"
-          className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-primary mb-4 relative z-10 transition-colors bg-secondary/50 px-3 py-1.5 rounded-full"
+          className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-cta mb-4 relative z-10 transition-colors bg-secondary/50 px-3 py-1.5 rounded-full"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Dashboard
         </Link>
@@ -168,7 +168,7 @@ function AdminUsersPage() {
 
         <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
           <div className="bg-secondary/50 px-4 py-3 rounded-xl flex items-center justify-center gap-2 border border-border">
-            <span className="text-2xl font-black font-display text-primary">{filteredUsers.length}</span>
+            <span className="text-2xl font-black font-display text-cta">{filteredUsers.length}</span>
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
               Filtered Users
             </span>
@@ -236,7 +236,7 @@ function AdminUsersPage() {
                 <div className="p-5">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                      <span className="font-display font-black text-primary text-lg">
+                      <span className="font-display font-black text-cta text-lg">
                         {u.username.charAt(0).toUpperCase()}
                       </span>
                     </div>
@@ -246,7 +246,7 @@ function AdminUsersPage() {
                           {u.username}
                         </div>
                         {u.role === "admin" && (
-                          <CheckCircle className="w-4 h-4 text-primary shrink-0" />
+                          <CheckCircle className="w-4 h-4 text-cta shrink-0" />
                         )}
                         {u.banned && (
                           <span className="text-xs font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">
@@ -256,7 +256,7 @@ function AdminUsersPage() {
                       </div>
                       <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mt-0.5">
                         Role:{" "}
-                        <span className={u.role === "admin" ? "text-primary" : "text-foreground"}>
+                        <span className={u.role === "admin" ? "text-cta" : "text-foreground"}>
                           {u.role}
                         </span>
                       </div>
@@ -328,7 +328,7 @@ function AdminUsersPage() {
                           <span className="w-16 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                             Earned
                           </span>
-                          <div className="flex items-center font-display font-black text-primary">
+                          <div className="flex items-center font-display font-black text-cta">
                             <GodCoin className="w-4 h-4 mr-1" /> {u.winning_balance || 0}
                           </div>
                         </div>

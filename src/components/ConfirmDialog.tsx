@@ -66,7 +66,7 @@ export function ConfirmDialog() {
       open={isOpen}
       onOpenChange={(v) => !v && close(options.type === "prompt" ? null : false)}
     >
-      <DialogContent className="sm:max-w-md bg-card border-primary/40 clip-notch p-6 shadow-fire z-[99999]">
+      <DialogContent className="z-[99999]">
         <DialogHeader>
           <DialogTitle
             className={`font-display text-xl font-black ${options.isDestructive ? "text-destructive" : "text-fire-gradient"}`}

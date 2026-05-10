@@ -10,7 +10,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-md hover:bg-primary/90 active:scale-95 transition-all",
+          "bg-cta text-cta-foreground shadow-cta hover:brightness-110 active:scale-95 transition-all border border-cta/50",
         destructive:
           "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 active:scale-95 transition-all",
         outline:
@@ -18,10 +18,10 @@ const buttonVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 active:scale-95 transition-all",
         ghost: "hover:bg-accent hover:text-accent-foreground active:scale-95 transition-all",
-        link: "text-primary underline-offset-4 hover:underline",
-        hero: "bg-fire-gradient text-primary-foreground font-bold shadow-[0_0_20px_rgba(255,0,255,0.4)] hover:shadow-[0_0_30px_rgba(255,0,255,0.6)] hover:scale-[1.02] active:scale-95 transition-all duration-300 clip-notch",
+        link: "text-cta underline-offset-4 hover:underline",
+        hero: "bg-cta-gradient text-cta-foreground font-black shadow-[0_0_20px_rgba(255,107,0,0.4)] hover:shadow-[0_0_30px_rgba(255,107,0,0.6)] hover:scale-[1.02] active:scale-95 transition-all duration-300 clip-notch",
         outlineFire:
-          "border-2 border-primary/60 text-primary bg-primary/5 hover:bg-primary/20 hover:border-primary hover:shadow-[0_0_15px_rgba(255,0,255,0.3)] backdrop-blur-sm active:scale-95 transition-all duration-300 clip-notch",
+          "border-2 border-primary/60 text-cta bg-primary/5 hover:bg-primary/20 hover:border-primary hover:shadow-[0_0_15px_rgba(255,0,255,0.3)] backdrop-blur-sm active:scale-95 transition-all duration-300 clip-notch",
         blade:
           "bg-gradient-to-r from-blood to-primary text-primary-foreground font-bold shadow-fire clip-blade hover:brightness-110 active:scale-95 transition-all",
       },

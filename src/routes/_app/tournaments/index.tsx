@@ -46,7 +46,7 @@ function TournamentsPage() {
       
       {/* ─── Minimal App Header ─── */}
       <div className="px-4 mb-4">
-        <div className="flex items-center gap-2 text-primary font-bold mb-1">
+        <div className="flex items-center gap-2 text-cta font-bold mb-1">
           <Trophy className="w-5 h-5" /> The Arena
         </div>
         <h1 className="text-2xl font-display font-black text-foreground">Find Your Match</h1>
@@ -131,90 +131,100 @@ function ArenaTournamentCard({ t, i }: { t: any; i: number }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: Math.min(i * 0.05, 0.3) }}
-      className="bg-card border border-white/5 rounded-[1.5rem] p-3 flex flex-col gap-3 active:scale-[0.98] transition-transform shadow-lg relative overflow-hidden"
+      className="group relative rounded-[1.5rem] p-[1px] overflow-hidden"
     >
-      <div className="flex gap-4">
-        {/* Poster */}
-        <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-xl overflow-hidden shrink-0 relative">
-          <img src={poster} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-          
-          <div className="absolute top-2 left-2 flex flex-col gap-1">
-            {t.status === "live" && (
-              <span className="bg-red-500 text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shadow-sm">
-                Live
-              </span>
+      {/* Cyberpunk Animated Border Gradient Underlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-transparent to-blue-500/30 opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+      
+      <div className="relative h-full bg-card/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-3 flex flex-col gap-3 shadow-card overflow-hidden">
+        <div className="flex gap-4">
+          {/* Poster */}
+          <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-xl overflow-hidden shrink-0 relative border border-white/10 shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+            <img src={poster} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+            
+            <div className="absolute top-2 left-2 flex flex-col gap-1">
+              {t.status === "live" && (
+                <span className="bg-red-500/20 border border-red-500/50 text-red-500 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shadow-[0_0_10px_rgba(239,68,68,0.4)]">
+                  Live
+                </span>
+              )}
+            </div>
+            <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md text-[9px] text-white px-2 py-0.5 rounded font-black uppercase border border-white/10 shadow-sm">
+              {t.format}
+            </div>
+          </div>
+
+          {/* Info */}
+          <div className="flex-1 flex flex-col min-w-0 py-1">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <span className="text-[10px] font-black text-cta uppercase tracking-widest text-glow">{t.mode}</span>
+            </div>
+            <h4 className="font-display font-black text-sm sm:text-base text-white line-clamp-2 leading-tight mb-2 drop-shadow-md">
+              {t.title}
+            </h4>
+            
+            <div className="text-[10px] text-muted-foreground font-bold flex items-center gap-1.5 mt-auto">
+              <Clock className="w-3 h-3 text-cta/50" /> <span className="text-white/80">{t.startsAt || t.startsat}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Bar */}
+        <div className="grid grid-cols-2 gap-2 mt-1">
+          <div className="bg-black/40 rounded-xl p-2.5 flex items-center justify-between border border-white/5 shadow-inner">
+            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Entry</span>
+            <span className="text-xs font-black text-cta flex items-center gap-1 text-glow">
+              {t.entry === 0 ? "FREE" : <><GodCoin className="w-3 h-3"/> {t.entry}</>}
+            </span>
+          </div>
+          <div className="bg-black/40 rounded-xl p-2.5 flex items-center justify-between border border-white/5 shadow-inner">
+            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Prize</span>
+            <span className="text-xs font-black text-white flex items-center gap-1">
+              <GodCoin className="w-3 h-3 text-cta"/> {t.mode === 'Solo' ? t.per_kill_coin || 0 : t.prize}
+            </span>
+          </div>
+        </div>
+
+        {/* Progress & Action */}
+        <div className="mt-1">
+          <div className="flex justify-between text-[10px] font-bold text-muted-foreground mb-1.5 px-1">
+            <span>{t.filled}/{t.slots} Joined</span>
+            <span className="text-cta/80">{fillPct.toFixed(0)}% Filled</span>
+          </div>
+          <div className="h-2 w-full bg-black/50 rounded-full overflow-hidden border border-white/5 mb-3 shadow-inner">
+            <div 
+              className={`h-full rounded-full transition-all duration-1000 relative ${isFull ? "bg-muted-foreground" : "bg-primary-gradient shadow-[0_0_10px_rgba(255,0,85,0.8)]"}`} 
+              style={{ width: `${fillPct}%` }} 
+            >
+              {!isFull && <div className="absolute right-0 top-0 bottom-0 w-4 bg-white/30 blur-[2px]" />}
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Link to={`/tournaments/${t.id}` as any} className="flex-1">
+              <Button variant="outline" className="w-full h-10 rounded-xl font-black text-[11px] uppercase tracking-widest bg-transparent border-white/10 text-white hover:bg-white/5">
+                Details
+              </Button>
+            </Link>
+            {isFull ? (
+               <Button disabled className="w-24 shrink-0 h-10 rounded-xl font-black text-[11px] uppercase tracking-widest bg-white/5 text-muted-foreground border border-white/5">
+                Full
+              </Button>
+            ) : (
+              <JoinBattleDialog
+                tournamentId={t.id}
+                tournamentTitle={t.title}
+                mode={t.mode as any}
+                entryFee={t.entry}
+                trigger={
+                  <Button className="w-24 shrink-0 h-10 rounded-xl font-black text-[11px] uppercase tracking-widest bg-cta-gradient text-cta-foreground shadow-cta border border-cta/50 hover:scale-105 transition-transform">
+                    Join
+                  </Button>
+                }
+              />
             )}
           </div>
-          <div className="absolute bottom-2 left-2 bg-black/40 backdrop-blur-md text-[9px] text-white px-2 py-0.5 rounded-full font-black uppercase border border-white/10">
-            {t.format}
-          </div>
-        </div>
-
-        {/* Info */}
-        <div className="flex-1 flex flex-col min-w-0 py-1">
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <span className="text-[10px] font-black text-primary uppercase tracking-widest">{t.mode}</span>
-          </div>
-          <h4 className="font-display font-black text-sm sm:text-base text-white line-clamp-2 leading-tight mb-2">
-            {t.title}
-          </h4>
-          
-          <div className="text-[10px] text-muted-foreground font-bold flex items-center gap-1.5 mt-auto">
-            <Clock className="w-3 h-3 text-white/50" /> {t.startsAt || t.startsat}
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Bar */}
-      <div className="grid grid-cols-2 gap-2 mt-1">
-        <div className="bg-background/50 rounded-xl p-2.5 flex items-center justify-between border border-white/5">
-          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Entry</span>
-          <span className="text-xs font-black text-primary flex items-center gap-1">
-            {t.entry === 0 ? "FREE" : <><GodCoin className="w-3 h-3"/> {t.entry}</>}
-          </span>
-        </div>
-        <div className="bg-background/50 rounded-xl p-2.5 flex items-center justify-between border border-white/5">
-          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Prize</span>
-          <span className="text-xs font-black text-white flex items-center gap-1">
-            <GodCoin className="w-3 h-3"/> {t.mode === 'Solo' ? t.per_kill_coin || 0 : t.prize}
-          </span>
-        </div>
-      </div>
-
-      {/* Progress & Action */}
-      <div className="mt-1">
-        <div className="flex justify-between text-[10px] font-bold text-muted-foreground mb-1.5 px-1">
-          <span>{t.filled}/{t.slots} Joined</span>
-          <span>{fillPct}% Filled</span>
-        </div>
-        <div className="h-2 w-full bg-background rounded-full overflow-hidden border border-white/5 mb-3">
-          <div className={`h-full rounded-full ${isFull ? "bg-muted-foreground" : "bg-primary"}`} style={{ width: `${fillPct}%` }} />
-        </div>
-
-        <div className="flex gap-2">
-          <Link to={`/tournaments/${t.id}` as any} className="flex-1">
-            <Button variant="outline" className="w-full h-10 rounded-xl font-black text-[11px] uppercase tracking-widest bg-transparent border-white/10 text-white">
-              Details
-            </Button>
-          </Link>
-          {isFull ? (
-             <Button disabled className="w-24 shrink-0 h-10 rounded-xl font-black text-[11px] uppercase tracking-widest bg-white/5 text-muted-foreground">
-              Full
-            </Button>
-          ) : (
-            <JoinBattleDialog
-              tournamentId={t.id}
-              tournamentTitle={t.title}
-              mode={t.mode as any}
-              entryFee={t.entry}
-              trigger={
-                <Button className="w-24 shrink-0 h-10 rounded-xl font-black text-[11px] uppercase tracking-widest bg-primary text-white shadow-primary">
-                  Join
-                </Button>
-              }
-            />
-          )}
         </div>
       </div>
     </motion.div>

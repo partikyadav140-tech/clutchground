@@ -166,7 +166,7 @@ function ChatPage() {
           <Button variant="ghost" size="icon" onClick={() => setActiveChat(null)} className="rounded-full w-10 h-10 shrink-0">
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden font-display font-black text-primary">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden font-display font-black text-cta">
             {activeChat.avatar ? <img src={activeChat.avatar} className="w-full h-full object-cover" /> : activeChat.name[0].toUpperCase()}
           </div>
           <div>
@@ -225,7 +225,7 @@ function ChatPage() {
       <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-4 px-4 relative overflow-hidden z-10">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="relative z-10">
-          <div className="flex items-center gap-2 text-primary font-bold mb-2">
+          <div className="flex items-center gap-2 text-cta font-bold mb-2">
             <MessageCircle className="w-5 h-5" /> Communications
           </div>
           <h1 className="font-display text-2xl font-black text-foreground">Chat & Friends</h1>
@@ -264,7 +264,7 @@ function ChatPage() {
                 </div>
                 <div>
                   <h3 className="font-display font-black text-lg text-foreground">{myTeam.name}</h3>
-                  <div className="text-[10px] text-primary uppercase tracking-widest font-bold">Squad Chat</div>
+                  <div className="text-[10px] text-cta uppercase tracking-widest font-bold">Squad Chat</div>
                 </div>
               </div>
             )}
@@ -273,7 +273,7 @@ function ChatPage() {
               <div className="bg-white border border-border rounded-[1.5rem] p-8 text-center mt-4">
                 <Users className="w-8 h-8 text-muted-foreground mx-auto mb-3 opacity-50" />
                 <p className="font-bold text-muted-foreground">No friends yet.</p>
-                <Button variant="link" onClick={() => setView('friends')} className="text-primary mt-2">Find players</Button>
+                <Button variant="link" onClick={() => setView('friends')} className="text-cta mt-2">Find players</Button>
               </div>
             ) : (
               <div className="bg-white border border-border rounded-[1.5rem] overflow-hidden">

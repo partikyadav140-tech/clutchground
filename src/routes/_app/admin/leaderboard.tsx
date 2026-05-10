@@ -94,7 +94,7 @@ function AdminLeaderboardPage() {
           <Button
             variant="outline"
             size="sm"
-            className="h-12 rounded-xl border-primary text-primary hover:bg-primary/5"
+            className="h-12 rounded-xl border-primary text-cta hover:bg-primary/5"
             onClick={() => router.invalidate()}
           >
             <RefreshCw className="w-4 h-4 mr-2" /> Refresh

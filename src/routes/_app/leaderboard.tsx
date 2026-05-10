@@ -29,7 +29,7 @@ function LeaderboardPage() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
         <div className="relative z-10 flex flex-col items-center text-center">
-          <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-3">
+          <div className="w-12 h-12 bg-primary/10 text-cta rounded-2xl flex items-center justify-center mb-3">
             <Crown className="w-6 h-6" />
           </div>
           <h1 className="font-display text-3xl font-black text-foreground">Hall of Fame</h1>
@@ -132,7 +132,7 @@ function LeaderboardPage() {
           <div className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-border bg-secondary/30 text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
             <div className="col-span-2 sm:col-span-1 text-center">Rank</div>
             <div className="col-span-8 sm:col-span-9">Player / Team</div>
-            <div className="col-span-2 text-right text-primary">Pts</div>
+            <div className="col-span-2 text-right text-cta">Pts</div>
           </div>
 
           {leaderboard.length === 0 ? (
@@ -169,7 +169,7 @@ function LeaderboardPage() {
                   </div>
 
                   <div className="col-span-8 sm:col-span-9 flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 grid place-items-center font-display font-black text-xs text-primary shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 grid place-items-center font-display font-black text-xs text-cta shrink-0">
                       {p.team ? p.team[0].toUpperCase() : "T"}
                     </div>
                     <div className="min-w-0">
@@ -179,13 +179,13 @@ function LeaderboardPage() {
                           <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                         )}
                         {p.badge === "elite" && (
-                          <Skull className="w-3.5 h-3.5 text-primary shrink-0" />
+                          <Skull className="w-3.5 h-3.5 text-cta shrink-0" />
                         )}
                       </div>
                     </div>
                   </div>
 
-            <div className="col-span-2 text-right font-semibold text-primary text-sm sm:text-base leading-none">
+            <div className="col-span-2 text-right font-semibold text-cta text-sm sm:text-base leading-none">
               {p.points.toLocaleString()}
             </div>
                 </motion.div>
@@ -227,7 +227,7 @@ function PodiumCard({
 
       {/* Avatar */}
       <div
-        className={`relative z-10 rounded-full bg-white border-2 flex items-center justify-center font-display font-black text-primary shadow-md mb-2 ${
+        className={`relative z-10 rounded-full bg-white border-2 flex items-center justify-center font-display font-black text-cta shadow-md mb-2 ${
           featured
             ? "w-14 h-14 text-2xl border-amber-300"
             : rank === 2

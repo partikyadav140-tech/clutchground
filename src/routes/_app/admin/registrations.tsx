@@ -67,7 +67,7 @@ function AdminRegistrationsPage() {
 
         <Link
           to="/admin"
-          className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-primary mb-4 relative z-10 transition-colors bg-secondary/50 px-3 py-1.5 rounded-full"
+          className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-cta mb-4 relative z-10 transition-colors bg-secondary/50 px-3 py-1.5 rounded-full"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Dashboard
         </Link>
@@ -117,7 +117,7 @@ function AdminRegistrationsPage() {
                       }}
                       className="bg-white rounded-[1.5rem] border border-border shadow-sm hover:shadow-md transition-all p-5 text-left group flex flex-col h-full active:scale-[0.98]"
                     >
-                      <div className="font-display font-black text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1 mb-1.5">
+                      <div className="font-display font-black text-lg text-foreground group-hover:text-cta transition-colors line-clamp-1 mb-1.5">
                         {t.title}
                       </div>
 
@@ -131,10 +131,10 @@ function AdminRegistrationsPage() {
                       </div>
 
                       <div className="mt-auto flex items-center justify-between pt-4 border-t border-border/50">
-                        <span className="text-[10px] uppercase tracking-widest text-primary font-bold bg-primary/10 px-2.5 py-1 rounded-full">
+                        <span className="text-[10px] uppercase tracking-widest text-cta font-bold bg-primary/10 px-2.5 py-1 rounded-full">
                           {regCount} {regCount === 1 ? "Entry" : "Entries"}
                         </span>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-cta group-hover:translate-x-1 transition-all">
                           View &rarr;
                         </span>
                       </div>
@@ -190,7 +190,7 @@ function AdminRegistrationsPage() {
                       <div className="p-5 border-b border-border/50 bg-secondary/20">
                         <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
                           <div>
-                            <div className="font-display font-black text-xl text-primary uppercase tracking-wide">
+                            <div className="font-display font-black text-xl text-cta uppercase tracking-wide">
                               {selectedTournament?.mode === "Squad" ? (r.team_name || r.username) : r.username}
                             </div>
                             <div className="text-[11px] font-bold text-muted-foreground mt-1 uppercase tracking-wider">
@@ -232,7 +232,7 @@ function AdminRegistrationsPage() {
                                 key={idx}
                                 className="flex gap-3 items-center bg-white rounded-xl p-2.5 border border-border shadow-sm"
                               >
-                                <span className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-display font-black text-xs shrink-0">
+                                <span className="w-8 h-8 rounded-lg bg-primary/10 text-cta flex items-center justify-center font-display font-black text-xs shrink-0">
                                   P{idx + 1}
                                 </span>
                                 <div className="min-w-0 flex-1">

@@ -105,7 +105,7 @@ export function WalletDepositDialog({ trigger, onSuccess }: { trigger: React.Rea
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-md bg-card border-primary/40">
+      <DialogContent className="">
         <div className="absolute inset-x-0 top-0 h-px bg-fire-gradient" />
         <DialogHeader>
           <DialogTitle className="font-display text-2xl font-black">
@@ -114,7 +114,7 @@ export function WalletDepositDialog({ trigger, onSuccess }: { trigger: React.Rea
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="flex items-center gap-2 text-primary mb-4">
+          <div className="flex items-center gap-2 text-cta mb-4">
             <CreditCard className="w-5 h-5" />
             <span className="text-sm font-display uppercase tracking-widest font-bold">Quick Amounts</span>
           </div>
@@ -170,7 +170,7 @@ export function WalletDepositDialog({ trigger, onSuccess }: { trigger: React.Rea
           </div>
 
           <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 text-xs text-foreground/80">
-            <Check className="w-3 h-3 inline mr-2 text-primary" />
+            <Check className="w-3 h-3 inline mr-2 text-cta" />
             Secure payment via Razorpay. Your wallet will be credited immediately after successful payment.
           </div>
         </div>

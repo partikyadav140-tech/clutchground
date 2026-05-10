@@ -393,13 +393,13 @@ export function JoinBattleDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border-primary/40 clip-notch">
-        <div className="absolute inset-x-0 top-0 h-px bg-fire-gradient" />
+      <DialogContent className="max-h-[90vh] overflow-y-auto bg-card/95 backdrop-blur-3xl border-white/10 shadow-2xl rounded-[1.5rem]">
+        <div className="absolute inset-x-0 top-0 h-px bg-primary-gradient shadow-[0_0_15px_rgba(255,0,85,0.8)]" />
         <DialogHeader>
           <DialogTitle className="font-display text-2xl sm:text-3xl font-black tracking-tight">
-            <span className="text-fire-gradient">JOIN BATTLE</span>
+            <span className="text-transparent bg-clip-text bg-primary-gradient drop-shadow-[0_0_8px_rgba(255,0,85,0.6)]">JOIN BATTLE</span>
           </DialogTitle>
-          <DialogDescription className="text-xs uppercase tracking-[0.2em] font-display">
+          <DialogDescription className="text-xs uppercase tracking-[0.2em] font-display text-muted-foreground font-bold">
             {tournamentTitle} · {mode}
           </DialogDescription>
         </DialogHeader>
@@ -407,47 +407,47 @@ export function JoinBattleDialog({
         {/* Player Selection from registered team */}
         {showPlayerSelection && mode !== "Solo" && (
           <div className="space-y-4 py-4">
-            <div className="flex items-center gap-2 text-primary">
+            <div className="flex items-center gap-2 text-cta">
               <Users className="w-4 h-4" />
-              <span className="text-xs font-display uppercase tracking-widest">
+              <span className="text-xs font-black uppercase tracking-widest text-glow">
                 {mode === "Duo"
                   ? "Select your Duo partner"
                   : `Select ${teamCount} players for ${mode}`}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground font-semibold">
               Your team has {availableMembers.length} member
               {availableMembers.length !== 1 ? "s" : ""}. Please select {teamCount} player
               {teamCount !== 1 ? "s" : ""} for this {mode} match.
             </p>
-            <div className="bg-secondary/60 border border-border clip-notch p-4 space-y-2 max-h-64 overflow-y-auto">
+            <div className="bg-black/40 border border-white/5 rounded-[1.25rem] p-4 space-y-2 max-h-64 overflow-y-auto shadow-inner">
               {availableMembers.map((m, idx) => (
                 <button
                   key={idx}
                   onClick={() => togglePlayerSelection(idx)}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg border transition-all ${
+                  className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
                     selectedPlayers.has(idx)
-                      ? "bg-primary/10 border-primary text-primary"
-                      : "bg-white border-border hover:border-primary/50"
+                      ? "bg-primary/20 border-primary text-cta shadow-[0_0_10px_rgba(255,0,85,0.3)]"
+                      : "bg-black/30 border-white/5 hover:border-white/20 hover:bg-black/50"
                   }`}
                 >
                   <div className="flex items-center gap-3 text-left">
                     <div
-                      className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                        selectedPlayers.has(idx) ? "bg-primary border-primary" : "border-border"
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                        selectedPlayers.has(idx) ? "bg-primary border-primary" : "border-white/20"
                       }`}
                     >
                       {selectedPlayers.has(idx) && <Check className="w-3 h-3 text-white" />}
                     </div>
                     <div>
-                      <div className="font-bold text-sm text-foreground">{m.ign}</div>
-                      <div className="text-[10px] text-muted-foreground font-mono">
+                      <div className="font-bold text-sm text-white">{m.ign}</div>
+                      <div className="text-[10px] text-muted-foreground font-mono font-semibold">
                         UID: {m.uid}
                       </div>
                     </div>
                   </div>
                   {selectedPlayers.has(idx) && (
-                    <span className="text-[10px] font-bold uppercase px-2 py-1 bg-primary text-white rounded">
+                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-primary text-white rounded">
                       Selected
                     </span>
                   )}
@@ -462,15 +462,15 @@ export function JoinBattleDialog({
                   setAvailableMembers([]);
                   setSelectedPlayers(new Set());
                 }}
-                className="flex-1 rounded-lg"
+                className="flex-1 rounded-xl border-white/10 text-white font-bold bg-transparent hover:bg-white/5 uppercase tracking-widest text-xs"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSelectPlayers}
-                className="flex-1 bg-primary text-white rounded-lg font-bold"
+                className="flex-1 bg-cta-gradient text-cta-foreground rounded-xl font-black shadow-cta border border-cta/50 uppercase tracking-widest text-xs"
               >
-                <Check className="w-4 h-4 mr-2" /> Confirm Selection
+                <Check className="w-4 h-4 mr-2" /> Confirm
               </Button>
             </div>
           </div>
@@ -479,14 +479,14 @@ export function JoinBattleDialog({
         {/* Team Input Step */}
         {step === "team-input" && mode !== "Solo" && (
           <div className="space-y-4 py-4">
-            <div className="flex items-center gap-2 text-primary">
+            <div className="flex items-center gap-2 text-cta">
               <Users className="w-4 h-4" />
-              <span className="text-xs font-display uppercase tracking-widest">Team Details</span>
+              <span className="text-xs font-black uppercase tracking-widest text-glow">Team Details</span>
             </div>
 
             {/* Team Name */}
-            <div className="bg-secondary/60 border border-border clip-notch p-4 space-y-3">
-              <div className="text-xs font-display font-bold text-muted-foreground uppercase tracking-widest mb-3">
+            <div className="bg-black/40 border border-white/5 rounded-[1.25rem] p-4 space-y-3 shadow-inner">
+              <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-3">
                 Team Information
               </div>
               <Field
@@ -499,10 +499,10 @@ export function JoinBattleDialog({
             </div>
 
             {/* Captain Details */}
-            <div className="bg-secondary/60 border border-border clip-notch p-4 space-y-3">
+            <div className="bg-black/40 border border-white/5 rounded-[1.25rem] p-4 space-y-3 shadow-inner">
               <div className="flex items-center gap-2 mb-3">
                 <Crown className="w-4 h-4 text-amber-500" />
-                <span className="text-xs font-display font-bold text-muted-foreground uppercase tracking-widest">
+                <span className="text-[10px] font-black text-white uppercase tracking-widest">
                   Captain (You)
                 </span>
               </div>
@@ -525,13 +525,13 @@ export function JoinBattleDialog({
             </div>
 
             {/* Teammates Details */}
-            <div className="bg-secondary/60 border border-border clip-notch p-4 space-y-3">
-              <div className="text-xs font-display font-bold text-muted-foreground uppercase tracking-widest mb-3">
+            <div className="bg-black/40 border border-white/5 rounded-[1.25rem] p-4 space-y-3 shadow-inner">
+              <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-3">
                 Team Members
               </div>
               {teammates.slice(0, teamCount).map((t, i) => (
-                <div key={i} className="pb-3 border-b border-border/40 last:border-b-0 last:pb-0">
-                  <div className="text-[10px] font-display font-bold text-muted-foreground uppercase tracking-widest mb-2">
+                <div key={i} className="pb-3 border-b border-white/5 last:border-b-0 last:pb-0">
+                  <div className="text-[10px] font-black text-white uppercase tracking-widest mb-2">
                     Player {i + 2}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -567,17 +567,17 @@ export function JoinBattleDialog({
             </div>
 
             {/* Fetch Team Details Button */}
-            <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-[1.25rem] p-3 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
               <Button
                 onClick={fetchTeamDetails}
                 disabled={loadingTeam}
-                className="w-full bg-primary text-white font-display"
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-black uppercase tracking-widest text-xs h-11 rounded-xl shadow-[0_0_15px_rgba(59,130,246,0.5)] border border-blue-400/50"
               >
                 <Download className="w-4 h-4 mr-2" />
-                {loadingTeam ? "Fetching..." : "Auto-fill From Registered Team"}
+                {loadingTeam ? "Fetching..." : "Auto-fill From Team"}
               </Button>
-              <p className="text-[10px] text-muted-foreground mt-2">
-                Click to automatically fill all player details from your registered team
+              <p className="text-[10px] font-semibold text-muted-foreground mt-2 text-center">
+                Automatically fill player details from your registered squad
               </p>
             </div>
           </div>
@@ -586,49 +586,49 @@ export function JoinBattleDialog({
         {/* Team Preview Step */}
         {step === "team-preview" && mode !== "Solo" && (
           <div className="space-y-4 py-4">
-            <div className="flex items-center gap-2 text-primary">
+            <div className="flex items-center gap-2 text-cta">
               <Users className="w-4 h-4" />
-              <span className="text-xs font-display uppercase tracking-widest">Team Roster</span>
+              <span className="text-xs font-black uppercase tracking-widest text-glow">Team Roster</span>
             </div>
-            <div className="bg-secondary/60 border border-border clip-notch overflow-hidden">
+            <div className="bg-black/40 border border-white/5 rounded-[1.25rem] overflow-hidden shadow-inner">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-border/60 hover:bg-secondary/40">
-                    <TableHead className="text-[10px] uppercase font-display font-bold">
+                  <TableRow className="border-white/5 hover:bg-black/20">
+                    <TableHead className="text-[9px] uppercase font-black text-muted-foreground tracking-widest">
                       Position
                     </TableHead>
-                    <TableHead className="text-[10px] uppercase font-display font-bold">
+                    <TableHead className="text-[9px] uppercase font-black text-muted-foreground tracking-widest">
                       IGN
                     </TableHead>
-                    <TableHead className="text-[10px] uppercase font-display font-bold">
+                    <TableHead className="text-[9px] uppercase font-black text-muted-foreground tracking-widest">
                       UID
                     </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow className="border-border/60 hover:bg-secondary/40">
-                    <TableCell className="text-xs font-display font-bold">
+                  <TableRow className="border-white/5 hover:bg-black/20">
+                    <TableCell className="text-xs font-black text-white">
                       <Crown className="w-4 h-4 inline mr-2 text-amber-500" />
                       Captain
                     </TableCell>
-                    <TableCell className="text-xs">{leader.ign}</TableCell>
-                    <TableCell className="text-xs font-mono">{leader.uid}</TableCell>
+                    <TableCell className="text-xs font-bold text-white">{leader.ign}</TableCell>
+                    <TableCell className="text-xs font-mono font-bold text-white">{leader.uid}</TableCell>
                   </TableRow>
                   {teammates.slice(0, teamCount).map((t, i) => (
-                    <TableRow key={i} className="border-border/60 hover:bg-secondary/40">
-                      <TableCell className="text-xs font-display font-bold">
+                    <TableRow key={i} className="border-white/5 hover:bg-black/20">
+                      <TableCell className="text-xs font-black text-white">
                         Player {i + 2}
                       </TableCell>
-                      <TableCell className="text-xs">{t.ign}</TableCell>
-                      <TableCell className="text-xs font-mono">{t.uid}</TableCell>
+                      <TableCell className="text-xs font-bold text-white">{t.ign}</TableCell>
+                      <TableCell className="text-xs font-mono font-bold text-white">{t.uid}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </div>
-            <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
-              <p className="text-xs text-foreground/80">
-                <Check className="w-3 h-3 inline mr-2 text-primary" />
+            <div className="bg-primary/10 border border-primary/30 rounded-xl p-3 shadow-[0_0_10px_rgba(255,0,85,0.1)]">
+              <p className="text-xs font-semibold text-white/80">
+                <Check className="w-3 h-3 inline mr-2 text-cta" />
                 Review your team roster. Click "Next" to confirm registration details.
               </p>
             </div>
@@ -638,19 +638,19 @@ export function JoinBattleDialog({
         {/* Confirm Step */}
         {step === "confirm" && (
           <div className="space-y-4 py-4">
-            <div className="flex items-center gap-2 text-primary">
+            <div className="flex items-center gap-2 text-cta">
               <Trophy className="w-4 h-4" />
-              <span className="text-xs font-display uppercase tracking-widest">Confirm Entry</span>
+              <span className="text-xs font-black uppercase tracking-widest text-glow">Confirm Entry</span>
             </div>
-            <div className="bg-secondary/60 border border-border clip-notch p-4 space-y-2 text-sm">
+            <div className="bg-black/40 border border-white/5 rounded-[1.25rem] p-4 space-y-2 text-sm shadow-inner">
               <Row k="Tournament" v={tournamentTitle} />
               <Row k="Mode" v={mode} />
               {mode !== "Solo" && <Row k="Team" v={leader.teamName} />}
               <Row k="Captain" v={`${leader.ign} (UID ${leader.uid})`} />
               <Row k="Contact" v={`${leader.email} · ${leader.phone}`} />
               {mode !== "Solo" && (
-                <div className="pt-2 mt-2 border-t border-border/60">
-                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+                <div className="pt-2 mt-2 border-t border-white/5">
+                  <div className="text-[9px] font-black uppercase tracking-widest text-cta mb-1 text-glow">
                     Roster
                   </div>
                   {teammates.slice(0, teamCount).map((t, i) => (
@@ -659,15 +659,15 @@ export function JoinBattleDialog({
                 </div>
               )}
             </div>
-            <label className="flex items-start gap-2 text-xs text-muted-foreground">
+            <label className="flex items-start gap-2.5 text-xs text-muted-foreground cursor-pointer px-1">
               <input
                 type="checkbox"
                 checked={agree}
                 onChange={(e) => setAgree(e.target.checked)}
-                className="accent-primary mt-0.5"
+                className="accent-primary mt-0.5 shrink-0 w-3.5 h-3.5 rounded bg-black/40 border-white/10"
               />
-              <span>
-                I confirm all UIDs are accurate. I accept the rules, anti-cheat policy, and consent
+              <span className="font-semibold leading-relaxed">
+                I confirm all UIDs are accurate. I accept the <span className="text-cta font-bold">rules</span>, <span className="text-cta font-bold">anti-cheat policy</span>, and consent
                 to screenshot verification.
               </span>
             </label>
@@ -675,22 +675,21 @@ export function JoinBattleDialog({
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-4 mt-2 border-t border-border/60">
+        <div className="flex items-center justify-between pt-4 mt-2 border-t border-white/5">
           {(step === "team-preview" || step === "confirm") && (
-            <Button variant="outline" onClick={handlePreviousStep} className="rounded-lg">
+            <Button variant="outline" onClick={handlePreviousStep} className="rounded-xl border-white/10 bg-transparent text-white font-bold hover:bg-white/5 text-xs uppercase tracking-widest">
               <ChevronLeft className="w-4 h-4 mr-2" /> Back
             </Button>
           )}
           <div className="flex-1" />
           {step === "confirm" ? (
-            <Button variant="hero" onClick={submit} className="font-display tracking-wider">
+            <Button onClick={submit} className="rounded-xl font-black bg-cta-gradient text-cta-foreground h-11 shadow-cta border border-cta/50 text-xs uppercase tracking-widest hover:scale-105 transition-transform">
               <Trophy className="w-4 h-4 mr-2" /> LOCK MY SLOT
             </Button>
           ) : (
             <Button
-              variant="hero"
               onClick={handleNextStep}
-              className="font-display tracking-wider"
+              className="rounded-xl font-black bg-cta-gradient text-cta-foreground h-11 shadow-cta border border-cta/50 text-xs uppercase tracking-widest hover:scale-105 transition-transform"
               disabled={step === "team-input" && mode === "Solo"}
             >
               Next <ChevronRight className="w-4 h-4 ml-2" />
@@ -724,7 +723,7 @@ function Field({
   return (
     <div className={className}>
       <label
-        className={`block text-[10px] uppercase tracking-widest font-display font-bold text-muted-foreground mb-1 ${compact ? "" : ""}`}
+        className={`block text-[10px] uppercase tracking-widest font-black text-muted-foreground mb-1`}
       >
         {label}
       </label>
@@ -734,7 +733,7 @@ function Field({
         placeholder={placeholder}
         type={type}
         maxLength={maxLength}
-        className={`w-full bg-background border border-border focus:border-primary outline-none px-3 ${compact ? "h-9 text-sm" : "h-10 text-sm"} transition-colors`}
+        className={`w-full bg-black/40 border border-white/10 focus:border-primary focus:bg-black/60 outline-none px-3 font-bold text-white transition-colors shadow-inner placeholder:text-white/20 ${compact ? "h-10 rounded-xl text-sm" : "h-12 rounded-xl text-sm"}`}
       />
     </div>
   );
@@ -742,9 +741,9 @@ function Field({
 
 function Row({ k, v }: { k: string; v: string }) {
   return (
-    <div className="flex justify-between gap-4 text-xs">
-      <span className="text-muted-foreground uppercase tracking-widest text-[10px]">{k}</span>
-      <span className="font-bold text-foreground text-right truncate">{v}</span>
+    <div className="flex justify-between gap-4 text-xs py-0.5">
+      <span className="text-muted-foreground uppercase tracking-widest text-[9px] font-black">{k}</span>
+      <span className="font-bold text-white text-right truncate">{v}</span>
     </div>
   );
 }

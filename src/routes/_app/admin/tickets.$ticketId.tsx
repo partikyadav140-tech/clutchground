@@ -99,7 +99,7 @@ function AdminTicketChatPage() {
                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                   {isAdmin ? 'YOU (ADMIN)' : r.ign || r.username}
                 </span>
-                {isAdmin && <ShieldAlert className="w-3 h-3 text-primary" />}
+                {isAdmin && <ShieldAlert className="w-3 h-3 text-cta" />}
               </div>
               <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm font-semibold whitespace-pre-wrap ${
                 isAdmin ? 'bg-primary text-white rounded-tr-sm' : 'bg-white border border-border text-foreground rounded-tl-sm'

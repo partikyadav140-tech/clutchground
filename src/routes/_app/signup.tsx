@@ -9,7 +9,7 @@ import { Eye, EyeOff, Flame } from "lucide-react";
 import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/_app/signup")({
-  head: () => ({ meta: [{ title: "Sign Up — Professional Esports Arena" }] }),
+  head: () => ({ meta: [{ title: "Sign Up — CLUTCHGROUND" }] }),
   component: SignupPage,
 });
 
@@ -42,10 +42,10 @@ function SignupPage() {
   };
 
   return (
-    <div className="min-h-[100svh] flex flex-col items-center justify-center px-4 py-8 mb-safe lg:mb-0 bg-background relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute top-0 right-0 w-64 h-64 lg:w-96 lg:h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 lg:w-96 lg:h-96 bg-primary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 pointer-events-none" />
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center px-4 py-8 bg-background relative overflow-hidden">
+      {/* Background Cyberpunk decorations */}
+      <div className="absolute top-0 right-0 w-64 h-64 lg:w-96 lg:h-96 bg-primary/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-64 h-64 lg:w-96 lg:h-96 bg-blue-500/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/3 pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -55,11 +55,11 @@ function SignupPage() {
       >
         {/* Logo */}
         <div className="flex flex-col items-center mb-6 lg:mb-8">
-          <div className="w-16 h-16 lg:w-20 lg:h-20 bg-white rounded-[1.25rem] shadow-sm border border-border flex items-center justify-center mb-3">
+          <div className="w-16 h-16 lg:w-20 lg:h-20 bg-card rounded-[1.25rem] shadow-[0_0_20px_rgba(255,0,85,0.3)] border border-primary/30 flex items-center justify-center mb-3">
             <Logo size={40} withText={false} />
           </div>
           <div className="text-center">
-            <h1 className="font-display text-2xl lg:text-3xl font-black text-foreground">
+            <h1 className="font-display text-2xl lg:text-3xl font-black text-white text-glow">
               Join The Arena
             </h1>
             <p className="text-muted-foreground text-sm lg:text-base mt-1 font-semibold">
@@ -69,7 +69,7 @@ function SignupPage() {
         </div>
 
         {/* Form card */}
-        <div className="rounded-[1.5rem] lg:rounded-[2rem] border border-border bg-white p-6 lg:p-8 shadow-sm">
+        <div className="rounded-[1.5rem] lg:rounded-[2rem] border border-white/5 bg-card/80 backdrop-blur-xl p-6 lg:p-8 shadow-card">
           <form onSubmit={handleSignup} className="space-y-4 lg:space-y-5">
             {/* Row 1 */}
             <div className="grid grid-cols-2 gap-3">
@@ -141,12 +141,12 @@ function SignupPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="new-password"
-                  className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-white outline-none px-4 pr-12 h-12 text-sm rounded-xl transition-all font-bold placeholder:font-semibold"
+                  className="w-full bg-black/30 border border-white/10 focus:border-primary focus:bg-black/50 text-white outline-none px-4 pr-12 h-12 text-sm rounded-xl transition-all font-bold placeholder:text-white/20"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-cta transition-colors"
                 >
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -158,19 +158,19 @@ function SignupPage() {
               <input
                 type="checkbox"
                 required
-                className="accent-primary mt-0.5 shrink-0 w-3.5 h-3.5 rounded"
+                className="accent-primary mt-0.5 shrink-0 w-3.5 h-3.5 rounded bg-black/30 border-white/10"
               />
               <span className="leading-relaxed font-semibold">
                 I accept the{" "}
-                <a href="/rules" className="text-primary font-bold hover:underline">
+                <a href="/rules" className="text-cta font-bold hover:text-white transition-colors">
                   Rules
                 </a>
                 ,{" "}
-                <a href="/terms" className="text-primary font-bold hover:underline">
+                <a href="/terms" className="text-cta font-bold hover:text-white transition-colors">
                   Terms
                 </a>{" "}
                 &{" "}
-                <a href="/privacy" className="text-primary font-bold hover:underline">
+                <a href="/privacy" className="text-cta font-bold hover:text-white transition-colors">
                   Privacy Policy
                 </a>
                 . I confirm I am 13+ years old.
@@ -180,7 +180,7 @@ function SignupPage() {
             {/* Submit */}
             <Button
               type="submit"
-              className="w-full font-bold mt-4 h-12 rounded-xl bg-primary text-white shadow-primary hover:opacity-90 active:scale-[0.98] transition-all"
+              className="w-full font-black uppercase tracking-widest mt-4 h-12 rounded-xl bg-cta-gradient text-cta-foreground shadow-cta hover:scale-[1.02] active:scale-[0.98] transition-all border border-cta/50"
               disabled={loading}
             >
               {loading ? (
@@ -198,22 +198,22 @@ function SignupPage() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground font-semibold">
             Already a warrior?{" "}
-            <a href="/login" className="text-primary font-black hover:underline">
+            <a href="/login" className="text-cta font-black hover:text-white transition-colors">
               Log in
             </a>
           </p>
         </div>
 
         <div className="mt-8 flex items-center justify-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-          <a href="/rules" className="hover:text-primary transition-colors">
+          <a href="/rules" className="hover:text-cta transition-colors">
             Rules
           </a>
-          <span className="w-1 h-1 rounded-full bg-border" />
-          <a href="/anti-cheat" className="hover:text-primary transition-colors">
+          <span className="w-1 h-1 rounded-full bg-white/10" />
+          <a href="/anti-cheat" className="hover:text-cta transition-colors">
             Anti-Cheat
           </a>
-          <span className="w-1 h-1 rounded-full bg-border" />
-          <a href="/contact" className="hover:text-primary transition-colors">
+          <span className="w-1 h-1 rounded-full bg-white/10" />
+          <a href="/contact" className="hover:text-cta transition-colors">
             Support
           </a>
         </div>
@@ -233,7 +233,7 @@ function Field({
       </label>
       <input
         {...rest}
-        className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-white outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold placeholder:font-semibold"
+        className="w-full bg-black/30 border border-white/10 focus:border-primary focus:bg-black/50 text-white outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold placeholder:text-white/20"
       />
     </div>
   );

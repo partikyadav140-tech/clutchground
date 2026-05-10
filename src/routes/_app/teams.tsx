@@ -284,7 +284,7 @@ function TeamsPage() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
         <div className="relative z-10 flex flex-col items-center text-center">
-          <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-3">
+          <div className="w-12 h-12 bg-primary/10 text-cta rounded-2xl flex items-center justify-center mb-3">
             <Shield className="w-6 h-6" />
           </div>
           <h1 className="font-display text-3xl font-black text-foreground">My Squad</h1>
@@ -304,7 +304,7 @@ function TeamsPage() {
           >
             <div className="p-5 border-b border-border/50 flex items-center justify-between bg-secondary/10">
               <div className="flex items-center gap-2.5">
-                <Users className="w-5 h-5 text-primary" />
+                <Users className="w-5 h-5 text-cta" />
                 <h3 className="font-display font-black text-lg text-foreground">
                   {myTeam ? "Edit Squad" : "Create Your Squad"}
                 </h3>
@@ -349,7 +349,7 @@ function TeamsPage() {
                         key={i}
                         className="flex gap-2 items-center p-3 rounded-xl border border-border/50 bg-secondary/20"
                       >
-                        <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary">
+                        <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center text-[10px] font-black text-cta">
                           P{i + 2}
                         </div>
                         <input
@@ -416,7 +416,7 @@ function TeamsPage() {
                   </Button>
                   <Button
                     onClick={handleSaveTeam}
-                    className="flex-1 h-12 rounded-xl font-bold bg-primary text-white shadow-primary"
+                    className="flex-1 h-12 rounded-xl font-black bg-cta-gradient text-cta-foreground shadow-cta border border-cta/50 uppercase tracking-widest text-xs"
                   >
                     <Save className="w-4 h-4 mr-2" /> {myTeam ? "Save Squad" : "Create Squad"}
                   </Button>
@@ -434,7 +434,7 @@ function TeamsPage() {
             >
               <div className="p-5 border-b border-border/50 flex items-center justify-between bg-secondary/10">
                 <div className="flex items-center gap-2.5">
-                  <Users className="w-5 h-5 text-primary" />
+                  <Users className="w-5 h-5 text-cta" />
                   <h3 className="font-display font-black text-lg text-foreground">My Squad</h3>
                 </div>
                 <div className="flex gap-2">
@@ -483,7 +483,7 @@ function TeamsPage() {
                     <div className="font-display text-3xl font-black text-foreground flex-1">
                       {myTeam.name}
                       {myTeam.leader_id === user.id && teamRequests.length > 0 && (
-                        <span className="block sm:inline-flex items-center gap-2 sm:ml-3 mt-2 sm:mt-0 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-[0.2em]">
+                        <span className="block sm:inline-flex items-center gap-2 sm:ml-3 mt-2 sm:mt-0 px-3 py-1 rounded-full bg-primary/10 text-cta text-xs font-semibold uppercase tracking-[0.2em]">
                           <span>{teamRequests.length}</span>
                           Pending Request{teamRequests.length !== 1 ? "s" : ""}
                         </span>
@@ -560,7 +560,7 @@ function TeamsPage() {
                       <div className="flex items-center justify-between p-3.5 rounded-xl bg-primary/5 border border-primary/20">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Crown className="w-5 h-5 text-primary" />
+                            <Crown className="w-5 h-5 text-cta" />
                           </div>
                           <div>
                             <div className="font-bold text-sm text-foreground">
@@ -627,7 +627,7 @@ function TeamsPage() {
             className="bg-white rounded-[1.5rem] border border-border shadow-sm overflow-hidden"
           >
             <div className="p-5 border-b border-border/50 flex items-center gap-3 bg-secondary/10">
-              <Shield className="w-5 h-5 text-primary" />
+              <Shield className="w-5 h-5 text-cta" />
               <div>
                 <h3 className="font-display font-black text-lg text-foreground">
                   Join Request Status
@@ -719,7 +719,7 @@ function TeamsPage() {
                     key={t.id}
                     className="bg-white rounded-[1.5rem] border border-border hover:border-primary/40 hover:shadow-lg transition-all p-5 flex flex-col relative overflow-hidden group"
                   >
-                    <div className="absolute top-0 right-0 p-4 font-display font-black text-xl text-secondary group-hover:text-primary/10 transition-colors z-0">
+                    <div className="absolute top-0 right-0 p-4 font-display font-black text-xl text-secondary group-hover:text-cta/10 transition-colors z-0">
                       #{t.id}
                     </div>
 
@@ -732,7 +732,7 @@ function TeamsPage() {
                         )}
                       </div>
                       <div>
-                        <h3 className="font-display text-xl font-black text-foreground group-hover:text-primary transition-colors">
+                        <h3 className="font-display text-xl font-black text-foreground group-hover:text-cta transition-colors">
                           {t.name}
                         </h3>
                         <div className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
@@ -743,7 +743,7 @@ function TeamsPage() {
 
                     <div className="grid grid-cols-2 gap-3 mb-5">
                       <div className="bg-secondary/30 rounded-xl p-3 border border-border/50 flex flex-col items-center">
-                        <Users className="w-4 h-4 text-primary mb-1" />
+                        <Users className="w-4 h-4 text-cta mb-1" />
                         <div className="font-display font-black text-lg text-foreground leading-tight">
                           {t.members?.length + 1 || 1}/4
                         </div>
@@ -752,7 +752,7 @@ function TeamsPage() {
                         </div>
                       </div>
                       <div className="bg-secondary/30 rounded-xl p-3 border border-border/50 flex flex-col items-center">
-                        <Calendar className="w-4 h-4 text-primary mb-1" />
+                        <Calendar className="w-4 h-4 text-cta mb-1" />
                         <div className="font-display font-black text-sm text-foreground mt-0.5 leading-tight">
                           {new Date(t.created_at).toLocaleDateString([], {
                             month: "short",
@@ -767,7 +767,7 @@ function TeamsPage() {
 
                     <Button
                       variant="outline"
-                      className="w-full mt-auto rounded-xl font-bold bg-white shadow-sm border-border hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+                      className="w-full mt-auto rounded-xl font-bold bg-white shadow-sm border-border hover:border-primary/30 hover:bg-primary/5 hover:text-cta"
                       onClick={() => handleOpenJoin(t.id)}
                     >
                       Request to Join

@@ -42,7 +42,7 @@ function AdminTicketsPage() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="relative z-10 flex items-center justify-between max-w-4xl mx-auto">
           <div>
-            <div className="flex items-center gap-2 text-primary font-bold mb-2">
+            <div className="flex items-center gap-2 text-cta font-bold mb-2">
               <LifeBuoy className="w-5 h-5" /> Help Desk
             </div>
             <h1 className="font-display text-2xl font-black text-foreground">Support Tickets</h1>
@@ -75,7 +75,7 @@ function AdminTicketsPage() {
                         {t.status}
                       </div>
                     </div>
-                    <h3 className="font-display font-black text-lg text-foreground mb-1 group-hover:text-primary transition-colors line-clamp-1">{t.subject}</h3>
+                    <h3 className="font-display font-black text-lg text-foreground mb-1 group-hover:text-cta transition-colors line-clamp-1">{t.subject}</h3>
                     <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground">
                       <span>User: {t.ign || t.username}</span>
                       <span>•</span>

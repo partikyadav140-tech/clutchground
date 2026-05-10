@@ -37,7 +37,7 @@ export function SplashScreen() {
 
         {/* Cinematic Title text */}
         <h1 className="font-display font-black text-3xl sm:text-5xl text-white tracking-[0.2em] mb-2 drop-shadow-md">
-          CLUTCH<span className="text-primary">GROUND</span>
+          CLUTCH<span className="text-cta">GROUND</span>
         </h1>
         <p className="font-display text-xs sm:text-sm text-muted-foreground uppercase tracking-[0.4em] mb-12">
           Entering The Arena

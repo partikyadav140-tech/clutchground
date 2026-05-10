@@ -109,7 +109,7 @@ function AdminDashboard() {
     <div className="bg-background min-h-screen pt-2 pb-safe">
       {/* ─── Minimal App Header ─── */}
       <div className="px-4 mb-6">
-        <div className="flex items-center gap-2 text-primary font-bold mb-1">
+        <div className="flex items-center gap-2 text-cta font-bold mb-1">
           <ShieldAlert className="w-5 h-5" /> Admin
         </div>
         <h1 className="text-2xl font-display font-black text-foreground">Command Center</h1>

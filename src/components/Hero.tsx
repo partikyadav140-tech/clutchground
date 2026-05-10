@@ -54,10 +54,10 @@ export function Hero() {
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/40 bg-primary/10 backdrop-blur-md mb-5"
           >
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse-glow" />
-            <span className="text-[11px] font-display tracking-[0.2em] text-primary uppercase font-bold">
+            <span className="text-[11px] font-display tracking-[0.2em] text-cta uppercase font-bold">
               Season 7 · Live Now
             </span>
-            <Flame className="w-3.5 h-3.5 text-primary animate-flicker" />
+            <Flame className="w-3.5 h-3.5 text-cta animate-flicker" />
           </motion.div>
 
           {/* Main Headline */}
@@ -150,7 +150,7 @@ export function Hero() {
                 <div className="font-display text-base sm:text-2xl font-black text-white text-glow leading-tight">
                   {s.v}
                 </div>
-                <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-primary/80 font-bold mt-0.5">
+                <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-cta/80 font-bold mt-0.5">
                   {s.l}
                 </div>
               </div>
@@ -167,7 +167,7 @@ export function Hero() {
           opacity: { delay: 1.5, duration: 0.6 },
           y: { duration: 1.8, repeat: Infinity, ease: "easeInOut", delay: 1.5 },
         }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 hidden sm:flex flex-col items-center gap-1 text-primary/60"
+        className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 hidden sm:flex flex-col items-center gap-1 text-cta/60"
       >
         <span className="text-[10px] font-display uppercase tracking-[0.3em]">Scroll</span>
         <ChevronDown className="w-4 h-4" />

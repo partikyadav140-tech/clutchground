@@ -193,7 +193,7 @@ function TournamentDetailPage() {
                 <span className="text-muted-foreground">
                   {t.filled}/{t.slots} slots filled
                 </span>
-                <span className="text-primary">{t.startsAt || t.startsat}</span>
+                <span className="text-cta">{t.startsAt || t.startsat}</span>
               </div>
               <div className="h-2 bg-secondary rounded-full overflow-hidden">
                 <div
@@ -257,13 +257,13 @@ function TournamentDetailPage() {
                   navigator.clipboard?.writeText(window.location.href);
                   toast.success("Link copied!");
                 }}
-                className="flex items-center justify-center gap-2 h-9 rounded-xl border border-border/60 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all text-sm font-semibold active:scale-95"
+                className="flex items-center justify-center gap-2 h-9 rounded-xl border border-border/60 text-muted-foreground hover:text-cta hover:border-primary/40 transition-all text-sm font-semibold active:scale-95"
               >
                 <Share2 className="w-4 h-4" /> Share
               </button>
               <button
                 onClick={() => toast.success("Added to watchlist 🔥")}
-                className="flex items-center justify-center gap-2 h-9 rounded-xl border border-border/60 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all text-sm font-semibold active:scale-95"
+                className="flex items-center justify-center gap-2 h-9 rounded-xl border border-border/60 text-muted-foreground hover:text-cta hover:border-primary/40 transition-all text-sm font-semibold active:scale-95"
               >
                 <Heart className="w-4 h-4" /> Watch
               </button>
@@ -272,7 +272,7 @@ function TournamentDetailPage() {
 
           {/* Room Card (mobile) */}
           <div className="lg:hidden mt-4 rounded-2xl border border-border/60 bg-card-gradient p-4">
-            <div className="text-xs font-display uppercase tracking-widest text-primary mb-3">
+            <div className="text-xs font-display uppercase tracking-widest text-cta mb-3">
               Match Room
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -281,7 +281,7 @@ function TournamentDetailPage() {
                   Room ID
                 </div>
                 {canViewRoom && t.room_id ? (
-                  <div className="font-mono text-lg font-bold text-primary">{t.room_id}</div>
+                  <div className="font-mono text-lg font-bold text-cta">{t.room_id}</div>
                 ) : (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Lock className="w-4 h-4" />
@@ -294,7 +294,7 @@ function TournamentDetailPage() {
                   Password
                 </div>
                 {canViewRoom && t.room_pass ? (
-                  <div className="font-mono text-lg font-bold text-primary">{t.room_pass}</div>
+                  <div className="font-mono text-lg font-bold text-cta">{t.room_pass}</div>
                 ) : (
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Lock className="w-4 h-4" />
@@ -318,7 +318,7 @@ function TournamentDetailPage() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex-1 py-2.5 text-xs font-display font-bold uppercase tracking-widest rounded-lg transition-all ${
                   activeTab === tab.key
-                    ? "bg-card text-primary shadow border border-border/50"
+                    ? "bg-card text-cta shadow border border-border/50"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -373,7 +373,7 @@ function TournamentDetailPage() {
                         className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40 border border-border/50"
                       >
                         <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                          <Icon className="w-4 h-4 text-primary" />
+                          <Icon className="w-4 h-4 text-cta" />
                         </div>
                         <div className="min-w-0">
                           <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -392,7 +392,7 @@ function TournamentDetailPage() {
 
                 {/* About */}
                 <div className="rounded-2xl border border-border/60 bg-card-gradient p-5">
-                  <div className="text-xs font-display uppercase tracking-widest text-primary mb-3">
+                  <div className="text-xs font-display uppercase tracking-widest text-cta mb-3">
                     About This Tournament
                   </div>
                   <div className="text-sm text-muted-foreground leading-relaxed space-y-3">
@@ -400,7 +400,7 @@ function TournamentDetailPage() {
                       Welcome to the ultimate battleground!{" "}
                       <strong className="text-foreground">{t.title}</strong> is a high-stakes{" "}
                       {t.game} event where the best of the best compete for glory and a share of the{" "}
-                      <span className="text-primary font-bold inline-flex items-center gap-1">
+                      <span className="text-cta font-bold inline-flex items-center gap-1">
                         <GodCoin className="w-4 h-4" /> {t.prize.toLocaleString()}
                       </span>{" "}
                       prize pool.
@@ -419,7 +419,7 @@ function TournamentDetailPage() {
 
                 {/* Rules in Info */}
                 <div className="rounded-2xl border border-border/60 bg-card-gradient p-5">
-                  <div className="text-xs font-display uppercase tracking-widest text-primary mb-4">
+                  <div className="text-xs font-display uppercase tracking-widest text-cta mb-4">
                     Tournament Rules
                   </div>
                   <ul className="space-y-3">
@@ -432,7 +432,7 @@ function TournamentDetailPage() {
                       "Prize money credited to wallet within 24 hours of admin verification.",
                     ].map((r, i) => (
                       <li key={i} className="flex gap-3 text-sm text-muted-foreground">
-                        <span className="font-display font-black text-primary text-base shrink-0 w-6">
+                        <span className="font-display font-black text-cta text-base shrink-0 w-6">
                           {String(i + 1).padStart(2, "0")}
                         </span>
                         {r}
@@ -445,7 +445,7 @@ function TournamentDetailPage() {
               {/* Registered Teams Tab */}
               <div className={`space-y-4 ${activeTab !== "registered" ? "hidden lg:block" : ""}`}>
                 <div className="rounded-2xl border border-border/60 bg-card-gradient p-5">
-                  <div className="text-xs font-display uppercase tracking-widest text-primary mb-3">
+                  <div className="text-xs font-display uppercase tracking-widest text-cta mb-3">
                     Registered Teams ({allRegistrations?.length || 0})
                   </div>
                   {allRegistrations && allRegistrations.length > 0 ? (
@@ -478,7 +478,7 @@ function TournamentDetailPage() {
               {/* Prizes Tab */}
               <div className={`space-y-4 ${activeTab !== "prizes" ? "hidden lg:block" : ""}`}>
                 <div className="rounded-2xl border border-border/60 bg-card-gradient p-5">
-                  <div className="text-xs font-display uppercase tracking-widest text-primary mb-4">
+                  <div className="text-xs font-display uppercase tracking-widest text-cta mb-4">
                     Prize Distribution
                   </div>
 
@@ -566,7 +566,7 @@ function TournamentDetailPage() {
                         <h3 className="font-display text-xl sm:text-2xl font-black uppercase tracking-tight text-foreground">
                           Leaderboard
                         </h3>
-                        <p className="text-[10px] text-primary uppercase tracking-widest mt-0.5 font-bold">
+                        <p className="text-[10px] text-cta uppercase tracking-widest mt-0.5 font-bold">
                           Final Match Results
                         </p>
                       </div>
@@ -589,7 +589,7 @@ function TournamentDetailPage() {
                             <th className="px-4 py-4 text-center w-24 whitespace-nowrap">Kills</th>
                             <th className="px-4 py-4 text-center w-24 whitespace-nowrap">Pos</th>
                             {t.mode === "Squad" && (
-                              <th className="px-4 sm:px-6 py-4 text-right w-24 whitespace-nowrap text-primary">Pts</th>
+                              <th className="px-4 sm:px-6 py-4 text-right w-24 whitespace-nowrap text-cta">Pts</th>
                             )}
                           </tr>
                         </thead>
@@ -699,7 +699,7 @@ function TournamentDetailPage() {
                     <span className="text-muted-foreground">
                       {t.filled}/{t.slots} slots
                     </span>
-                    <span className="text-primary">{t.startsAt || t.startsat}</span>
+                    <span className="text-cta">{t.startsAt || t.startsat}</span>
                   </div>
                   <div className="h-2 bg-secondary rounded-full overflow-hidden">
                     <div
@@ -757,13 +757,13 @@ function TournamentDetailPage() {
                       navigator.clipboard?.writeText(window.location.href);
                       toast.success("Link copied!");
                     }}
-                    className="flex items-center justify-center gap-2 h-9 rounded-xl border border-border/60 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all text-sm font-semibold active:scale-95"
+                    className="flex items-center justify-center gap-2 h-9 rounded-xl border border-border/60 text-muted-foreground hover:text-cta hover:border-primary/40 transition-all text-sm font-semibold active:scale-95"
                   >
                     <Share2 className="w-4 h-4" /> Share
                   </button>
                   <button
                     onClick={() => toast.success("Added to watchlist 🔥")}
-                    className="flex items-center justify-center gap-2 h-9 rounded-xl border border-border/60 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all text-sm font-semibold active:scale-95"
+                    className="flex items-center justify-center gap-2 h-9 rounded-xl border border-border/60 text-muted-foreground hover:text-cta hover:border-primary/40 transition-all text-sm font-semibold active:scale-95"
                   >
                     <Heart className="w-4 h-4" /> Watch
                   </button>
@@ -775,7 +775,7 @@ function TournamentDetailPage() {
                 id="room-details-tour"
                 className="rounded-2xl border border-border/60 bg-card-gradient p-5"
               >
-                <div className="text-xs font-display uppercase tracking-widest text-primary mb-4">
+                <div className="text-xs font-display uppercase tracking-widest text-cta mb-4">
                   Match Room
                 </div>
                 <div className="space-y-3">
@@ -784,7 +784,7 @@ function TournamentDetailPage() {
                       Room ID
                     </div>
                     {canViewRoom && t.room_id ? (
-                      <div className="font-mono text-xl font-bold text-primary">{t.room_id}</div>
+                      <div className="font-mono text-xl font-bold text-cta">{t.room_id}</div>
                     ) : (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Lock className="w-4 h-4" />
@@ -797,7 +797,7 @@ function TournamentDetailPage() {
                       Password
                     </div>
                     {canViewRoom && t.room_pass ? (
-                      <div className="font-mono text-xl font-bold text-primary">{t.room_pass}</div>
+                      <div className="font-mono text-xl font-bold text-cta">{t.room_pass}</div>
                     ) : (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <Lock className="w-4 h-4" />

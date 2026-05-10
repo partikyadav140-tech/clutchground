@@ -78,7 +78,7 @@ function AdminPayoutsPage() {
 
         <Link
           to="/admin"
-          className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-primary mb-4 relative z-10 transition-colors bg-secondary/50 px-3 py-1.5 rounded-full"
+          className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-cta mb-4 relative z-10 transition-colors bg-secondary/50 px-3 py-1.5 rounded-full"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Dashboard
         </Link>
@@ -164,7 +164,7 @@ function AdminPayoutsPage() {
                             <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px] block mb-0.5">
                               UPI ID
                             </span>
-                            <span className="font-mono font-semibold text-primary bg-primary/5 px-1.5 py-0.5 rounded">
+                            <span className="font-mono font-semibold text-cta bg-primary/5 px-1.5 py-0.5 rounded">
                               {p.upi_id}
                             </span>
                           </div>

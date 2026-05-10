@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_app/rules")({
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
         <div className="relative z-10 flex flex-col items-center text-center">
-          <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-3">
+          <div className="w-12 h-12 bg-primary/10 text-cta rounded-2xl flex items-center justify-center mb-3">
             <ScrollText className="w-6 h-6" />
           </div>
           <h1 className="font-display text-3xl font-black text-foreground">Rules</h1>
@@ -41,7 +41,7 @@ export const Route = createFileRoute("/_app/rules")({
               className="flex gap-4 p-5 bg-white rounded-2xl border border-border shadow-sm items-start"
             >
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <span className="font-display font-black text-lg text-primary">
+                <span className="font-display font-black text-lg text-cta">
                   {String(i + 1).padStart(2, "0")}
                 </span>
               </div>

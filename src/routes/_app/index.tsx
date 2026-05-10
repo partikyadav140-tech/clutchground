@@ -99,7 +99,7 @@ function HomePage() {
         {/* Action Grid */}
         <div className="grid grid-cols-4 gap-3">
           <QuickAction icon={Wallet} label="Add Cash" to="/wallet" color="text-emerald-400 bg-emerald-400/10" />
-          <QuickAction icon={Trophy} label="Matches" to="/matches" color="text-primary bg-primary/10" />
+          <QuickAction icon={Trophy} label="Matches" to="/matches" color="text-cta bg-primary/10" />
           <QuickAction icon={Users} label="Teams" to="/teams" color="text-blue-400 bg-blue-400/10" />
           <QuickAction icon={Crown} label="Ranks" to="/leaderboard" color="text-amber-400 bg-amber-400/10" />
         </div>
@@ -117,7 +117,7 @@ function HomePage() {
         <div className="mb-8">
           <div className="px-4 flex items-center justify-between mb-4">
             <h3 className="font-display font-black text-lg text-foreground flex items-center gap-2">
-              <Flame className="w-5 h-5 text-primary" /> Featured
+              <Flame className="w-5 h-5 text-cta" /> Featured
             </h3>
             <Link to="/tournaments" className="text-xs font-bold text-muted-foreground flex items-center">
               See All <ChevronRight className="w-4 h-4" />
@@ -177,60 +177,70 @@ function AppTournamentCard({ t, i }: { t: any; i: number }) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: i * 0.05 }}
-      className="shrink-0 w-[80vw] max-w-[300px] snap-center rounded-[1.5rem] bg-card border border-white/5 shadow-xl overflow-hidden flex flex-col relative"
+      className="shrink-0 w-[80vw] max-w-[300px] snap-center group relative rounded-[1.5rem] p-[1px] overflow-hidden"
     >
-      <div className="relative h-32 w-full overflow-hidden">
-        <img src={poster} alt={t.title} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-card to-transparent" />
-        
-        <div className="absolute top-3 left-3 flex gap-2">
-          {t.status === "live" && (
-            <span className="px-2 py-0.5 rounded-full bg-red-500 text-white text-[9px] font-black uppercase tracking-widest flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live
-            </span>
-          )}
-          <span className="px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-widest border border-white/10">
-            {t.mode}
-          </span>
-        </div>
-      </div>
-
-      <div className="p-4 flex flex-col flex-1 relative z-10 -mt-6">
-        <div className="flex justify-between items-start gap-2 mb-3">
-          <h4 className="font-display font-black text-base text-white leading-tight line-clamp-1 drop-shadow-md">
-            {t.title}
-          </h4>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 mb-4 bg-background/50 rounded-xl p-2 border border-white/5">
-          <div className="flex flex-col items-center justify-center">
-            <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider mb-1">Entry</span>
-            <span className="text-xs font-black text-primary flex items-center gap-1">
-              {t.entry === 0 ? "FREE" : <><GodCoin className="w-3 h-3"/> {t.entry}</>}
-            </span>
-          </div>
-          <div className="flex flex-col items-center justify-center border-l border-white/5">
-            <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-wider mb-1">Prize</span>
-            <span className="text-xs font-black text-white flex items-center gap-1">
-              <GodCoin className="w-3 h-3"/> {t.mode === 'Solo' ? t.per_kill_coin || 0 : t.prize}
+      {/* Cyberpunk Animated Border Gradient Underlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-transparent to-blue-500/30 opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
+      
+      <div className="relative h-full bg-card/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] shadow-card flex flex-col overflow-hidden">
+        <div className="relative h-36 w-full overflow-hidden">
+          <img src={poster} alt={t.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
+          
+          <div className="absolute top-3 left-3 flex gap-2">
+            {t.status === "live" && (
+              <span className="px-2 py-0.5 rounded bg-red-500/20 border border-red-500/50 text-red-500 text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-[0_0_10px_rgba(239,68,68,0.4)]">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> Live
+              </span>
+            )}
+            <span className="px-2 py-0.5 rounded bg-black/60 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-widest border border-white/10 shadow-sm">
+              {t.mode}
             </span>
           </div>
         </div>
 
-        <div className="mt-auto">
-          <div className="flex justify-between text-[10px] font-bold text-muted-foreground mb-1.5">
-            <span>{t.filled}/{t.slots} Joined</span>
-            <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {t.startsAt || t.startsat}</span>
-          </div>
-          <div className="h-1.5 w-full bg-background rounded-full overflow-hidden mb-4 border border-white/5">
-            <div className="h-full bg-primary rounded-full" style={{ width: `${fillPct}%` }} />
+        <div className="p-4 flex flex-col flex-1 relative z-10 -mt-6">
+          <div className="flex justify-between items-start gap-2 mb-3">
+            <h4 className="font-display font-black text-base text-white leading-tight line-clamp-1 drop-shadow-md">
+              {t.title}
+            </h4>
           </div>
 
-          <Link to={`/tournaments/${t.id}` as any}>
-            <Button className="w-full rounded-xl font-black bg-primary text-white h-10 shadow-primary">
-              View details
-            </Button>
-          </Link>
+          <div className="grid grid-cols-2 gap-2 mb-4 bg-black/40 rounded-xl p-2 border border-white/5 shadow-inner">
+            <div className="flex flex-col items-center justify-center">
+              <span className="text-[9px] text-muted-foreground uppercase font-black tracking-wider mb-1">Entry</span>
+              <span className="text-xs font-black text-cta flex items-center gap-1 text-glow">
+                {t.entry === 0 ? "FREE" : <><GodCoin className="w-3 h-3"/> {t.entry}</>}
+              </span>
+            </div>
+            <div className="flex flex-col items-center justify-center border-l border-white/5">
+              <span className="text-[9px] text-muted-foreground uppercase font-black tracking-wider mb-1">Prize</span>
+              <span className="text-xs font-black text-white flex items-center gap-1">
+                <GodCoin className="w-3 h-3 text-cta"/> {t.mode === 'Solo' ? t.per_kill_coin || 0 : t.prize}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-auto">
+            <div className="flex justify-between text-[10px] font-bold text-muted-foreground mb-1.5">
+              <span>{t.filled}/{t.slots} Joined</span>
+              <span className="flex items-center gap-1 text-cta/80"><Clock className="w-3 h-3" /> {t.startsAt || t.startsat}</span>
+            </div>
+            <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden mb-4 border border-white/5 shadow-inner">
+              <div 
+                className="h-full bg-primary-gradient rounded-full relative shadow-[0_0_10px_rgba(255,0,85,0.8)]" 
+                style={{ width: `${fillPct}%` }}
+              >
+                {fillPct < 100 && <div className="absolute right-0 top-0 bottom-0 w-4 bg-white/30 blur-[2px]" />}
+              </div>
+            </div>
+
+            <Link to={`/tournaments/${t.id}` as any}>
+              <Button className="w-full rounded-xl font-black uppercase tracking-widest text-xs bg-primary-gradient text-white h-11 shadow-fire border border-primary/50 hover:scale-105 transition-transform">
+                View details
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </motion.div>
@@ -247,36 +257,58 @@ function ListTournamentCard({ t, i }: { t: any; i: number }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: i * 0.05 }}
-      className="bg-card border border-white/5 rounded-[1.25rem] p-3 flex gap-4 active:scale-95 transition-transform shadow-lg relative overflow-hidden"
+      className="group relative rounded-[1.25rem] p-[1px] overflow-hidden"
     >
-      <div className="w-24 h-24 rounded-xl overflow-hidden shrink-0 relative">
-        <img src={poster} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        <div className="absolute bottom-1 left-1 bg-black/60 backdrop-blur text-[8px] text-white px-1.5 py-0.5 rounded font-black uppercase border border-white/10">
-          {t.mode}
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      
+      <div className="relative bg-card/80 backdrop-blur-xl border border-white/5 rounded-[1.25rem] p-3 flex gap-4 active:scale-95 transition-transform shadow-lg overflow-hidden">
+        {/* Left thumbnail */}
+        <div className="w-20 h-24 sm:w-24 sm:h-28 rounded-xl overflow-hidden relative shrink-0 border border-white/10 shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+          <img src={poster} alt={t.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+          <span className="absolute bottom-1.5 left-1.5 text-[8px] font-black uppercase text-white bg-black/60 backdrop-blur px-1.5 py-0.5 rounded border border-white/10">
+            {t.format}
+          </span>
         </div>
-      </div>
 
-      <div className="flex-1 flex flex-col justify-center min-w-0">
-        <h4 className="font-display font-black text-sm text-white line-clamp-1 mb-1">{t.title}</h4>
-        <div className="text-[10px] text-muted-foreground font-bold flex items-center gap-2 mb-2">
-          <span className="flex items-center gap-1 text-primary"><Clock className="w-3 h-3"/> {t.startsAt || t.startsat}</span>
-        </div>
-        
-        <div className="flex items-center justify-between mt-auto">
-          <div className="flex items-center gap-2 text-[10px] font-black">
-            <span className="px-2 py-1 bg-primary/10 text-primary rounded-md border border-primary/20">
-              {t.entry === 0 ? 'FREE' : <span className="flex items-center gap-1"><GodCoin className="w-3 h-3"/>{t.entry}</span>}
-            </span>
-            <span className="px-2 py-1 bg-secondary text-white rounded-md border border-white/5 flex items-center gap-1">
-              <GodCoin className="w-3 h-3"/> {t.mode === 'Solo' ? t.per_kill_coin || 0 : t.prize}
-            </span>
-          </div>
-          <Link to={`/tournaments/${t.id}` as any}>
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white shadow-primary">
-              <ChevronRight className="w-4 h-4" />
+        {/* Right content */}
+        <div className="flex-1 flex flex-col justify-between py-0.5 pr-1 min-w-0">
+          <div>
+            <div className="flex items-center justify-between mb-0.5">
+              <span className="text-[9px] font-black uppercase tracking-widest text-cta text-glow">
+                {t.mode}
+              </span>
+              <span className="text-[9px] font-bold text-muted-foreground flex items-center gap-1">
+                <Clock className="w-2.5 h-2.5" /> {t.startsAt || t.startsat}
+              </span>
             </div>
-          </Link>
+            <h4 className="font-display font-black text-sm text-white line-clamp-1 drop-shadow-md">
+              {t.title}
+            </h4>
+          </div>
+
+          <div className="flex items-center gap-3 mt-2 mb-2">
+            <div className="flex items-center gap-1.5 text-[11px] font-black text-white">
+              <span className="text-[9px] text-muted-foreground tracking-widest uppercase">Prize</span>
+              <GodCoin className="w-3.5 h-3.5 text-cta" /> {t.mode === 'Solo' ? t.per_kill_coin || 0 : t.prize}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 w-full">
+            <div className="flex-1 h-1.5 bg-black/50 rounded-full overflow-hidden border border-white/5 shadow-inner">
+              <div 
+                className="h-full bg-primary-gradient rounded-full relative shadow-[0_0_10px_rgba(255,0,85,0.8)]" 
+                style={{ width: `${fillPct}%` }}
+              >
+                {fillPct < 100 && <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/30 blur-[1px]" />}
+              </div>
+            </div>
+            <Link to={`/tournaments/${t.id}` as any} className="shrink-0">
+              <Button size="sm" className="h-8 text-[10px] uppercase font-black tracking-wider rounded-lg px-4 bg-cta-gradient shadow-cta text-cta-foreground border border-cta/50">
+                Join
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </motion.div>

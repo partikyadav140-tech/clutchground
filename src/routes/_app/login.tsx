@@ -40,10 +40,10 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-[100svh] flex flex-col items-center justify-center px-4 py-8 mb-safe lg:mb-0 bg-background relative overflow-hidden">
-      {/* Background decorations */}
-      <div className="absolute top-0 right-0 w-64 h-64 lg:w-96 lg:h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 lg:w-96 lg:h-96 bg-primary/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 pointer-events-none" />
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center px-4 py-8 bg-background relative overflow-hidden">
+      {/* Background Cyberpunk decorations */}
+      <div className="absolute top-0 right-0 w-64 h-64 lg:w-96 lg:h-96 bg-primary/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-64 h-64 lg:w-96 lg:h-96 bg-blue-500/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/3 pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -53,11 +53,11 @@ function LoginPage() {
       >
         {/* Logo */}
         <div className="flex flex-col items-center mb-6 lg:mb-8">
-          <div className="w-16 h-16 lg:w-20 lg:h-20 bg-white rounded-[1.25rem] shadow-sm border border-border flex items-center justify-center mb-3 lg:mb-4">
+          <div className="w-16 h-16 lg:w-20 lg:h-20 bg-card rounded-[1.25rem] shadow-[0_0_20px_rgba(255,0,85,0.3)] border border-primary/30 flex items-center justify-center mb-3 lg:mb-4">
             <Logo size={40} withText={false} />
           </div>
           <div className="text-center">
-            <h1 className="font-display text-2xl lg:text-3xl font-black text-foreground">
+            <h1 className="font-display text-2xl lg:text-3xl font-black text-white text-glow">
               Welcome Back
             </h1>
             <p className="text-muted-foreground text-sm lg:text-base mt-1 font-semibold">
@@ -67,7 +67,7 @@ function LoginPage() {
         </div>
 
         {/* Form card */}
-        <div className="rounded-[1.5rem] lg:rounded-[2rem] border border-border bg-white p-6 lg:p-8 shadow-sm">
+        <div className="rounded-[1.5rem] lg:rounded-[2rem] border border-white/5 bg-card/80 backdrop-blur-xl p-6 lg:p-8 shadow-card">
           <form onSubmit={handleLogin} className="space-y-4 lg:space-y-5">
             {/* Phone */}
             <div>
@@ -87,7 +87,7 @@ function LoginPage() {
                 required
                 autoComplete="tel"
                 maxLength={10}
-                className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-white outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold placeholder:font-semibold"
+                className="w-full bg-black/30 border border-white/10 focus:border-primary focus:bg-black/50 text-white outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold placeholder:text-white/20"
               />
             </div>
 
@@ -104,12 +104,12 @@ function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-white outline-none px-4 pr-12 h-12 text-sm rounded-xl transition-all font-bold placeholder:font-semibold"
+                  className="w-full bg-black/30 border border-white/10 focus:border-primary focus:bg-black/50 text-white outline-none px-4 pr-12 h-12 text-sm rounded-xl transition-all font-bold placeholder:text-white/20"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-cta transition-colors"
                 >
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -119,10 +119,10 @@ function LoginPage() {
             {/* Remember + forgot */}
             <div className="flex items-center justify-between text-xs px-1">
               <label className="flex items-center gap-2 text-muted-foreground font-semibold cursor-pointer">
-                <input type="checkbox" className="accent-primary rounded w-3.5 h-3.5" />
+                <input type="checkbox" className="accent-primary rounded w-3.5 h-3.5 bg-black/30 border-white/10" />
                 Remember me
               </label>
-              <a href="#" className="text-primary hover:underline font-bold">
+              <a href="#" className="text-cta hover:text-white transition-colors font-bold">
                 Forgot password?
               </a>
             </div>
@@ -130,7 +130,7 @@ function LoginPage() {
             {/* Submit */}
             <Button
               type="submit"
-              className="w-full font-bold mt-2 h-12 rounded-xl bg-primary text-white shadow-primary hover:opacity-90 active:scale-[0.98] transition-all"
+              className="w-full font-black uppercase tracking-widest mt-2 h-12 rounded-xl bg-cta-gradient text-cta-foreground shadow-cta hover:scale-[1.02] active:scale-[0.98] transition-all border border-cta/50"
               disabled={loading}
             >
               {loading ? (
@@ -148,17 +148,17 @@ function LoginPage() {
 
           {/* Divider */}
           <div className="mt-6 flex items-center gap-3">
-            <div className="flex-1 h-px bg-border/80" />
+            <div className="flex-1 h-px bg-white/5" />
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               OR
             </span>
-            <div className="flex-1 h-px bg-border/80" />
+            <div className="flex-1 h-px bg-white/5" />
           </div>
 
           {/* Sign up link */}
           <p className="mt-6 text-center text-sm text-muted-foreground font-semibold">
             New to the arena?{" "}
-            <a href="/signup" className="text-primary font-black hover:underline">
+            <a href="/signup" className="text-cta font-black hover:text-white transition-colors">
               Create account
             </a>
           </p>
@@ -166,15 +166,15 @@ function LoginPage() {
 
         {/* Bottom links */}
         <div className="mt-8 flex items-center justify-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-          <a href="/rules" className="hover:text-primary transition-colors">
+          <a href="/rules" className="hover:text-cta transition-colors">
             Rules
           </a>
-          <span className="w-1 h-1 rounded-full bg-border" />
-          <a href="/privacy" className="hover:text-primary transition-colors">
+          <span className="w-1 h-1 rounded-full bg-white/10" />
+          <a href="/privacy" className="hover:text-cta transition-colors">
             Privacy
           </a>
-          <span className="w-1 h-1 rounded-full bg-border" />
-          <a href="/contact" className="hover:text-primary transition-colors">
+          <span className="w-1 h-1 rounded-full bg-white/10" />
+          <a href="/contact" className="hover:text-cta transition-colors">
             Support
           </a>
         </div>

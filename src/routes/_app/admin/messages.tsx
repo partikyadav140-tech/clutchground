@@ -49,7 +49,7 @@ function AdminMessages() {
 
         <Link
           to="/admin"
-          className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-primary mb-4 relative z-10 transition-colors bg-secondary/50 px-3 py-1.5 rounded-full"
+          className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-cta mb-4 relative z-10 transition-colors bg-secondary/50 px-3 py-1.5 rounded-full"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Dashboard
         </Link>
@@ -104,7 +104,7 @@ function AdminMessages() {
                     <Button
                       asChild
                       variant="outline"
-                      className="rounded-xl font-bold border-primary/20 text-primary hover:bg-primary/5 h-10 px-5"
+                      className="rounded-xl font-bold border-primary/20 text-cta hover:bg-primary/5 h-10 px-5"
                     >
                       <a href={`mailto:${m.email}`}>
                         <Mail className="w-4 h-4 mr-2" /> Reply via Email

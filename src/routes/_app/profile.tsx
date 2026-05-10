@@ -3,30 +3,26 @@ import {
   Trophy,
   Edit3,
   Share2,
-  Save,
   Users,
   Bell,
   User,
   ChevronRight,
   Wallet,
-  Shield,
   LogOut,
+  ShieldAlert,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "../../lib/auth-client";
 import { useState, useEffect } from "react";
-import { confirmDialog } from "@/components/ConfirmDialog";
-import {
-  getProfile,
-  updateProfile,
-} from "../../api";
+import { getProfile, updateProfile } from "../../api";
 import { GodCoin } from "@/components/GodCoin";
 import { Link } from "@tanstack/react-router";
-import { motion } from "framer-motion";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_app/profile")({
-  head: () => ({ meta: [{ title: "My Profile — Professional Esports Arena" }] }),
+  head: () => ({ meta: [{ title: "Profile — CLUTCHGROUND" }] }),
   component: ProfilePage,
 });
 
@@ -74,7 +70,7 @@ function ProfilePage() {
       await (updateProfile as any)({ data: { userId: user.id, ...formData } });
       setProfile({ ...profile, ...formData });
       setIsEditingProfile(false);
-      toast.success("Profile updated!");
+      toast.success("Profile updated successfully!");
     } catch (err: any) {
       toast.error(err.message || "Failed to update profile");
     }
@@ -113,234 +109,201 @@ function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="bg-background min-h-screen pb-24">
-      {/* ─── Top Header (Mobile First) ─── */}
-      <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col items-center text-center">
-          <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-3">
-            <User className="w-6 h-6" />
-          </div>
-          <h1 className="font-display text-3xl font-black text-foreground">My Profile</h1>
-          <p className="text-sm text-muted-foreground mt-1 font-semibold">
-            Manage your identity
-          </p>
+    <div className="bg-background min-h-screen pt-2 pb-safe">
+      {/* ─── Minimal App Header ─── */}
+      <div className="px-4 mb-6">
+        <div className="flex items-center gap-2 text-cta font-bold mb-1">
+          <User className="w-5 h-5" /> Settings
         </div>
+        <h1 className="text-3xl font-display font-black text-white">Profile</h1>
       </div>
 
-      <div className="px-4 mt-6 space-y-6">
-        {/* ─── Profile Card ─── */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="bg-white rounded-[1.5rem] border border-border shadow-sm p-5 relative overflow-hidden"
-        >
-          <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-primary/20 to-primary/5" />
+      <div className="px-4 space-y-6">
+        {/* ─── Avatar Header Card ─── */}
+        <div className="bg-card border border-white/5 rounded-[1.5rem] p-4 flex items-center gap-4 shadow-lg active:scale-[0.98] transition-transform">
+          <div className="w-16 h-16 rounded-full bg-primary/20 text-cta border border-primary/30 flex items-center justify-center text-xl font-display font-black shrink-0 overflow-hidden">
+            {profile?.avatar_url ? (
+               <img src={profile.avatar_url} className="w-full h-full object-cover" />
+            ) : (
+               profile?.ign ? profile.ign[0].toUpperCase() : user?.username?.[0]?.toUpperCase() || "?"
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="font-display font-black text-xl text-white truncate leading-tight">
+              {profile?.ign || user.username}
+            </h2>
+            <p className="text-[11px] font-bold text-muted-foreground truncate uppercase tracking-widest mt-0.5">
+              UID: {profile?.uid || "NOT SET"}
+            </p>
+          </div>
+          
+          {/* Edit Profile Trigger */}
+          <Dialog open={isEditingProfile} onOpenChange={setIsEditingProfile}>
+            <DialogTrigger asChild>
+              <button className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white shrink-0 active:bg-white/10 transition-colors">
+                <Edit3 className="w-5 h-5" />
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[90vh] overflow-y-auto bg-card/95 backdrop-blur-3xl border-white/10 shadow-2xl">
+              <DialogHeader>
+                <DialogTitle className="font-display text-2xl font-black text-white text-glow">Edit Profile</DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-4 py-4">
+                <div className="flex justify-center mb-6">
+                  <label className="relative w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center cursor-pointer overflow-hidden border-2 border-primary/50 shadow-[0_0_15px_rgba(255,0,85,0.4)]">
+                    {formData.avatar_url ? (
+                      <img src={formData.avatar_url} className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-8 h-8 text-cta" />
+                    )}
+                    <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity backdrop-blur-sm">
+                      <span className="text-[9px] font-black uppercase text-white tracking-widest mt-1">Change</span>
+                    </div>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                  </label>
+                </div>
 
-          <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-4">
-            <div className="relative w-24 h-24 rounded-[1rem] bg-gradient-to-br from-primary to-[#d95a00] flex items-center justify-center font-display font-black text-4xl text-white shadow-lg border-4 border-white mt-4 sm:mt-0 overflow-hidden group">
-              {(isEditingProfile ? formData.avatar_url : profile?.avatar_url) ? (
-                <img src={isEditingProfile ? formData.avatar_url : profile?.avatar_url} className="w-full h-full object-cover" />
-              ) : (
-                profile?.ign ? profile.ign[0].toUpperCase() : user?.username?.[0]?.toUpperCase() || "?"
-              )}
-              {isEditingProfile && (
-                <label className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Edit3 className="w-6 h-6 text-white mb-1" />
-                  <span className="text-[9px] font-bold uppercase text-white tracking-widest">Upload</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                </label>
-              )}
-            </div>
-
-            <div className="flex-1 text-center sm:text-left mt-2 sm:mt-8 w-full">
-              {isEditingProfile ? (
-                <div className="space-y-3 mt-4">
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1 text-left">
-                      IGN (In-Game Name)
-                    </label>
+                    <label className="block text-[10px] uppercase tracking-widest font-black text-cta mb-1 ml-1 text-glow">IGN (In-Game Name)</label>
                     <input
-                      className="w-full bg-secondary/50 border border-border focus:border-primary outline-none px-4 py-2.5 text-sm rounded-xl font-bold"
-                      placeholder="IGN"
+                      className="w-full bg-black/40 border border-white/10 focus:border-primary focus:bg-black/60 outline-none px-4 h-12 text-sm rounded-xl font-bold text-white transition-colors shadow-inner placeholder:text-white/20"
+                      placeholder="Enter IGN"
                       value={formData.ign}
                       onChange={(e) => setFormData({ ...formData, ign: e.target.value })}
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1 text-left">
-                      Free Fire UID
-                    </label>
+                    <label className="block text-[10px] uppercase tracking-widest font-black text-cta mb-1 ml-1 text-glow">Free Fire UID</label>
                     <input
-                      className="w-full bg-secondary/50 border border-border focus:border-primary outline-none px-4 py-2.5 text-sm rounded-xl font-mono"
-                      placeholder="Free Fire UID"
+                      className="w-full bg-black/40 border border-white/10 focus:border-primary focus:bg-black/60 outline-none px-4 h-12 text-sm rounded-xl font-mono text-white transition-colors shadow-inner placeholder:text-white/20"
+                      placeholder="Enter UID"
                       value={formData.uid}
                       onChange={(e) => setFormData({ ...formData, uid: e.target.value })}
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1 text-left">
-                      Email Address
-                    </label>
+                    <label className="block text-[10px] uppercase tracking-widest font-black text-cta mb-1 ml-1 text-glow">Email Address</label>
                     <input
-                      className="w-full bg-secondary/50 border border-border focus:border-primary outline-none px-4 py-2.5 text-sm rounded-xl"
+                      className="w-full bg-black/40 border border-white/10 focus:border-primary focus:bg-black/60 outline-none px-4 h-12 text-sm rounded-xl text-white font-bold transition-colors shadow-inner placeholder:text-white/20"
                       placeholder="Email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1 text-left">
-                      Phone Number
-                    </label>
+                    <label className="block text-[10px] uppercase tracking-widest font-black text-cta mb-1 ml-1 text-glow">Phone Number</label>
                     <input
-                      className="w-full bg-secondary/50 border border-border focus:border-primary outline-none px-4 py-2.5 text-sm rounded-xl"
+                      className="w-full bg-black/40 border border-white/10 focus:border-primary focus:bg-black/60 outline-none px-4 h-12 text-sm rounded-xl text-white font-bold transition-colors shadow-inner placeholder:text-white/20"
                       placeholder="Phone"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     />
                   </div>
                 </div>
-              ) : (
-                <>
-                  <div className="space-y-2">
-                    <div className="font-display text-2xl font-black text-foreground">
-                      {profile?.ign || user.username}
-                    </div>
-                    {profile?.ign && (
-                      <div className="text-sm text-muted-foreground font-semibold">
-                        @{user.username} • IGN: {profile.ign}
-                      </div>
-                    )}
-                    {!profile?.ign && (
-                      <div className="text-sm text-muted-foreground font-semibold">
-                        @{user.username}
-                      </div>
-                    )}
-                  </div>
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary text-xs font-mono font-bold text-muted-foreground mt-2 border border-border">
-                    UID: {profile?.uid || "Not set"}
-                  </div>
-                  {(profile?.email || profile?.phone) && (
-                    <div className="text-xs font-semibold text-muted-foreground mt-3 space-y-1">
-                      {profile.email && (
-                        <div className="flex items-center justify-center sm:justify-start gap-1.5">
-                          <Shield className="w-3.5 h-3.5" /> {profile.email}
-                        </div>
-                      )}
-                      {profile.phone && (
-                        <div className="flex items-center justify-center sm:justify-start gap-1.5">
-                          <User className="w-3.5 h-3.5" /> {profile.phone}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
+                
+                <Button onClick={handleSaveProfile} className="w-full h-12 rounded-xl font-black bg-cta-gradient text-cta-foreground mt-4 shadow-cta text-sm uppercase tracking-widest border border-cta/50 hover:scale-105 transition-transform">
+                  Save Changes
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* ─── iOS Style Settings Group 1 ─── */}
+        <div>
+          <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-2 ml-4">Account</div>
+          <div className="bg-card border border-white/5 rounded-[1.25rem] overflow-hidden">
+            <Link to="/wallet" className="flex items-center gap-3 p-4 border-b border-white/5 active:bg-white/5 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-500 flex items-center justify-center shrink-0">
+                <Wallet className="w-4 h-4" />
+              </div>
+              <div className="flex-1 font-bold text-sm text-white">Wallet & Balance</div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-cta flex items-center gap-1"><GodCoin className="w-3 h-3"/> {totalBalance}</span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </div>
+            </Link>
+            
+            <Link to="/teams" className="flex items-center gap-3 p-4 border-b border-white/5 active:bg-white/5 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-500 flex items-center justify-center shrink-0">
+                <Users className="w-4 h-4" />
+              </div>
+              <div className="flex-1 font-bold text-sm text-white">Squad Management</div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </Link>
+
+            <Link to="/matches" className="flex items-center gap-3 p-4 active:bg-white/5 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-500 flex items-center justify-center shrink-0">
+                <Trophy className="w-4 h-4" />
+              </div>
+              <div className="flex-1 font-bold text-sm text-white">Match History</div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </Link>
+          </div>
+        </div>
+
+        {/* ─── iOS Style Settings Group 2 ─── */}
+        <div>
+          <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-2 ml-4">Preferences</div>
+          <div className="bg-card border border-white/5 rounded-[1.25rem] overflow-hidden">
+            <Link to="/notifications" className="flex items-center gap-3 p-4 border-b border-white/5 active:bg-white/5 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-500 flex items-center justify-center shrink-0">
+                <Bell className="w-4 h-4" />
+              </div>
+              <div className="flex-1 font-bold text-sm text-white">Notifications</div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </Link>
+            
+            <Link to="/support" className="flex items-center gap-3 p-4 border-b border-white/5 active:bg-white/5 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-pink-500/20 text-pink-500 flex items-center justify-center shrink-0">
+                <MessageCircle className="w-4 h-4" />
+              </div>
+              <div className="flex-1 font-bold text-sm text-white">Help & Support</div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </Link>
+            
+            <button 
+              onClick={() => {
+                navigator.clipboard?.writeText(window.location.href);
+                toast.success("Profile link copied!");
+              }}
+              className="w-full flex items-center gap-3 p-4 active:bg-white/5 transition-colors text-left"
+            >
+              <div className="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-500 flex items-center justify-center shrink-0">
+                <Share2 className="w-4 h-4" />
+              </div>
+              <div className="flex-1 font-bold text-sm text-white">Share Profile</div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+        </div>
+        
+        {/* ─── Admin Group (If Admin) ─── */}
+        {user.role === "admin" && (
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-widest text-cta mb-2 ml-4">Administration</div>
+            <div className="bg-card border border-primary/20 rounded-[1.25rem] overflow-hidden">
+              <Link to="/admin" className="flex items-center gap-3 p-4 active:bg-white/5 transition-colors">
+                <div className="w-8 h-8 rounded-lg bg-red-500/20 text-red-500 flex items-center justify-center shrink-0">
+                  <ShieldAlert className="w-4 h-4" />
+                </div>
+                <div className="flex-1 font-bold text-sm text-red-500">Admin Command Center</div>
+                <ChevronRight className="w-4 h-4 text-red-500/50" />
+              </Link>
             </div>
           </div>
+        )}
 
-          <div className="mt-6 flex flex-col sm:flex-row gap-3">
-            {isEditingProfile ? (
-              <>
-                <Button
-                  onClick={handleSaveProfile}
-                  className="flex-1 h-12 rounded-xl font-bold bg-primary text-white shadow-primary"
-                >
-                  <Save className="w-4 h-4 mr-2" /> Save Changes
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsEditingProfile(false)}
-                  className="flex-1 h-12 rounded-xl font-bold border-border"
-                >
-                  Cancel
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsEditingProfile(true)}
-                  className="flex-1 h-12 rounded-xl font-bold border-border shadow-sm bg-white hover:bg-secondary/20"
-                >
-                  <Edit3 className="w-4 h-4 mr-2" /> Edit Profile
-                </Button>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      navigator.clipboard?.writeText(window.location.href);
-                      toast.success("Link copied!");
-                    }}
-                    className="flex-1 sm:flex-none w-12 h-12 p-0 rounded-xl border-border shadow-sm"
-                  >
-                    <Share2 className="w-4 h-4 text-muted-foreground" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={logout}
-                    className="flex-1 sm:flex-none w-12 h-12 p-0 rounded-xl border-destructive/20 text-destructive bg-destructive/5 hover:bg-destructive/10"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        </motion.div>
+        {/* ─── Logout ─── */}
+        <button 
+          onClick={logout}
+          className="w-full flex items-center justify-center gap-2 p-4 bg-red-500/10 text-red-500 font-black rounded-[1.25rem] border border-red-500/20 active:scale-95 transition-all mt-4 uppercase tracking-widest text-sm"
+        >
+          <LogOut className="w-4 h-4" /> Log Out
+        </button>
 
-        {/* ─── Wallet Quick Link ─── */}
-        <a href="/wallet" className="block">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className="bg-gradient-to-r from-primary to-[#d95a00] rounded-2xl p-4 shadow-lg text-white flex items-center justify-between active:scale-[0.98] transition-transform"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
-                <GodCoin className="w-6 h-6 drop-shadow-sm text-white" />
-              </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-widest font-bold text-white/80">
-                  Wallet Balance
-                </div>
-                <div className="font-display font-black text-xl">{totalBalance} Coins</div>
-              </div>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
-              <ChevronRight className="w-5 h-5" />
-            </div>
-          </motion.div>
-        </a>
-
-        {/* ─── Teams Quick Link ─── */}
-        <Link to="/teams" className="block">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
-            className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl p-4 shadow-sm border border-primary/20 flex items-center justify-between active:scale-[0.98] transition-transform"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Users className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <div className="text-[10px] uppercase tracking-widest font-bold text-primary">
-                  Squad Management
-                </div>
-                <div className="font-display font-black text-lg text-foreground">Manage Your Squad</div>
-              </div>
-            </div>
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <ChevronRight className="w-5 h-5 text-primary" />
-            </div>
-          </motion.div>
-        </Link>
       </div>
     </div>
   );

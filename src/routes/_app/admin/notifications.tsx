@@ -75,7 +75,7 @@ function AdminNotificationsPage() {
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
         <div className="relative z-10 flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-2 text-primary font-bold mb-2">
+            <div className="flex items-center gap-2 text-cta font-bold mb-2">
               <Bell className="w-5 h-5" /> Push Notifications
             </div>
             <h1 className="font-display text-2xl font-black text-foreground">Broadcast Center</h1>
@@ -96,19 +96,19 @@ function AdminNotificationsPage() {
             <div className="grid grid-cols-3 gap-3">
               <div 
                 onClick={() => setTargetType("all")}
-                className={`p-3 rounded-xl border text-center font-bold cursor-pointer transition-colors ${targetType === "all" ? "bg-primary/10 border-primary/50 text-primary" : "bg-secondary text-muted-foreground border-transparent hover:bg-secondary/80"}`}
+                className={`p-3 rounded-xl border text-center font-bold cursor-pointer transition-colors ${targetType === "all" ? "bg-primary/10 border-primary/50 text-cta" : "bg-secondary text-muted-foreground border-transparent hover:bg-secondary/80"}`}
               >
                 All Users
               </div>
               <div 
                 onClick={() => setTargetType("users")}
-                className={`p-3 rounded-xl border text-center font-bold cursor-pointer transition-colors ${targetType === "users" ? "bg-primary/10 border-primary/50 text-primary" : "bg-secondary text-muted-foreground border-transparent hover:bg-secondary/80"}`}
+                className={`p-3 rounded-xl border text-center font-bold cursor-pointer transition-colors ${targetType === "users" ? "bg-primary/10 border-primary/50 text-cta" : "bg-secondary text-muted-foreground border-transparent hover:bg-secondary/80"}`}
               >
                 Specific Users
               </div>
               <div 
                 onClick={() => setTargetType("tournament")}
-                className={`p-3 rounded-xl border text-center font-bold cursor-pointer transition-colors ${targetType === "tournament" ? "bg-primary/10 border-primary/50 text-primary" : "bg-secondary text-muted-foreground border-transparent hover:bg-secondary/80"}`}
+                className={`p-3 rounded-xl border text-center font-bold cursor-pointer transition-colors ${targetType === "tournament" ? "bg-primary/10 border-primary/50 text-cta" : "bg-secondary text-muted-foreground border-transparent hover:bg-secondary/80"}`}
               >
                 Tournament
               </div>

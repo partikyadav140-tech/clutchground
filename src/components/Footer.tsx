@@ -39,31 +39,31 @@ export function Footer() {
             <div className="space-y-3">
               <a
                 href="/tournaments"
-                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
               >
                 Tournaments
               </a>
               <a
                 href="/leaderboard"
-                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
               >
                 Leaderboard
               </a>
               <a
                 href="/teams"
-                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
               >
                 Teams
               </a>
               <a
                 href="/matches"
-                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
               >
                 My Matches
               </a>
               <a
                 href="/wallet"
-                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
               >
                 Wallet
               </a>
@@ -78,31 +78,31 @@ export function Footer() {
             <div className="space-y-3">
               <a
                 href="/rules"
-                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
               >
                 Rules & Regulations
               </a>
               <a
                 href="/anti-cheat"
-                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
               >
                 Anti-Cheat Policy
               </a>
               <a
                 href="/support"
-                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
               >
                 Support Tickets
               </a>
               <a
                 href="/privacy"
-                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
               >
                 Privacy Policy
               </a>
               <a
                 href="/terms"
-                className="block text-sm text-muted-foreground hover:text-primary transition-colors"
+                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
               >
                 Terms of Service
               </a>
@@ -138,7 +138,7 @@ export function Footer() {
           <div className="flex flex-col lg:flex-row items-center justify-between gap-2 lg:gap-4">
             <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
               <span className="flex items-center gap-2">
-                <span className="text-primary">⚔ FORGED IN FIRE ⚔</span>
+                <span className="text-cta">⚔ FORGED IN FIRE ⚔</span>
               </span>
             </div>
             <div className="flex flex-col lg:flex-row items-center gap-2 lg:gap-4 text-xs text-muted-foreground/80 text-center lg:text-left">
@@ -146,7 +146,7 @@ export function Footer() {
               <p className="hidden lg:block">|</p>
               <p>
                 Designed & Developed by{" "}
-                <span className="font-bold text-primary">Pratikk Yadav | +91 8307224756</span>
+                <span className="font-bold text-cta">Pratikk Yadav | +91 8307224756</span>
               </p>
             </div>
           </div>

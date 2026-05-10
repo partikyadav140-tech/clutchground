@@ -38,7 +38,8 @@
   --color-blood: var(--blood);
   --color-ember: var(--ember);
   --color-gold: var(--gold);
-
+  --color-cta: var(--cta);
+  --color-cta-foreground: var(--cta-foreground);
   --animate-flicker: flicker 3s ease-in-out infinite;
   --animate-pulse-glow: pulseGlow 2.5s ease-in-out infinite;
   --animate-scan: scan 4s linear infinite;
@@ -52,7 +53,7 @@
 
 /* ──────────────────────────────────────────────
    DARK MODE THRYL-STYLE ESPORTS THEME
-   Primary: Vibrant Orange #FF6B00
+   Primary: Neon Pink #FF0055 & Electric Blue #00F0FF
    Background: Deep Dark Gray/Black
 ────────────────────────────────────────────── */
 :root {
@@ -68,12 +69,12 @@
   --popover: oklch(0.18 0.01 260);
   --popover-foreground: oklch(0.95 0 0);
 
-  /* Primary - Vibrant Orange */
-  --primary: oklch(0.65 0.22 45); 
+  /* Primary - Neon Pink */
+  --primary: oklch(0.65 0.25 340); /* #FF0055 */
   --primary-foreground: oklch(0.98 0 0);
 
-  /* Secondary - Soft dark accent */
-  --secondary: oklch(0.22 0.015 260);
+  /* Secondary - Deep Neon Blue accent */
+  --secondary: oklch(0.2 0.05 240);
   --secondary-foreground: oklch(0.9 0 0);
 
   --muted: oklch(0.2 0.01 260);
@@ -87,30 +88,36 @@
 
   --border: oklch(0.22 0.01 260); /* Subtle border */
   --input: oklch(0.2 0.01 260);
-  --ring: oklch(0.65 0.22 45 / 0.6);
+  --ring: oklch(0.65 0.25 340 / 0.6);
 
   /* Brand colors */
-  --fire: oklch(0.65 0.22 45);
-  --blood: oklch(0.55 0.22 25);
-  --ember: oklch(0.75 0.18 60);
+  --fire: oklch(0.65 0.25 340); /* Re-mapped to Pink */
+  --blood: oklch(0.55 0.25 340);
+  --ember: oklch(0.7 0.15 240); /* Re-mapped to Light Blue */
   --gold: oklch(0.8 0.16 80);
   --purple: oklch(0.5 0.22 285);
   --purple-light: oklch(0.65 0.18 285);
+  
+  /* CTA Buttons - Orange */
+  --cta: oklch(0.65 0.2 40); /* Vibrant Orange */
+  --cta-foreground: oklch(0.98 0 0);
 
   /* Gradients */
-  --gradient-fire: linear-gradient(135deg, oklch(0.6 0.24 35), oklch(0.65 0.22 45), oklch(0.72 0.2 60));
+  --gradient-fire: linear-gradient(135deg, #ff0055, #8a2be2); /* Pink to Purple */
   --gradient-hero: linear-gradient(160deg, oklch(0.15 0.01 260) 0%, oklch(0.25 0.02 260) 100%);
   --gradient-card: linear-gradient(145deg, oklch(0.2 0.01 260), oklch(0.16 0.01 260));
-  --gradient-primary: linear-gradient(135deg, oklch(0.6 0.24 35), oklch(0.68 0.22 50));
+  --gradient-primary: linear-gradient(135deg, #ff0055, #00f0ff); /* Cyberpunk Pink to Blue */
   --gradient-purple: linear-gradient(135deg, oklch(0.45 0.22 285), oklch(0.6 0.2 295));
   --gradient-banner: linear-gradient(135deg, oklch(0.15 0.02 260) 0%, oklch(0.18 0.02 260) 100%);
+  --gradient-cta: linear-gradient(135deg, #ff6b00, #ff3b00); /* Vibrant Orange CTA */
 
   /* Shadows - Subtle on dark mode, bright for glows */
-  --shadow-fire: 0 8px 32px oklch(0.65 0.22 45 / 0.4), 0 2px 12px oklch(0.65 0.22 45 / 0.2);
+  --shadow-fire: 0 8px 32px oklch(0.65 0.25 340 / 0.4), 0 2px 12px oklch(0.65 0.25 340 / 0.2);
   --shadow-purple: 0 8px 32px oklch(0.5 0.22 285 / 0.4);
   --shadow-card: 0 8px 24px oklch(0 0 0 / 0.4), 0 2px 8px oklch(0 0 0 / 0.2);
   --shadow-card-hover: 0 12px 40px oklch(0 0 0 / 0.6), 0 4px 12px oklch(0 0 0 / 0.4);
-  --glow-text: 0 0 12px oklch(0.65 0.22 45 / 0.8);
+  --shadow-cta: 0 8px 20px oklch(0.65 0.2 40 / 0.4);
+  --glow-text: 0 0 12px oklch(0.65 0.25 340 / 0.8);
 
   /* Mobile safe area */
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -150,11 +157,11 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: oklch(0.65 0.22 45 / 0.3);
+    background: oklch(0.65 0.25 340 / 0.3);
     border-radius: 2px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: oklch(0.65 0.22 45 / 0.6);
+    background: oklch(0.65 0.25 340 / 0.6);
   }
 
   /* Inputs */
@@ -197,6 +204,9 @@
   }
   .bg-banner-gradient {
     background: var(--gradient-banner);
+  }
+  .bg-cta-gradient {
+    background: var(--gradient-cta);
   }
 
   /* ── Shadows ── */
@@ -242,8 +252,8 @@
   /* ── Subtle grid bg ── */
   .grid-bg {
     background-image:
-      linear-gradient(oklch(0.65 0.22 45 / 0.06) 1px, transparent 1px),
-      linear-gradient(90deg, oklch(0.65 0.22 45 / 0.06) 1px, transparent 1px);
+      linear-gradient(oklch(0.65 0.25 340 / 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(0.65 0.25 340 / 0.06) 1px, transparent 1px);
     background-size: 32px 32px;
   }
 

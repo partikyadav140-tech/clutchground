@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_app/anti-cheat")({
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
         <div className="relative z-10 flex flex-col items-center text-center">
-          <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-3">
+          <div className="w-12 h-12 bg-primary/10 text-cta rounded-2xl flex items-center justify-center mb-3">
             <Shield className="w-6 h-6" />
           </div>
           <h1 className="font-display text-3xl font-black text-foreground">Anti-Cheat</h1>

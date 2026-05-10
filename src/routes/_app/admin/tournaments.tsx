@@ -345,7 +345,7 @@ function AdminTournamentsPage() {
 
         <Link
           to="/admin"
-          className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-primary mb-4 relative z-10 transition-colors bg-secondary/50 px-3 py-1.5 rounded-full"
+          className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-cta mb-4 relative z-10 transition-colors bg-secondary/50 px-3 py-1.5 rounded-full"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Dashboard
         </Link>
@@ -414,9 +414,9 @@ function AdminTournamentsPage() {
             <div className="flex justify-between items-center mb-5 pb-4 border-b border-border/50">
               <h4 className="font-display font-black text-xl text-foreground flex items-center gap-2">
                 {editingT ? (
-                  <Edit className="w-5 h-5 text-primary" />
+                  <Edit className="w-5 h-5 text-cta" />
                 ) : (
-                  <Plus className="w-5 h-5 text-primary" />
+                  <Plus className="w-5 h-5 text-cta" />
                 )}
                 {editingT ? "Edit" : "Create"} Tournament
               </h4>
@@ -609,7 +609,7 @@ function AdminTournamentsPage() {
                       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1.5">
-                            <h3 className="font-display font-black text-lg text-foreground truncate group-hover:text-primary transition-colors">
+                            <h3 className="font-display font-black text-lg text-foreground truncate group-hover:text-cta transition-colors">
                               {t.title}
                             </h3>
                             {t.is_hero && (
@@ -642,7 +642,7 @@ function AdminTournamentsPage() {
                               {t.status}
                             </span>
                             {t.hosted_by && (
-                              <span className="bg-primary/10 text-primary px-2 py-1 rounded-md uppercase tracking-wider">
+                              <span className="bg-primary/10 text-cta px-2 py-1 rounded-md uppercase tracking-wider">
                                 Host: {t.hosted_by}
                               </span>
                             )}
@@ -653,7 +653,7 @@ function AdminTournamentsPage() {
                               <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-0.5">
                                 Prize Pool
                               </div>
-                              <div className="font-display font-black text-primary text-base flex items-center gap-1 flex-wrap">
+                              <div className="font-display font-black text-cta text-base flex items-center gap-1 flex-wrap">
                                 {t.mode === "Solo" ? (
                                   <>
                                     <GodCoin className="w-4 h-4" /> {t.per_kill_coin}/Kill |{" "}
@@ -696,7 +696,7 @@ function AdminTournamentsPage() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => openResults(t)}
-                                className="rounded-xl font-bold h-9 border-primary/20 text-primary hover:bg-primary/5 whitespace-nowrap"
+                                className="rounded-xl font-bold h-9 border-primary/20 text-cta hover:bg-primary/5 whitespace-nowrap"
                               >
                                 <ListChecks className="w-4 h-4 mr-1.5" /> Results
                               </Button>
@@ -740,7 +740,7 @@ function AdminTournamentsPage() {
 
       {/* Results Dialog */}
       <Dialog open={!!resultsTId} onOpenChange={(v) => !v && setResultsTId(null)}>
-        <DialogContent className="max-w-2xl bg-white border-border rounded-[2rem] p-0 overflow-hidden shadow-2xl w-[95vw] sm:w-full">
+        <DialogContent className="p-0 overflow-hidden max-h-[90vh] flex flex-col">
           <DialogHeader className="p-6 pb-4 border-b border-border bg-secondary/20">
             <div className="flex justify-between items-center pr-4">
               <DialogTitle className="font-display text-xl font-black text-foreground">
@@ -884,7 +884,7 @@ function AdminTournamentsPage() {
                       <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold sm:hidden mb-0.5">
                         Total Points
                       </div>
-                      <div className="font-display font-black text-primary text-lg leading-none">
+                      <div className="font-display font-black text-cta text-lg leading-none">
                         {r.points || 0}
                       </div>
                     </div>
@@ -898,7 +898,7 @@ function AdminTournamentsPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => setIsEditingResults(true)}
-                    className="rounded-lg h-8 text-xs font-bold border-primary text-primary hover:bg-primary/5"
+                    className="rounded-lg h-8 text-xs font-bold border-primary text-cta hover:bg-primary/5"
                   >
                     <Edit className="w-3 h-3 mr-1" /> Edit Mode
                   </Button>
@@ -913,7 +913,7 @@ function AdminTournamentsPage() {
                           <th className="px-4 py-3 font-bold text-center">Kills</th>
                           <th className="px-4 py-3 font-bold text-center">Pos</th>
                           <th className="px-4 py-3 font-bold text-center">Manual Pts</th>
-                          <th className="px-4 py-3 font-bold text-right text-primary">Points</th>
+                          <th className="px-4 py-3 font-bold text-right text-cta">Points</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/50">
@@ -936,7 +936,7 @@ function AdminTournamentsPage() {
                                 ? r.manualPoints
                                 : "—"}
                             </td>
-                            <td className="px-4 py-3.5 text-right font-display font-black text-primary text-lg">
+                            <td className="px-4 py-3.5 text-right font-display font-black text-cta text-lg">
                               {r.points || 0}
                             </td>
                           </tr>
