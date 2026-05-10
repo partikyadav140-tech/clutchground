@@ -588,7 +588,7 @@ export const getRegistrations = createServerFn({ method: "GET" }).handler(async 
   return db
     .prepare(
       `
-      SELECT r.*, u.username 
+      SELECT r.*, u.username, u.avatar_url
       FROM registrations r
       JOIN users u ON r.user_id = u.id
       ORDER BY r.created_at DESC
@@ -723,7 +723,7 @@ export const getMyTeam = createServerFn({ method: "POST" }).handler(async ({ dat
   const members = await db
     .prepare(
       `
-      SELECT tm.*, u.username
+      SELECT tm.*, u.username, u.avatar_url
       FROM team_members tm
       LEFT JOIN users u ON u.id = tm.user_id
       WHERE tm.team_id = ?
@@ -731,7 +731,7 @@ export const getMyTeam = createServerFn({ method: "POST" }).handler(async ({ dat
     )
     .all(team.id);
   const leader = await db
-    .prepare("SELECT username, ign, uid FROM users WHERE id = ?")
+    .prepare("SELECT username, ign, uid, avatar_url FROM users WHERE id = ?")
     .get(team.leader_id);
   return { ...team, members, leader };
 });
@@ -882,6 +882,12 @@ export const requestJoinTeam = createServerFn({ method: "POST" }).handler(async 
     .get(teamId, userId);
   if (existing) throw new Error("You already have a pending request to this team.");
 
+  const isCaptain = await db.prepare("SELECT id FROM teams WHERE leader_id = ?").get(userId);
+  if (isCaptain) throw new Error("You are already the captain of a team. Leave or delete your team first.");
+
+  const isMember = await db.prepare("SELECT team_id FROM team_members WHERE user_id = ?").get(userId);
+  if (isMember) throw new Error("You are already in a team. Leave your current team first.");
+
   const team = (await db
     .prepare("SELECT name, leader_id FROM teams WHERE id = ?")
     .get(teamId)) as any;
@@ -953,6 +959,12 @@ export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(asy
     await tx.prepare("UPDATE team_requests SET status = ? WHERE id = ?").run(status, requestId);
 
     if (status === "approved") {
+      const isCaptain = await tx.prepare("SELECT id FROM teams WHERE leader_id = ?").get(req.user_id);
+      if (isCaptain) throw new Error("User is already a captain of another team.");
+
+      const isMember = await tx.prepare("SELECT team_id FROM team_members WHERE user_id = ?").get(req.user_id);
+      if (isMember) throw new Error("User has already joined another team.");
+
       const teamCount = (await tx
         .prepare("SELECT COUNT(*) as count FROM team_members WHERE team_id = ?")
         .get(req.team_id)) as any;
@@ -968,8 +980,12 @@ export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(asy
         .run(req.team_id, req.user_id, req.ign, req.uid, "player");
 
       await tx
+        .prepare("UPDATE team_requests SET status = 'rejected' WHERE user_id = ? AND status = 'pending' AND id != ?")
+        .run(req.user_id, requestId);
+
+      await tx
         .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
-        .run(req.user_id, "🎉 Your request to join the team has been approved!", "/teams");
+        .run(req.user_id, "🎉 Your request to join the team has been approved! All other pending requests were cancelled.", "/teams");
     } else {
       await tx
         .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
@@ -1090,10 +1106,11 @@ export const getTournamentResults = createServerFn({ method: "POST" }).handler(a
   const results = (await db
     .prepare(
       `
-      SELECT r.*, u.username, COALESCE(r.team_name, u.username) as display_name, t.mode as tourney_mode
+      SELECT r.*, u.username, u.avatar_url, COALESCE(r.team_name, u.username) as display_name, t.mode as tourney_mode, tm.logo as team_logo
       FROM registrations r
       JOIN users u ON r.user_id = u.id
       JOIN tournaments t ON r.tournament_id = t.id
+      LEFT JOIN teams tm ON tm.name = r.team_name
       WHERE r.tournament_id = ? 
       ORDER BY 
         CASE WHEN t.mode IN ('Duo', 'Solo') THEN (CASE WHEN r.position > 0 THEN r.position ELSE 99999 END) ELSE 0 END ASC,

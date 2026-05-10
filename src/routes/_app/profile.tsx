@@ -194,8 +194,9 @@ function ProfilePage() {
                     ) : (
                       <User className="w-8 h-8 text-cta" />
                     )}
-                    <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity backdrop-blur-sm">
-                      <span className="text-[9px] font-black uppercase text-white tracking-widest mt-1">Change</span>
+                    <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center backdrop-blur-[2px]">
+                      <Edit3 className="w-6 h-6 text-white mb-1 drop-shadow-md" />
+                      <span className="text-[9px] font-black uppercase text-white tracking-widest drop-shadow-md">Edit</span>
                     </div>
                     <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                   </label>

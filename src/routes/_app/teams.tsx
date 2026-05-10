@@ -559,8 +559,12 @@ function TeamsPage() {
                       {/* Captain */}
                       <div className="flex items-center justify-between p-3.5 rounded-xl bg-primary/5 border border-primary/20">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Crown className="w-5 h-5 text-cta" />
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden shrink-0 border border-primary/20">
+                            {myTeam.leader?.avatar_url ? (
+                               <img src={myTeam.leader.avatar_url} className="w-full h-full object-cover" />
+                            ) : (
+                               <Crown className="w-5 h-5 text-cta" />
+                            )}
                           </div>
                           <div>
                             <div className="font-bold text-sm text-foreground">
@@ -590,8 +594,12 @@ function TeamsPage() {
                           className="flex items-center justify-between p-3.5 rounded-xl bg-card border border-white/10 shadow-sm"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground font-black text-xs">
-                              P{i + 2}
+                            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-muted-foreground font-black text-xs overflow-hidden shrink-0 border border-white/5">
+                              {m.avatar_url ? (
+                                 <img src={m.avatar_url} className="w-full h-full object-cover" />
+                              ) : (
+                                 `P${i + 2}`
+                              )}
                             </div>
                             <div>
                               <div className="font-bold text-sm text-foreground">

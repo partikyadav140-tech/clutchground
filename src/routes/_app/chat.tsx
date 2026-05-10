@@ -186,12 +186,23 @@ function ChatPage() {
             return (
               <div key={m.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                 {!isMe && activeChat.type === 'team' && (
-                  <div className="text-[10px] font-bold text-muted-foreground ml-1 mb-1">{m.ign || m.username}</div>
+                  <div className="text-[10px] font-bold text-muted-foreground ml-10 mb-1">{m.ign || m.username}</div>
                 )}
-                <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm font-semibold whitespace-pre-wrap ${
-                  isMe ? 'bg-primary text-white rounded-br-sm shadow-primary/20 shadow-md' : 'bg-card border border-white/10 text-foreground rounded-bl-sm shadow-sm'
-                }`}>
-                  {m.message}
+                <div className={`flex items-end gap-2 max-w-[85%]`}>
+                  {!isMe && (
+                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0 overflow-hidden font-display font-black text-xs text-muted-foreground border border-white/5">
+                      {m.avatar_url ? (
+                        <img src={m.avatar_url} className="w-full h-full object-cover" />
+                      ) : (
+                        (m.ign || m.username)[0].toUpperCase()
+                      )}
+                    </div>
+                  )}
+                  <div className={`rounded-2xl px-4 py-2 text-sm font-semibold whitespace-pre-wrap ${
+                    isMe ? 'bg-primary text-white rounded-br-sm shadow-primary/20 shadow-md' : 'bg-card border border-white/10 text-foreground rounded-bl-sm shadow-sm'
+                  }`}>
+                    {m.message}
+                  </div>
                 </div>
               </div>
             );

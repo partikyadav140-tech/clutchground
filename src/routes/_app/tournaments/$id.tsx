@@ -460,8 +460,12 @@ function TournamentDetailPage() {
                           key={r.id}
                           className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40 border border-border/40"
                         >
-                          <div className="w-7 h-7 rounded-full bg-fire-gradient grid place-items-center font-display font-black text-xs text-white shrink-0">
-                            {(t.mode === "Squad" ? (r.team_name || r.username) : r.username)?.[0]?.toUpperCase() || "?"}
+                          <div className="w-7 h-7 rounded-full bg-fire-gradient flex items-center justify-center font-display font-black text-xs text-white shrink-0 overflow-hidden border border-white/5 shadow-sm">
+                            {(t.mode === "Squad" && r.team_logo) || r.avatar_url ? (
+                              <img src={t.mode === "Squad" && r.team_logo ? r.team_logo : r.avatar_url} className="w-full h-full object-cover" />
+                            ) : (
+                              (t.mode === "Squad" ? (r.team_name || r.username) : r.username)?.[0]?.toUpperCase() || "?"
+                            )}
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="font-bold text-sm truncate">
@@ -628,8 +632,12 @@ function TournamentDetailPage() {
                                 </td>
                                 <td className="px-4 py-3 sm:py-4">
                                   <div className="flex items-center gap-3 sm:gap-4">
-                                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg shrink-0 flex items-center justify-center font-display font-black text-sm sm:text-base text-background ${isTop3 ? (isFirst ? 'bg-amber-500' : isSecond ? 'bg-slate-300' : 'bg-amber-700') : 'bg-secondary-foreground/20 text-muted-foreground border border-border/40'}`}>
-                                      {(t.mode === "Squad" ? (r.team_name || r.username) : r.username)?.[0]?.toUpperCase() || "?"}
+                                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg shrink-0 flex items-center justify-center overflow-hidden font-display font-black text-sm sm:text-base text-background border border-white/10 ${isTop3 ? (isFirst ? 'bg-amber-500' : isSecond ? 'bg-slate-300' : 'bg-amber-700') : 'bg-secondary/40 text-muted-foreground'}`}>
+                                      {(t.mode === "Squad" && r.team_logo) || r.avatar_url ? (
+                                        <img src={t.mode === "Squad" && r.team_logo ? r.team_logo : r.avatar_url} className="w-full h-full object-cover" />
+                                      ) : (
+                                        (t.mode === "Squad" ? (r.team_name || r.username) : r.username)?.[0]?.toUpperCase() || "?"
+                                      )}
                                     </div>
                                     <div className={`font-black text-sm sm:text-base ${isFirst ? 'text-amber-500' : isSecond ? 'text-slate-400' : isThird ? 'text-amber-700' : 'text-foreground'}`}>
                                       {t.mode === "Squad" ? (r.team_name || r.username) : r.username}
