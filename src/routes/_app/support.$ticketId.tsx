@@ -76,7 +76,7 @@ function TicketChatPage() {
       <div className="flex-1 p-4 overflow-y-auto space-y-4">
         {ticket.replies?.map((r: any) => {
           const isMe = r.user_id === user?.id;
-          const isAdmin = r.is_admin === 1;
+          const isAdmin = r.is_admin === 1 || r.is_admin === true || r.is_admin === 'true';
 
           return (
             <div key={r.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>

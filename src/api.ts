@@ -1789,7 +1789,7 @@ export const createTicket = createServerFn({ method: "POST" }).handler(async ({ 
   const { userId, subject, message } = data as any;
   const res = await db.prepare("INSERT INTO tickets (user_id, subject) VALUES (?, ?)").run(userId, subject);
   const ticketId = res.lastInsertRowid;
-  await db.prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)").run(ticketId, userId, message, 0);
+  await db.prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)").run(ticketId, userId, message, false);
   return { success: true, ticketId };
 });
 
@@ -1819,7 +1819,7 @@ export const replyTicket = createServerFn({ method: "POST" }).handler(async ({ d
   const { ticketId, userId, message, isAdmin } = data as any;
   
   await db.transaction(async (tx: any) => {
-    await tx.prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)").run(ticketId, userId, message, isAdmin ? 1 : 0);
+    await tx.prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)").run(ticketId, userId, message, !!isAdmin);
     await tx.prepare("UPDATE tickets SET updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(ticketId);
   });
   return { success: true };
