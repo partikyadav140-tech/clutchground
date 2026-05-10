@@ -396,10 +396,10 @@ export function JoinBattleDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto bg-card/95 backdrop-blur-3xl border-white/10 shadow-2xl rounded-[1.5rem]">
         <div className="absolute inset-x-0 top-0 h-px bg-primary-gradient shadow-[0_0_15px_rgba(255,0,85,0.8)]" />
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl sm:text-3xl font-black tracking-tight">
-            <span className="text-transparent bg-clip-text bg-primary-gradient drop-shadow-[0_0_8px_rgba(255,0,85,0.6)]">JOIN BATTLE</span>
+          <DialogTitle className="font-display text-2xl sm:text-3xl font-black tracking-tight text-white text-glow">
+            JOIN BATTLE
           </DialogTitle>
-          <DialogDescription className="text-xs uppercase tracking-[0.2em] font-display text-muted-foreground font-bold">
+          <DialogDescription className="text-xs uppercase tracking-[0.2em] font-display text-muted-foreground font-bold mt-1">
             {tournamentTitle} · {mode}
           </DialogDescription>
         </DialogHeader>
