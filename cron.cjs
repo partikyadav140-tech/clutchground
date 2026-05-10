@@ -1,8 +1,13 @@
 const cron = require('node-cron');
 const { Pool } = require('pg');
 
+let connString = process.env.DATABASE_URL;
+if (!connString || connString.includes('arena.db')) {
+  connString = "postgresql://neondb_owner:npg_Z2IiLU7CrfqO@ep-morning-shape-a4x9wieu.us-east-1.aws.neon.tech/neondb?sslmode=require";
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || "postgresql://neondb_owner:npg_Z2IiLU7CrfqO@ep-morning-shape-a4x9wieu.us-east-1.aws.neon.tech/neondb?sslmode=require",
+  connectionString: connString,
 });
 
 // Run every Sunday at 11:59 PM to award 500 points to top team captain

@@ -2,6 +2,12 @@
 import { Pool } from "pg";
 
 let connString = process.env.DATABASE_URL;
+
+if (!connString || connString.includes("arena.db")) {
+  // Fallback to the known correct database URL if undefined or incorrect local SQLite path is set
+  connString = "postgresql://neondb_owner:npg_Z2IiLU7CrfqO@ep-morning-shape-a4x9wieu-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+}
+
 if (!connString) {
   throw new Error("DATABASE_URL environment variable is required");
 }
