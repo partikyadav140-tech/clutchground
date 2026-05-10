@@ -1817,10 +1817,18 @@ export const getTicket = createServerFn({ method: "POST" }).handler(async ({ dat
 export const replyTicket = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const { ticketId, userId, message, isAdmin } = data as any;
+  const tId = Number(ticketId);
   
   await db.transaction(async (tx: any) => {
-    await tx.prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)").run(ticketId, userId, message, !!isAdmin);
-    await tx.prepare("UPDATE tickets SET updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(ticketId);
+    await tx.prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)").run(tId, userId, message, !!isAdmin);
+    await tx.prepare("UPDATE tickets SET updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(tId);
+    
+    if (isAdmin) {
+      const ticket = await tx.prepare("SELECT user_id, subject FROM tickets WHERE id = ?").get(tId);
+      if (ticket) {
+        await tx.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)").run(ticket.user_id, `📩 Support Agent replied to your ticket: ${ticket.subject}`, `/support/${tId}`);
+      }
+    }
   });
   return { success: true };
 });
@@ -1838,7 +1846,8 @@ export const getAllTickets = createServerFn({ method: "GET" }).handler(async () 
 export const updateTicketStatus = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const { ticketId, status } = data as any;
-  await db.prepare("UPDATE tickets SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(status, ticketId);
+  const tId = Number(ticketId);
+  await db.prepare("UPDATE tickets SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(status, tId);
   return { success: true };
 });
 
