@@ -84,7 +84,8 @@ function MatchesPage() {
       </div>
     );
 
-  const upcomingMatches = matches.filter((m) => m.match_status !== "completed");
+  const upcomingMatches = matches.filter((m) => m.match_status !== "completed" && m.match_status !== "rescheduled");
+  const rescheduledMatches = matches.filter((m) => m.match_status === "rescheduled");
   const pastMatches = matches.filter((m) => m.match_status === "completed");
 
   return (
@@ -126,109 +127,23 @@ function MatchesPage() {
               </a>
             </div>
           ) : (
-            upcomingMatches.map((m, i) => (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: i * 0.05 }}
-                key={i}
-              >
-                <a
-                  href={`/tournaments/${String(m.id)}`}
-                  className="block bg-white rounded-2xl border border-border shadow-sm overflow-hidden active:scale-[0.99] transition-transform"
-                >
-                  <div
-                    className={`p-4 border-b border-border/50 relative overflow-hidden ${m.reg_status === "pending" ? "bg-amber-50" : m.match_status === "live" ? "bg-red-50" : ""}`}
-                  >
-                    {/* Status Badge */}
-                    <div className="absolute top-4 right-4">
-                      {m.reg_status === "pending" ? (
-                        <span className="bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded shadow-sm">
-                          Pending
-                        </span>
-                      ) : m.match_status === "live" ? (
-                        <span className="bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded flex items-center gap-1 shadow-sm">
-                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live
-                        </span>
-                      ) : (
-                        <span className="bg-primary text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded shadow-sm">
-                          Upcoming
-                        </span>
-                      )}
-                    </div>
-
-                    <h3 className="font-display font-black text-lg pr-20 leading-tight text-foreground">
-                      {m.name}
-                    </h3>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground mt-2 uppercase tracking-wider">
-                      <Calendar className="w-3.5 h-3.5 text-primary" />{" "}
-                      {new Date(m.date).toLocaleString([], {
-                        dateStyle: "short",
-                        timeStyle: "short",
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Room Details if available */}
-                  {(m.room_id || m.room_pass) && m.reg_status !== "pending" && (
-                    <div className="bg-primary/5 p-4 border-b border-primary/10">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Info className="w-4 h-4 text-primary" />
-                        <span className="text-xs font-bold uppercase tracking-widest text-primary">
-                          Room Details
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-3">
-                        {m.room_id && (
-                          <div className="bg-white rounded-lg px-3 py-2 border border-primary/20 shadow-sm flex-1">
-                            <div className="text-[9px] font-bold text-muted-foreground uppercase">
-                              Room ID
-                            </div>
-                            <div className="font-mono font-black text-sm text-foreground">
-                              {m.room_id}
-                            </div>
-                          </div>
-                        )}
-                        {m.room_pass && (
-                          <div className="bg-white rounded-lg px-3 py-2 border border-primary/20 shadow-sm flex-1">
-                            <div className="text-[9px] font-bold text-muted-foreground uppercase">
-                              Password
-                            </div>
-                            <div className="font-mono font-black text-sm text-foreground">
-                              {m.room_pass}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Footer Info */}
-                  <div className="p-4 bg-secondary/10 flex justify-between items-center text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                    <div className="flex items-center gap-4">
-                      <span className="flex items-center gap-1">
-                        <Crosshair className="w-3.5 h-3.5" /> {m.format}
-                      </span>
-                    </div>
-                    <span className="text-primary flex items-center gap-1">
-                      <Trophy className="w-3.5 h-3.5" />{" "}
-                      {m.mode === "Solo" ? (
-                        <>
-                          {m.per_kill_coin}/Kill | {m.first_place_coin} Booyah Points{" "}
-                          <GodCoin className="w-3.5 h-3.5" />
-                        </>
-                      ) : (
-                        <>
-                          <GodCoin className="w-3.5 h-3.5" /> {m.prize}
-                        </>
-                      )}
-                    </span>
-                  </div>
-                </a>
-              </motion.div>
-            ))
+            upcomingMatches.map((m, i) => <MatchCard m={m} i={i} key={i} />)
           )}
         </div>
+
+        {/* Rescheduled Matches */}
+        {rescheduledMatches.length > 0 && (
+          <>
+            <h2 className="text-lg font-display font-black tracking-wide text-orange-600 mb-3 px-1 flex items-center gap-2">
+              <Calendar className="w-5 h-5" /> Rescheduled Battles
+            </h2>
+            <div className="space-y-4 mb-8">
+              {rescheduledMatches.map((m, i) => (
+                <MatchCard m={m} i={i} key={i} />
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Past Matches */}
         <h2 className="text-lg font-display font-black tracking-wide text-foreground mb-3 px-1">
@@ -446,5 +361,111 @@ function MatchesPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function MatchCard({ m, i }: { m: any; i: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: i * 0.05 }}
+    >
+      <a
+        href={`/tournaments/${String(m.id)}`}
+        className="block bg-white rounded-2xl border border-border shadow-sm overflow-hidden active:scale-[0.99] transition-transform"
+      >
+        <div
+          className={`p-4 border-b border-border/50 relative overflow-hidden ${m.reg_status === "pending" ? "bg-amber-50" : m.match_status === "live" ? "bg-red-50" : m.match_status === "rescheduled" ? "bg-orange-50" : ""}`}
+        >
+          {/* Status Badge */}
+          <div className="absolute top-4 right-4">
+            {m.reg_status === "pending" ? (
+              <span className="bg-amber-100 text-amber-700 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded shadow-sm">
+                Pending
+              </span>
+            ) : m.match_status === "live" ? (
+              <span className="bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded flex items-center gap-1 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live
+              </span>
+            ) : m.match_status === "rescheduled" ? (
+              <span className="bg-orange-500 text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded shadow-sm">
+                Rescheduled
+              </span>
+            ) : (
+              <span className="bg-primary text-white text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded shadow-sm">
+                Upcoming
+              </span>
+            )}
+          </div>
+
+          <h3 className="font-display font-black text-lg pr-24 leading-tight text-foreground">
+            {m.name}
+          </h3>
+          <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground mt-2 uppercase tracking-wider">
+            <Calendar className="w-3.5 h-3.5 text-primary" />{" "}
+            {new Date(m.date).toLocaleString([], {
+              dateStyle: "short",
+              timeStyle: "short",
+            })}
+          </div>
+        </div>
+
+        {/* Room Details if available */}
+        {(m.room_id || m.room_pass) && m.reg_status !== "pending" && (
+          <div className="bg-primary/5 p-4 border-b border-primary/10">
+            <div className="flex items-center gap-2 mb-2">
+              <Info className="w-4 h-4 text-primary" />
+              <span className="text-xs font-bold uppercase tracking-widest text-primary">
+                Room Details
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {m.room_id && (
+                <div className="bg-white rounded-lg px-3 py-2 border border-primary/20 shadow-sm flex-1">
+                  <div className="text-[9px] font-bold text-muted-foreground uppercase">
+                    Room ID
+                  </div>
+                  <div className="font-mono font-black text-sm text-foreground">
+                    {m.room_id}
+                  </div>
+                </div>
+              )}
+              {m.room_pass && (
+                <div className="bg-white rounded-lg px-3 py-2 border border-primary/20 shadow-sm flex-1">
+                  <div className="text-[9px] font-bold text-muted-foreground uppercase">
+                    Password
+                  </div>
+                  <div className="font-mono font-black text-sm text-foreground">
+                    {m.room_pass}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Footer Info */}
+        <div className="p-4 bg-secondary/10 flex justify-between items-center text-xs font-bold text-muted-foreground uppercase tracking-widest">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1">
+              <Crosshair className="w-3.5 h-3.5" /> {m.format}
+            </span>
+          </div>
+          <span className="text-primary flex items-center gap-1">
+            <Trophy className="w-3.5 h-3.5" />{" "}
+            {m.mode === "Solo" ? (
+              <>
+                {m.per_kill_coin}/Kill | {m.first_place_coin} Booyah Pts <GodCoin className="w-3.5 h-3.5" />
+              </>
+            ) : (
+              <>
+                <GodCoin className="w-3.5 h-3.5" /> {m.prize}
+              </>
+            )}
+          </span>
+        </div>
+      </a>
+    </motion.div>
   );
 }

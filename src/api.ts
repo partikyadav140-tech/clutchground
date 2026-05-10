@@ -383,6 +383,45 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
       .get(userId, tournamentId);
     if (existing) throw new Error("You are already registered for this tournament");
 
+    const incomingUids = players.map((p: any) => p.uid).filter(Boolean);
+    if (incomingUids.length > 0) {
+      const existingRegs = (await db
+        .prepare("SELECT players_json FROM registrations WHERE tournament_id = ?")
+        .all(tournamentId)) as any[];
+
+      for (const reg of existingRegs) {
+        if (!reg.players_json) continue;
+        try {
+          const regPlayers = JSON.parse(reg.players_json);
+          for (const rp of regPlayers) {
+            if (rp.uid && incomingUids.includes(rp.uid)) {
+              throw new Error(`Player with UID ${rp.uid} (${rp.ign}) is already registered in this tournament in another team.`);
+            }
+          }
+        } catch (e: any) {
+          if (e.message?.includes("is already registered")) throw e;
+        }
+      }
+
+      const existingReqs = (await db
+        .prepare("SELECT players_json FROM tournament_requests WHERE tournament_id = ? AND status = 'pending'")
+        .all(tournamentId)) as any[];
+
+      for (const req of existingReqs) {
+        if (!req.players_json) continue;
+        try {
+          const reqPlayers = JSON.parse(req.players_json);
+          for (const rp of reqPlayers) {
+            if (rp.uid && incomingUids.includes(rp.uid)) {
+              throw new Error(`Player with UID ${rp.uid} (${rp.ign}) has a pending registration request for this tournament.`);
+            }
+          }
+        } catch (e: any) {
+          if (e.message?.includes("pending registration")) throw e;
+        }
+      }
+    }
+
     await db.transaction(async (tx) => {
       // Handle Entry Fee Deduction
       if (t.entry > 0) {
@@ -551,10 +590,44 @@ export const checkUserRegistration = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
     const { db } = await import("./lib/db");
     const { userId, tournamentId } = data as any;
+    
     const existing = await db
       .prepare("SELECT id FROM registrations WHERE user_id = ? AND tournament_id = ?")
       .get(userId, tournamentId);
-    return { isRegistered: !!existing };
+    if (existing) return { isRegistered: true };
+    
+    const userProfile = await db.prepare("SELECT uid FROM users WHERE id = ?").get(userId) as any;
+    if (userProfile && userProfile.uid) {
+      const existingRegs = (await db
+        .prepare("SELECT players_json FROM registrations WHERE tournament_id = ?")
+        .all(tournamentId)) as any[];
+        
+      for (const reg of existingRegs) {
+        if (!reg.players_json) continue;
+        try {
+          const players = JSON.parse(reg.players_json);
+          if (players.some((p: any) => p.uid === userProfile.uid)) {
+            return { isRegistered: true };
+          }
+        } catch (e) {}
+      }
+
+      const existingReqs = (await db
+        .prepare("SELECT players_json FROM tournament_requests WHERE tournament_id = ? AND status = 'pending'")
+        .all(tournamentId)) as any[];
+        
+      for (const req of existingReqs) {
+        if (!req.players_json) continue;
+        try {
+          const players = JSON.parse(req.players_json);
+          if (players.some((p: any) => p.uid === userProfile.uid)) {
+            return { isRegistered: true };
+          }
+        } catch (e) {}
+      }
+    }
+    
+    return { isRegistered: false };
   },
 );
 
@@ -1175,7 +1248,7 @@ export const rescheduleTournament = createServerFn({ method: "POST" }).handler(a
     const tourney = (await tx.prepare("SELECT title FROM tournaments WHERE id = ?").get(id)) as any;
     if (!tourney) throw new Error("Tournament not found");
 
-    await tx.prepare("UPDATE tournaments SET status = 'upcoming' WHERE id = ?").run(id);
+    await tx.prepare("UPDATE tournaments SET status = 'rescheduled' WHERE id = ?").run(id);
     await tx
       .prepare(
         "UPDATE registrations SET kills = 0, position = 0, points = 0 WHERE tournament_id = ?",

@@ -53,6 +53,7 @@ function AdminTournamentsPage() {
   const [loadingResults, setLoadingResults] = useState(false);
   const [isEditingResults, setIsEditingResults] = useState(false);
   const [q, setQ] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
     setTournaments(initialTournaments);
@@ -94,8 +95,9 @@ function AdminTournamentsPage() {
 
   const filteredTournaments = tournaments.filter(
     (t: any) =>
-      t.title.toLowerCase().includes(q.toLowerCase()) ||
-      t.game.toLowerCase().includes(q.toLowerCase()),
+      (activeTab === "all" || t.status === activeTab) &&
+      (t.title.toLowerCase().includes(q.toLowerCase()) ||
+       t.game.toLowerCase().includes(q.toLowerCase())),
   );
 
   const openResults = async (t: any) => {
@@ -309,7 +311,7 @@ function AdminTournamentsPage() {
           async () => {
             await (rescheduleTournament as any)({ data: id });
           },
-          (fresh) => fresh.some((t: any) => t.id === id && t.status === "upcoming"),
+          (fresh) => fresh.some((t: any) => t.id === id && t.status === "rescheduled"),
         );
         toast.success("Tournament rescheduled!");
         await refreshTournaments();
@@ -526,6 +528,7 @@ function AdminTournamentsPage() {
                     <option value="upcoming">Upcoming</option>
                     <option value="live">Live</option>
                     <option value="completed">Completed</option>
+                    <option value="rescheduled">Rescheduled</option>
                   </select>
                 </div>
                 <Input
@@ -560,6 +563,23 @@ function AdminTournamentsPage() {
           </motion.div>
         ) : (
           <>
+            {/* Tabs */}
+            <div className="flex overflow-x-auto gap-2 mb-6 pb-2 hide-scrollbar">
+              {["all", "open", "upcoming", "live", "rescheduled", "completed"].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-colors ${
+                    activeTab === tab
+                      ? "bg-primary text-white"
+                      : "bg-white text-muted-foreground hover:bg-secondary border border-border shadow-sm"
+                  }`}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+
             <div className="relative mb-6">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
@@ -614,7 +634,9 @@ function AdminTournamentsPage() {
                                     ? "bg-amber-100 text-amber-700"
                                     : t.status === "live"
                                       ? "bg-red-100 text-red-700"
-                                      : "bg-slate-100 text-slate-700"
+                                      : t.status === "rescheduled"
+                                        ? "bg-orange-100 text-orange-700"
+                                        : "bg-slate-100 text-slate-700"
                               }`}
                             >
                               {t.status}
