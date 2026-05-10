@@ -576,109 +576,96 @@ function TournamentDetailPage() {
               {/* Standings Tab */}
               {t.status === "completed" && results && results.length > 0 && (
                 <div className={`space-y-4 ${activeTab !== "standings" ? "hidden lg:block" : ""}`}>
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
-                    <div>
-                      <h3 className="font-display text-2xl sm:text-3xl font-black uppercase tracking-tight text-foreground">
-                        Leaderboard
-                      </h3>
-                      <p className="text-[10px] sm:text-xs text-primary uppercase tracking-widest mt-0.5 font-bold">
-                        Final Match Results
-                      </p>
+                  <div className="rounded-2xl border border-border/60 bg-card-gradient overflow-hidden shadow-2xl">
+                    <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-border/40 bg-secondary/20">
+                      <div>
+                        <h3 className="font-display text-xl sm:text-2xl font-black uppercase tracking-tight text-foreground">
+                          Leaderboard
+                        </h3>
+                        <p className="text-[10px] text-primary uppercase tracking-widest mt-0.5 font-bold">
+                          Final Match Results
+                        </p>
+                      </div>
+                      <Button
+                        variant="outlineFire"
+                        size="sm"
+                        onClick={downloadStandings}
+                        className="h-9 text-xs"
+                      >
+                        <Download className="w-4 h-4 mr-2" /> Export
+                      </Button>
                     </div>
-                    <Button
-                      variant="outlineFire"
-                      size="sm"
-                      onClick={downloadStandings}
-                      className="h-9 text-xs"
-                    >
-                      <Download className="w-4 h-4 mr-2" /> Export CSV
-                    </Button>
-                  </div>
-                  
-                  <div className="flex flex-col gap-2.5">
-                    {/* Header Row */}
-                    <div className="hidden sm:flex items-center px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground bg-secondary/50 rounded-xl border border-border/40">
-                      <div className="w-12 text-center">Rank</div>
-                      <div className="flex-1 px-3">Team / Player</div>
-                      <div className="w-20 text-center">Kills</div>
-                      <div className="w-20 text-center">Pos</div>
-                      {t.mode === "Squad" && <div className="w-20 text-right text-primary">Points</div>}
-                    </div>
-
-                    {/* Standings Rows */}
-                    {results.map((r: any, idx: number) => {
-                      const isFirst = idx === 0;
-                      const isSecond = idx === 1;
-                      const isThird = idx === 2;
-                      const isTop3 = idx < 3;
-                      
-                      let rankStyle = "bg-secondary/40 border-border/40 text-muted-foreground";
-                      let accentBar = "";
-                      let textAccent = "";
-                      
-                      if (isFirst) {
-                        rankStyle = "bg-amber-500/10 border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.15)]";
-                        accentBar = "bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]";
-                        textAccent = "text-amber-500";
-                      } else if (isSecond) {
-                        rankStyle = "bg-slate-300/10 border-slate-300/40";
-                        accentBar = "bg-slate-300 shadow-[0_0_10px_rgba(203,213,225,0.4)]";
-                        textAccent = "text-slate-300";
-                      } else if (isThird) {
-                        rankStyle = "bg-amber-700/10 border-amber-700/40";
-                        accentBar = "bg-amber-700 shadow-[0_0_10px_rgba(180,83,9,0.4)]";
-                        textAccent = "text-amber-600";
-                      }
-
-                      return (
-                        <div
-                          key={r.id}
-                          className={`group relative flex items-center p-3 sm:px-4 sm:py-3.5 rounded-xl border backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-lg ${isTop3 ? rankStyle : "bg-card-gradient border-border/60 hover:border-primary/30"}`}
-                        >
-                          {/* Accent Bar for Top 3 */}
-                          {isTop3 && (
-                            <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl ${accentBar}`} />
-                          )}
-                          
-                          {/* Rank */}
-                          <div className={`w-10 sm:w-12 text-center font-display font-black text-xl sm:text-2xl ${isTop3 ? textAccent : "text-muted-foreground/40"}`}>
-                            {idx + 1}
-                          </div>
-                          
-                          {/* Avatar / Name */}
-                          <div className="flex-1 flex items-center gap-3 px-2 sm:px-3 min-w-0">
-                            <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg shrink-0 flex items-center justify-center font-display font-black text-sm sm:text-base text-background ${isTop3 ? accentBar : "bg-secondary-foreground/20 text-muted-foreground border border-border/50"}`}>
-                              {(r.team_name || r.username)?.[0]?.toUpperCase() || "?"}
-                            </div>
-                            <div className={`font-bold text-sm sm:text-lg truncate ${isTop3 ? "text-foreground" : "text-foreground/90"}`}>
-                              {r.team_name || r.username}
-                            </div>
-                          </div>
-                          
-                          {/* Stats */}
-                          <div className="flex items-center gap-3 sm:gap-0">
-                            <div className="w-12 sm:w-20 text-center">
-                              <div className="sm:hidden text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Kills</div>
-                              <div className="font-display font-bold text-base sm:text-lg">{r.kills || 0}</div>
-                            </div>
-                            
-                            <div className="w-12 sm:w-20 text-center border-l border-border/30 sm:border-0">
-                              <div className="sm:hidden text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Pos</div>
-                              <div className="font-display font-bold text-base sm:text-lg">{r.position || "-"}</div>
-                            </div>
-                            
+                    
+                    <div className="w-full overflow-x-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+                      <table className="w-full text-left border-collapse min-w-[500px]">
+                        <thead>
+                          <tr className="bg-secondary/40 border-b border-border/50 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                            <th className="px-4 sm:px-6 py-4 text-center w-16 whitespace-nowrap">Rank</th>
+                            <th className="px-4 py-4 whitespace-nowrap">Team / Player</th>
+                            <th className="px-4 py-4 text-center w-24 whitespace-nowrap">Kills</th>
+                            <th className="px-4 py-4 text-center w-24 whitespace-nowrap">Pos</th>
                             {t.mode === "Squad" && (
-                              <div className="w-16 sm:w-20 text-right border-l border-border/30 sm:border-0 pl-3 sm:pl-0">
-                                <div className="sm:hidden text-[9px] font-bold uppercase tracking-widest text-primary mb-0.5">Pts</div>
-                                <div className={`font-display font-black text-lg sm:text-xl ${isTop3 ? textAccent : "text-fire-gradient"}`}>
-                                  {r.points || 0}
-                                </div>
-                              </div>
+                              <th className="px-4 sm:px-6 py-4 text-right w-24 whitespace-nowrap text-primary">Pts</th>
                             )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/30">
+                          {results.map((r: any, idx: number) => {
+                            const isFirst = idx === 0;
+                            const isSecond = idx === 1;
+                            const isThird = idx === 2;
+                            const isTop3 = idx < 3;
+                            
+                            let rowClass = "hover:bg-primary/5 transition-colors group";
+                            let rankColor = "text-muted-foreground";
+                            
+                            if (isFirst) {
+                              rowClass = "bg-amber-500/10 hover:bg-amber-500/20 transition-colors group relative shadow-[inset_4px_0_0_0_rgba(245,158,11,1)]";
+                              rankColor = "text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]";
+                            } else if (isSecond) {
+                              rowClass = "bg-slate-300/10 hover:bg-slate-300/20 transition-colors group relative shadow-[inset_4px_0_0_0_rgba(203,213,225,1)]";
+                              rankColor = "text-slate-300 drop-shadow-[0_0_8px_rgba(203,213,225,0.5)]";
+                            } else if (isThird) {
+                              rowClass = "bg-amber-700/10 hover:bg-amber-700/20 transition-colors group relative shadow-[inset_4px_0_0_0_rgba(180,83,9,1)]";
+                              rankColor = "text-amber-600 drop-shadow-[0_0_8px_rgba(180,83,9,0.5)]";
+                            }
+
+                            return (
+                              <tr key={r.id} className={rowClass}>
+                                <td className="px-4 sm:px-6 py-3 sm:py-4">
+                                  <div className={`flex items-center justify-center font-display font-black text-lg sm:text-2xl ${rankColor}`}>
+                                    {isFirst ? "1" : isSecond ? "2" : isThird ? "3" : `${idx + 1}`}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 sm:py-4">
+                                  <div className="flex items-center gap-3 sm:gap-4">
+                                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg shrink-0 flex items-center justify-center font-display font-black text-sm sm:text-base text-background ${isTop3 ? (isFirst ? 'bg-amber-500' : isSecond ? 'bg-slate-300' : 'bg-amber-700') : 'bg-secondary-foreground/20 text-muted-foreground border border-border/40'}`}>
+                                      {(r.team_name || r.username)?.[0]?.toUpperCase() || "?"}
+                                    </div>
+                                    <div className={`font-bold text-sm sm:text-base whitespace-nowrap ${isTop3 ? "text-foreground" : "text-foreground/90"}`}>
+                                      {r.team_name || r.username}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 sm:py-4 text-center">
+                                  <span className="font-display font-bold text-base sm:text-lg">{r.kills || 0}</span>
+                                </td>
+                                <td className="px-4 py-3 sm:py-4 text-center">
+                                  <span className="font-display font-bold text-base sm:text-lg">{r.position || "-"}</span>
+                                </td>
+                                {t.mode === "Squad" && (
+                                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-right">
+                                    <span className={`font-display font-black text-xl sm:text-2xl ${isTop3 ? rankColor : "text-fire-gradient"}`}>
+                                      {r.points || 0}
+                                    </span>
+                                  </td>
+                                )}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}
