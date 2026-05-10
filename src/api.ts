@@ -981,25 +981,8 @@ export const getMyMatches = createServerFn({ method: "POST" }).handler(async ({ 
   const { db } = await import("./lib/db");
   const userId = data as unknown as number;
 
-  const userTeam = (await db
-    .prepare(
-      `
-      SELECT t.name, t.id
-      FROM teams t 
-      JOIN team_members tm ON tm.team_id = t.id 
-      WHERE tm.user_id = ?
-    `,
-    )
-    .get(userId)) as any;
-
-  const leaderTeam = (await db
-    .prepare("SELECT name, id FROM teams WHERE leader_id = ?")
-    .get(userId)) as any;
-
-  const teamName1 = userTeam ? userTeam.name : null;
-  const teamName2 = leaderTeam ? leaderTeam.name : null;
-  const teamId1 = userTeam ? userTeam.id : null;
-  const teamId2 = leaderTeam ? leaderTeam.id : null;
+  const userProfile = (await db.prepare("SELECT uid FROM users WHERE id = ?").get(userId)) as any;
+  const uidPattern = userProfile?.uid ? `%"uid":"${userProfile.uid}"%` : "NON_EXISTENT_UID_PATTERN";
 
   return db
     .prepare(
@@ -1008,7 +991,7 @@ export const getMyMatches = createServerFn({ method: "POST" }).handler(async ({ 
              r.kills, r.position, r.points, 'approved' as reg_status
       FROM registrations r
       JOIN tournaments t ON r.tournament_id = t.id
-      WHERE r.user_id = ? OR (r.team_name = ? AND r.team_name IS NOT NULL) OR (r.team_name = ? AND r.team_name IS NOT NULL)
+      WHERE r.user_id = ? OR r.players_json LIKE ?
 
       UNION ALL
 
@@ -1016,12 +999,12 @@ export const getMyMatches = createServerFn({ method: "POST" }).handler(async ({ 
              0 as kills, 0 as position, 0 as points, req.status as reg_status
       FROM tournament_requests req
       JOIN tournaments t ON req.tournament_id = t.id
-      WHERE req.status = 'pending' AND (req.requested_by = ? OR req.team_id = ? OR req.team_id = ?)
+      WHERE req.status = 'pending' AND (req.requested_by = ? OR req.players_json LIKE ?)
 
       ORDER BY date DESC
     `,
     )
-    .all(userId, teamName1, teamName2, userId, teamId1, teamId2);
+    .all(userId, uidPattern, userId, uidPattern);
 });
 
 export const getTournamentResults = createServerFn({ method: "POST" }).handler(async ({ data }) => {

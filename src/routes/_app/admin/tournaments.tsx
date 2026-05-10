@@ -641,6 +641,11 @@ function AdminTournamentsPage() {
                             >
                               {t.status}
                             </span>
+                            {t.hosted_by && (
+                              <span className="bg-primary/10 text-primary px-2 py-1 rounded-md uppercase tracking-wider">
+                                Host: {t.hosted_by}
+                              </span>
+                            )}
                           </div>
 
                           <div className="grid grid-cols-2 gap-3 mt-4">
