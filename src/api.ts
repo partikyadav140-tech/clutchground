@@ -40,7 +40,18 @@ export const loginUser = createServerFn({ method: "POST" }).handler(async ({ dat
     .prepare("INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)")
     .run(sessionId, user.id, expiresAt);
 
-  return { sessionId, user: { id: user.id, username: user.username, role: user.role } };
+  return { sessionId, user: { 
+    id: user.id, 
+    username: user.username, 
+    role: user.role,
+    ign: user.ign,
+    uid: user.uid,
+    email: user.email,
+    phone: user.phone,
+    avatar_url: user.avatar_url,
+    deposit_balance: user.deposit_balance,
+    winning_balance: user.winning_balance
+  } };
 });
 
 export const signupUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
@@ -143,7 +154,7 @@ export const getUserFromSession = createServerFn({ method: "GET" }).handler(asyn
   if (!sessionId) return null;
 
   const stmt = db.prepare(`
-      SELECT users.id, users.username, users.role, users.deposit_balance, users.winning_balance, users.banned
+      SELECT users.id, users.username, users.role, users.deposit_balance, users.winning_balance, users.banned, users.ign, users.uid, users.email, users.phone, users.avatar_url
       FROM sessions 
       JOIN users ON sessions.user_id = users.id 
       WHERE sessions.id = ? AND sessions.expires_at > ?

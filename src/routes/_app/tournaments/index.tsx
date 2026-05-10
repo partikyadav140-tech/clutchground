@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { getTournaments } from "../../../api";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, Trophy, Clock, Users, ChevronRight, Gamepad2 } from "lucide-react";
+import { Search, Filter, Trophy, Clock, Users, ChevronRight, Gamepad2, Wallet } from "lucide-react";
 import { motion } from "framer-motion";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { GodCoin } from "@/components/GodCoin";
@@ -123,110 +123,122 @@ function TournamentsPage() {
 
 function ArenaTournamentCard({ t, i }: { t: any; i: number }) {
   const poster = POSTERS[t.id % POSTERS.length];
-  const fillPct = Math.min(100, (t.filled / t.slots) * 100);
   const isFull = t.filled >= t.slots;
+
+  // Calculate relative time for the "Reg. closes" pill
+  const getDaysLeft = () => {
+    try {
+      const dateStr = t.startsAt || t.startsat;
+      if (!dateStr) return "soon";
+      const parts = dateStr.match(/(\d+)(st|nd|rd|th)?\s+([A-Za-z]+)\s+(\d{4})/);
+      if (parts) {
+        const [, day, , month, year] = parts;
+        const d = new Date(`${month} ${day}, ${year}`);
+        const diff = Math.ceil((d.getTime() - Date.now()) / (1000 * 3600 * 24));
+        if (diff > 1) return `in ${diff} days`;
+        if (diff === 1) return `in 1 day`;
+      }
+      return "soon";
+    } catch {
+      return "soon";
+    }
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: Math.min(i * 0.05, 0.3) }}
-      className="group relative rounded-[1.5rem] p-[1px] overflow-hidden"
+      className="group relative pt-2"
     >
-      {/* Cyberpunk Animated Border Gradient Underlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-transparent to-blue-500/30 opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
-      
-      <div className="relative h-full bg-card/80 backdrop-blur-xl border border-white/5 rounded-[1.5rem] p-3 flex flex-col gap-3 shadow-card overflow-hidden">
-        <div className="flex gap-4">
-          {/* Poster */}
-          <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-xl overflow-hidden shrink-0 relative border border-white/10 shadow-[0_0_15px_rgba(0,0,0,0.5)]">
-            <img src={poster} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-            
-            <div className="absolute top-2 left-2 flex flex-col gap-1">
-              {t.status === "live" && (
-                <span className="bg-red-500/20 border border-red-500/50 text-red-500 text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shadow-[0_0_10px_rgba(239,68,68,0.4)]">
-                  Live
-                </span>
-              )}
-            </div>
-            <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md text-[9px] text-white px-2 py-0.5 rounded font-black uppercase border border-white/10 shadow-sm">
-              {t.format}
-            </div>
+      <div className="bg-[#be008c] rounded-2xl p-3 pb-0 flex flex-col relative border border-[#d6009f] shadow-[0_4px_20px_rgba(190,0,140,0.4)] overflow-visible w-full">
+        
+        {/* Banner Image */}
+        <div className="relative w-full h-[120px] sm:h-[160px] rounded-xl overflow-hidden">
+          <img src={poster} className="w-full h-full object-cover" />
+          
+          {/* Top Right Prize Pill */}
+          <div className="absolute top-2 right-2 bg-[#0e1015]/90 backdrop-blur rounded-lg px-2.5 py-1 flex items-center gap-1.5 border border-white/5 shadow-lg">
+            <GodCoin className="w-4 h-4 text-blue-500" />
+            <span className="text-white font-bold text-xs">{t.prize || 0}</span>
           </div>
 
-          {/* Info */}
-          <div className="flex-1 flex flex-col min-w-0 py-1">
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="text-[10px] font-black text-cta uppercase tracking-widest text-glow">{t.mode}</span>
+          {/* Live Badge */}
+          {t.status === "live" && (
+            <div className="absolute top-2 left-2 bg-red-500/90 text-white text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded shadow-[0_0_10px_rgba(239,68,68,0.8)]">
+              Live
             </div>
-            <h4 className="font-display font-black text-sm sm:text-base text-white line-clamp-2 leading-tight mb-2 drop-shadow-md">
-              {t.title}
-            </h4>
-            
-            <div className="text-[10px] text-muted-foreground font-bold flex items-center gap-1.5 mt-auto">
-              <Clock className="w-3 h-3 text-cta/50" /> <span className="text-white/80">{t.startsAt || t.startsat}</span>
-            </div>
+          )}
+        </div>
+
+        {/* Overlapping Thumbnail & Game Name */}
+        <div className="flex justify-between items-end mt-[-28px] px-1 relative z-10 h-16">
+          <div className="w-[72px] h-[72px] sm:w-[84px] sm:h-[84px] rounded-xl overflow-hidden border-[3px] border-[#be008c] shadow-lg bg-[#1a1b26]">
+             <img src={poster} className="w-full h-full object-cover" />
+          </div>
+          <div className="flex items-center gap-1.5 text-white font-medium text-[11px] sm:text-xs pb-1 bg-[#be008c]/80 px-2 sm:px-3 py-0.5 rounded-full backdrop-blur-sm">
+             <Gamepad2 className="w-3.5 h-3.5" /> {t.game || "Free Fire Max"}
           </div>
         </div>
 
-        {/* Stats Bar */}
-        <div className="grid grid-cols-2 gap-2 mt-1">
-          <div className="bg-black/40 rounded-xl p-2.5 flex items-center justify-between border border-white/5 shadow-inner">
-            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Entry</span>
-            <span className="text-xs font-black text-cta flex items-center gap-1 text-glow">
-              {t.entry === 0 ? "FREE" : <><GodCoin className="w-3 h-3"/> {t.entry}</>}
-            </span>
-          </div>
-          <div className="bg-black/40 rounded-xl p-2.5 flex items-center justify-between border border-white/5 shadow-inner">
-            <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Prize</span>
-            <span className="text-xs font-black text-white flex items-center gap-1">
-              <GodCoin className="w-3 h-3 text-cta"/> {t.mode === 'Solo' ? t.per_kill_coin || 0 : t.prize}
-            </span>
-          </div>
+        {/* Title & Organizer */}
+        <div className="px-1 mt-2">
+           <h4 className="font-bold text-white text-lg sm:text-xl leading-tight line-clamp-1 drop-shadow-sm">{t.title}</h4>
+           <div className="flex items-center gap-2 mt-2">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white flex items-center justify-center text-[8px] text-black font-black uppercase overflow-hidden">
+                <img src="/logo.svg" className="w-full h-full object-contain p-0.5 opacity-50" />
+              </div>
+              <span className="text-white text-[13px] sm:text-sm font-medium">{t.hosted_by || "God Esports"}</span>
+           </div>
         </div>
 
-        {/* Progress & Action */}
-        <div className="mt-1">
-          <div className="flex justify-between text-[10px] font-bold text-muted-foreground mb-1.5 px-1">
-            <span>{t.filled}/{t.slots} Joined</span>
-            <span className="text-cta/80">{fillPct.toFixed(0)}% Filled</span>
+        {/* Stats Row */}
+        <div className="flex items-center gap-4 px-1 mt-3 mb-5 text-white text-[12px] sm:text-[13px] font-medium">
+           <div className="flex items-center gap-1.5">
+              <Wallet className="w-4 h-4" /> 
+              <span>{t.entry === 0 ? "Free" : t.entry}</span>
+           </div>
+           <div className="flex items-center gap-1.5">
+              <Users className="w-4 h-4" /> 
+              <span>{t.mode}</span>
+           </div>
+           <div className="flex items-center gap-1.5">
+              <Clock className="w-4 h-4" /> 
+              <span>{t.startsAt || "TBA"}</span>
+           </div>
+        </div>
+
+        {/* Bottom Action Bar overlapping the bottom */}
+        <div className="absolute -bottom-4 left-3 right-3 h-[42px] sm:h-[46px] flex rounded-xl overflow-hidden shadow-[0_8px_16px_rgba(0,0,0,0.3)]">
+          {/* Left part */}
+          <div className="bg-white flex-1 flex items-center pl-3 sm:pl-4">
+            <span className="text-black text-[11px] sm:text-xs font-semibold">
+              Reg. closes <span className="text-red-500 ml-0.5">{getDaysLeft()}</span>
+            </span>
           </div>
-          <div className="h-2 w-full bg-black/50 rounded-full overflow-hidden border border-white/5 mb-3 shadow-inner">
+          {/* Right part (Blue Slanted) */}
+          {isFull ? (
             <div 
-              className={`h-full rounded-full transition-all duration-1000 relative ${isFull ? "bg-muted-foreground" : "bg-primary-gradient shadow-[0_0_10px_rgba(255,0,85,0.8)]"}`} 
-              style={{ width: `${fillPct}%` }} 
+              className="bg-gray-500 w-[130px] sm:w-[150px] h-full flex items-center justify-center text-white text-[13px] sm:text-sm font-bold opacity-80" 
+              style={{ clipPath: "polygon(15px 0, 100% 0, 100% 100%, 0 100%)", marginLeft: "-10px" }}
             >
-              {!isFull && <div className="absolute right-0 top-0 bottom-0 w-4 bg-white/30 blur-[2px]" />}
+              <span className="ml-2">Full</span>
             </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Link to={`/tournaments/${t.id}` as any} className="flex-1">
-              <Button variant="outline" className="w-full h-10 rounded-xl font-black text-[11px] uppercase tracking-widest bg-transparent border-white/10 text-white hover:bg-white/5">
-                Details
-              </Button>
+          ) : (
+            <Link to={`/tournaments/${t.id}` as any} className="block">
+              <div 
+                className="bg-[#3091f2] w-[130px] sm:w-[150px] h-full flex items-center justify-center text-white text-[13px] sm:text-sm font-bold cursor-pointer hover:bg-[#257dd4] transition-colors" 
+                style={{ clipPath: "polygon(15px 0, 100% 0, 100% 100%, 0 100%)", marginLeft: "-10px" }}
+              >
+                <span className="ml-2">Register Now</span>
+              </div>
             </Link>
-            {isFull ? (
-               <Button disabled className="w-24 shrink-0 h-10 rounded-xl font-black text-[11px] uppercase tracking-widest bg-white/5 text-muted-foreground border border-white/5">
-                Full
-              </Button>
-            ) : (
-              <JoinBattleDialog
-                tournamentId={t.id}
-                tournamentTitle={t.title}
-                mode={t.mode as any}
-                entryFee={t.entry}
-                trigger={
-                  <Button className="w-24 shrink-0 h-10 rounded-xl font-black text-[11px] uppercase tracking-widest bg-cta-gradient text-cta-foreground shadow-cta border border-cta/50 hover:scale-105 transition-transform">
-                    Join
-                  </Button>
-                }
-              />
-            )}
-          </div>
+          )}
         </div>
       </div>
+      
+      {/* Spacer to account for the overlapping button */}
+      <div className="h-6" />
     </motion.div>
   );
 }

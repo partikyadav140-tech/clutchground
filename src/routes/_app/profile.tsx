@@ -1,4 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
+import Cropper from "react-easy-crop";
 import {
   Trophy,
   Edit3,
@@ -35,6 +36,12 @@ function ProfilePage() {
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [formData, setFormData] = useState({ ign: "", uid: "", email: "", phone: "", avatar_url: "" });
+
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
 
   const totalBalance = user
     ? ((user as any).deposit_balance || 0) + ((user as any).winning_balance || 0)
@@ -81,21 +88,51 @@ function ProfilePage() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const MAX_WIDTH = 256;
-        const scaleSize = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scaleSize;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-        setFormData({ ...formData, avatar_url: dataUrl });
-      };
-      img.src = event.target?.result as string;
+      setCropSrc(event.target?.result as string);
+      setIsCropModalOpen(true);
     };
     reader.readAsDataURL(file);
+    e.target.value = ""; // Reset input
+  };
+
+  const onCropComplete = (croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const createCroppedImage = async () => {
+    try {
+      const image = new Image();
+      image.src = cropSrc!;
+      await new Promise((resolve) => (image.onload = resolve));
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const MAX_WIDTH = 256;
+      canvas.width = MAX_WIDTH;
+      canvas.height = MAX_WIDTH;
+
+      ctx.drawImage(
+        image,
+        croppedAreaPixels.x,
+        croppedAreaPixels.y,
+        croppedAreaPixels.width,
+        croppedAreaPixels.height,
+        0,
+        0,
+        MAX_WIDTH,
+        MAX_WIDTH
+      );
+
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      setFormData({ ...formData, avatar_url: dataUrl });
+      setIsCropModalOpen(false);
+      setCropSrc(null);
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to crop image");
+    }
   };
 
   if (loading || authLoading) {
@@ -305,6 +342,47 @@ function ProfilePage() {
         </button>
 
       </div>
+
+      {/* Crop Modal */}
+      <Dialog open={isCropModalOpen} onOpenChange={setIsCropModalOpen}>
+        <DialogContent className="max-w-[90vw] w-[400px] bg-card/95 backdrop-blur-3xl border-white/10 shadow-2xl z-[100]">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl font-black text-white text-glow">Crop Photo</DialogTitle>
+          </DialogHeader>
+          <div className="relative w-full h-64 bg-black/50 rounded-xl overflow-hidden mt-4">
+            {cropSrc && (
+              <Cropper
+                image={cropSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            )}
+          </div>
+          <div className="mt-4 px-2 flex items-center gap-2">
+            <span className="text-xs font-bold text-muted-foreground">1x</span>
+            <input
+              type="range"
+              value={zoom}
+              min={1}
+              max={3}
+              step={0.1}
+              aria-labelledby="Zoom"
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="w-full accent-primary"
+            />
+            <span className="text-xs font-bold text-muted-foreground">3x</span>
+          </div>
+          <Button onClick={createCroppedImage} className="w-full mt-4 font-black bg-cta-gradient text-cta-foreground h-12 rounded-xl text-sm uppercase tracking-widest shadow-cta border border-cta/50 hover:scale-105 transition-transform">
+            Apply Crop
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
