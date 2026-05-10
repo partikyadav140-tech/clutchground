@@ -79,9 +79,9 @@ function TournamentDetailPage() {
 
   const downloadStandings = () => {
     if (!results || results.length === 0) return;
-    const headers = t.mode === "Duo" 
-      ? ["Rank", "Team / Player", "Kills", "Position"]
-      : ["Rank", "Team / Player", "Kills", "Position", "Points"];
+    const headers = t.mode === "Squad" 
+      ? ["Rank", "Team / Player", "Kills", "Position", "Points"]
+      : ["Rank", "Team / Player", "Kills", "Position"];
     const rows = results.map((r: any, i: number) => {
       const baseRow = [
         i + 1,
@@ -89,7 +89,7 @@ function TournamentDetailPage() {
         r.kills || 0,
         r.position || "-",
       ];
-      return t.mode === "Duo" ? baseRow : [...baseRow, r.points || 0];
+      return t.mode === "Squad" ? [...baseRow, r.points || 0] : baseRow;
     });
     const csvContent = [headers.join(","), ...rows.map((r: any) => r.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -573,65 +573,112 @@ function TournamentDetailPage() {
               </div>
 
               {/* Standings Tab */}
+              {/* Standings Tab */}
               {t.status === "completed" && results && results.length > 0 && (
                 <div className={`space-y-4 ${activeTab !== "standings" ? "hidden lg:block" : ""}`}>
-                  <div className="rounded-2xl border border-border/60 bg-card-gradient overflow-hidden">
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
-                      <div className="text-xs font-display uppercase tracking-widest text-primary">
-                        Final Standings
-                      </div>
-                      <Button
-                        variant="outlineFire"
-                        size="sm"
-                        onClick={downloadStandings}
-                        className="h-8 text-xs py-0"
-                      >
-                        <Download className="w-3 h-3 mr-1.5" /> Export
-                      </Button>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
+                    <div>
+                      <h3 className="font-display text-2xl sm:text-3xl font-black uppercase tracking-tight text-foreground">
+                        Leaderboard
+                      </h3>
+                      <p className="text-[10px] sm:text-xs text-primary uppercase tracking-widest mt-0.5 font-bold">
+                        Final Match Results
+                      </p>
                     </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-left">
-                        <thead className="text-[10px] uppercase tracking-widest text-muted-foreground bg-secondary/40 border-b border-border/40">
-                          <tr>
-                            <th className="px-4 py-3 font-display">#</th>
-                            <th className="px-4 py-3 font-display">Team / Player</th>
-                            <th className="px-4 py-3 font-display text-center">Kills</th>
-                            <th className="px-4 py-3 font-display text-center">Pos</th>
-                            {t.mode !== "Duo" && (
-                              <th className="px-4 py-3 font-display text-right text-primary">Pts</th>
-                            )}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {results.map((r: any, idx: number) => (
-                            <tr
-                              key={r.id}
-                              className="border-b border-border/30 hover:bg-primary/5 transition-colors last:border-0"
-                            >
-                              <td className="px-4 py-3 font-display font-black text-muted-foreground text-sm">
-                                {idx === 0
-                                  ? "🥇"
-                                  : idx === 1
-                                    ? "🥈"
-                                    : idx === 2
-                                      ? "🥉"
-                                      : `#${idx + 1}`}
-                              </td>
-                              <td className="px-4 py-3 font-bold text-foreground">
-                                {r.team_name || r.username}
-                              </td>
-                              <td className="px-4 py-3 text-center">{r.kills || 0}</td>
-                              <td className="px-4 py-3 text-center">{r.position || "-"}</td>
-                              {t.mode !== "Duo" && (
-                                <td className="px-4 py-3 text-right font-display font-black text-fire-gradient text-base">
+                    <Button
+                      variant="outlineFire"
+                      size="sm"
+                      onClick={downloadStandings}
+                      className="h-9 text-xs"
+                    >
+                      <Download className="w-4 h-4 mr-2" /> Export CSV
+                    </Button>
+                  </div>
+                  
+                  <div className="flex flex-col gap-2.5">
+                    {/* Header Row */}
+                    <div className="hidden sm:flex items-center px-4 py-2.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground bg-secondary/50 rounded-xl border border-border/40">
+                      <div className="w-12 text-center">Rank</div>
+                      <div className="flex-1 px-3">Team / Player</div>
+                      <div className="w-20 text-center">Kills</div>
+                      <div className="w-20 text-center">Pos</div>
+                      {t.mode === "Squad" && <div className="w-20 text-right text-primary">Points</div>}
+                    </div>
+
+                    {/* Standings Rows */}
+                    {results.map((r: any, idx: number) => {
+                      const isFirst = idx === 0;
+                      const isSecond = idx === 1;
+                      const isThird = idx === 2;
+                      const isTop3 = idx < 3;
+                      
+                      let rankStyle = "bg-secondary/40 border-border/40 text-muted-foreground";
+                      let accentBar = "";
+                      let textAccent = "";
+                      
+                      if (isFirst) {
+                        rankStyle = "bg-amber-500/10 border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.15)]";
+                        accentBar = "bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]";
+                        textAccent = "text-amber-500";
+                      } else if (isSecond) {
+                        rankStyle = "bg-slate-300/10 border-slate-300/40";
+                        accentBar = "bg-slate-300 shadow-[0_0_10px_rgba(203,213,225,0.4)]";
+                        textAccent = "text-slate-300";
+                      } else if (isThird) {
+                        rankStyle = "bg-amber-700/10 border-amber-700/40";
+                        accentBar = "bg-amber-700 shadow-[0_0_10px_rgba(180,83,9,0.4)]";
+                        textAccent = "text-amber-600";
+                      }
+
+                      return (
+                        <div
+                          key={r.id}
+                          className={`group relative flex items-center p-3 sm:px-4 sm:py-3.5 rounded-xl border backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:shadow-lg ${isTop3 ? rankStyle : "bg-card-gradient border-border/60 hover:border-primary/30"}`}
+                        >
+                          {/* Accent Bar for Top 3 */}
+                          {isTop3 && (
+                            <div className={`absolute left-0 top-0 bottom-0 w-1.5 rounded-l-xl ${accentBar}`} />
+                          )}
+                          
+                          {/* Rank */}
+                          <div className={`w-10 sm:w-12 text-center font-display font-black text-xl sm:text-2xl ${isTop3 ? textAccent : "text-muted-foreground/40"}`}>
+                            {idx + 1}
+                          </div>
+                          
+                          {/* Avatar / Name */}
+                          <div className="flex-1 flex items-center gap-3 px-2 sm:px-3 min-w-0">
+                            <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg shrink-0 flex items-center justify-center font-display font-black text-sm sm:text-base text-background ${isTop3 ? accentBar : "bg-secondary-foreground/20 text-muted-foreground border border-border/50"}`}>
+                              {(r.team_name || r.username)?.[0]?.toUpperCase() || "?"}
+                            </div>
+                            <div className={`font-bold text-sm sm:text-lg truncate ${isTop3 ? "text-foreground" : "text-foreground/90"}`}>
+                              {r.team_name || r.username}
+                            </div>
+                          </div>
+                          
+                          {/* Stats */}
+                          <div className="flex items-center gap-3 sm:gap-0">
+                            <div className="w-12 sm:w-20 text-center">
+                              <div className="sm:hidden text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Kills</div>
+                              <div className="font-display font-bold text-base sm:text-lg">{r.kills || 0}</div>
+                            </div>
+                            
+                            <div className="w-12 sm:w-20 text-center border-l border-border/30 sm:border-0">
+                              <div className="sm:hidden text-[9px] font-bold uppercase tracking-widest text-muted-foreground mb-0.5">Pos</div>
+                              <div className="font-display font-bold text-base sm:text-lg">{r.position || "-"}</div>
+                            </div>
+                            
+                            {t.mode === "Squad" && (
+                              <div className="w-16 sm:w-20 text-right border-l border-border/30 sm:border-0 pl-3 sm:pl-0">
+                                <div className="sm:hidden text-[9px] font-bold uppercase tracking-widest text-primary mb-0.5">Pts</div>
+                                <div className={`font-display font-black text-lg sm:text-xl ${isTop3 ? textAccent : "text-fire-gradient"}`}>
                                   {r.points || 0}
-                                </td>
-                              )}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
