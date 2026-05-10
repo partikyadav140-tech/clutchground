@@ -81,7 +81,7 @@ function TicketChatPage() {
         </div>
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto space-y-4">
+      <div className="flex-1 p-4 overflow-y-auto space-y-4 pb-36">
         {ticket.replies?.map((r: any) => {
           const isMe = r.user_id === user?.id;
           const isAdmin = r.is_admin === 1 || r.is_admin === true || r.is_admin === 'true';
@@ -109,7 +109,7 @@ function TicketChatPage() {
         <div ref={endRef} />
       </div>
 
-      <div className="fixed bottom-0 sm:bottom-0 left-0 sm:left-64 right-0 bg-card border-t border-white/5 p-3 z-20 pb-safe">
+      <div className="fixed bottom-16 sm:bottom-0 left-0 right-0 bg-card border-t border-white/5 p-3 z-20 pb-safe sm:left-64">
         {ticket.status === 'resolved' ? (
           <div className="bg-emerald-50 text-emerald-600 rounded-xl p-3 flex items-center justify-center gap-2 font-bold text-sm">
             <CheckCircle2 className="w-5 h-5" /> This ticket has been resolved

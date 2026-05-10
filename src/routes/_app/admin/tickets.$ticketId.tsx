@@ -100,7 +100,7 @@ function AdminTicketChatPage() {
         </Button>
       </div>
 
-      <div className="flex-1 p-4 overflow-y-auto space-y-4 max-w-4xl mx-auto w-full">
+      <div className="flex-1 p-4 overflow-y-auto space-y-4 max-w-4xl mx-auto w-full pb-36">
         {ticket.replies?.map((r: any) => {
           const isAdmin = r.is_admin === 1 || r.is_admin === true || r.is_admin === 'true';
 
@@ -126,7 +126,7 @@ function AdminTicketChatPage() {
         <div ref={endRef} />
       </div>
 
-      <div className="fixed bottom-0 sm:bottom-0 left-0 sm:left-64 right-0 bg-card border-t border-border p-3 z-20 pb-safe">
+      <div className="fixed bottom-16 sm:bottom-0 left-0 sm:left-64 right-0 bg-card border-t border-border p-3 z-20 pb-safe">
         <form onSubmit={handleReply} className="flex items-end gap-2 max-w-4xl mx-auto w-full">
           <textarea
             value={message}
