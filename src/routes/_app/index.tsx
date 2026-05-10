@@ -62,11 +62,11 @@ function HomePage() {
   const { user } = useAuth();
   
   const [emblaRef] = useEmblaCarousel({ loop: true, align: "center" }, [
-    Autoplay({ delay: 2000, stopOnInteraction: true }),
+    Autoplay({ delay: 2500, stopOnInteraction: true }),
   ]);
 
   const [upcomingEmblaRef] = useEmblaCarousel({ loop: true, align: "center" }, [
-    Autoplay({ delay: 3000, stopOnInteraction: true }),
+    Autoplay({ delay: 2500, stopOnInteraction: true }),
   ]);
 
   const isCompleted = (t: any) => String(t.status || "").trim().toLowerCase() === "completed";
