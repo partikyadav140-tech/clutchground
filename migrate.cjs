@@ -4,7 +4,10 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL || "postgresq
 async function migrate() {
   try {
     await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT");
-    console.log("Migration complete: added avatar_url to users");
+    await pool.query("ALTER TABLE tickets ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'open'");
+    await pool.query("ALTER TABLE tickets ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+    await pool.query("ALTER TABLE ticket_replies ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false");
+    console.log("Migration complete: added missing columns for tickets and users");
   } catch(e) {
     console.error(e);
   } finally {

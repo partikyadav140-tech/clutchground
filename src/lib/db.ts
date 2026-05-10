@@ -304,6 +304,11 @@ async function initDb() {
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS deposit_balance INTEGER DEFAULT 0;`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS winning_balance INTEGER DEFAULT 0;`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS banned BOOLEAN DEFAULT false;`);
+      
+      // Ticket system migrations
+      await pool.query(`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'open';`);
+      await pool.query(`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
+      await pool.query(`ALTER TABLE ticket_replies ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;`);
     } catch (e) {
       console.log("Column addition skipped or failed:", e);
     }
