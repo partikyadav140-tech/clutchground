@@ -7,7 +7,7 @@ import { LifeBuoy, Plus, MessageCircle, Clock, CheckCircle2 } from "lucide-react
 import { motion } from "framer-motion";
 import { getMyTickets, createTicket } from "../../api";
 
-export const Route = createFileRoute("/_app/support")({
+export const Route = createFileRoute("/_app/support/")({
   head: () => ({ meta: [{ title: "Help & Support — CLUTCHGROUND" }] }),
   component: SupportPage,
 });

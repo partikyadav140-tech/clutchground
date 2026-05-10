@@ -6,7 +6,7 @@ import { LifeBuoy, Clock, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { getAllTickets } from "../../../api";
 
-export const Route = createFileRoute("/_app/admin/tickets")({
+export const Route = createFileRoute("/_app/admin/tickets/")({
   head: () => ({ meta: [{ title: "Support Tickets — Admin" }] }),
   component: AdminTicketsPage,
 });
