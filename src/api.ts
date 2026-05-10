@@ -952,10 +952,10 @@ export const getMyMatches = createServerFn({ method: "POST" }).handler(async ({ 
 export const getTournamentResults = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const id = data as unknown as number;
-  const results = db
+  const results = (await db
     .prepare(
       `
-      SELECT r.*, u.username, t.mode as tourney_mode
+      SELECT r.*, u.username, COALESCE(r.team_name, u.username) as display_name, t.mode as tourney_mode
       FROM registrations r
       JOIN users u ON r.user_id = u.id
       JOIN tournaments t ON r.tournament_id = t.id
@@ -966,7 +966,7 @@ export const getTournamentResults = createServerFn({ method: "POST" }).handler(a
         r.kills DESC
     `,
     )
-    .all(id) as any[];
+    .all(id)) as any[];
   
   // Zero out points for Duo and Solo tournaments (only Squad shows points)
   return results.map((r: any) => {
