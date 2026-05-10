@@ -127,11 +127,12 @@ export const createAdminUser = createServerFn({ method: "POST" }).handler(async 
       user: verifyUser
     };
   } catch (error) {
-    console.error("Error creating admin user:", error);
+    const err = error as Error;
+    console.error("Error creating admin user:", err);
     return {
       success: false,
-      message: `Failed to create admin user: ${error.message}`,
-      error: error.message
+      message: `Failed to create admin user: ${err.message}`,
+      error: err.message
     };
   }
 });
