@@ -305,6 +305,24 @@ export function JoinBattleDialog({
       router.navigate({ to: "/matches" });
     } catch (err: any) {
       toast.dismiss();
+      if (err?.message?.includes("w.delete is not a function")) {
+        try {
+          const result = await (checkUserRegistration as any)({
+            data: { userId: user.id, tournamentId },
+          });
+          if (result?.isRegistered) {
+            toast.success(`🔥 Slot reserved for ${leader.ign} in ${tournamentTitle}!`, {
+              description: "Room ID will be sent to your email & in-app inbox 10 minutes before start.",
+            });
+            setOpen(false);
+            setTimeout(reset, 300);
+            router.navigate({ to: "/matches" });
+            return;
+          }
+        } catch (_err) {
+          console.error("Fallback verification failed", _err);
+        }
+      }
       toast.error(err.message || "Failed to register");
     }
   };

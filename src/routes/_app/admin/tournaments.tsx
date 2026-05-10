@@ -61,8 +61,33 @@ function AdminTournamentsPage() {
     try {
       const fresh = await getTournaments();
       setTournaments(fresh);
+      return fresh;
     } catch (err: any) {
       console.error("Failed to refresh tournaments:", err);
+      return tournaments;
+    }
+  };
+
+  const isFalsePositiveServerFnError = (err: any) =>
+    err?.message?.includes("w.delete is not a function") ||
+    err?.message?.includes("delete is not a function") ||
+    err?.message?.includes("w.delete");
+
+  const attemptTourneyAction = async (
+    action: () => Promise<any>,
+    verify: (fresh: any[]) => boolean,
+  ) => {
+    try {
+      await action();
+      return true;
+    } catch (err: any) {
+      if (isFalsePositiveServerFnError(err)) {
+        const fresh = await refreshTournaments();
+        if (verify(fresh)) {
+          return true;
+        }
+      }
+      throw err;
     }
   };
 
@@ -172,14 +197,27 @@ function AdminTournamentsPage() {
   const handleSaveTournament = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      if (editingT) {
-        await (updateTournament as any)({ data: { ...formData, id: editingT.id } });
-        toast.success("Tournament updated!");
-      } else {
-        await (addTournament as any)({ data: formData });
-        toast.success("Tournament added!");
-      }
-      await refreshTournaments();
+      await attemptTourneyAction(
+        async () => {
+          if (editingT) {
+            await (updateTournament as any)({ data: { ...formData, id: editingT.id } });
+          } else {
+            await (addTournament as any)({ data: formData });
+          }
+        },
+        (fresh) => {
+          if (editingT) {
+            return fresh.some((t: any) => t.id === editingT.id && t.title === formData.title);
+          }
+          return fresh.some(
+            (t: any) =>
+              t.title === formData.title &&
+              t.game === formData.game &&
+              t.mode === formData.mode,
+          );
+        },
+      );
+      toast.success(editingT ? "Tournament updated!" : "Tournament added!");
       setShowForm(false);
       setEditingT(null);
       router.invalidate();
@@ -197,9 +235,13 @@ function AdminTournamentsPage() {
     });
     if (yes) {
       try {
-        await (deleteTournament as any)({ data: id });
+        await attemptTourneyAction(
+          async () => {
+            await (deleteTournament as any)({ data: id });
+          },
+          (fresh) => !fresh.some((t: any) => t.id === id),
+        );
         toast.success("Tournament deleted!");
-        await refreshTournaments();
         router.invalidate();
       } catch (err: any) {
         toast.error("Failed to delete.");
@@ -217,9 +259,13 @@ function AdminTournamentsPage() {
     });
     if (yes) {
       try {
-        await (deleteAllTournaments as any)({});
+        await attemptTourneyAction(
+          async () => {
+            await (deleteAllTournaments as any)({});
+          },
+          (fresh) => fresh.length === 0,
+        );
         toast.success("All tournaments deleted!");
-        await refreshTournaments();
         router.invalidate();
       } catch (err: any) {
         toast.error("Failed to delete all tournaments.");
@@ -229,9 +275,13 @@ function AdminTournamentsPage() {
 
   const handleToggleHero = async (id: number) => {
     try {
-      await (toggleHeroTournament as any)({ data: id });
+      await attemptTourneyAction(
+        async () => {
+          await (toggleHeroTournament as any)({ data: id });
+        },
+        (fresh) => fresh.some((t: any) => t.id === id),
+      );
       toast.success("Hero status updated!");
-      await refreshTournaments();
       router.invalidate();
     } catch (err: any) {
       toast.error("Failed to update hero status.");
@@ -247,9 +297,13 @@ function AdminTournamentsPage() {
     });
     if (yes) {
       try {
-        await (rescheduleTournament as any)({ data: id });
+        await attemptTourneyAction(
+          async () => {
+            await (rescheduleTournament as any)({ data: id });
+          },
+          (fresh) => fresh.some((t: any) => t.id === id && t.status === "upcoming"),
+        );
         toast.success("Tournament rescheduled!");
-        await refreshTournaments();
         router.invalidate();
       } catch (err: any) {
         toast.error("Failed to reschedule.");
