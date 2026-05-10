@@ -94,7 +94,7 @@ export function Navbar() {
           <nav className="container mx-auto px-4 h-16 flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center gap-2">
-              <Logo size={40} withText={false} />
+              <Logo size={52} withText={false} />
               <span className="font-display font-black text-lg text-foreground uppercase tracking-widest hidden sm:inline-block">ClutchGround</span>
             </div>
 

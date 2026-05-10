@@ -294,6 +294,20 @@ async function initDb() {
       );
     `);
 
+    // Ensure columns exist (for SQLite/Postgres compatibility we use separate ALTER statements if needed, but in Postgres ADD COLUMN IF NOT EXISTS works)
+    try {
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ign TEXT;`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS uid TEXT;`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS deposit_balance INTEGER DEFAULT 0;`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS winning_balance INTEGER DEFAULT 0;`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS banned BOOLEAN DEFAULT false;`);
+    } catch (e) {
+      console.log("Column addition skipped or failed:", e);
+    }
+
     // Seed Admin
     try {
       // First delete any existing admin account

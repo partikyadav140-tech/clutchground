@@ -170,105 +170,100 @@ function QuickAction({ icon: Icon, label, to, color }: { icon: any; label: strin
 // Mobile-first horizontal scroll card
 function AppTournamentCard({ t, i }: { t: any; i: number }) {
   const poster = POSTERS[t.id % POSTERS.length];
-  
-  // Calculate relative time for the "Reg. closes" pill
-  const getDaysLeft = () => {
-    try {
-      const dateStr = t.startsAt || t.startsat;
-      if (!dateStr) return "soon";
-      const parts = dateStr.match(/(\d+)(st|nd|rd|th)?\s+([A-Za-z]+)\s+(\d{4})/);
-      if (parts) {
-        const [, day, , month, year] = parts;
-        const d = new Date(`${month} ${day}, ${year}`);
-        const diff = Math.ceil((d.getTime() - Date.now()) / (1000 * 3600 * 24));
-        if (diff > 1) return `in ${diff} days`;
-        if (diff === 1) return `in 1 day`;
-      }
-      return "soon";
-    } catch {
-      return "soon";
-    }
-  };
+  const fillPct = Math.min(100, (t.filled / t.slots) * 100);
 
   return (
     <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.3, delay: i * 0.05 }}
-      className="shrink-0 w-[85vw] max-w-[320px] snap-center group relative pt-2"
+      transition={{ duration: 0.4, delay: i * 0.05, ease: "easeOut" }}
+      className="shrink-0 w-[85vw] max-w-[320px] snap-center group relative p-[1px] rounded-[2rem] overflow-hidden mt-2 mb-2"
     >
-      <div className="bg-[#be008c] rounded-2xl p-3 pb-0 flex flex-col relative border border-[#d6009f] shadow-[0_4px_20px_rgba(190,0,140,0.4)]">
+      {/* Animated Glowing Border */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary via-purple-500 to-blue-500 opacity-40 group-hover:opacity-100 transition-opacity duration-700" />
+      
+      <div className="relative h-full bg-[#0a0a0f]/95 backdrop-blur-3xl rounded-[2rem] flex flex-col overflow-hidden shadow-2xl">
         
-        {/* Banner Image */}
-        <div className="relative w-full h-[120px] rounded-xl overflow-hidden">
-          <img src={poster} alt={t.title} className="w-full h-full object-cover" />
+        {/* Banner Section */}
+        <div className="relative h-[160px] w-full overflow-hidden">
+          <img src={poster} alt={t.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out opacity-90" />
           
-          {/* Top Right Prize Pill */}
-          <div className="absolute top-2 right-2 bg-[#0e1015]/90 backdrop-blur rounded-lg px-2.5 py-1 flex items-center gap-1.5 border border-white/5 shadow-lg">
-            <GodCoin className="w-4 h-4 text-blue-500" />
-            <span className="text-white font-bold text-xs">{t.prize || 0}</span>
-          </div>
-        </div>
-
-        {/* Overlapping Thumbnail & Game Name */}
-        <div className="flex justify-between items-end mt-[-28px] px-1 relative z-10 h-16">
-          <div className="w-[72px] h-[72px] rounded-xl overflow-hidden border-[3px] border-[#be008c] shadow-lg bg-[#1a1b26]">
-             <img src={poster} className="w-full h-full object-cover" />
-          </div>
-          <div className="flex items-center gap-1.5 text-white font-medium text-[11px] pb-1 bg-[#be008c]/80 px-2 py-0.5 rounded-full backdrop-blur-sm">
-             <Gamepad2 className="w-3.5 h-3.5" /> {t.game || "Free Fire Max"}
-          </div>
-        </div>
-
-        {/* Title & Organizer */}
-        <div className="px-1 mt-2">
-           <h4 className="font-bold text-white text-lg leading-tight line-clamp-1 drop-shadow-sm">{t.title}</h4>
-           <div className="flex items-center gap-2 mt-2">
-              <div className="w-5 h-5 rounded-full bg-white flex items-center justify-center text-[8px] text-black font-black uppercase overflow-hidden">
-                <img src="/logo.svg" className="w-full h-full object-contain p-0.5 opacity-50" />
-              </div>
-              <span className="text-white text-[13px] font-medium">{t.hosted_by || "God Esports"}</span>
-           </div>
-        </div>
-
-        {/* Stats Row */}
-        <div className="flex items-center gap-4 px-1 mt-3 mb-5 text-white text-[12px] font-medium">
-           <div className="flex items-center gap-1.5">
-              <Wallet className="w-4 h-4" /> 
-              <span>{t.entry === 0 ? "Free" : t.entry}</span>
-           </div>
-           <div className="flex items-center gap-1.5">
-              <Users className="w-4 h-4" /> 
-              <span>{t.mode}</span>
-           </div>
-           <div className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4" /> 
-              <span>{t.startsAt || "TBA"}</span>
-           </div>
-        </div>
-
-        {/* Bottom Action Bar overlapping the bottom */}
-        <div className="absolute -bottom-4 left-3 right-3 h-[42px] flex rounded-xl overflow-hidden shadow-[0_8px_16px_rgba(0,0,0,0.3)]">
-          {/* Left part */}
-          <div className="bg-white flex-1 flex items-center pl-3">
-            <span className="text-black text-[11px] font-semibold">
-              Reg. closes <span className="text-red-500 ml-0.5">{getDaysLeft()}</span>
+          {/* Gradient Overlay for smooth transition */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-[#0a0a0f]/30 to-transparent" />
+          
+          {/* Badges */}
+          <div className="absolute top-4 left-4 flex gap-2">
+            {t.status === "live" && (
+              <span className="px-3 py-1 rounded-full bg-red-500/20 backdrop-blur-md border border-red-500/50 text-red-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-[0_0_15px_rgba(239,68,68,0.5)]">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" /> Live
+              </span>
+            )}
+            <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-white/90 text-[10px] font-black uppercase tracking-widest border border-white/10">
+              {t.mode}
             </span>
           </div>
-          {/* Right part (Blue Slanted) */}
-          <Link to={`/tournaments/${t.id}` as any} className="block">
-            <div 
-              className="bg-[#3091f2] w-[130px] h-full flex items-center justify-center text-white text-[13px] font-bold cursor-pointer hover:bg-[#257dd4] transition-colors" 
-              style={{ clipPath: "polygon(15px 0, 100% 0, 100% 100%, 0 100%)", marginLeft: "-10px" }}
-            >
-              <span className="ml-2">Register Now</span>
+
+          {/* Floating Game Name */}
+          <div className="absolute bottom-3 left-5 flex items-center gap-1.5 text-primary text-[10px] font-black uppercase tracking-widest text-glow z-10">
+             <Gamepad2 className="w-3.5 h-3.5" /> {t.game || "Free Fire"}
+          </div>
+        </div>
+
+        {/* Content Section */}
+        <div className="p-5 flex flex-col flex-1 relative z-10 -mt-2">
+          <h4 className="font-display font-black text-xl text-white leading-tight line-clamp-1 drop-shadow-md mb-4">
+            {t.title}
+          </h4>
+
+          {/* Highlighted Prize & Entry Box */}
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-3 border border-white/10 flex flex-col items-center justify-center transition-colors group-hover:bg-white/10">
+              <span className="text-[9px] text-muted-foreground uppercase font-black tracking-widest mb-1.5">Entry</span>
+              <span className="text-sm font-black text-white flex items-center gap-1.5">
+                {t.entry === 0 ? "FREE" : <><GodCoin className="w-4 h-4 text-primary"/> {t.entry}</>}
+              </span>
             </div>
-          </Link>
+            <div className="bg-gradient-to-br from-primary/10 to-purple-500/10 backdrop-blur-sm rounded-2xl p-3 border border-primary/30 flex flex-col items-center justify-center relative overflow-hidden shadow-[0_0_20px_rgba(255,0,85,0.1)] group-hover:shadow-[0_0_25px_rgba(255,0,85,0.2)] transition-shadow">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-primary/20 blur-xl rounded-full translate-x-1/2 -translate-y-1/2" />
+              <span className="text-[9px] text-primary uppercase font-black tracking-widest mb-1.5 relative z-10">Prize Pool</span>
+              <span className="text-sm font-black text-white flex items-center gap-1.5 relative z-10">
+                <GodCoin className="w-4 h-4 text-amber-400"/> {t.mode === 'Solo' ? t.per_kill_coin || 0 : t.prize}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-auto">
+             <div className="flex justify-between items-end mb-2.5">
+                <div className="flex flex-col gap-1">
+                   <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Starts In</span>
+                   <span className="text-xs font-bold text-white/90 flex items-center gap-1.5">
+                     <Clock className="w-3 h-3 text-primary" /> {t.startsAt || t.startsat}
+                   </span>
+                </div>
+                <div className="text-right">
+                   <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest block mb-1">Slots</span>
+                   <span className="text-xs font-black text-white/90">{t.filled} / <span className="text-muted-foreground">{t.slots}</span></span>
+                </div>
+             </div>
+
+            {/* Premium Progress Bar */}
+            <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-5 border border-white/5 shadow-inner">
+              <div 
+                className="h-full bg-gradient-to-r from-primary to-purple-500 rounded-full relative shadow-[0_0_15px_rgba(255,0,85,0.6)]" 
+                style={{ width: `${fillPct}%` }}
+              >
+                {fillPct < 100 && <div className="absolute right-0 top-0 bottom-0 w-6 bg-white/40 blur-[3px]" />}
+              </div>
+            </div>
+
+            <Link to={`/tournaments/${t.id}` as any} className="block">
+              <Button className="w-full rounded-2xl font-black uppercase tracking-widest text-xs bg-white text-black hover:bg-gray-200 h-12 shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:scale-[1.02] transition-transform duration-300">
+                View Details
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
-      
-      {/* Spacer to account for the overlapping button */}
-      <div className="h-6" />
     </motion.div>
   );
 }
