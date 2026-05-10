@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_app")({
     return (
       <div className="min-h-screen flex flex-col bg-background text-foreground">
         <Navbar />
-        <main className="flex-1 pt-16 lg:pt-20 pb-40 lg:pb-0">
+        <main className="flex-1 pt-16 pb-24">
           <Suspense fallback={<PageLoadingSkeleton />}>
             <AnimatePresence mode="wait" initial={false}>
               <motion.div

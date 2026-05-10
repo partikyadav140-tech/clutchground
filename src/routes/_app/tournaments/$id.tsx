@@ -85,7 +85,7 @@ function TournamentDetailPage() {
     const rows = results.map((r: any, i: number) => {
       const baseRow = [
         i + 1,
-        `"${(r.team_name || r.username).replace(/"/g, '""')}"`,
+        `"${(t.mode === "Squad" ? (r.team_name || r.username) : r.username)?.replace(/"/g, '""') || "Unknown"}"`,
         r.kills || 0,
         r.position || "-",
       ];
@@ -113,23 +113,7 @@ function TournamentDetailPage() {
   ];
 
   return (
-    <div
-      className="mb-safe lg:mb-0 min-h-[100svh] bg-background"
-      style={
-        {
-          "--background": "oklch(0.97 0.01 260)",
-          "--foreground": "oklch(0.15 0.02 260)",
-          "--card": "oklch(0.99 0.005 260)",
-          "--card-foreground": "oklch(0.15 0.02 260)",
-          "--muted": "oklch(0.95 0.01 260)",
-          "--muted-foreground": "oklch(0.45 0.02 260)",
-          "--border": "oklch(0.92 0.01 260)",
-          "--secondary": "oklch(0.95 0.01 260)",
-          "--secondary-foreground": "oklch(0.15 0.02 260)",
-          "--gradient-card": "linear-gradient(145deg, oklch(1 0 0), oklch(0.97 0.01 260))",
-        } as any
-      }
-    >
+    <div className="mb-safe lg:mb-0 min-h-[100svh] bg-background">
       <div className="bg-background text-foreground min-h-[100svh] pb-10">
         {/* ─── Hero Banner ─── */}
         <div
@@ -472,11 +456,11 @@ function TournamentDetailPage() {
                           className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40 border border-border/40"
                         >
                           <div className="w-7 h-7 rounded-full bg-fire-gradient grid place-items-center font-display font-black text-xs text-white shrink-0">
-                            {(r.team_name || r.username)?.[0]?.toUpperCase() || "?"}
+                            {(t.mode === "Squad" ? (r.team_name || r.username) : r.username)?.[0]?.toUpperCase() || "?"}
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="font-bold text-sm truncate">
-                              {r.team_name || r.username}
+                              {t.mode === "Squad" ? (r.team_name || r.username) : r.username}
                             </div>
                           </div>
                           <span className="text-[10px] text-muted-foreground font-display">
@@ -640,10 +624,10 @@ function TournamentDetailPage() {
                                 <td className="px-4 py-3 sm:py-4">
                                   <div className="flex items-center gap-3 sm:gap-4">
                                     <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg shrink-0 flex items-center justify-center font-display font-black text-sm sm:text-base text-background ${isTop3 ? (isFirst ? 'bg-amber-500' : isSecond ? 'bg-slate-300' : 'bg-amber-700') : 'bg-secondary-foreground/20 text-muted-foreground border border-border/40'}`}>
-                                      {(r.team_name || r.username)?.[0]?.toUpperCase() || "?"}
+                                      {(t.mode === "Squad" ? (r.team_name || r.username) : r.username)?.[0]?.toUpperCase() || "?"}
                                     </div>
-                                    <div className={`font-bold text-sm sm:text-base whitespace-nowrap ${isTop3 ? "text-foreground" : "text-foreground/90"}`}>
-                                      {r.team_name || r.username}
+                                    <div className={`font-black text-sm sm:text-base ${isFirst ? 'text-amber-500' : isSecond ? 'text-slate-400' : isThird ? 'text-amber-700' : 'text-foreground'}`}>
+                                      {t.mode === "Squad" ? (r.team_name || r.username) : r.username}
                                     </div>
                                   </div>
                                 </td>

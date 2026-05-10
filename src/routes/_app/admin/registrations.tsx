@@ -191,7 +191,7 @@ function AdminRegistrationsPage() {
                         <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
                           <div>
                             <div className="font-display font-black text-xl text-primary uppercase tracking-wide">
-                              {r.team_name || r.username}
+                              {selectedTournament?.mode === "Squad" ? (r.team_name || r.username) : r.username}
                             </div>
                             <div className="text-[11px] font-bold text-muted-foreground mt-1 uppercase tracking-wider">
                               Registered by: <span className="text-foreground">{r.username}</span>

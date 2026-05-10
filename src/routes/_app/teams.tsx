@@ -163,6 +163,28 @@ function TeamsPage() {
     }
   };
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 256;
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+        setTeamData({ ...teamData, logo: dataUrl });
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSaveTeam = async () => {
     try {
       if (!teamData.name) return toast.error("Squad Name is required");
@@ -291,16 +313,30 @@ function TeamsPage() {
 
             <div className="p-5">
               <div className="space-y-5">
-                <div>
-                  <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">
-                    Squad Name
-                  </label>
-                  <input
-                    className="w-full bg-secondary/50 border border-border focus:border-primary outline-none px-4 py-3 text-sm font-bold rounded-xl shadow-sm"
-                    value={teamData.name}
-                    onChange={(e) => setTeamData({ ...teamData, name: e.target.value })}
-                    placeholder="Enter squad name"
-                  />
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                  <div className="relative w-24 h-24 shrink-0 rounded-[1rem] bg-gradient-to-br from-primary to-[#d95a00] flex items-center justify-center font-display font-black text-4xl text-white shadow-lg overflow-hidden group">
+                    {teamData.logo ? (
+                      <img src={teamData.logo} className="w-full h-full object-cover" />
+                    ) : (
+                      teamData.name ? teamData.name.slice(0, 2).toUpperCase() : "?"
+                    )}
+                    <label className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Edit3 className="w-6 h-6 text-white mb-1" />
+                      <span className="text-[9px] font-bold uppercase text-white tracking-widest">Logo</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                    </label>
+                  </div>
+                  <div className="flex-1 w-full">
+                    <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">
+                      Squad Name
+                    </label>
+                    <input
+                      className="w-full bg-secondary/50 border border-border focus:border-primary outline-none px-4 py-3 text-sm font-bold rounded-xl shadow-sm"
+                      value={teamData.name}
+                      onChange={(e) => setTeamData({ ...teamData, name: e.target.value })}
+                      placeholder="Enter squad name"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -436,14 +472,23 @@ function TeamsPage() {
 
               <div className="p-5">
                 <div className="space-y-4">
-                  <div className="font-display text-2xl font-black text-foreground mb-4 flex items-center justify-between gap-3">
-                    <span>{myTeam.name}</span>
-                    {myTeam.leader_id === user.id && teamRequests.length > 0 && (
-                      <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-[0.2em]">
-                        <span>{teamRequests.length}</span>
-                        Pending Request{teamRequests.length !== 1 ? "s" : ""}
-                      </span>
-                    )}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+                    <div className="w-20 h-20 shrink-0 rounded-[1rem] bg-gradient-to-br from-primary to-[#d95a00] flex items-center justify-center font-display font-black text-3xl text-white shadow-lg overflow-hidden">
+                      {myTeam.logo ? (
+                        <img src={myTeam.logo} className="w-full h-full object-cover" />
+                      ) : (
+                        myTeam.name.slice(0, 2).toUpperCase()
+                      )}
+                    </div>
+                    <div className="font-display text-3xl font-black text-foreground flex-1">
+                      {myTeam.name}
+                      {myTeam.leader_id === user.id && teamRequests.length > 0 && (
+                        <span className="block sm:inline-flex items-center gap-2 sm:ml-3 mt-2 sm:mt-0 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold uppercase tracking-[0.2em]">
+                          <span>{teamRequests.length}</span>
+                          Pending Request{teamRequests.length !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {myTeam.leader_id === user.id && (
@@ -679,8 +724,12 @@ function TeamsPage() {
                     </div>
 
                     <div className="relative z-10 flex items-center gap-4 mb-4">
-                      <div className="w-14 h-14 rounded-[1rem] bg-gradient-to-br from-primary to-[#d95a00] flex items-center justify-center font-display font-black text-2xl text-white shadow-md">
-                        {t.name.slice(0, 2).toUpperCase()}
+                      <div className="w-14 h-14 shrink-0 rounded-[1rem] bg-gradient-to-br from-primary to-[#d95a00] flex items-center justify-center font-display font-black text-2xl text-white shadow-md overflow-hidden">
+                        {t.logo ? (
+                          <img src={t.logo} className="w-full h-full object-cover" />
+                        ) : (
+                          t.name.slice(0, 2).toUpperCase()
+                        )}
                       </div>
                       <div>
                         <h3 className="font-display text-xl font-black text-foreground group-hover:text-primary transition-colors">

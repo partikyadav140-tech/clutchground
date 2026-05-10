@@ -633,10 +633,18 @@ export const checkUserRegistration = createServerFn({ method: "POST" }).handler(
 
 export const updateProfile = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { userId, ign, uid, email, phone } = data as any;
-  await db
-    .prepare("UPDATE users SET ign = ?, uid = ?, email = ?, phone = ? WHERE id = ?")
-    .run(ign, uid, email, phone, userId);
+  const { userId, ign, uid, email, phone, avatar_url } = data as any;
+  
+  // Conditionally update avatar_url if provided, otherwise leave it alone
+  if (avatar_url !== undefined) {
+    await db
+      .prepare("UPDATE users SET ign = ?, uid = ?, email = ?, phone = ?, avatar_url = ? WHERE id = ?")
+      .run(ign, uid, email, phone, avatar_url, userId);
+  } else {
+    await db
+      .prepare("UPDATE users SET ign = ?, uid = ?, email = ?, phone = ? WHERE id = ?")
+      .run(ign, uid, email, phone, userId);
+  }
   return { success: true };
 });
 
@@ -645,7 +653,7 @@ export const getProfile = createServerFn({ method: "POST" }).handler(async ({ da
   const userId = data as unknown as number;
   return (await db
     .prepare(
-      "SELECT id, username, role, ign, uid, email, phone, created_at, deposit_balance, winning_balance FROM users WHERE id = ?",
+      "SELECT id, username, role, ign, uid, email, phone, avatar_url, created_at, deposit_balance, winning_balance FROM users WHERE id = ?",
     )
     .get(userId)) as any;
 });
@@ -976,6 +984,64 @@ export const markNotificationsRead = createServerFn({ method: "POST" }).handler(
     return { success: true };
   },
 );
+export const sendPushNotification = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { targetType, targetData, message, redirectUrl, adminId } = data as any;
+
+  // Verify Admin
+  const adminCheck = (await db.prepare("SELECT role FROM users WHERE id = ?").get(adminId)) as any;
+  if (!adminCheck || adminCheck.role !== "admin") throw new Error("Unauthorized");
+
+  const notifyUrl = redirectUrl || null;
+
+  if (targetType === "all") {
+    const users = await db.prepare("SELECT id FROM users").all() as any[];
+    for (const u of users) {
+      await db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+        .run(u.id, message, notifyUrl);
+    }
+  } else if (targetType === "users") {
+    const usernames = targetData.split(",").map((s: string) => s.trim()).filter(Boolean);
+    for (const username of usernames) {
+      const user = await db.prepare("SELECT id FROM users WHERE username = ? OR uid = ?").get(username, username) as any;
+      if (user) {
+        await db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+          .run(user.id, message, notifyUrl);
+      }
+    }
+  } else if (targetType === "tournament") {
+    // Notify all users registered in this tournament
+    const regs = await db.prepare("SELECT user_id, players_json FROM registrations WHERE tournament_id = ?").all(targetData) as any[];
+    const notifiedUsers = new Set<number>();
+    
+    // Notify the user who registered
+    for (const reg of regs) {
+      if (!notifiedUsers.has(reg.user_id)) {
+        await db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+          .run(reg.user_id, message, notifyUrl);
+        notifiedUsers.add(reg.user_id);
+      }
+      // Notify teammates found in players_json
+      if (reg.players_json) {
+        try {
+          const players = JSON.parse(reg.players_json);
+          for (const p of players) {
+            if (p.uid) {
+              const u = await db.prepare("SELECT id FROM users WHERE uid = ?").get(p.uid) as any;
+              if (u && !notifiedUsers.has(u.id)) {
+                await db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+                  .run(u.id, message, notifyUrl);
+                notifiedUsers.add(u.id);
+              }
+            }
+          }
+        } catch(e) {}
+      }
+    }
+  }
+
+  return { success: true };
+});
 
 export const getMyMatches = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
@@ -1704,3 +1770,165 @@ export const addDepositRazorpay = createServerFn({ method: "POST" })
     });
     return { success: true };
   });
+
+// --- TICKET SYSTEM ---
+
+export const createTicket = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { userId, subject, message } = data as any;
+  const res = await db.prepare("INSERT INTO tickets (user_id, subject) VALUES (?, ?)").run(userId, subject);
+  const ticketId = res.lastInsertRowid;
+  await db.prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)").run(ticketId, userId, message, 0);
+  return { success: true, ticketId };
+});
+
+export const getMyTickets = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const userId = data as unknown as number;
+  return await db.prepare("SELECT * FROM tickets WHERE user_id = ? ORDER BY updated_at DESC").all(userId);
+});
+
+export const getTicket = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { ticketId } = data as any;
+  const ticket = await db.prepare("SELECT * FROM tickets WHERE id = ?").get(ticketId) as any;
+  if (!ticket) return null;
+  const replies = await db.prepare(`
+    SELECT r.*, u.username, u.ign, u.role
+    FROM ticket_replies r
+    JOIN users u ON r.user_id = u.id
+    WHERE r.ticket_id = ?
+    ORDER BY r.created_at ASC
+  `).all(ticketId);
+  return { ...ticket, replies };
+});
+
+export const replyTicket = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { ticketId, userId, message, isAdmin } = data as any;
+  
+  await db.transaction(async (tx: any) => {
+    await tx.prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)").run(ticketId, userId, message, isAdmin ? 1 : 0);
+    await tx.prepare("UPDATE tickets SET updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(ticketId);
+  });
+  return { success: true };
+});
+
+export const getAllTickets = createServerFn({ method: "GET" }).handler(async () => {
+  const { db } = await import("./lib/db");
+  return await db.prepare(`
+    SELECT t.*, u.username, u.ign 
+    FROM tickets t
+    JOIN users u ON t.user_id = u.id
+    ORDER BY t.updated_at DESC
+  `).all();
+});
+
+export const updateTicketStatus = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { ticketId, status } = data as any;
+  await db.prepare("UPDATE tickets SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(status, ticketId);
+  return { success: true };
+});
+
+// --- CHAT & FRIENDS SYSTEM ---
+
+export const searchUsers = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { query, userId } = data as any;
+  const searchTerm = `%${query}%`;
+  return await db.prepare(`
+    SELECT id, username, ign, uid, avatar_url 
+    FROM users 
+    WHERE id != ? AND (username ILIKE ? OR ign ILIKE ? OR uid ILIKE ?)
+    LIMIT 10
+  `).all(userId, searchTerm, searchTerm, searchTerm);
+});
+
+export const sendFriendRequest = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { fromUserId, toUserId } = data as any;
+  const existing = await db.prepare("SELECT * FROM friendships WHERE (user_id1 = ? AND user_id2 = ?) OR (user_id1 = ? AND user_id2 = ?)").get(fromUserId, toUserId, toUserId, fromUserId);
+  if (existing) throw new Error("Friendship or request already exists.");
+  await db.prepare("INSERT INTO friendships (user_id1, user_id2) VALUES (?, ?)").run(fromUserId, toUserId);
+  return { success: true };
+});
+
+export const getFriendRequests = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const userId = data as unknown as number;
+  return await db.prepare(`
+    SELECT f.id, u.id as user_id, u.username, u.ign, u.uid, u.avatar_url 
+    FROM friendships f 
+    JOIN users u ON f.user_id1 = u.id 
+    WHERE f.user_id2 = ? AND f.status = 'pending'
+  `).all(userId);
+});
+
+export const resolveFriendRequest = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { requestId, status } = data as any; // status can be 'accepted' or 'rejected'
+  if (status === 'rejected') {
+    await db.prepare("DELETE FROM friendships WHERE id = ?").run(requestId);
+  } else {
+    await db.prepare("UPDATE friendships SET status = 'accepted' WHERE id = ?").run(requestId);
+  }
+  return { success: true };
+});
+
+export const getFriends = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const userId = data as unknown as number;
+  return await db.prepare(`
+    SELECT 
+      f.id as friendship_id,
+      u.id as user_id, 
+      u.username, u.ign, u.uid, u.avatar_url
+    FROM friendships f
+    JOIN users u ON (u.id = f.user_id1 OR u.id = f.user_id2) AND u.id != ?
+    WHERE (f.user_id1 = ? OR f.user_id2 = ?) AND f.status = 'accepted'
+  `).all(userId, userId, userId);
+});
+
+export const getChatMessages = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { userId, otherUserId, teamId, lastMessageId } = data as any;
+  
+  let query = "";
+  let params: any[] = [];
+  
+  if (teamId) {
+    query = `
+      SELECT m.*, u.username, u.ign, u.avatar_url 
+      FROM chat_messages m
+      JOIN users u ON m.sender_id = u.id
+      WHERE m.team_id = ? ${lastMessageId ? 'AND m.id > ?' : ''}
+      ORDER BY m.created_at ASC
+    `;
+    params = lastMessageId ? [teamId, lastMessageId] : [teamId];
+  } else {
+    query = `
+      SELECT m.*, u.username, u.ign, u.avatar_url 
+      FROM chat_messages m
+      JOIN users u ON m.sender_id = u.id
+      WHERE ((m.sender_id = ? AND m.receiver_id = ?) OR (m.sender_id = ? AND m.receiver_id = ?)) 
+      ${lastMessageId ? 'AND m.id > ?' : ''}
+      ORDER BY m.created_at ASC
+    `;
+    params = lastMessageId ? [userId, otherUserId, otherUserId, userId, lastMessageId] : [userId, otherUserId, otherUserId, userId];
+  }
+  
+  return await db.prepare(query).all(...params);
+});
+
+export const sendMessage = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { senderId, receiverId, teamId, message } = data as any;
+  
+  const res = await db.prepare(`
+    INSERT INTO chat_messages (sender_id, receiver_id, team_id, message) 
+    VALUES (?, ?, ?, ?)
+  `).run(senderId, receiverId || null, teamId || null, message);
+  
+  return { success: true, messageId: res.lastInsertRowid };
+});

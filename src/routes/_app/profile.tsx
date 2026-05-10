@@ -38,7 +38,7 @@ function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [formData, setFormData] = useState({ ign: "", uid: "", email: "", phone: "" });
+  const [formData, setFormData] = useState({ ign: "", uid: "", email: "", phone: "", avatar_url: "" });
 
   const totalBalance = user
     ? ((user as any).deposit_balance || 0) + ((user as any).winning_balance || 0)
@@ -59,6 +59,7 @@ function ProfilePage() {
           uid: p?.uid || "",
           email: p?.email || "",
           phone: p?.phone || "",
+          avatar_url: p?.avatar_url || "",
         });
       } catch (err) {
         console.error(err);
@@ -77,6 +78,28 @@ function ProfilePage() {
     } catch (err: any) {
       toast.error(err.message || "Failed to update profile");
     }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX_WIDTH = 256;
+        const scaleSize = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scaleSize;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+        setFormData({ ...formData, avatar_url: dataUrl });
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   if (loading || authLoading) {
@@ -117,8 +140,19 @@ function ProfilePage() {
           <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-primary/20 to-primary/5" />
 
           <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-4">
-            <div className="w-24 h-24 rounded-[1rem] bg-gradient-to-br from-primary to-[#d95a00] flex items-center justify-center font-display font-black text-4xl text-white shadow-lg border-4 border-white mt-4 sm:mt-0">
-              {profile?.ign ? profile.ign[0].toUpperCase() : user.username[0].toUpperCase()}
+            <div className="relative w-24 h-24 rounded-[1rem] bg-gradient-to-br from-primary to-[#d95a00] flex items-center justify-center font-display font-black text-4xl text-white shadow-lg border-4 border-white mt-4 sm:mt-0 overflow-hidden group">
+              {(isEditingProfile ? formData.avatar_url : profile?.avatar_url) ? (
+                <img src={isEditingProfile ? formData.avatar_url : profile?.avatar_url} className="w-full h-full object-cover" />
+              ) : (
+                profile?.ign ? profile.ign[0].toUpperCase() : user?.username?.[0]?.toUpperCase() || "?"
+              )}
+              {isEditingProfile && (
+                <label className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Edit3 className="w-6 h-6 text-white mb-1" />
+                  <span className="text-[9px] font-bold uppercase text-white tracking-widest">Upload</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                </label>
+              )}
             </div>
 
             <div className="flex-1 text-center sm:text-left mt-2 sm:mt-8 w-full">

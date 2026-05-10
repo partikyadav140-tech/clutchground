@@ -51,79 +51,66 @@
 }
 
 /* ──────────────────────────────────────────────
-   LIGHT + BRIGHT TOURNAMENT APP THEME
-   Inspired by: Thryl, BGMI Pro, MPL India
+   DARK MODE THRYL-STYLE ESPORTS THEME
    Primary: Vibrant Orange #FF6B00
-   Secondary: Deep Purple #7C3AED
-   Background: Clean white/light gray
+   Background: Deep Dark Gray/Black
 ────────────────────────────────────────────── */
 :root {
   --radius: 0.875rem;
 
-  /* Backgrounds - clean bright white */
-  --background: oklch(0.98 0.005 255);
-  --foreground: oklch(0.15 0.02 260);
+  /* Backgrounds - Deep dark */
+  --background: oklch(0.14 0.01 260); /* #0a0a0c approx */
+  --foreground: oklch(0.98 0 0); /* Pure White */
 
-  /* Cards - pure white with subtle shadow */
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.02 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.02 260);
+  /* Cards - slightly lighter dark */
+  --card: oklch(0.18 0.01 260); 
+  --card-foreground: oklch(0.95 0 0);
+  --popover: oklch(0.18 0.01 260);
+  --popover-foreground: oklch(0.95 0 0);
 
-  /* Primary - Vibrant Orange (energy, action) */
-  --primary: oklch(0.65 0.22 45); /* #FF6B00 orange */
-  --primary-foreground: oklch(1 0 0);
+  /* Primary - Vibrant Orange */
+  --primary: oklch(0.65 0.22 45); 
+  --primary-foreground: oklch(0.98 0 0);
 
-  /* Secondary - Light purple accent */
-  --secondary: oklch(0.94 0.015 265);
-  --secondary-foreground: oklch(0.4 0.06 265);
+  /* Secondary - Soft dark accent */
+  --secondary: oklch(0.22 0.015 260);
+  --secondary-foreground: oklch(0.9 0 0);
 
-  --muted: oklch(0.96 0.008 255);
-  --muted-foreground: oklch(0.55 0.025 265);
+  --muted: oklch(0.2 0.01 260);
+  --muted-foreground: oklch(0.65 0.01 260); /* Gray text */
 
-  --accent: oklch(0.92 0.025 270);
-  --accent-foreground: oklch(0.35 0.08 270);
+  --accent: oklch(0.25 0.01 260);
+  --accent-foreground: oklch(0.98 0 0);
 
-  --destructive: oklch(0.6 0.22 22);
-  --destructive-foreground: oklch(1 0 0);
+  --destructive: oklch(0.5 0.22 22); /* Red */
+  --destructive-foreground: oklch(0.98 0 0);
 
-  --border: oklch(0.88 0.01 255);
-  --input: oklch(0.96 0.008 255);
-  --ring: oklch(0.65 0.22 45 / 0.4);
+  --border: oklch(0.22 0.01 260); /* Subtle border */
+  --input: oklch(0.2 0.01 260);
+  --ring: oklch(0.65 0.22 45 / 0.6);
 
   /* Brand colors */
-  --fire: oklch(0.65 0.22 45); /* Orange */
-  --blood: oklch(0.55 0.22 25); /* Deep red-orange */
-  --ember: oklch(0.75 0.18 60); /* Amber */
-  --gold: oklch(0.8 0.16 80); /* Gold */
-  --purple: oklch(0.5 0.22 285); /* Deep purple */
-  --purple-light: oklch(0.65 0.18 285); /* Medium purple */
+  --fire: oklch(0.65 0.22 45);
+  --blood: oklch(0.55 0.22 25);
+  --ember: oklch(0.75 0.18 60);
+  --gold: oklch(0.8 0.16 80);
+  --purple: oklch(0.5 0.22 285);
+  --purple-light: oklch(0.65 0.18 285);
 
   /* Gradients */
-  --gradient-fire: linear-gradient(
-    135deg,
-    oklch(0.6 0.24 35),
-    oklch(0.65 0.22 45),
-    oklch(0.72 0.2 60)
-  );
-  --gradient-hero: linear-gradient(160deg, oklch(0.45 0.22 285) 0%, oklch(0.65 0.22 45) 100%);
-  --gradient-card: linear-gradient(145deg, oklch(1 0 0), oklch(0.97 0.005 255));
+  --gradient-fire: linear-gradient(135deg, oklch(0.6 0.24 35), oklch(0.65 0.22 45), oklch(0.72 0.2 60));
+  --gradient-hero: linear-gradient(160deg, oklch(0.15 0.01 260) 0%, oklch(0.25 0.02 260) 100%);
+  --gradient-card: linear-gradient(145deg, oklch(0.2 0.01 260), oklch(0.16 0.01 260));
   --gradient-primary: linear-gradient(135deg, oklch(0.6 0.24 35), oklch(0.68 0.22 50));
   --gradient-purple: linear-gradient(135deg, oklch(0.45 0.22 285), oklch(0.6 0.2 295));
-  --gradient-banner: linear-gradient(
-    135deg,
-    oklch(0.42 0.22 285) 0%,
-    oklch(0.55 0.22 300) 50%,
-    oklch(0.65 0.22 45) 100%
-  );
+  --gradient-banner: linear-gradient(135deg, oklch(0.15 0.02 260) 0%, oklch(0.18 0.02 260) 100%);
 
-  /* Shadows - more pronounced for bright theme */
-  --shadow-fire: 0 8px 24px oklch(0.65 0.22 45 / 0.3), 0 2px 8px oklch(0.65 0.22 45 / 0.15);
-  --shadow-purple: 0 8px 24px oklch(0.5 0.22 285 / 0.25);
-  --shadow-card: 0 2px 16px oklch(0.15 0.02 260 / 0.08), 0 1px 4px oklch(0.15 0.02 260 / 0.04);
-  --shadow-card-hover:
-    0 8px 32px oklch(0.15 0.02 260 / 0.14), 0 2px 8px oklch(0.15 0.02 260 / 0.06);
-  --glow-text: 0 0 20px oklch(0.65 0.22 45 / 0.5);
+  /* Shadows - Subtle on dark mode, bright for glows */
+  --shadow-fire: 0 8px 32px oklch(0.65 0.22 45 / 0.4), 0 2px 12px oklch(0.65 0.22 45 / 0.2);
+  --shadow-purple: 0 8px 32px oklch(0.5 0.22 285 / 0.4);
+  --shadow-card: 0 8px 24px oklch(0 0 0 / 0.4), 0 2px 8px oklch(0 0 0 / 0.2);
+  --shadow-card-hover: 0 12px 40px oklch(0 0 0 / 0.6), 0 4px 12px oklch(0 0 0 / 0.4);
+  --glow-text: 0 0 12px oklch(0.65 0.22 45 / 0.8);
 
   /* Mobile safe area */
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -295,10 +282,10 @@
 
   /* ── Glass card ── */
   .glass-card {
-    background: oklch(1 0 0 / 0.92);
+    background: oklch(0.18 0.01 260 / 0.8);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid oklch(0.88 0.01 255);
+    border: 1px solid oklch(0.3 0.01 260 / 0.5);
   }
 
   /* ── Active press effect ── */
@@ -394,7 +381,7 @@
 
   /* ── Thryl-like section backgrounds ── */
   .section-alt {
-    background: linear-gradient(180deg, oklch(0.96 0.015 265) 0%, oklch(0.98 0.005 255) 100%);
+    background: linear-gradient(180deg, oklch(0.12 0.01 260) 0%, oklch(0.14 0.01 260) 100%);
   }
 
   /* ── Mobile bottom safe space ── */

@@ -89,10 +89,10 @@ export function Footer() {
                 Anti-Cheat Policy
               </a>
               <a
-                href="/contact"
+                href="/support"
                 className="block text-sm text-muted-foreground hover:text-primary transition-colors"
               >
-                Contact Support
+                Support Tickets
               </a>
               <a
                 href="/privacy"

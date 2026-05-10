@@ -1,15 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { getTournaments } from "../../../api";
 import { Button } from "@/components/ui/button";
-import { Search, Filter, Eye, Trophy, Crosshair, Zap, Users, Flame } from "lucide-react";
+import { Search, Filter, Trophy, Clock, Users, ChevronRight, Gamepad2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { GodCoin } from "@/components/GodCoin";
 
 export const Route = createFileRoute("/_app/tournaments/")({
   head: () => ({
-    meta: [{ title: "Tournaments — Professional Esports Arena" }],
+    meta: [{ title: "Arena — CLUTCHGROUND" }],
   }),
   loader: async () => await getTournaments(),
   component: TournamentsPage,
@@ -42,81 +42,75 @@ function TournamentsPage() {
   });
 
   return (
-    <div className="bg-background min-h-screen pb-24">
-      {/* ─── Top Header (Mobile First) ─── */}
-      <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col items-center text-center">
-          <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-3">
-            <Trophy className="w-6 h-6" />
-          </div>
-          <h1 className="font-display text-3xl font-black text-foreground">Arena Battles</h1>
-          <p className="text-sm text-muted-foreground mt-1 font-semibold">
-            Find your match. Secure the bag.
-          </p>
+    <div className="bg-background min-h-screen pt-2 pb-safe">
+      
+      {/* ─── Minimal App Header ─── */}
+      <div className="px-4 mb-4">
+        <div className="flex items-center gap-2 text-primary font-bold mb-1">
+          <Trophy className="w-5 h-5" /> The Arena
         </div>
+        <h1 className="text-2xl font-display font-black text-foreground">Find Your Match</h1>
+      </div>
 
-        {/* Search */}
-        <div className="relative mt-6 z-10">
+      {/* ─── Search Bar ─── */}
+      <div className="px-4 mb-4">
+        <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search tournaments..."
-            className="w-full bg-secondary/50 border border-border/80 focus:border-primary focus:bg-white outline-none pl-12 pr-4 h-14 text-sm font-semibold rounded-[1rem] transition-all shadow-sm"
+            placeholder="Search battles..."
+            className="w-full bg-card border border-white/5 focus:border-primary outline-none pl-12 pr-4 h-12 text-sm font-bold text-white rounded-[1.25rem] transition-all shadow-lg"
           />
         </div>
       </div>
 
-      <div className="px-4 mt-6">
-        {/* Filters */}
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4 snap-x">
+      {/* ─── Filters ─── */}
+      <div className="mb-6">
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4 w-[calc(100%+2rem)] ml-0">
           {filters.map((f) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`snap-center px-5 py-2.5 text-xs font-bold uppercase tracking-wider rounded-full border transition-all whitespace-nowrap ${
+              className={`shrink-0 px-5 py-2 text-xs font-black uppercase tracking-widest rounded-full transition-all border ${
                 filter === f
-                  ? "bg-primary text-white border-primary shadow-[0_4px_12px_oklch(0.65_0.22_45/0.3)]"
-                  : "bg-white border-border text-muted-foreground hover:border-primary/40 active:bg-secondary/60"
+                  ? "bg-primary text-white border-primary shadow-[0_0_15px_oklch(0.65_0.22_45/0.4)]"
+                  : "bg-card border-white/5 text-muted-foreground hover:text-white"
               }`}
             >
               {f}
             </button>
           ))}
         </div>
+      </div>
 
-        {/* Results */}
-        <div className="mt-4 flex items-center justify-between text-xs font-bold text-muted-foreground uppercase tracking-widest px-1 mb-4">
-          <span>{filtered.length} Matches Found</span>
-          <div className="h-px bg-border flex-1 ml-4" />
+      <div className="px-4 space-y-4">
+        <div className="flex items-center justify-between text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1">
+          <span>{filtered.length} BATTLES FOUND</span>
         </div>
 
-        {/* Cards list */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {/* ─── Matches List ─── */}
+        <div className="flex flex-col gap-4">
           {filtered.map((t: any, i: number) => (
-            <TournamentCard key={t.id} t={t} i={i} />
+            <ArenaTournamentCard key={t.id} t={t} i={i} />
           ))}
         </div>
 
         {/* Empty state */}
         {filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-border mt-4 shadow-sm">
-            <div className="w-16 h-16 rounded-full bg-secondary text-muted-foreground flex items-center justify-center mb-3">
+          <div className="flex flex-col items-center justify-center py-16 bg-card rounded-[2rem] border border-white/5 mt-4 shadow-lg text-center">
+            <div className="w-16 h-16 rounded-2xl bg-white/5 text-muted-foreground flex items-center justify-center mb-4">
               <Filter className="w-6 h-6" />
             </div>
-            <p className="text-foreground font-display font-black text-lg">No matches found</p>
-            <p className="text-sm text-muted-foreground mt-1 text-center px-4">
-              Try adjusting your search or filters to find more tournaments.
+            <p className="text-white font-display font-black text-lg mb-2">No active battles</p>
+            <p className="text-xs text-muted-foreground max-w-[200px] mb-6">
+              Change your filters to discover more events.
             </p>
             <Button
+              size="sm"
+              onClick={() => { setFilter("All"); setQ(""); }}
+              className="rounded-full font-black px-6 border border-white/10"
               variant="outline"
-              onClick={() => {
-                setFilter("All");
-                setQ("");
-              }}
-              className="mt-6 rounded-full font-bold"
             >
               Clear Filters
             </Button>
@@ -127,7 +121,7 @@ function TournamentsPage() {
   );
 }
 
-function TournamentCard({ t, i }: { t: any; i: number }) {
+function ArenaTournamentCard({ t, i }: { t: any; i: number }) {
   const poster = POSTERS[t.id % POSTERS.length];
   const fillPct = Math.min(100, (t.filled / t.slots) * 100);
   const isFull = t.filled >= t.slots;
@@ -137,125 +131,92 @@ function TournamentCard({ t, i }: { t: any; i: number }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: Math.min(i * 0.05, 0.3) }}
-      className="rounded-[1.25rem] bg-white border border-border shadow-[0_8px_24px_oklch(0_0_0/0.04)] overflow-hidden flex flex-col active:scale-[0.99] transition-transform"
+      className="bg-card border border-white/5 rounded-[1.5rem] p-3 flex flex-col gap-3 active:scale-[0.98] transition-transform shadow-lg relative overflow-hidden"
     >
-      <div className="relative h-40 w-full overflow-hidden">
-        <img src={poster} alt={t.title} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-        <div className="absolute top-3 left-3 flex gap-2">
-          {t.status === "live" && (
-            <span className="px-2 py-0.5 rounded bg-red-500 text-white text-[10px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> Live
-            </span>
-          )}
-          {t.entry === 0 && (
-            <span className="px-2 py-0.5 rounded bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest shadow-sm">
-              FREE
-            </span>
-          )}
-        </div>
-
-        {isFull && (
-          <div className="absolute inset-0 bg-background/50 backdrop-blur-[2px] flex items-center justify-center z-10">
-            <span className="text-xs font-display font-black text-muted-foreground bg-white px-4 py-1.5 rounded-full border border-border shadow-sm">
-              SLOTS FULL
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className="p-4 flex flex-col flex-1 relative">
-        <div className="absolute right-4 -top-6 bg-white rounded-xl shadow-md border border-border px-3 py-1.5 flex flex-col items-center">
-          <span className="text-[9px] font-bold uppercase text-muted-foreground">Entry</span>
-          <span className="font-display font-black text-primary text-sm leading-none mt-0.5 flex items-center gap-1">
-            {t.entry === 0 ? (
-              "FREE"
-            ) : (
-              <>
-                <GodCoin className="w-3.5 h-3.5" /> {t.entry}
-              </>
+      <div className="flex gap-4">
+        {/* Poster */}
+        <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-xl overflow-hidden shrink-0 relative">
+          <img src={poster} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+          
+          <div className="absolute top-2 left-2 flex flex-col gap-1">
+            {t.status === "live" && (
+              <span className="bg-red-500 text-white text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded shadow-sm">
+                Live
+              </span>
             )}
-          </span>
+          </div>
+          <div className="absolute bottom-2 left-2 bg-black/40 backdrop-blur-md text-[9px] text-white px-2 py-0.5 rounded-full font-black uppercase border border-white/10">
+            {t.format}
+          </div>
         </div>
 
-        <div className="flex justify-between items-start gap-2 mb-2 pr-16">
-          <h4 className="font-display font-black text-base sm:text-lg leading-tight line-clamp-2">
+        {/* Info */}
+        <div className="flex-1 flex flex-col min-w-0 py-1">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="text-[10px] font-black text-primary uppercase tracking-widest">{t.mode}</span>
+          </div>
+          <h4 className="font-display font-black text-sm sm:text-base text-white line-clamp-2 leading-tight mb-2">
             {t.title}
           </h4>
-        </div>
-
-        <div className="flex items-center gap-4 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-4">
-          <div className="flex items-center gap-1">
-            <Trophy className="w-3.5 h-3.5 text-primary" /> <GodCoin className="w-3.5 h-3.5" />{" "}
-            {t.prize}
-          </div>
-          <div className="flex items-center gap-1">
-            <Users className="w-3.5 h-3.5" /> {t.format}
-          </div>
-          <div className="flex items-center gap-1">
-            <Crosshair className="w-3.5 h-3.5" /> {t.mode}
+          
+          <div className="text-[10px] text-muted-foreground font-bold flex items-center gap-1.5 mt-auto">
+            <Clock className="w-3 h-3 text-white/50" /> {t.startsAt || t.startsat}
           </div>
         </div>
+      </div>
 
-        <div className="mt-auto">
-          <div className="flex justify-between text-[10px] font-bold text-muted-foreground mb-1.5">
-            <span>
-              {t.filled}/{t.slots} Joined
-            </span>
-            <span className="text-primary">{t.startsAt}</span>
-          </div>
-          <div className="h-2 w-full bg-secondary rounded-full overflow-hidden mb-4">
-            <div
-              className={`h-full rounded-full transition-all ${isFull ? "bg-muted-foreground" : "bg-primary"}`}
-              style={{ width: `${fillPct}%` }}
+      {/* Stats Bar */}
+      <div className="grid grid-cols-2 gap-2 mt-1">
+        <div className="bg-background/50 rounded-xl p-2.5 flex items-center justify-between border border-white/5">
+          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Entry</span>
+          <span className="text-xs font-black text-primary flex items-center gap-1">
+            {t.entry === 0 ? "FREE" : <><GodCoin className="w-3 h-3"/> {t.entry}</>}
+          </span>
+        </div>
+        <div className="bg-background/50 rounded-xl p-2.5 flex items-center justify-between border border-white/5">
+          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Prize</span>
+          <span className="text-xs font-black text-white flex items-center gap-1">
+            <GodCoin className="w-3 h-3"/> {t.mode === 'Solo' ? t.per_kill_coin || 0 : t.prize}
+          </span>
+        </div>
+      </div>
+
+      {/* Progress & Action */}
+      <div className="mt-1">
+        <div className="flex justify-between text-[10px] font-bold text-muted-foreground mb-1.5 px-1">
+          <span>{t.filled}/{t.slots} Joined</span>
+          <span>{fillPct}% Filled</span>
+        </div>
+        <div className="h-2 w-full bg-background rounded-full overflow-hidden border border-white/5 mb-3">
+          <div className={`h-full rounded-full ${isFull ? "bg-muted-foreground" : "bg-primary"}`} style={{ width: `${fillPct}%` }} />
+        </div>
+
+        <div className="flex gap-2">
+          <Link to={`/tournaments/${t.id}` as any} className="flex-1">
+            <Button variant="outline" className="w-full h-10 rounded-xl font-black text-[11px] uppercase tracking-widest bg-transparent border-white/10 text-white">
+              Details
+            </Button>
+          </Link>
+          {isFull ? (
+             <Button disabled className="w-24 shrink-0 h-10 rounded-xl font-black text-[11px] uppercase tracking-widest bg-white/5 text-muted-foreground">
+              Full
+            </Button>
+          ) : (
+            <JoinBattleDialog
+              tournamentId={t.id}
+              tournamentTitle={t.title}
+              mode={t.mode as any}
+              entryFee={t.entry}
+              trigger={
+                <Button className="w-24 shrink-0 h-10 rounded-xl font-black text-[11px] uppercase tracking-widest bg-primary text-white shadow-primary">
+                  Join
+                </Button>
+              }
             />
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <a href={`/tournaments/${String(t.id)}`} className="w-full">
-              <Button
-                variant="outline"
-                className="w-full h-11 rounded-xl font-bold text-xs bg-white border-border shadow-sm"
-              >
-                Details
-              </Button>
-            </a>
-            {isFull ? (
-              <Button
-                disabled
-                className="w-full h-11 rounded-xl font-bold text-xs bg-muted text-muted-foreground"
-              >
-                Full
-              </Button>
-            ) : (
-              <JoinBattleDialog
-                tournamentId={t.id}
-                tournamentTitle={t.title}
-                mode={t.mode as any}
-                entryFee={t.entry}
-                trigger={
-                  <Button className="w-full h-11 rounded-xl font-bold text-xs bg-primary text-white shadow-primary">
-                    Join
-                  </Button>
-                }
-              />
-            )}
-          </div>
+          )}
         </div>
       </div>
     </motion.div>
-  );
-}
-
-export function PageHeader({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10 mb-6">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-      <div className="relative z-10 flex flex-col items-center text-center">
-        <h1 className="font-display text-3xl font-black text-foreground">{title}</h1>
-        <p className="text-sm text-muted-foreground mt-1 font-semibold">{subtitle}</p>
-      </div>
-    </div>
   );
 }
