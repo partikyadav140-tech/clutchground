@@ -1,11 +1,10 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { useState, useEffect, useRef } from "react";
-import {
-  Home, Trophy, Crosshair, User, Bell, Wallet, MessageCircle, Crown, ChevronLeft
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Home, Trophy, Crosshair, User, Crown, Bell, MessageCircle, Sun, Moon, Wallet } from "lucide-react";
 import { Logo } from "./Logo";
 import { GodCoin } from "./GodCoin";
 import { useAuth } from "../lib/auth-client";
+import { useTheme } from "../lib/theme";
 import { getNotifications } from "../api";
 import {
   requestBrowserNotificationPermission,
@@ -14,146 +13,202 @@ import {
   vibrateNotification,
 } from "../lib/notification-utils";
 
-const bottomNavItems = [
-  { to: "/", label: "Home", icon: Home },
-  { to: "/tournaments", label: "Arena", icon: Trophy },
-  { to: "/matches", label: "Matches", icon: Crosshair },
-  { to: "/leaderboard", label: "Ranks", icon: Crown },
-  { to: "/profile", label: "Profile", icon: User },
+const NAV_ITEMS = [
+  { to: "/",            label: "Home",     icon: Home },
+  { to: "/tournaments", label: "Arena",    icon: Trophy },
+  { to: "/matches",     label: "Matches",  icon: Crosshair },
+  { to: "/leaderboard", label: "Ranks",    icon: Crown },
+  { to: "/profile",     label: "Profile",  icon: User },
 ] as const;
 
-// Pages that should show the main global top header
 const MAIN_TABS = ["/", "/tournaments", "/matches", "/leaderboard", "/profile", "/wallet"];
 
 export function Navbar() {
-  const { user } = useAuth();
-  const router = useRouter();
-  const currentPath = router.state.location.pathname;
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [scrolled, setScrolled] = useState(false);
-  const latestNotificationIdsRef = useRef<string[]>([]);
+  const { user }          = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const router            = useRouter();
+  const path              = router.state.location.pathname;
+  const [unread, setUnread] = useState(0);
+  const notifsRef         = useRef<string[]>([]);
 
-  const totalBalance = user
+  const balance = user
     ? ((user as any).deposit_balance || 0) + ((user as any).winning_balance || 0)
     : 0;
-
-  useEffect(() => {
-    // We bind to the main scroll container in _app.tsx instead of window
-    const mainEl = document.getElementById("app-scroll-container");
-    if (!mainEl) return;
-    const handleScroll = () => setScrolled(mainEl.scrollTop > 10);
-    mainEl.addEventListener("scroll", handleScroll, { passive: true });
-    return () => mainEl.removeEventListener("scroll", handleScroll);
-  }, []);
 
   useEffect(() => {
     if (!user) return;
     requestBrowserNotificationPermission();
 
-    async function load() {
+    async function poll() {
       try {
         const notifs = await (getNotifications as any)({ data: user.id });
-        setUnreadCount(notifs.filter((n: any) => !n.is_read).length);
-
-        const currentIds = notifs.map((n: any) => n.id);
-        const previousIds = latestNotificationIdsRef.current;
-        const newlyAdded = notifs.filter(
-          (n: any) => !previousIds.includes(n.id) && !n.is_read,
-        );
-
-        if (previousIds.length > 0 && newlyAdded.length > 0) {
-          newlyAdded.slice(-3).forEach((notification: any) => {
-            showBrowserNotification("CLUTCHGROUND Alert", notification.message || "You have a new notification.");
+        setUnread(notifs.filter((n: any) => !n.is_read).length);
+        const ids    = notifs.map((n: any) => n.id);
+        const prev   = notifsRef.current;
+        const newOnes = notifs.filter((n: any) => !prev.includes(n.id) && !n.is_read);
+        if (prev.length > 0 && newOnes.length > 0) {
+          newOnes.slice(-3).forEach((n: any) => {
+            showBrowserNotification("ClutchGround", n.message || "New notification");
             playNotificationTone();
             vibrateNotification();
           });
         }
-        latestNotificationIdsRef.current = currentIds;
+        notifsRef.current = ids;
       } catch {}
     }
 
-    load();
-    const id = setInterval(load, 5000);
+    poll();
+    const id = setInterval(poll, 5000);
     return () => clearInterval(id);
   }, [user]);
 
-  const isMainTab = MAIN_TABS.includes(currentPath) || currentPath === "";
-  const isDeepPage = !isMainTab;
+  const isMain = MAIN_TABS.includes(path);
+  const isAuth = ["/login", "/signup"].includes(path);
+
+  if (isAuth) return null;
 
   return (
     <>
-      {/* ─── Dynamic Top Header ─── */}
-      {isMainTab && (
-        <header
-          className={`absolute top-0 inset-x-0 z-50 transition-all duration-300 ${
-            scrolled
-              ? "bg-background/90 backdrop-blur-2xl border-b border-white/5"
-              : "bg-background/80 backdrop-blur-md"
-          }`}
-        >
-          <nav className="container mx-auto px-4 h-16 flex items-center justify-between">
-            {/* Logo */}
-            <div className="flex items-center gap-2">
-              <Logo size={52} withText={false} />
-              <span className="font-display font-black text-lg text-foreground uppercase tracking-widest hidden sm:inline-block">ClutchGround</span>
-            </div>
+      {/* ══════════════════════════════════════════════════════
+          TOP HEADER
+          • Mobile  → only visible on main tabs (isMain)
+          • Desktop → always visible on non-auth pages
+         ══════════════════════════════════════════════════════ */}
+      <header
+        className={`absolute top-0 inset-x-0 z-50 border-b border-border/60 ${
+          isMain ? "" : "hidden lg:block"
+        }`}
+        style={{
+          background:
+            theme === "dark"
+              ? "rgba(8,12,20,0.92)"
+              : "rgba(255,255,255,0.92)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+        }}
+      >
+        {/* Inner content — constrained to max-w-5xl on desktop */}
+        <div className="flex items-center justify-between px-4 h-16 max-w-[480px] lg:max-w-5xl mx-auto w-full">
 
-            {/* Right Actions */}
-            <div className="flex items-center gap-2 sm:gap-3">
+          {/* Logo */}
+          <Link to="/" className="flex items-center active:opacity-80 transition-opacity">
+            <Logo size={44} withText={false} />
+          </Link>
+
+          {/* ── Desktop horizontal nav (lg+ only) ── */}
+          <nav className="hidden lg:flex items-center gap-1">
+            {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
+              const isActive = to === "/" ? path === "/" : path.startsWith(to);
+              return (
+                <Link
+                  key={to}
+                  to={to}
+                  className={`flex items-center gap-2 px-4 h-9 rounded-xl text-sm font-bold transition-all press-effect ${
+                    isActive
+                      ? "bg-primary/15 text-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Right actions */}
+          <div className="flex items-center gap-2">
+            {/* Balance pill */}
+            {user && (
               <Link
                 to="/wallet"
-                className="flex items-center gap-1.5 px-3 h-9 rounded-full bg-secondary border border-border hover:border-primary/50 transition-all active:scale-95"
+                className="flex items-center gap-1.5 px-3 h-8 rounded-full border border-border bg-card hover:border-primary/50 transition-all active:scale-95 press-effect"
               >
-                <GodCoin className="w-4 h-4" />
-                <span className="text-sm font-bold font-display text-white">{totalBalance}</span>
+                <GodCoin className="w-3.5 h-3.5" />
+                <span className="text-xs font-black font-display text-foreground tabular-nums">{balance}</span>
               </Link>
+            )}
 
-              <Link
-                to={"/chat" as any}
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-secondary border border-border hover:border-primary/50 text-muted-foreground hover:text-white transition-all active:scale-95"
-              >
-                <MessageCircle className="w-4 h-4" />
-              </Link>
+            {/* Chat */}
+            <Link
+              to={"/chat" as any}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
+            >
+              <MessageCircle className="w-4 h-4" />
+            </Link>
 
-              <Link
-                to="/notifications"
-                className="relative w-9 h-9 flex items-center justify-center rounded-full bg-secondary border border-border hover:border-primary/50 text-muted-foreground hover:text-white transition-all active:scale-95"
-              >
-                <Bell className="w-4 h-4" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-white text-[9px] font-black grid place-items-center shadow-md">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                )}
-              </Link>
-            </div>
-          </nav>
-        </header>
-      )}
+            {/* Notifications */}
+            <Link
+              to="/notifications"
+              className="relative w-8 h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
+            >
+              <Bell className="w-4 h-4" />
+              {unread > 0 && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[8px] font-black grid place-items-center"
+                  style={{ background: "var(--fire)", color: "#fff" }}
+                >
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </Link>
 
-      {/* ─── iOS-Style Bottom Tab Bar ─── */}
-      {/* On very deep pages (like chat), we can hide bottom tab too if wanted. For now, kept global */}
-      <nav className="absolute bottom-0 inset-x-0 z-50 bg-background/80 backdrop-blur-2xl border-t border-white/10 pb-safe">
-        <div className="flex items-center justify-around h-16 px-2">
-          {bottomNavItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = currentPath === item.to || (item.to !== "/" && currentPath.startsWith(item.to));
-            
+            {/* Theme toggle */}
+            <button
+              id="theme-toggle-btn"
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
+            >
+              {theme === "dark" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ══════════════════════════════════════════════════════
+          BOTTOM TAB BAR
+          • Mobile  → always visible (unchanged)
+          • Desktop → hidden (navigation is in the top header)
+         ══════════════════════════════════════════════════════ */}
+      <nav
+        className="absolute bottom-0 inset-x-0 z-50 border-t border-border lg:hidden"
+        style={{
+          background:
+            theme === "dark"
+              ? "rgba(8,12,20,0.97)"
+              : "rgba(255,255,255,0.97)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+        }}
+      >
+        <div className="flex items-center justify-around h-[60px] px-2 max-w-[480px] mx-auto pb-[env(safe-area-inset-bottom,0px)]">
+          {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
+            const isActive = to === "/" ? path === "/" : path.startsWith(to);
             return (
               <Link
-                key={item.to}
-                to={item.to}
-                className={`relative flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-200 active:scale-90 ${
-                  isActive ? "text-cta" : "text-muted-foreground hover:text-white"
-                }`}
+                key={to}
+                to={to}
+                className="relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full press-effect active:scale-90 transition-all duration-150"
               >
-                <div className="relative">
-                  <Icon className={`w-6 h-6 transition-transform duration-200 ${isActive ? "scale-110" : ""}`} />
-                  {isActive && <div className="absolute inset-0 bg-primary/40 blur-md rounded-full -z-10" />}
+                <div className={`relative flex items-center justify-center w-10 h-7 rounded-xl transition-all duration-200 ${
+                  isActive ? "bg-primary/15" : ""
+                }`}>
+                  <Icon className={`w-5 h-5 transition-all duration-200 ${
+                    isActive ? "text-primary scale-110" : "text-muted-foreground"
+                  }`} />
                 </div>
-                <span className={`text-[10px] font-bold tracking-wide transition-colors ${isActive ? "text-white" : ""}`}>
-                  {item.label}
+                <span className={`text-[9px] font-bold tracking-wide transition-colors ${
+                  isActive ? "text-primary" : "text-muted-foreground"
+                }`}>
+                  {label}
                 </span>
+                {isActive && (
+                  <span
+                    className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full"
+                    style={{ background: "var(--primary)" }}
+                  />
+                )}
               </Link>
             );
           })}

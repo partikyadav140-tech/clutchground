@@ -393,15 +393,11 @@ export function JoinBattleDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto bg-card/95 backdrop-blur-3xl border-white/10 shadow-2xl rounded-[1.5rem]">
-        <div className="absolute inset-x-0 top-0 h-px bg-primary-gradient shadow-[0_0_15px_rgba(255,0,85,0.8)]" />
+      <DialogContent className="max-h-[90vh] overflow-y-auto bg-card border border-border shadow-2xl rounded-3xl">
+        <div className="h-1 w-full rounded-t-3xl -mt-1 mb-2" style={{ background: "var(--gradient-primary)" }} />
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl sm:text-3xl font-black tracking-tight text-white text-glow">
-            JOIN BATTLE
-          </DialogTitle>
-          <DialogDescription className="text-xs uppercase tracking-[0.2em] font-display text-muted-foreground font-bold mt-1">
-            {tournamentTitle} · {mode}
-          </DialogDescription>
+          <DialogTitle className="font-display text-xl font-black text-foreground">JOIN BATTLE</DialogTitle>
+          <DialogDescription className="text-xs uppercase tracking-[0.2em] font-display text-muted-foreground font-bold mt-1">{tournamentTitle} · {mode}</DialogDescription>
         </DialogHeader>
 
         {/* Player Selection from registered team */}
@@ -420,7 +416,7 @@ export function JoinBattleDialog({
               {availableMembers.length !== 1 ? "s" : ""}. Please select {teamCount} player
               {teamCount !== 1 ? "s" : ""} for this {mode} match.
             </p>
-            <div className="bg-black/40 border border-white/5 rounded-[1.25rem] p-4 space-y-2 max-h-64 overflow-y-auto shadow-inner">
+            <div className="bg-secondary border border-border rounded-2xl p-4 space-y-2 max-h-64 overflow-y-auto">
               {availableMembers.map((m, idx) => (
                 <button
                   key={idx}
@@ -485,7 +481,7 @@ export function JoinBattleDialog({
             </div>
 
             {/* Team Name */}
-            <div className="bg-black/40 border border-white/5 rounded-[1.25rem] p-4 space-y-3 shadow-inner">
+            <div className="bg-secondary border border-border rounded-2xl p-4 space-y-3 shadow-inner">
               <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-3">
                 Team Information
               </div>
@@ -499,7 +495,7 @@ export function JoinBattleDialog({
             </div>
 
             {/* Captain Details */}
-            <div className="bg-black/40 border border-white/5 rounded-[1.25rem] p-4 space-y-3 shadow-inner">
+            <div className="bg-secondary border border-border rounded-2xl p-4 space-y-3 shadow-inner">
               <div className="flex items-center gap-2 mb-3">
                 <Crown className="w-4 h-4 text-amber-500" />
                 <span className="text-[10px] font-black text-white uppercase tracking-widest">
@@ -642,14 +638,14 @@ export function JoinBattleDialog({
               <Trophy className="w-4 h-4" />
               <span className="text-xs font-black uppercase tracking-widest text-glow">Confirm Entry</span>
             </div>
-            <div className="bg-black/40 border border-white/5 rounded-[1.25rem] p-4 space-y-2 text-sm shadow-inner">
+            <div className="bg-secondary border border-border rounded-2xl p-4 space-y-2 text-sm">
               <Row k="Tournament" v={tournamentTitle} />
               <Row k="Mode" v={mode} />
               {mode !== "Solo" && <Row k="Team" v={leader.teamName} />}
               <Row k="Captain" v={`${leader.ign} (UID ${leader.uid})`} />
               <Row k="Contact" v={`${leader.email} · ${leader.phone}`} />
               {mode !== "Solo" && (
-                <div className="pt-2 mt-2 border-t border-white/5">
+                <div className="pt-2 mt-2 border-t border-border">
                   <div className="text-[9px] font-black uppercase tracking-widest text-cta mb-1 text-glow">
                     Roster
                   </div>
@@ -733,7 +729,7 @@ function Field({
         placeholder={placeholder}
         type={type}
         maxLength={maxLength}
-        className={`w-full bg-black/40 border border-white/10 focus:border-primary focus:bg-black/60 outline-none px-3 font-bold text-white transition-colors shadow-inner placeholder:text-white/20 ${compact ? "h-10 rounded-xl text-sm" : "h-12 rounded-xl text-sm"}`}
+        className={`w-full bg-secondary border border-border focus:border-primary/60 outline-none px-3 font-bold text-foreground transition-colors placeholder:text-muted-foreground ${compact ? "h-10 rounded-xl text-sm" : "h-12 rounded-xl text-sm"}`}
       />
     </div>
   );
@@ -743,7 +739,7 @@ function Row({ k, v }: { k: string; v: string }) {
   return (
     <div className="flex justify-between gap-4 text-xs py-0.5">
       <span className="text-muted-foreground uppercase tracking-widest text-[9px] font-black">{k}</span>
-      <span className="font-bold text-white text-right truncate">{v}</span>
+      <span className="font-bold text-foreground text-right truncate">{v}</span>
     </div>
   );
 }

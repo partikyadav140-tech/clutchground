@@ -147,7 +147,7 @@ export function Hero() {
               >
                 <div className="absolute top-0 left-0 w-full h-0.5 bg-fire-gradient opacity-60" />
                 <div className="text-base sm:text-xl mb-0.5">{s.icon}</div>
-                <div className="font-display text-base sm:text-2xl font-black text-white text-glow leading-tight">
+                <div className="font-display text-base sm:text-2xl font-black text-foreground text-glow leading-tight">
                   {s.v}
                 </div>
                 <div className="text-[9px] sm:text-[10px] uppercase tracking-wider text-cta/80 font-bold mt-0.5">

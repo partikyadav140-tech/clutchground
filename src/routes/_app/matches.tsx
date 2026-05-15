@@ -1,13 +1,11 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-
-import { Trophy, ListChecks, Download, Calendar, Crosshair, Map, Swords, Info } from "lucide-react";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { Trophy, Calendar, Crosshair, Download, Swords, Info, Clock, Zap, ListChecks, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../lib/auth-client";
 import { getMyMatches, getTournamentResults } from "../../api";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { GodCoin } from "@/components/GodCoin";
 
 export const Route = createFileRoute("/_app/matches")({
@@ -20,285 +18,200 @@ function MatchesPage() {
   const router = useRouter();
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const [standingsModal, setStandingsModal] = useState<any>(null);
-  const [standingsData, setStandingsData] = useState<any[]>([]);
+  const [standingsTournament, setStandingsTournament] = useState<any>(null);
+  const [standings, setStandings] = useState<any[]>([]);
   const [loadingStandings, setLoadingStandings] = useState(false);
-
-  const openStandings = async (e: React.MouseEvent, t: any) => {
-    e.preventDefault();
-    setStandingsModal(t);
-    setLoadingStandings(true);
-    try {
-      const data = await (getTournamentResults as any)({ data: t.id });
-      setStandingsData(data || []);
-    } catch (err: any) {
-      toast.error(err.message);
-    }
-    setLoadingStandings(false);
-  };
-
-  const downloadExcel = () => {
-    if (!standingsData || standingsData.length === 0) return;
-    const headers = ["Rank", "Team / Player", "Kills", "Position", "Points"];
-    const rows = standingsData.map((r: any, i: number) => [
-      i + 1,
-      `"${(r.team_name || r.username).replace(/"/g, '""')}"`,
-      r.kills || 0,
-      r.position || "-",
-      r.points || 0,
-    ]);
-    const csvContent = [headers.join(","), ...rows.map((r: any) => r.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `${standingsModal.name.replace(/\s+/g, "_")}_Standings.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const [tab, setTab] = useState<"upcoming" | "history">("upcoming");
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.navigate({ to: "/login" });
-      return;
-    }
+    if (!authLoading && !user) { router.navigate({ to: "/login" }); return; }
     if (!user) return;
-    async function load() {
+    (async () => {
       try {
         const m = await (getMyMatches as any)({ data: user.id });
         setMatches(m || []);
-      } catch (err) {
-        console.error(err);
-      }
+      } catch {}
       setLoading(false);
-    }
-    load();
-  }, [user, authLoading, router]);
+    })();
+  }, [user, authLoading]);
 
-  if (!user || loading)
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+  const openStandings = async (m: any) => {
+    setStandingsTournament(m);
+    setLoadingStandings(true);
+    try {
+      const data = await (getTournamentResults as any)({ data: m.id });
+      setStandings(data || []);
+    } catch (e: any) { toast.error(e.message); }
+    setLoadingStandings(false);
+  };
 
-  const upcomingMatches = matches.filter((m) => m.match_status !== "completed" && m.match_status !== "rescheduled");
-  const rescheduledMatches = matches.filter((m) => m.match_status === "rescheduled");
-  const pastMatches = matches.filter((m) => m.match_status === "completed");
+  const downloadCSV = () => {
+    if (!standings.length) return;
+    const csv = [["Rank","Team/Player","Kills","Position","Points"].join(","),
+      ...standings.map((r: any, i: number) => [i+1, `"${(r.team_name||r.username).replace(/"/g,'""')}"`, r.kills||0, r.position||"-", r.points||0].join(","))
+    ].join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = `${standingsTournament?.name?.replace(/\s+/g,"_")}_Standings.csv`;
+    a.click();
+  };
+
+  if (!user || loading) return (
+    <div className="h-screen flex items-center justify-center bg-background">
+      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  const upcoming = matches.filter(m => m.match_status !== "completed");
+  const history  = matches.filter(m => m.match_status === "completed");
 
   return (
-    <div className="bg-background min-h-screen pt-2 pb-safe">
-      {/* ─── Minimal App Header ─── */}
-      <div className="px-4 mb-6">
-        <div className="flex items-center gap-2 text-cta font-bold mb-1">
-          <Swords className="w-5 h-5" /> Activity
-        </div>
-        <h1 className="text-3xl font-display font-black text-white">Matches</h1>
+    <div className="min-h-screen bg-background pb-[80px]">
+      {/* ── Header ── */}
+      <div className="px-4 pt-5 pb-4">
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">Activity</p>
+        <h1 className="font-display font-black text-2xl text-foreground">My Matches</h1>
       </div>
 
-      <div className="px-4 space-y-8">
-        {/* Upcoming Matches */}
-        <div>
-          <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3 ml-2">
-            Upcoming Battles
-          </h2>
-          <div className="space-y-4">
-            {upcomingMatches.length === 0 ? (
-              <div className="bg-card border border-white/5 rounded-[1.25rem] p-10 text-center flex flex-col items-center">
-                <div className="w-16 h-16 rounded-full bg-white/5 text-muted-foreground flex items-center justify-center mb-4">
-                  <Calendar className="w-6 h-6" />
-                </div>
-                <p className="font-display font-black text-lg text-white">No upcoming matches</p>
-                <p className="text-sm text-muted-foreground mt-1 mb-6">
-                  You haven't joined any active tournaments.
-                </p>
-                <a href="/tournaments" className="w-full">
-                  <Button className="w-full rounded-xl font-black bg-primary text-white h-12 shadow-primary uppercase tracking-widest text-sm">
-                    Find Tournaments
-                  </Button>
-                </a>
-              </div>
-            ) : (
-              upcomingMatches.map((m, i) => <MatchCard m={m} i={i} key={i} />)
-            )}
-          </div>
+      {/* ── Tab Switcher ── */}
+      <div className="px-4 mb-5">
+        <div className="flex bg-secondary rounded-2xl p-1 gap-1">
+          {(["upcoming","history"] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all press-effect active:scale-95 ${
+                tab === t ? "text-white shadow-sm" : "text-muted-foreground"
+              }`}
+              style={tab === t ? { background: "var(--gradient-primary)" } : {}}>
+              {t === "upcoming" ? `Active (${upcoming.length})` : `History (${history.length})`}
+            </button>
+          ))}
         </div>
+      </div>
 
-        {/* Rescheduled Matches */}
-        {rescheduledMatches.length > 0 && (
-          <div>
-            <h2 className="text-[11px] font-bold uppercase tracking-widest text-orange-500 mb-3 ml-2 flex items-center gap-2">
-              <Calendar className="w-4 h-4" /> Rescheduled Battles
-            </h2>
-            <div className="space-y-4">
-              {rescheduledMatches.map((m, i) => (
-                <MatchCard m={m} i={i} key={i} />
-              ))}
+      {/* ── Content ── */}
+      <div className="px-4 flex flex-col gap-3">
+        <AnimatePresence mode="wait">
+          {tab === "upcoming" ? (
+            <motion.div key="upcoming" initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }} transition={{ duration: 0.15 }}>
+              {upcoming.length === 0 ? (
+                <EmptyState
+                  icon={Calendar}
+                  title="No Active Matches"
+                  subtitle="You haven't joined any tournaments yet."
+                  cta={{ label: "Find Tournaments", to: "/tournaments" }}
+                />
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {upcoming.map((m, i) => <MatchCard key={i} m={m} i={i} />)}
+                </div>
+              )}
+            </motion.div>
+          ) : (
+            <motion.div key="history" initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }} transition={{ duration: 0.15 }}>
+              {history.length === 0 ? (
+                <EmptyState icon={Trophy} title="No Match History" subtitle="Complete tournaments to see your results here." />
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {history.map((m, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                      <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-card">
+                        {/* Top */}
+                        <Link to={`/tournaments/${String(m.id)}` as any}
+                          className="flex items-start justify-between p-4 border-b border-border active:bg-secondary/40 transition-colors">
+                          <div className="flex-1 min-w-0 pr-3">
+                            <h3 className="font-display font-black text-sm text-foreground leading-tight truncate">{m.name}</h3>
+                            <div className="flex items-center gap-1 mt-1">
+                              <Calendar className="w-3 h-3 text-muted-foreground" />
+                              <span className="text-[10px] text-muted-foreground font-semibold">
+                                {new Date(m.date).toLocaleDateString([], { day: "numeric", month: "short" })}
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-[9px] font-black px-2.5 py-1 rounded-full border shrink-0 mt-0.5"
+                            style={{ background: "rgba(100,116,139,0.1)", color: "#94a3b8", borderColor: "rgba(100,116,139,0.2)" }}>
+                            Completed
+                          </span>
+                        </Link>
+
+                        {/* Stats */}
+                        <div className="flex items-stretch divide-x divide-border">
+                          {[
+                            { label: "Kills",    value: m.kills    || 0 },
+                            { label: "Position", value: `#${m.position || "-"}` },
+                            { label: "Points",   value: m.points   || 0, highlight: true },
+                          ].map(({ label, value, highlight }) => (
+                            <div key={label} className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5">
+                              <span className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">{label}</span>
+                              <span className={`font-display font-black text-base ${highlight ? "text-primary" : "text-foreground"}`}>{value}</span>
+                            </div>
+                          ))}
+                          <button onClick={() => openStandings(m)}
+                            className="px-4 flex flex-col items-center justify-center gap-0.5 active:bg-secondary/60 transition-colors press-effect">
+                            <ListChecks className="w-4 h-4 text-muted-foreground" />
+                            <span className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">Board</span>
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* ── Standings Sheet ── */}
+      <Dialog open={!!standingsTournament} onOpenChange={v => !v && setStandingsTournament(null)}>
+        <DialogContent className="max-h-[88vh] flex flex-col rounded-3xl border border-border bg-card p-0 overflow-hidden">
+          {/* Sheet handle + header */}
+          <div className="relative pt-3 pb-4 px-5 border-b border-border shrink-0">
+            <div className="w-10 h-1 rounded-full bg-border mx-auto mb-3" />
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="font-display font-black text-base text-foreground leading-tight">
+                  🏆 {standingsTournament?.name}
+                </DialogTitle>
+                <p className="text-[10px] font-black uppercase tracking-widest mt-0.5 text-primary">Tournament Standings</p>
+              </div>
+              {(user as any)?.role === "admin" && (
+                <button onClick={downloadCSV}
+                  className="w-9 h-9 rounded-xl bg-secondary border border-border flex items-center justify-center text-muted-foreground press-effect active:scale-90">
+                  <Download className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
-        )}
 
-        {/* Past Matches */}
-        <div className="pb-4">
-          <h2 className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground mb-3 ml-2">
-            Match History
-          </h2>
-          <div className="space-y-4">
-            {pastMatches.length === 0 ? (
-              <div className="bg-card border border-white/5 rounded-[1.25rem] p-8 text-center text-muted-foreground text-sm font-semibold">
-                No match history available yet.
-              </div>
-            ) : (
-              pastMatches.map((m, i) => (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: i * 0.05 }}
-                  key={i}
-                >
-                  <div className="bg-card border border-white/5 rounded-[1.25rem] overflow-hidden shadow-lg">
-                    <a
-                      href={`/tournaments/${String(m.id)}`}
-                      className="block p-4 border-b border-white/5 hover:bg-white/5 transition-colors active:bg-white/10"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-display font-black text-base text-white flex-1 pr-4 truncate">
-                          {m.name}
-                        </h3>
-                        <span className="bg-white/10 text-white/70 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded shadow-sm shrink-0">
-                          Completed
-                        </span>
-                      </div>
-                      <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                        {new Date(m.date).toLocaleDateString()}
-                      </div>
-                    </a>
-
-                    {/* Results Section */}
-                    <div className="p-4 bg-white/5 flex items-center justify-between gap-4">
-                      <div className="flex gap-4">
-                        <div className="text-center">
-                          <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
-                            Kills
-                          </div>
-                          <div className="font-display font-black text-base text-white">
-                            {m.kills || 0}
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
-                            Position
-                          </div>
-                          <div className="font-display font-black text-base text-white">
-                            #{m.position || "-"}
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
-                            Points
-                          </div>
-                          <div className="font-display font-black text-base text-cta">
-                            {m.points || 0}
-                          </div>
-                        </div>
-                      </div>
-                      <Button
-                        onClick={(e) => openStandings(e, m)}
-                        className="rounded-lg text-xs font-bold h-9 bg-primary/20 text-cta hover:bg-primary/30"
-                      >
-                        Standings
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Standings Bottom Sheet */}
-      <Dialog open={!!standingsModal} onOpenChange={(v) => !v && setStandingsModal(null)}>
-        <DialogContent className="max-h-[85vh] overflow-hidden flex flex-col p-0 border-white/5">
-          <div className="bg-primary/20 p-6 border-b border-primary/20 relative shrink-0">
-            <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 rounded-full bg-white/20" />
-            <DialogTitle className="font-display text-xl mt-4 font-black tracking-tight leading-tight pr-10 text-white">
-              🏆 {standingsModal?.name}
-            </DialogTitle>
-            <DialogDescription className="text-cta text-xs uppercase tracking-widest font-bold mt-1">
-              Tournament Standings
-            </DialogDescription>
-            {user?.role === "admin" && (
-              <Button
-                size="sm"
-                onClick={downloadExcel}
-                className="absolute bottom-6 right-6 h-8 w-8 p-0 rounded-md bg-primary text-white shadow-primary"
-                title="Download CSV"
-              >
-                <Download className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
-
-          <div className="overflow-y-auto flex-1 bg-background p-4">
+          <div className="flex-1 overflow-y-auto p-4">
             {loadingStandings ? (
-              <div className="flex justify-center p-8">
+              <div className="flex justify-center py-12">
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               </div>
-            ) : standingsData.length === 0 ? (
-              <div className="text-center p-8 text-muted-foreground text-sm font-bold">
-                No standings data available yet.
-              </div>
+            ) : standings.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground font-semibold py-8">No standings data yet.</p>
             ) : (
-              <div className="bg-card border border-white/5 rounded-[1.25rem] overflow-hidden shadow-lg">
-                <div className="bg-white/5 p-3 border-b border-white/5">
-                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 ml-1">
-                    <ListChecks className="w-3.5 h-3.5" />
-                    Leaderboard
-                  </h3>
-                </div>
-                <div className="divide-y divide-white/5">
-                  {standingsData.map((r: any, idx: number) => (
-                    <div
-                      key={r.id}
-                      className={`p-4 flex items-center transition-colors ${
-                        idx < 3 ? 'bg-primary/5' : ''
-                      }`}
-                    >
-                      <div className="flex-shrink-0 mr-4">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-display font-black text-sm border ${
-                          idx === 0 ? 'bg-amber-500/20 text-amber-500 border-amber-500/50 shadow-[0_0_10px_rgba(245,158,11,0.2)]' :
-                          idx === 1 ? 'bg-gray-300/20 text-gray-300 border-gray-300/50' :
-                          idx === 2 ? 'bg-orange-700/20 text-orange-500 border-orange-700/50' :
-                          'bg-white/5 text-muted-foreground border-white/10'
-                        }`}>
-                          {idx + 1}
-                        </div>
+              <div className="bg-background rounded-2xl border border-border overflow-hidden">
+                {standings.map((r: any, idx: number) => {
+                  const medals = ["🥇", "🥈", "🥉"];
+                  return (
+                    <div key={r.id} className={`flex items-center gap-3 px-4 py-3 ${idx < standings.length - 1 ? "border-b border-border" : ""} ${idx < 3 ? "bg-primary/3" : ""}`}>
+                      <span className="w-7 text-center text-base">{idx < 3 ? medals[idx] : <span className="text-xs font-black text-muted-foreground">{idx+1}</span>}</span>
+                      <div className="w-8 h-8 rounded-xl bg-secondary flex items-center justify-center font-display font-black text-xs text-foreground shrink-0">
+                        {(r.team_name || r.username || "?")[0].toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-white truncate text-sm">
-                          {r.team_name || r.username}
-                        </div>
-                        <div className="text-[10px] uppercase font-bold text-muted-foreground flex items-center gap-3 mt-1">
-                          <span className="flex items-center gap-1 tracking-wider">
-                            <Crosshair className="w-3 h-3 text-cta/70" />
-                            {r.kills || 0} KILLS
+                        <p className="font-bold text-sm text-foreground truncate">{r.team_name || r.username}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="flex items-center gap-0.5 text-[9px] font-black text-muted-foreground uppercase">
+                            <Crosshair className="w-2.5 h-2.5" /> {r.kills || 0} kills
                           </span>
                         </div>
                       </div>
-                      <div className="flex-shrink-0 ml-3 text-right">
-                        <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
-                          Points
-                        </div>
-                        <div className="font-display font-black text-cta text-lg">
-                          {r.points || 0}
-                        </div>
-                      </div>
+                      <span className="font-display font-black text-sm" style={{ color: "var(--primary)" }}>{r.points || 0}</span>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -309,112 +222,93 @@ function MatchesPage() {
 }
 
 function MatchCard({ m, i }: { m: any; i: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: i * 0.05 }}
-      className="group relative rounded-[1.25rem] p-[1px] overflow-hidden"
-    >
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <a
-        href={`/tournaments/${String(m.id)}`}
-        className="block bg-card/80 backdrop-blur-xl rounded-[1.25rem] border border-white/5 shadow-lg overflow-hidden active:scale-[0.98] transition-transform relative z-10"
-      >
-        <div className={`p-4 border-b border-white/5 relative overflow-hidden ${
-            m.reg_status === "pending" ? "bg-amber-500/5" : 
-            m.match_status === "live" ? "bg-red-500/5" : 
-            m.match_status === "rescheduled" ? "bg-orange-500/5" : "bg-black/20"
-          }`}
-        >
-          {/* Status Badge */}
-          <div className="absolute top-4 right-4 z-10">
-            {m.reg_status === "pending" ? (
-              <span className="bg-amber-500/20 border border-amber-500/30 text-amber-500 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded shadow-[0_0_10px_rgba(245,158,11,0.3)]">
-                Pending
-              </span>
-            ) : m.match_status === "live" ? (
-              <span className="bg-red-500/20 border border-red-500/30 text-red-500 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded flex items-center gap-1 shadow-[0_0_10px_rgba(239,68,68,0.4)]">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> Live
-              </span>
-            ) : m.match_status === "rescheduled" ? (
-              <span className="bg-orange-500/20 border border-orange-500/30 text-orange-500 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded shadow-[0_0_10px_rgba(249,115,22,0.3)]">
-                Rescheduled
-              </span>
-            ) : (
-              <span className="bg-primary/20 border border-primary/30 text-cta text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded shadow-[0_0_10px_rgba(255,0,85,0.4)] text-glow">
-                Upcoming
-              </span>
-            )}
-          </div>
+  const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
+    live:        { label: "LIVE",        color: "#f87171", bg: "rgba(239,68,68,0.1)",  border: "rgba(239,68,68,0.25)" },
+    pending:     { label: "PENDING",     color: "#fbbf24", bg: "rgba(251,191,36,0.1)", border: "rgba(251,191,36,0.25)" },
+    rescheduled: { label: "RESCHEDULED", color: "#fb923c", bg: "rgba(251,146,60,0.1)", border: "rgba(251,146,60,0.25)" },
+    upcoming:    { label: "UPCOMING",    color: "var(--primary)", bg: "rgba(0,200,255,0.08)", border: "rgba(0,200,255,0.2)" },
+  };
+  const s = statusConfig[m.match_status === "pending" ? "pending" : m.match_status === "rescheduled" ? "rescheduled" : m.match_status === "live" ? "live" : "upcoming"];
 
-          <h3 className="font-display font-black text-lg pr-24 leading-tight text-white relative z-10 drop-shadow-md">
-            {m.name}
-          </h3>
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground mt-2 uppercase tracking-wider relative z-10">
-            <Calendar className="w-3.5 h-3.5 text-cta" />{" "}
-            {new Date(m.date).toLocaleString([], {
-              dateStyle: "short",
-              timeStyle: "short",
-            })}
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+      <Link to={`/tournaments/${String(m.id)}` as any}
+        className="block bg-card rounded-2xl border border-border overflow-hidden shadow-card press-effect active:scale-[0.98] transition-transform">
+        {/* Header */}
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <h3 className="font-display font-black text-sm text-foreground leading-tight flex-1 truncate">{m.name}</h3>
+            <span className="text-[9px] font-black px-2.5 py-1 rounded-full border shrink-0"
+              style={{ color: s.color, background: s.bg, borderColor: s.border }}>
+              {s.label === "LIVE" ? (
+                <span className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" /> {s.label}
+                </span>
+              ) : s.label}
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-[10px] font-semibold text-muted-foreground">
+            <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(m.date).toLocaleDateString([], { dateStyle: "short" })}</span>
+            <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(m.date).toLocaleTimeString([], { timeStyle: "short" })}</span>
+            <span className="flex items-center gap-1"><Crosshair className="w-3 h-3" />{m.format}</span>
           </div>
         </div>
 
-        {/* Room Details if available */}
+        {/* Room details */}
         {(m.room_id || m.room_pass) && m.reg_status !== "pending" && (
-          <div className="bg-primary/10 p-4 border-b border-primary/10 shadow-inner">
-            <div className="flex items-center gap-2 mb-2">
-              <Info className="w-3.5 h-3.5 text-cta" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-cta text-glow">
-                Room Details
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {m.room_id && (
-                <div className="bg-black/40 rounded-lg px-3 py-2 border border-white/5 flex-1 min-w-[100px] shadow-inner">
-                  <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Room ID
+          <div className="px-4 pb-3">
+            <div className="rounded-2xl p-3 border flex gap-3" style={{ background: "rgba(0,200,255,0.05)", borderColor: "rgba(0,200,255,0.15)" }}>
+              <div className="flex items-center gap-1 mb-1">
+                <Info className="w-3 h-3" style={{ color: "var(--primary)" }} />
+                <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "var(--primary)" }}>Room Details</span>
+              </div>
+              <div className="flex gap-3">
+                {m.room_id && (
+                  <div>
+                    <p className="text-[8px] text-muted-foreground font-black uppercase tracking-widest mb-0.5">Room ID</p>
+                    <p className="font-mono font-black text-sm text-foreground">{m.room_id}</p>
                   </div>
-                  <div className="font-mono font-bold text-sm text-white">
-                    {m.room_id}
+                )}
+                {m.room_pass && (
+                  <div>
+                    <p className="text-[8px] text-muted-foreground font-black uppercase tracking-widest mb-0.5">Password</p>
+                    <p className="font-mono font-black text-sm text-foreground">{m.room_pass}</p>
                   </div>
-                </div>
-              )}
-              {m.room_pass && (
-                <div className="bg-black/40 rounded-lg px-3 py-2 border border-white/5 flex-1 min-w-[100px] shadow-inner">
-                  <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">
-                    Password
-                  </div>
-                  <div className="font-mono font-bold text-sm text-white">
-                    {m.room_pass}
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Footer Info */}
-        <div className="p-4 bg-black/40 flex justify-between items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1">
-              <Crosshair className="w-3 h-3 text-cta/70" /> {m.format}
-            </span>
-          </div>
-          <span className="text-white flex items-center gap-1">
-            <Trophy className="w-3 h-3 text-cta text-glow" />{" "}
-            {m.mode === "Solo" ? (
-              <>
-                {m.per_kill_coin}/Kill | {m.first_place_coin} Pts <GodCoin className="w-3.5 h-3.5 text-cta" />
-              </>
-            ) : (
-              <>
-                <GodCoin className="w-3.5 h-3.5 text-cta" /> {m.prize}
-              </>
-            )}
+        {/* Footer */}
+        <div className="flex items-center justify-between px-4 py-2.5 bg-secondary/30 border-t border-border">
+          <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{m.mode}</span>
+          <span className="flex items-center gap-1 text-xs font-black" style={{ color: "var(--primary)" }}>
+            <GodCoin className="w-3.5 h-3.5" />
+            {m.mode === "Solo" ? `${m.per_kill_coin}/kill` : m.prize}
           </span>
         </div>
-      </a>
+      </Link>
     </motion.div>
+  );
+}
+
+function EmptyState({ icon: Icon, title, subtitle, cta }: { icon: any; title: string; subtitle: string; cta?: { label: string; to: string } }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 bg-card rounded-2xl border border-border text-center">
+      <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center mb-4">
+        <Icon className="w-6 h-6 text-muted-foreground opacity-40" />
+      </div>
+      <p className="font-display font-black text-base text-foreground mb-1">{title}</p>
+      <p className="text-xs text-muted-foreground font-medium max-w-[200px] mb-5">{subtitle}</p>
+      {cta && (
+        <Link to={cta.to as any}>
+          <button className="h-10 px-6 rounded-xl text-xs font-black uppercase tracking-widest text-white press-effect active:scale-95"
+            style={{ background: "var(--gradient-cta)" }}>
+            {cta.label}
+          </button>
+        </Link>
+      )}
+    </div>
   );
 }

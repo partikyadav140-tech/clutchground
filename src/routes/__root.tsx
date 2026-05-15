@@ -1,9 +1,10 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { SplashScreen } from "@/components/SplashScreen";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useEffect } from "react";
 import { trackWebVitals } from "@/lib/performance";
+import { ThemeProvider, themeInitScript } from "@/lib/theme";
 
 import appCss from "../styles.css?url";
 
@@ -17,7 +18,6 @@ function NotFoundComponent() {
           The page you're looking for doesn't exist or has been moved.
         </p>
         <div className="mt-6">
-          {/* Force rebuild - Link component fix */}
           <a
             href="/"
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
@@ -53,14 +53,12 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      // Preload critical fonts
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap",
       },
-      // DNS prefetch for external resources
       { rel: "dns-prefetch", href: "//api.clutchground.com" },
       { rel: "dns-prefetch", href: "//fonts.googleapis.com" },
     ],
@@ -74,21 +72,25 @@ function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
+        {/* Anti-flash theme script — runs before CSS */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <HeadContent />
       </head>
       <body>
-        <SplashScreen />
-        {children}
-        <ConfirmDialog />
-        <Toaster
-          theme="light"
-          position="top-center"
-          toastOptions={{
-            className:
-              "bg-background border border-primary/50 text-foreground font-display clip-notch shadow-fire",
-            descriptionClassName: "text-muted-foreground font-sans",
-          }}
-        />
+        <ThemeProvider>
+          <SplashScreen />
+          {children}
+          <ConfirmDialog />
+          <Toaster
+            theme="system"
+            position="top-center"
+            toastOptions={{
+              className:
+                "bg-card border border-primary/50 text-foreground font-display shadow-fire",
+              descriptionClassName: "text-muted-foreground font-sans",
+            }}
+          />
+        </ThemeProvider>
         <Scripts />
       </body>
     </html>
@@ -97,38 +99,16 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   useEffect(() => {
-    // Track web vitals on mount
     trackWebVitals();
 
-    // Performance monitoring
-    if (typeof window !== 'undefined' && 'performance' in window) {
-      // Log performance metrics
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          const perfData = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-          if (perfData) {
-            console.log('Page Load Performance:', {
-              'DNS Lookup': perfData.domainLookupEnd - perfData.domainLookupStart,
-              'TCP Connect': perfData.connectEnd - perfData.connectStart,
-              'Server Response': perfData.responseStart - perfData.requestStart,
-              'Page Load': perfData.loadEventEnd - perfData.navigationStart,
-              'DOM Ready': perfData.domContentLoadedEventEnd - perfData.navigationStart,
-            });
-          }
-        }, 0);
-      });
-    }
-
-    // Prefetch all navigation links on page load for instant navigation
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
       requestIdleCallback(() => {
         const links = document.querySelectorAll('a[href^="/"]');
-        links.forEach(link => {
-          const href = link.getAttribute('href');
-          if (href && !href.startsWith('http')) {
-            // Pre-create link element to trigger prefetch if available
-            const prefetchLink = document.createElement('link');
-            prefetchLink.rel = 'prefetch';
+        links.forEach((link) => {
+          const href = link.getAttribute("href");
+          if (href && !href.startsWith("http")) {
+            const prefetchLink = document.createElement("link");
+            prefetchLink.rel = "prefetch";
             prefetchLink.href = href;
             document.head.appendChild(prefetchLink);
           }

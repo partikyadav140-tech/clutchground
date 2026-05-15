@@ -1,57 +1,70 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap font-bold transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 select-none touch-manipulation",
   {
     variants: {
       variant: {
         default:
-          "bg-cta text-cta-foreground shadow-cta hover:brightness-110 active:scale-95 transition-all border border-cta/50",
+          "bg-primary text-primary-foreground shadow-primary hover:brightness-110 active:scale-95 rounded-2xl",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 active:scale-95 transition-all",
+          "bg-destructive text-white hover:bg-destructive/90 active:scale-95 rounded-2xl",
         outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground active:scale-95 transition-all",
+          "border border-border bg-card text-foreground hover:bg-secondary active:scale-95 rounded-2xl",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 active:scale-95 transition-all",
-        ghost: "hover:bg-accent hover:text-accent-foreground active:scale-95 transition-all",
-        link: "text-cta underline-offset-4 hover:underline",
-        hero: "bg-cta-gradient text-cta-foreground font-black shadow-[0_0_20px_rgba(255,107,0,0.4)] hover:shadow-[0_0_30px_rgba(255,107,0,0.6)] hover:scale-[1.02] active:scale-95 transition-all duration-300 clip-notch",
+          "bg-secondary text-secondary-foreground hover:bg-accent active:scale-95 rounded-2xl",
+        ghost:
+          "hover:bg-secondary text-foreground active:scale-95 rounded-2xl",
+        link:
+          "text-primary underline-offset-4 hover:underline",
+        hero:
+          "text-white font-black shadow-cta hover:brightness-110 active:scale-95 rounded-2xl",
         outlineFire:
-          "border-2 border-primary/60 text-cta bg-primary/5 hover:bg-primary/20 hover:border-primary hover:shadow-[0_0_15px_rgba(255,0,255,0.3)] backdrop-blur-sm active:scale-95 transition-all duration-300 clip-notch",
+          "border border-primary/50 text-primary bg-primary/5 hover:bg-primary/10 active:scale-95 rounded-2xl",
         blade:
-          "bg-gradient-to-r from-blood to-primary text-primary-foreground font-bold shadow-fire clip-blade hover:brightness-110 active:scale-95 transition-all",
+          "text-white font-black active:scale-95 rounded-2xl",
       },
       size: {
-        default: "h-10 px-5 py-2",
-        sm: "h-9 rounded-md px-4 text-xs",
-        lg: "h-12 rounded-md px-10 text-base",
-        xl: "h-14 rounded-md px-12 text-lg",
-        icon: "h-10 w-10",
+        default: "h-12 px-6 text-sm",
+        sm:      "h-9 px-4 text-xs rounded-xl",
+        lg:      "h-14 px-8 text-base",
+        xl:      "h-16 px-10 text-lg",
+        icon:    "h-10 w-10 rounded-2xl",
       },
     },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  },
+    defaultVariants: { variant: "default", size: "default" },
+  }
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
   asChild?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, style, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
+
+    const gradientStyles: React.CSSProperties =
+      variant === "hero"
+        ? { background: "var(--gradient-cta)", ...style }
+        : variant === "blade"
+        ? { background: "var(--gradient-primary)", ...style }
+        : { ...style };
+
     return (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        style={gradientStyles}
+        {...props}
+      />
     );
-  },
+  }
 );
 Button.displayName = "Button";
 

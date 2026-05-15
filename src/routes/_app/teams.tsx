@@ -278,23 +278,16 @@ function TeamsPage() {
   if (!user) return null;
 
   return (
-    <div className="bg-background min-h-screen pb-24">
-      {/* ─── Top Header (Mobile First) ─── */}
-      <div className="bg-card border-b border-white/5 shadow-2xl pt-6 pb-6 px-4 relative overflow-hidden z-10 rounded-b-[2rem]">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col items-center text-center">
-          <div className="w-12 h-12 bg-primary/10 text-cta rounded-2xl flex items-center justify-center mb-3">
-            <Shield className="w-6 h-6" />
-          </div>
-          <h1 className="font-display text-3xl font-black text-foreground">My Squad</h1>
-          <p className="text-sm text-muted-foreground mt-1 font-semibold">
-            {myTeam ? "Manage your squad" : "Join forces and conquer"}
-          </p>
-        </div>
+    <div className="min-h-screen bg-background pb-[80px]">
+      {/* ── App Header ── */}
+      <div className="px-4 pt-4 pb-4">
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">Squads</p>
+        <h1 className="font-display font-black text-2xl text-foreground">
+          {myTeam ? myTeam.name : "My Squad"}
+        </h1>
       </div>
 
-      <div className="px-4 mt-6 space-y-6">
+      <div className="px-4 space-y-5">
         {/* ─── My Team Section / Create Team Form ─── */}
         {isEditingTeam || !myTeam ? (
           <motion.div
@@ -331,7 +324,7 @@ function TeamsPage() {
                       Squad Name
                     </label>
                     <input
-                      className="w-full bg-secondary/50 border border-border focus:border-primary outline-none px-4 py-3 text-sm font-bold rounded-xl shadow-sm"
+                      className="w-full bg-secondary border border-border focus:border-primary/60 outline-none px-4 py-3 text-sm font-bold rounded-2xl transition-all"
                       value={teamData.name}
                       onChange={(e) => setTeamData({ ...teamData, name: e.target.value })}
                       placeholder="Enter squad name"
@@ -353,7 +346,7 @@ function TeamsPage() {
                           P{i + 2}
                         </div>
                         <input
-                          className="flex-1 bg-card border border-white/10 focus:border-primary outline-none px-3 py-2 text-xs font-bold rounded-lg shadow-sm"
+                          className="flex-1 bg-secondary border border-border focus:border-primary/60 outline-none px-3 py-2 text-xs font-bold rounded-xl transition-all"
                           placeholder="IGN"
                           value={m.ign}
                           onChange={(e) =>
@@ -366,7 +359,7 @@ function TeamsPage() {
                           }
                         />
                         <input
-                          className="w-24 bg-card border border-white/10 focus:border-primary outline-none px-3 py-2 text-xs font-mono rounded-lg shadow-sm"
+                          className="w-24 bg-secondary border border-border focus:border-primary/60 outline-none px-3 py-2 text-xs font-mono rounded-xl transition-all"
                           placeholder="UID"
                           value={m.uid}
                           onChange={(e) =>
@@ -700,13 +693,13 @@ function TeamsPage() {
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Search squads..."
-                  className="w-full bg-secondary/50 border border-white/10 focus:border-primary focus:bg-card outline-none pl-10 pr-4 h-9 text-sm rounded-lg transition-all"
+                  className="w-full bg-secondary border border-border focus:border-primary/60 focus:bg-card outline-none pl-10 pr-4 h-9 text-sm rounded-xl transition-all"
                 />
               </div>
             </div>
 
             {filteredTeams.length === 0 ? (
-              <div className="bg-card rounded-2xl border border-white/10 shadow-sm p-10 text-center">
+              <div className="bg-secondary rounded-2xl border border-border p-10 text-center">
                 <div className="w-16 h-16 rounded-full bg-secondary text-muted-foreground flex items-center justify-center mb-4 mx-auto">
                   <Users className="w-6 h-6" />
                 </div>

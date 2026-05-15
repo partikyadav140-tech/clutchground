@@ -1,15 +1,14 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { Bell, Check, X, ShieldCheck, AlertTriangle } from "lucide-react";
+import { Bell, Check, X, ShieldCheck, AlertTriangle, Zap } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../lib/auth-client";
 import { getNotifications, markNotificationsRead, resolveTournamentRequest } from "../../api";
 import { requestBrowserNotificationPermission } from "../../lib/notification-utils";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/_app/notifications")({
-  head: () => ({ meta: [{ title: "Notifications — Professional Esports Arena" }] }),
+  head: () => ({ meta: [{ title: "Notifications — CLUTCHGROUND" }] }),
   component: NotificationsPage,
 });
 
@@ -18,55 +17,33 @@ function NotificationsPage() {
   const router = useRouter();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [browserPermission, setBrowserPermission] = useState<NotificationPermission>(
-    typeof window !== "undefined" && "Notification" in window ? Notification.permission : "denied",
+  const [browserPerm, setBrowserPerm] = useState<NotificationPermission>(
+    typeof window !== "undefined" && "Notification" in window ? Notification.permission : "denied"
   );
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.navigate({ to: "/login" });
-      return;
-    }
+    if (!authLoading && !user) { router.navigate({ to: "/login" }); return; }
     if (!user) return;
-    async function load() {
+    (async () => {
       try {
         const notifs = await (getNotifications as any)({ data: user.id });
         setNotifications(notifs);
-
-        // Mark as read so the bell counter resets
-        setTimeout(() => {
-          (markNotificationsRead as any)({ data: user.id }).catch(() => {});
-        }, 2000);
-      } catch (err) {
-        console.error(err);
-      }
+        setTimeout(() => (markNotificationsRead as any)({ data: user.id }).catch(() => {}), 2000);
+      } catch {}
       setLoading(false);
-    }
-    load();
-  }, [user, authLoading, router]);
+    })();
+  }, [user, authLoading]);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window) {
-      setBrowserPermission(Notification.permission);
-    }
+    if (typeof window !== "undefined" && "Notification" in window) setBrowserPerm(Notification.permission);
   }, []);
 
-  const requestBrowserAlerts = async () => {
-    const permission = await requestBrowserNotificationPermission();
-    if (typeof window !== "undefined" && "Notification" in window) {
-      const currentPermission = permission ?? Notification.permission;
-      setBrowserPermission(currentPermission);
-      if (currentPermission === "granted") {
-        toast.success(
-          "Browser alerts enabled — new notifications will appear on mobile and desktop.",
-        );
-      } else if (currentPermission === "denied") {
-        toast.error(
-          "Browser alerts disabled. Please allow notifications in your browser settings.",
-        );
-      } else {
-        toast.error("Notification permission not granted yet. Please try again.");
-      }
+  const enableAlerts = async () => {
+    const p = await requestBrowserNotificationPermission();
+    if ("Notification" in window) {
+      const cur = p ?? Notification.permission;
+      setBrowserPerm(cur);
+      cur === "granted" ? toast.success("Browser alerts enabled!") : toast.error("Permission not granted.");
     }
   };
 
@@ -76,146 +53,130 @@ function NotificationsPage() {
       toast.success(status === "approved" ? "Registration approved!" : "Registration rejected.");
       const notifs = await (getNotifications as any)({ data: user!.id });
       setNotifications(notifs);
-    } catch (err: any) {
-      toast.error(err.message);
-    }
+    } catch (e: any) { toast.error(e.message); }
   };
 
-  if (!user || loading)
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+  if (!user || loading) return (
+    <div className="h-screen flex items-center justify-center bg-background">
+      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  const unread = notifications.filter(n => !n.is_read);
+  const read   = notifications.filter(n => n.is_read);
 
   return (
-    <div className="bg-background min-h-screen pb-24">
-      {/* ─── Top Header (Mobile First) ─── */}
-      <div className="bg-card border-b border-white/5 shadow-2xl pt-6 pb-6 px-4 relative overflow-hidden z-10">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col items-center text-center">
-          <div className="w-12 h-12 bg-primary/10 text-cta rounded-2xl flex items-center justify-center mb-3">
-            <Bell className="w-6 h-6" />
-          </div>
-          <h1 className="font-display text-3xl font-black text-foreground">Inbox</h1>
-          <p className="text-sm text-muted-foreground mt-1 font-semibold">
-            Stay updated on your matches
-          </p>
+    <div className="min-h-screen bg-background pb-5">
+      {/* ── Header ── */}
+      <div className="px-4 pt-4 pb-4">
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">Updates</p>
+        <div className="flex items-center justify-between">
+          <h1 className="font-display font-black text-2xl text-foreground">Notifications</h1>
+          {unread.length > 0 && (
+            <span className="px-2.5 py-1 rounded-full text-xs font-black text-white" style={{ background: "var(--fire)" }}>
+              {unread.length} new
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="px-4 mt-6 space-y-4">
-        <div className="bg-card rounded-[1.75rem] border border-white/10 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <div className="text-sm font-semibold text-foreground">Enable browser alerts</div>
-            <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              If you allow browser notifications, new alerts will appear even when you are on mobile
-              or when the app is backgrounded. This is more than the bell icon.
-            </p>
-          </div>
+      {/* ── Browser alerts card ── */}
+      <div className="px-4 mb-5">
+        <div className="bg-card rounded-2xl border border-border p-4 flex items-center justify-between gap-3 shadow-card">
           <div className="flex items-center gap-3">
-            <span
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-[0.2em] ${
-                browserPermission === "granted"
-                  ? "bg-emerald-100 text-emerald-700"
-                  : browserPermission === "denied"
-                    ? "bg-destructive/10 text-destructive"
-                    : "bg-secondary text-muted-foreground"
-              }`}
-            >
-              {browserPermission}
-            </span>
-            <Button
-              onClick={requestBrowserAlerts}
-              variant={browserPermission === "granted" ? "outline" : "hero"}
-              size="sm"
-            >
-              {browserPermission === "granted" ? "Re-check permission" : "Enable alerts"}
-            </Button>
-          </div>
-        </div>
-        <div className="space-y-3">
-          {notifications.length === 0 ? (
-            <div className="text-center py-20 bg-card rounded-[1.5rem] border border-white/10 shadow-sm">
-              <div className="w-16 h-16 rounded-full bg-secondary text-muted-foreground flex items-center justify-center mx-auto mb-4">
-                <Bell className="w-8 h-8" />
-              </div>
-              <p className="text-foreground font-display font-bold text-lg">All caught up!</p>
-              <p className="text-sm text-muted-foreground mt-1">You have no new notifications.</p>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(0,200,255,0.1)", color: "var(--primary)" }}>
+              <Bell className="w-5 h-5" />
             </div>
-          ) : (
-            notifications.map((n, i) => {
-              const isImportant =
-                n.action_type === "tournament_request" ||
-                n.message?.startsWith("❌") ||
-                n.message?.startsWith("⚠️");
-              return (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: i * 0.05 }}
-                  key={n.id}
-                  className={`p-5 rounded-[1.5rem] border ${n.is_read ? "bg-card border-white/10 shadow-sm" : "bg-primary/5 border-primary/30 shadow-md"} flex flex-col sm:flex-row gap-4 items-start sm:items-center transition-all ${n.redirect_url ? "cursor-pointer hover:shadow-lg" : ""}`}
-                  onClick={() => {
-                    if (n.redirect_url) {
-                      router.navigate({ to: n.redirect_url });
-                    }
-                  }}
-                >
+            <div>
+              <p className="font-black text-sm text-foreground">Push Alerts</p>
+              <p className="text-[10px] text-muted-foreground font-semibold">
+                Status: <span className={browserPerm === "granted" ? "text-emerald-400" : "text-muted-foreground"}>
+                  {browserPerm}
+                </span>
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={enableAlerts}
+            className="h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-white press-effect active:scale-95"
+            style={{ background: browserPerm === "granted" ? "var(--secondary)" : "var(--gradient-primary)", color: browserPerm === "granted" ? "var(--muted-foreground)" : "white" }}
+          >
+            {browserPerm === "granted" ? "Enabled" : "Enable"}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Notification list ── */}
+      <div className="px-4 flex flex-col gap-3">
+        {notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-card rounded-3xl border border-border text-center">
+            <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center mb-4">
+              <Bell className="w-6 h-6 text-muted-foreground opacity-30" />
+            </div>
+            <p className="font-display font-black text-base text-foreground mb-1">All Caught Up!</p>
+            <p className="text-sm text-muted-foreground">No notifications yet.</p>
+          </div>
+        ) : (
+          notifications.map((n, i) => {
+            const isImportant = n.action_type === "tournament_request" || n.message?.startsWith("❌") || n.message?.startsWith("⚠️");
+            const isNew = !n.is_read;
+
+            return (
+              <motion.div
+                key={n.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(i * 0.04, 0.3) }}
+                onClick={() => n.redirect_url && router.navigate({ to: n.redirect_url })}
+                className={`bg-card rounded-2xl border shadow-card overflow-hidden ${n.redirect_url ? "cursor-pointer press-effect active:scale-[0.98]" : ""} ${isNew ? "border-primary/30" : "border-border"}`}
+              >
+                {/* New indicator stripe */}
+                {isNew && (
+                  <div className="h-0.5 w-full" style={{ background: "var(--gradient-primary)" }} />
+                )}
+
+                <div className="p-4 flex items-start gap-3">
+                  {/* Icon */}
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-sm ${
-                      n.is_read
-                        ? "bg-secondary text-muted-foreground"
-                        : isImportant
-                          ? "bg-destructive text-white"
-                          : "bg-primary text-white"
-                    }`}
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+                    style={isNew
+                      ? { background: isImportant ? "rgba(239,68,68,0.12)" : "rgba(0,200,255,0.12)", color: isImportant ? "#f87171" : "var(--primary)" }
+                      : { background: "var(--secondary)", color: "var(--muted-foreground)" }
+                    }
                   >
-                    {isImportant ? (
-                      <AlertTriangle className="w-5 h-5" />
-                    ) : (
-                      <ShieldCheck className="w-5 h-5" />
-                    )}
+                    {isImportant ? <AlertTriangle className="w-4.5 h-4.5" /> : <ShieldCheck className="w-4.5 h-4.5" />}
                   </div>
-                  <div className="flex-1 min-w-0 w-full">
-                    <div
-                      className={`text-sm ${n.is_read ? "text-muted-foreground" : "text-foreground font-bold"}`}
-                    >
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm leading-relaxed ${isNew ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
                       {n.message}
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
-                        {n.is_read ? "Read" : "New"}
-                      </span>
-                      <span className="text-right">{new Date(n.created_at).toLocaleString()}</span>
-                    </div>
+                    </p>
+                    <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest mt-1.5">
+                      {new Date(n.created_at).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
+                      {isNew && <span className="ml-2 px-1.5 py-0.5 rounded-full text-white text-[8px]" style={{ background: "var(--primary)" }}>NEW</span>}
+                    </p>
+
+                    {/* Approve/Reject */}
                     {n.action_type === "tournament_request" && (
-                      <div
-                        className="mt-4 flex gap-2 w-full sm:w-auto"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Button
-                          onClick={() => handleResolve(n.action_data, "approved")}
-                          className="flex-1 sm:flex-none h-10 rounded-xl font-bold bg-primary text-white shadow-primary"
-                        >
-                          <Check className="w-4 h-4 mr-1" /> Approve
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => handleResolve(n.action_data, "rejected")}
-                          className="flex-1 sm:flex-none h-10 rounded-xl font-bold border-border shadow-sm hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
-                        >
-                          <X className="w-4 h-4 mr-1" /> Reject
-                        </Button>
+                      <div className="flex gap-2 mt-3" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => handleResolve(n.action_data, "approved")}
+                          className="flex-1 h-9 rounded-xl text-xs font-black text-white press-effect active:scale-95"
+                          style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>
+                          <Check className="w-3.5 h-3.5 inline mr-1" />Approve
+                        </button>
+                        <button onClick={() => handleResolve(n.action_data, "rejected")}
+                          className="flex-1 h-9 rounded-xl text-xs font-black border border-red-500/30 text-red-500 bg-red-500/8 press-effect active:scale-95">
+                          <X className="w-3.5 h-3.5 inline mr-1" />Reject
+                        </button>
                       </div>
                     )}
                   </div>
-                </motion.div>
-              );
-            })
-          )}
-        </div>
+                </div>
+              </motion.div>
+            );
+          })
+        )}
       </div>
     </div>
   );
