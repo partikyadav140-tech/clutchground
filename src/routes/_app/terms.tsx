@@ -1,89 +1,90 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { FileText } from "lucide-react";
+import { FileText, RefreshCcw, XCircle, Shield, Gamepad2, CreditCard } from "lucide-react";
 import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/_app/terms")({
-  head: () => ({ meta: [{ title: "Terms and Conditions — Professional Esports Arena" }] }),
+  head: () => ({ meta: [{ title: "Terms & Conditions — CLUTCHGROUND" }] }),
   component: TermsPage,
 });
+
+const Section = ({ icon: Icon, title, children, color = "var(--primary)" }: any) => (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="bg-card rounded-2xl border border-border p-5 space-y-2"
+  >
+    <div className="flex items-center gap-3 mb-3">
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${color}18`, color }}>
+        <Icon className="w-4 h-4" />
+      </div>
+      <h2 className="font-display font-black text-base text-foreground">{title}</h2>
+    </div>
+    <div className="text-sm text-muted-foreground leading-relaxed font-medium space-y-2">{children}</div>
+  </motion.div>
+);
 
 function TermsPage() {
   return (
     <div className="bg-background min-h-screen pb-24">
-      {/* ─── Top Header (Mobile First) ─── */}
-      <div className="bg-white rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col items-center text-center">
-          <div className="w-12 h-12 bg-primary/10 text-cta rounded-2xl flex items-center justify-center mb-3">
-            <FileText className="w-6 h-6" />
-          </div>
-          <h1 className="font-display text-3xl font-black text-foreground">Terms of Service</h1>
-          <p className="text-sm text-muted-foreground mt-1 font-semibold">Platform Rules</p>
+      {/* Header */}
+      <div className="px-4 pt-5 pb-4">
+        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">
+          <FileText className="w-3 h-3" /> Legal
         </div>
+        <h1 className="font-display font-black text-2xl text-foreground">Terms & Conditions</h1>
+        <p className="text-xs text-muted-foreground mt-1">Last updated: May 2025 · CLUTCHGROUND</p>
       </div>
 
-      <div className="px-4 mt-6">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="bg-white rounded-[1.5rem] border border-border shadow-sm p-6 space-y-6 text-sm text-muted-foreground leading-relaxed"
-        >
-          <div>
-            <h3 className="text-lg font-display font-black text-foreground mb-2">
-              1. Acceptance of Terms
-            </h3>
-            <p className="font-semibold">
-              By registering on our platform, you agree to abide by these Terms and Conditions. You
-              must be at least 13 years old to participate, and users under 18 must have parental
-              consent to make transactions.
-            </p>
-          </div>
+      <div className="px-4 space-y-3">
 
-          <div>
-            <h3 className="text-lg font-display font-black text-foreground mb-2">
-              2. Fair Play & Anti-Cheat
-            </h3>
-            <p className="font-semibold">
-              We maintain a strict zero-tolerance policy against cheating, hacking, or using
-              unauthorized third-party software. Any player caught cheating will be permanently
-              banned, and their team may be disqualified and forfeit all winnings.
-            </p>
-          </div>
+        {/* Fair Play / Skill-Based */}
+        <Section icon={Gamepad2} title="Skill-Based Gaming Platform" color="#f59e0b">
+          <p>CLUTCHGROUND is a <strong className="text-foreground">skill-based competitive gaming platform</strong>. All tournaments are won through player skill, strategy, and performance — not chance or luck.</p>
+          <p>This platform is <strong className="text-foreground">NOT gambling</strong>. Outcomes are determined entirely by player ability in Free Fire tournaments. Entry fees are participation fees for competitive events.</p>
+          <p>Participation is open to users aged 13 and above. Users under 18 require parental consent for transactions.</p>
+        </Section>
 
-          <div>
-            <h3 className="text-lg font-display font-black text-foreground mb-2">
-              3. Wallets & Transactions
-            </h3>
-            <p className="font-semibold">
-              Coins have no real-world value outside of the platform until officially withdrawn.
-              Deposits are final and non-refundable. Withdrawals are processed manually within 24-48
-              hours and may be subject to verification.
-            </p>
-          </div>
+        {/* Refund Policy */}
+        <Section icon={RefreshCcw} title="Refund & Cancellation Policy" color="#10b981">
+          <p><strong className="text-foreground">Tournament Cancellation by Platform:</strong> If CLUTCHGROUND cancels a tournament due to technical issues, insufficient participants, or any other reason, 100% of the entry fee will be refunded to your Deposit Balance within 24 hours.</p>
+          <p><strong className="text-foreground">Wallet Deposits:</strong> Coins purchased via Razorpay are non-refundable once added to the wallet, except in cases of duplicate transactions or payment errors. Contact support within 48 hours for such claims.</p>
+          <p><strong className="text-foreground">Duplicate Payments:</strong> If you are charged twice for the same order, raise a support ticket within 48 hours. Verified duplicates will be refunded within 5–7 business days to the original payment method.</p>
+          <p><strong className="text-foreground">Technical Failures:</strong> If your payment is deducted but coins are not credited, contact support with your Razorpay Payment ID within 48 hours for immediate resolution.</p>
+        </Section>
 
-          <div>
-            <h3 className="text-lg font-display font-black text-foreground mb-2">
-              4. Tournament Execution
-            </h3>
-            <p className="font-semibold">
-              We reserve the right to reschedule, cancel, or alter tournaments in case of technical
-              issues or insufficient participation. In the event of a cancellation, entry fees will
-              be refunded to your deposit balance.
-            </p>
-          </div>
+        {/* Cancellation */}
+        <Section icon={XCircle} title="Tournament Registration Cancellation" color="#ef4444">
+          <p><strong className="text-foreground">Before Room Details Released:</strong> You may request cancellation before the room ID/password is shared. Entry fee will be refunded to your Deposit Balance.</p>
+          <p><strong className="text-foreground">After Room Details Released:</strong> No refunds once the room ID and password have been shared, as tournament integrity cannot be guaranteed.</p>
+          <p><strong className="text-foreground">No-Show Policy:</strong> Players who register but do not join the match forfeit their entry fee. No refunds for no-shows.</p>
+        </Section>
 
-          <div>
-            <h3 className="text-lg font-display font-black text-foreground mb-2">
-              5. Dispute Resolution
-            </h3>
-            <p className="font-semibold">
-              All tournament disputes must be submitted within 30 minutes of match completion with
-              video evidence. Admin decisions are final and binding.
-            </p>
-          </div>
-        </motion.div>
+        {/* Fair Play */}
+        <Section icon={Shield} title="Fair Play & Anti-Cheat Policy" color="#8b5cf6">
+          <p>CLUTCHGROUND maintains a <strong className="text-foreground">zero-tolerance policy</strong> against cheating, hacking, emulators (in restricted categories), or any unauthorized third-party software.</p>
+          <p>Violations result in: permanent account ban, disqualification from current and future tournaments, and forfeiture of all winnings.</p>
+          <p>All results are subject to admin review. Video evidence may be requested to verify kills and placement. Admin decisions are final and binding.</p>
+        </Section>
+
+        {/* Wallets & Transactions */}
+        <Section icon={CreditCard} title="Wallet & Transactions" color="#00c8ff">
+          <p><strong className="text-foreground">1 CG Coin = ₹1.</strong> Deposited coins can only be used for tournament entry fees.</p>
+          <p>Only <strong className="text-foreground">Winnings Balance</strong> is withdrawable to UPI/bank accounts. Deposited coins are non-withdrawable.</p>
+          <p>Withdrawals are processed within 2–3 business days after identity verification. Minimum withdrawal amount is ₹50.</p>
+          <p>CLUTCHGROUND uses <strong className="text-foreground">Razorpay</strong> as its secure payment gateway. All transactions are encrypted and PCI-DSS compliant.</p>
+        </Section>
+
+        {/* Disputes */}
+        <Section icon={FileText} title="Dispute Resolution" color="#f97316">
+          <p>Tournament disputes must be submitted within <strong className="text-foreground">30 minutes</strong> of match completion with video/screenshot evidence via the Support Ticket system.</p>
+          <p>Payment disputes must be raised within <strong className="text-foreground">48 hours</strong> of the transaction via email at <strong className="text-foreground">clutchgroundofficial@gmail.com</strong> or through in-app support.</p>
+          <p>Governing law: These terms are governed by the laws of India. Disputes are subject to the jurisdiction of courts in India.</p>
+        </Section>
+
+        <p className="text-center text-[10px] text-muted-foreground pb-4">
+          By using CLUTCHGROUND, you agree to these Terms & Conditions.
+          <br />Contact: clutchgroundofficial@gmail.com
+        </p>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Mail, MessageCircle, Send, HeadphonesIcon, Hash, ArrowRight } from "lucide-react";
+import { Mail, MessageCircle, Send, HeadphonesIcon, Hash, ArrowRight, MapPin, Clock, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { saveContactMessage } from "../../api";
@@ -48,6 +48,32 @@ function ContactPage() {
       </div>
 
       <div className="px-4 space-y-5">
+        {/* ── Business Info (Razorpay compliance) ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          className="bg-card rounded-2xl border border-border shadow-card p-4 space-y-3"
+        >
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Business Information</p>
+          <div className="space-y-2.5">
+            {[
+              { icon: Building2, title: "CLUTCHGROUND", sub: "Skill-Based Esports Platform" },
+              { icon: MapPin,    title: "Registered Address", sub: "Haryana, India — 126102" },
+              { icon: Mail,      title: "clutchgroundofficial@gmail.com", sub: "Official contact for disputes & refunds" },
+              { icon: Clock,     title: "Support Hours", sub: "Mon – Sat, 10:00 AM – 8:00 PM IST" },
+            ].map(({ icon: Icon, title, sub }) => (
+              <div key={title} className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 text-primary mt-0.5">
+                  <Icon className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="font-black text-sm text-foreground">{title}</p>
+                  <p className="text-xs text-muted-foreground font-medium">{sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
         {/* ── Quick channels ── */}
         <div>
           <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 ml-1">Direct Channels</p>
