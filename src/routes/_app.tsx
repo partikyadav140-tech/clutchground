@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Navbar } from "@/components/Navbar";
 
 const PageSpinner = () => (
@@ -14,6 +14,9 @@ export const Route = createFileRoute("/_app")({
     const router = useRouter();
     const path = router.state.location.pathname;
     const scrollRef = useRef<HTMLElement>(null);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => { setMounted(true); }, []);
 
     const isAuthRoute = ["/login", "/signup"].includes(path);
     const isMainTab   = ["", "/", "/tournaments", "/matches", "/leaderboard", "/profile", "/wallet"].includes(path);
@@ -63,7 +66,7 @@ export const Route = createFileRoute("/_app")({
                   transition={{ duration: 0.18, ease: "easeOut" }}
                   className={isChatPage ? "h-full flex flex-col" : "min-h-full"}
                 >
-                  <Outlet />
+                  {mounted ? <Outlet /> : <PageSpinner />}
                 </motion.div>
               </AnimatePresence>
             </Suspense>
