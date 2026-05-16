@@ -3,15 +3,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { createHmac } from "crypto";
 import { db } from "./db";
 
-/* ─────────────────────────────────────────────
-   CREATE ORDER
-   Called by WalletDepositDialog before opening
-   the Razorpay checkout modal.
-───────────────────────────────────────────── */
-export const createRazorpayOrder = createServerFn({ method: "POST" })
-  .validator((d: { userId: number; amount: number; description?: string }) => d)
-  .handler(async ({ data }) => {
-    const { userId, amount, description } = data;
+export const createRazorpayOrder = createServerFn({ method: "POST" }).handler(
+  async ({ data }) => {
+    const { userId, amount, description } = data as any;
 
     if (!amount || amount < 100) {
       throw new Error("Minimum deposit amount is ₹100");
@@ -24,7 +18,6 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
       throw new Error("Razorpay credentials not configured on server");
     }
 
-    // Call Razorpay Orders API
     const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
     const response = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
@@ -33,7 +26,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        amount: amount * 100, // paise
+        amount: amount * 100,
         currency: "INR",
         receipt: `wallet_${userId}_${Date.now()}`,
         notes: { description: description || "Wallet Deposit" },
@@ -47,7 +40,6 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
 
     const order = (await response.json()) as any;
 
-    // Persist order for idempotent verification later
     await db
       .prepare(
         `INSERT INTO razorpay_orders (user_id, order_id, amount, status, description, created_at)
@@ -58,26 +50,16 @@ export const createRazorpayOrder = createServerFn({ method: "POST" })
 
     return {
       orderId:  order.id,
-      amount:   order.amount / 100, // back to rupees for display
+      amount:   order.amount / 100,
       currency: order.currency,
-      keyId,  // safe — this is the public KEY_ID, not the secret
+      keyId,
     };
-  });
+  },
+);
 
-/* ─────────────────────────────────────────────
-   VERIFY PAYMENT
-   Called by WalletDepositDialog after Razorpay
-   modal calls its handler() callback.
-───────────────────────────────────────────── */
-export const verifyRazorpayPayment = createServerFn({ method: "POST" })
-  .validator((d: {
-    userId:    number;
-    orderId:   string;
-    paymentId: string;
-    signature: string;
-  }) => d)
-  .handler(async ({ data }) => {
-    const { userId, orderId, paymentId, signature } = data;
+export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
+  async ({ data }) => {
+    const { userId, orderId, paymentId, signature } = data as any;
 
     if (!orderId || !paymentId || !signature) {
       throw new Error("Missing payment fields");
@@ -88,7 +70,6 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       throw new Error("Razorpay secret not configured on server");
     }
 
-    // HMAC-SHA256 verification (orderId|paymentId, KEY_SECRET)
     const hmac = createHmac("sha256", keySecret);
     hmac.update(`${orderId}|${paymentId}`);
     const generatedSignature = hmac.digest("hex");
@@ -97,7 +78,6 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       throw new Error("Payment verification failed — signature mismatch");
     }
 
-    // Fetch stored order
     const order = (await db
       .prepare("SELECT amount FROM razorpay_orders WHERE order_id = ?")
       .get(orderId)) as any;
@@ -106,7 +86,6 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
       throw new Error("Order not found");
     }
 
-    // Credit wallet inside a transaction
     await db.transaction(async (tx: any) => {
       await tx
         .prepare("UPDATE users SET deposit_balance = deposit_balance + ? WHERE id = ?")
@@ -136,14 +115,13 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" })
     });
 
     return { success: true, amount: order.amount };
-  });
+  },
+);
 
-/* ─────────────────────────────────────────────
-   GET WALLET BALANCE  (used by some components)
-───────────────────────────────────────────── */
-export const getWalletBalance = createServerFn({ method: "POST" })
-  .validator((d: number) => d)
-  .handler(async ({ data: userId }) => {
+export const getWalletBalance = createServerFn({ method: "POST" }).handler(
+  async ({ data }) => {
+    const userId = data as any;
+
     const user = (await db
       .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
       .get(userId)) as any;
@@ -155,15 +133,12 @@ export const getWalletBalance = createServerFn({ method: "POST" })
       winningBalance: user.winning_balance || 0,
       totalBalance:   (user.deposit_balance || 0) + (user.winning_balance || 0),
     };
-  });
+  },
+);
 
-/* ─────────────────────────────────────────────
-   GET TRANSACTION HISTORY
-───────────────────────────────────────────── */
-export const getTransactionHistory = createServerFn({ method: "POST" })
-  .validator((d: { userId: number; limit?: number; offset?: number }) => d)
-  .handler(async ({ data }) => {
-    const { userId, limit = 10, offset = 0 } = data;
+export const getTransactionHistory = createServerFn({ method: "POST" }).handler(
+  async ({ data }) => {
+    const { userId, limit = 10, offset = 0 } = data as any;
 
     const transactions = (await db
       .prepare(
@@ -185,4 +160,5 @@ export const getTransactionHistory = createServerFn({ method: "POST" })
       limit,
       offset,
     };
-  });
+  },
+);
