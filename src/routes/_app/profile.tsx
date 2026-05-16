@@ -3,6 +3,7 @@ import Cropper from "react-easy-crop";
 import {
   Trophy, Edit3, Share2, Users, Bell, User, ChevronRight,
   Wallet, LogOut, ShieldAlert, MessageCircle, Settings, Star, Gamepad2,
+  Phone, FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../../lib/auth-client";
@@ -174,6 +175,8 @@ function ProfilePage() {
         <MenuSection label="Settings">
           <MenuItem icon={Bell}    iconBg="rgba(139,92,246,0.12)"  iconColor="#8b5cf6" label="Notifications"   to="/notifications" />
           <MenuItem icon={MessageCircle} iconBg="rgba(236,72,153,0.12)" iconColor="#ec4899" label="Help & Support" to={"/support" as any} />
+          <MenuItem icon={Phone}   iconBg="rgba(96,165,250,0.12)"  iconColor="#60a5fa" label="Contact Us"       to="/contact" />
+          <MenuItem icon={FileText} iconBg="rgba(251,191,36,0.12)"  iconColor="#fbbf24" label="Terms & Conditions" to="/terms" />
 
           {/* Theme toggle as menu item */}
           <button

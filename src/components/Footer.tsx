@@ -100,11 +100,11 @@ export function Footer() {
               >
                 Privacy Policy
               </a>
-              <a
-                href="/terms"
-                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
-              >
+              <a href="/terms" className="block text-sm text-muted-foreground hover:text-cta transition-colors">
                 Terms of Service
+              </a>
+              <a href="/contact" className="block text-sm text-muted-foreground hover:text-cta transition-colors">
+                Contact Us
               </a>
             </div>
           </div>
@@ -117,7 +117,7 @@ export function Footer() {
             <div className="space-y-3 text-sm text-muted-foreground">
               <p>
                 <span className="block font-semibold text-foreground">Email</span>
-                support@clutchground.com
+               clutchgroundofficial@gmail.com
               </p>
               <p>
                 <span className="block font-semibold text-foreground">Phone</span>
