@@ -33,6 +33,9 @@ function WalletPage() {
   const winBal      = (user as any)?.winning_balance   || 0;
   const totalBal    = depositBal + winBal;
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const loadTx = async () => {
     if (!user) return;
     try {
@@ -65,7 +68,7 @@ function WalletPage() {
     } finally { setSubmitting(false); }
   };
 
-  if (authLoading || !user) {
+  if (!mounted || authLoading || !user) {
     return <div className="h-screen flex items-center justify-center bg-background">
       <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
     </div>;
