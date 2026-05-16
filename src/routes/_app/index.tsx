@@ -45,11 +45,11 @@ function HomePage() {
 
   /* ── Carousels ── */
   const [featuredRef] = useEmblaCarousel(
-    { loop: true, align: "start" },
+    { loop: true, align: "center", containScroll: false },
     [Autoplay({ delay: 3000, stopOnInteraction: false })]
   );
   const [battlesRef] = useEmblaCarousel(
-    { loop: true, align: "start" },
+    { loop: true, align: "center", containScroll: false },
     [Autoplay({ delay: 3800, stopOnInteraction: false })]
   );
 
@@ -134,9 +134,9 @@ function HomePage() {
             </Link>
           </div>
           <div className="overflow-hidden" ref={featuredRef}>
-            <div className="flex gap-3 pl-4 pr-4">
+            <div className="flex gap-3">
               {featured.map((t: any, i: number) => (
-                <div key={t.id} className="flex-[0_0_82%] min-w-0 max-w-[300px]">
+                <div key={t.id} className="flex-[0_0_78%] min-w-0">
                   <TournamentCard t={t} i={i} />
                 </div>
               ))}
@@ -158,9 +158,9 @@ function HomePage() {
             </Link>
           </div>
           <div className="overflow-hidden" ref={battlesRef}>
-            <div className="flex gap-3 pl-4 pr-4">
+            <div className="flex gap-3">
               {battles.map((t: any, i: number) => (
-                <div key={t.id} className="flex-[0_0_82%] min-w-0 max-w-[300px]">
+                <div key={t.id} className="flex-[0_0_78%] min-w-0">
                   <TournamentCard t={t} i={i} />
                 </div>
               ))}
