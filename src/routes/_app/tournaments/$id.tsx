@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { getTournaments, getTournamentResults, getMyMatches } from "../../../api";
 import {
   Calendar, Trophy, Users, Target, Shield, ArrowLeft,
-  Crosshair, Share2, Download, Lock, CheckCircle2, Zap,
+  Crosshair, Share2, Lock, CheckCircle2, Zap,
   Star, Clock, ChevronRight, Swords,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { GodCoin } from "@/components/GodCoin";
 import { useAuth } from "../../../lib/auth-client";
+import { StandingsCard } from "@/components/StandingsCard";
 
 export const Route = createFileRoute("/_app/tournaments/$id")({
   component: TournamentDetailPage,
@@ -73,20 +74,6 @@ function TournamentDetailPage() {
   const isFree   = t.entry === 0;
   const isLive   = t.status === "live";
   const isComp   = t.status === "completed";
-
-  const downloadCSV = () => {
-    if (!results?.length) return;
-    const rows = results.map((r: any, i: number) => [
-      i + 1,
-      `"${(t.mode === "Squad" ? r.team_name || r.username : r.username)?.replace(/"/g, '""') || "?"}"`,
-      r.kills || 0, r.position || "-", r.points || 0,
-    ]);
-    const csv = [["Rank","Team/Player","Kills","Pos","Points"].join(","), ...rows.map((r: any) => r.join(","))].join("\n");
-    const a   = document.createElement("a");
-    a.href    = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    a.download= `${t.title.replace(/\s+/g,"_")}_Standings.csv`;
-    a.click();
-  };
 
   const tabs: { key: Tab; label: string }[] = [
     { key: "info",       label: "Info" },
@@ -424,59 +411,11 @@ function TournamentDetailPage() {
           {/* STANDINGS TAB */}
           {tab === "standings" && results?.length > 0 && (
             <motion.div key="standings" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-card">
-                {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                  <div>
-                    <p className="font-display font-black text-base text-foreground">Leaderboard</p>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mt-0.5">Final Results</p>
-                  </div>
-                  <button onClick={downloadCSV}
-                    className="w-9 h-9 rounded-xl bg-secondary border border-border flex items-center justify-center text-muted-foreground press-effect active:scale-90">
-                    <Download className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Rows */}
-                <div className="divide-y divide-border">
-                  {results.map((r: any, idx: number) => {
-                    const medals = ["🥇", "🥈", "🥉"];
-                    const colors = ["#f59e0b", "#94a3b8", "#b45309"];
-                    const isTop = idx < 3;
-                    return (
-                      <div key={r.id}
-                        className={`flex items-center gap-3 px-4 py-3 ${isTop ? "" : ""}`}
-                        style={{ background: isTop ? `${mc.bg}` : "transparent" }}>
-                        <span className="w-7 text-center text-base shrink-0">
-                          {isTop ? medals[idx] : <span className="font-display font-black text-xs text-muted-foreground">{idx + 1}</span>}
-                        </span>
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center font-display font-black text-xs text-white shrink-0 overflow-hidden"
-                          style={{ background: isTop ? `${colors[idx]}22` : "var(--secondary)", border: isTop ? `1px solid ${colors[idx]}44` : "1px solid var(--border)" }}>
-                          <span style={{ color: isTop ? colors[idx] : "var(--muted-foreground)" }}>
-                            {(t.mode === "Squad" ? r.team_logo : r.avatar_url)
-                              ? <img src={t.mode === "Squad" ? r.team_logo : r.avatar_url} className="w-full h-full object-cover rounded-xl" />
-                              : (t.mode === "Squad" ? r.team_name || r.username : r.username)?.[0]?.toUpperCase()
-                            }
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm text-foreground truncate" style={{ color: isTop ? colors[idx] : "var(--foreground)" }}>
-                            {t.mode === "Squad" ? r.team_name || r.username : r.username}
-                          </p>
-                          <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
-                            {r.kills || 0} kills · pos #{r.position || "-"}
-                          </p>
-                        </div>
-                        {t.mode === "Squad" && (
-                          <span className="font-display font-black text-base" style={{ color: isTop ? colors[idx] : "var(--primary)" }}>
-                            {r.points || 0}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <StandingsCard
+                tournamentName={t.title}
+                mode={t.mode}
+                results={results}
+              />
             </motion.div>
           )}
 

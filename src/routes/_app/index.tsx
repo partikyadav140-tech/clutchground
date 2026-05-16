@@ -55,7 +55,7 @@ function HomePage() {
 
   const active   = (allT as any[]).filter(t => t.status !== "completed" && t.status !== "locked");
   const featured = active.filter(t => t.is_hero && t.is_hero !== "0" && t.is_hero !== "false");
-  const battles  = active; // show all active in second carousel
+  const battles  = active.filter(t => !t.is_hero || t.is_hero === "0" || t.is_hero === "false"); // non-featured only
 
   const balance = user ? ((user as any).deposit_balance || 0) + ((user as any).winning_balance || 0) : 0;
   const top3    = ((lb as any[]) || []).slice(0, 3);

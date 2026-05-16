@@ -80,7 +80,7 @@ export function Tutorial() {
           animate: true,
           allowClose: true,
           popoverClass: "driverjs-theme",
-          stageBackground: "rgba(0,0,0,0.72)",
+          overlayColor: "rgba(0,0,0,0.72)",
           topOffset: 64,
           steps: steps as any,
           onDestroyStarted: async () => {

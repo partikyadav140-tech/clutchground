@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { Trophy, Calendar, Crosshair, Download, Swords, Info, Clock, Zap, ListChecks, CheckCircle2 } from "lucide-react";
+import { Trophy, Calendar, Crosshair, Swords, Info, Clock, Zap, ListChecks, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../lib/auth-client";
 import { getMyMatches, getTournamentResults } from "../../api";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { GodCoin } from "@/components/GodCoin";
+import { StandingsCard } from "@/components/StandingsCard";
 
 export const Route = createFileRoute("/_app/matches")({
   head: () => ({ meta: [{ title: "My Matches — CLUTCHGROUND" }] }),
@@ -43,17 +44,6 @@ function MatchesPage() {
       setStandings(data || []);
     } catch (e: any) { toast.error(e.message); }
     setLoadingStandings(false);
-  };
-
-  const downloadCSV = () => {
-    if (!standings.length) return;
-    const csv = [["Rank","Team/Player","Kills","Position","Points"].join(","),
-      ...standings.map((r: any, i: number) => [i+1, `"${(r.team_name||r.username).replace(/"/g,'""')}"`, r.kills||0, r.position||"-", r.points||0].join(","))
-    ].join("\n");
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    a.download = `${standingsTournament?.name?.replace(/\s+/g,"_")}_Standings.csv`;
-    a.click();
   };
 
   if (!user || loading) return (
@@ -163,56 +153,27 @@ function MatchesPage() {
 
       {/* ── Standings Sheet ── */}
       <Dialog open={!!standingsTournament} onOpenChange={v => !v && setStandingsTournament(null)}>
-        <DialogContent className="max-h-[88vh] flex flex-col rounded-3xl border border-border bg-card p-0 overflow-hidden">
+        <DialogContent className="max-h-[92vh] flex flex-col rounded-3xl border border-border bg-card p-0 overflow-hidden">
           {/* Sheet handle + header */}
           <div className="relative pt-3 pb-4 px-5 border-b border-border shrink-0">
             <div className="w-10 h-1 rounded-full bg-border mx-auto mb-3" />
-            <div className="flex items-center justify-between">
-              <div>
-                <DialogTitle className="font-display font-black text-base text-foreground leading-tight">
-                  🏆 {standingsTournament?.name}
-                </DialogTitle>
-                <p className="text-[10px] font-black uppercase tracking-widest mt-0.5 text-primary">Tournament Standings</p>
-              </div>
-              {(user as any)?.role === "admin" && (
-                <button onClick={downloadCSV}
-                  className="w-9 h-9 rounded-xl bg-secondary border border-border flex items-center justify-center text-muted-foreground press-effect active:scale-90">
-                  <Download className="w-4 h-4" />
-                </button>
-              )}
-            </div>
+            <DialogTitle className="font-display font-black text-base text-foreground leading-tight">
+              🏆 {standingsTournament?.name}
+            </DialogTitle>
+            <p className="text-[10px] font-black uppercase tracking-widest mt-0.5" style={{ color: "var(--primary)" }}>Final Standings</p>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
             {loadingStandings ? (
-              <div className="flex justify-center py-12">
+              <div className="flex justify-center py-16">
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               </div>
-            ) : standings.length === 0 ? (
-              <p className="text-center text-sm text-muted-foreground font-semibold py-8">No standings data yet.</p>
             ) : (
-              <div className="bg-background rounded-2xl border border-border overflow-hidden">
-                {standings.map((r: any, idx: number) => {
-                  const medals = ["🥇", "🥈", "🥉"];
-                  return (
-                    <div key={r.id} className={`flex items-center gap-3 px-4 py-3 ${idx < standings.length - 1 ? "border-b border-border" : ""} ${idx < 3 ? "bg-primary/3" : ""}`}>
-                      <span className="w-7 text-center text-base">{idx < 3 ? medals[idx] : <span className="text-xs font-black text-muted-foreground">{idx+1}</span>}</span>
-                      <div className="w-8 h-8 rounded-xl bg-secondary flex items-center justify-center font-display font-black text-xs text-foreground shrink-0">
-                        {(r.team_name || r.username || "?")[0].toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm text-foreground truncate">{r.team_name || r.username}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="flex items-center gap-0.5 text-[9px] font-black text-muted-foreground uppercase">
-                            <Crosshair className="w-2.5 h-2.5" /> {r.kills || 0} kills
-                          </span>
-                        </div>
-                      </div>
-                      <span className="font-display font-black text-sm" style={{ color: "var(--primary)" }}>{r.points || 0}</span>
-                    </div>
-                  );
-                })}
-              </div>
+              <StandingsCard
+                tournamentName={standingsTournament?.name || ""}
+                mode={standingsTournament?.format || standingsTournament?.mode || "Solo"}
+                results={standings}
+              />
             )}
           </div>
         </DialogContent>

@@ -66,7 +66,7 @@ function AdminTicketsPage() {
             </div>
           ) : (
             tickets.map((t) => (
-              <Link key={t.id} to={`/admin/tickets/${t.id}`} className="block">
+              <Link key={t.id} to={`/admin/tickets/${t.id}` as any} className="block">
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-card rounded-[1.5rem] border border-border hover:border-primary/40 hover:shadow-md transition-all p-5 flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
