@@ -48,7 +48,7 @@ function ContactPage() {
       </div>
 
       <div className="px-4 space-y-5">
-        {/* ── Business Info (Razorpay compliance) ── */}
+        {/* ── Business Info (UPI compliance) ── */}
         <motion.div
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
           className="bg-card rounded-2xl border border-border shadow-card p-4 space-y-3"

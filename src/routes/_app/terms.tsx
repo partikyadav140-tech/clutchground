@@ -47,9 +47,9 @@ function TermsPage() {
         {/* Refund Policy */}
         <Section icon={RefreshCcw} title="Refund & Cancellation Policy" color="#10b981">
           <p><strong className="text-foreground">Tournament Cancellation by Platform:</strong> If CLUTCHGROUND cancels a tournament due to technical issues, insufficient participants, or any other reason, 100% of the entry fee will be refunded to your Deposit Balance within 24 hours.</p>
-          <p><strong className="text-foreground">Wallet Deposits:</strong> Coins purchased via Razorpay are non-refundable once added to the wallet, except in cases of duplicate transactions or payment errors. Contact support within 48 hours for such claims.</p>
-          <p><strong className="text-foreground">Duplicate Payments:</strong> If you are charged twice for the same order, raise a support ticket within 48 hours. Verified duplicates will be refunded within 5–7 business days to the original payment method.</p>
-          <p><strong className="text-foreground">Technical Failures:</strong> If your payment is deducted but coins are not credited, contact support with your Razorpay Payment ID within 48 hours for immediate resolution.</p>
+          <p><strong className="text-foreground">Wallet Deposits:</strong> Coins purchased via UPI are non-refundable once added to the wallet, except in cases of duplicate transactions or payment errors. Contact support within 48 hours for such claims.</p>
+          <p><strong className="text-foreground">Duplicate Payments:</strong> If you are charged twice for the same order, raise a support ticket within 48 hours. Verified duplicates will be refunded within 5–7 business days.</p>
+          <p><strong className="text-foreground">Technical Failures:</strong> If your payment is deducted but coins are not credited, contact support with your UTR / Transaction ID within 48 hours for immediate resolution.</p>
         </Section>
 
         {/* Cancellation */}
@@ -71,7 +71,7 @@ function TermsPage() {
           <p><strong className="text-foreground">1 CG Coin = ₹1.</strong> Deposited coins can only be used for tournament entry fees.</p>
           <p>Only <strong className="text-foreground">Winnings Balance</strong> is withdrawable to UPI/bank accounts. Deposited coins are non-withdrawable.</p>
           <p>Withdrawals are processed within 2–3 business days after identity verification. Minimum withdrawal amount is ₹50.</p>
-          <p>CLUTCHGROUND uses <strong className="text-foreground">Razorpay</strong> as its secure payment gateway. All transactions are encrypted and PCI-DSS compliant.</p>
+          <p>CLUTCHGROUND uses <strong className="text-foreground">Bharat UPI</strong> for secure, instant payments. All deposits require UTR verification by our team before credits are applied.</p>
         </Section>
 
         {/* Disputes */}

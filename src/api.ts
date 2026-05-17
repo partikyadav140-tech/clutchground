@@ -1,7 +1,8 @@
 "use server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-export { createRazorpayOrder, verifyRazorpayPayment, getWalletBalance, getTransactionHistory } from "./lib/razorpay";
+export { getWalletBalance, getTransactionHistory } from "./lib/razorpay";
+export { createUpiDeposit, submitUpiUtr, getPendingUpiDeposits, approveUpiDeposit, rejectUpiDeposit, getUserUpiDeposits } from "./lib/upi";
 
 export const loginUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
@@ -1787,14 +1788,14 @@ export const getTransactions = createServerFn({ method: "POST" }).handler(async 
     .all(userId);
 });
 
-export const addDepositRazorpay = createServerFn({ method: "POST" })
+export const addDepositUpi = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { db } = await import("./lib/db");
-    const { userId, amount, paymentId } = data as any;
+    const { userId, amount, utr } = data as any;
     
     await db.transaction(async (tx: any) => {
       await tx.prepare('UPDATE users SET deposit_balance = deposit_balance + ? WHERE id = ?').run(amount, userId);
-      await tx.prepare('INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)').run(userId, amount, 'deposit_added', `Added Cash via Razorpay (${paymentId})`);
+      await tx.prepare('INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)').run(userId, amount, 'deposit_added', `Added Cash via UPI (UTR: ${utr})`);
     });
     return { success: true };
   });

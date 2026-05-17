@@ -249,6 +249,21 @@ async function initDb() {
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
       );
 
+      CREATE TABLE IF NOT EXISTS upi_deposits (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        amount INTEGER NOT NULL,
+        txn_ref TEXT UNIQUE NOT NULL,
+        utr TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        description TEXT,
+        reject_reason TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        submitted_at TIMESTAMP,
+        approved_at TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+
       CREATE TABLE IF NOT EXISTS tickets (
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL,

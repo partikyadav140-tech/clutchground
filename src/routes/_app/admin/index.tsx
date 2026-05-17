@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Users, Trophy, ClipboardList, Banknote, Mail, ShieldAlert, RefreshCw, Bell, LifeBuoy } from "lucide-react";
+import { Users, Trophy, ClipboardList, Banknote, Mail, ShieldAlert, RefreshCw, Bell, LifeBuoy, IndianRupee } from "lucide-react";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -102,6 +102,14 @@ function AdminDashboard() {
       desc: "Manage user help requests.",
       color: "text-teal-500",
       bg: "bg-teal-500/10",
+    },
+    {
+      to: "/admin/deposits",
+      icon: IndianRupee,
+      title: "UPI Deposits",
+      desc: "Approve or reject user deposit requests.",
+      color: "text-blue-500",
+      bg: "bg-blue-500/10",
     },
   ];
 

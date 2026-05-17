@@ -40,6 +40,7 @@ import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin/messag
 import { Route as AppAdminLeaderboardRouteImport } from './routes/_app/admin/leaderboard'
 import { Route as AppAdminTicketsIndexRouteImport } from './routes/_app/admin/tickets.index'
 import { Route as AppAdminTicketsTicketIdRouteImport } from './routes/_app/admin/tickets.$ticketId'
+import { Route as AppAdminDepositsRouteImport } from './routes/_app/admin/deposits'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -195,6 +196,11 @@ const AppAdminTicketsTicketIdRoute = AppAdminTicketsTicketIdRouteImport.update({
   path: '/admin/tickets/$ticketId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminDepositsRoute = AppAdminDepositsRouteImport.update({
+  id: '/admin/deposits',
+  path: '/admin/deposits',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -227,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/tournaments/': typeof AppTournamentsIndexRoute
   '/admin/tickets/$ticketId': typeof AppAdminTicketsTicketIdRoute
   '/admin/tickets/': typeof AppAdminTicketsIndexRoute
+  '/admin/deposits': typeof AppAdminDepositsRoute
 }
 export interface FileRoutesByTo {
   '/anti-cheat': typeof AppAntiCheatRoute
@@ -259,6 +266,7 @@ export interface FileRoutesByTo {
   '/tournaments': typeof AppTournamentsIndexRoute
   '/admin/tickets/$ticketId': typeof AppAdminTicketsTicketIdRoute
   '/admin/tickets': typeof AppAdminTicketsIndexRoute
+  '/admin/deposits': typeof AppAdminDepositsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -293,6 +301,7 @@ export interface FileRoutesById {
   '/_app/tournaments/': typeof AppTournamentsIndexRoute
   '/_app/admin/tickets/$ticketId': typeof AppAdminTicketsTicketIdRoute
   '/_app/admin/tickets/': typeof AppAdminTicketsIndexRoute
+  '/_app/admin/deposits': typeof AppAdminDepositsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -327,6 +336,7 @@ export interface FileRouteTypes {
     | '/tournaments/'
     | '/admin/tickets/$ticketId'
     | '/admin/tickets/'
+    | '/admin/deposits'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/anti-cheat'
@@ -359,6 +369,7 @@ export interface FileRouteTypes {
     | '/tournaments'
     | '/admin/tickets/$ticketId'
     | '/admin/tickets'
+    | '/admin/deposits'
   id:
     | '__root__'
     | '/_app'
@@ -392,6 +403,7 @@ export interface FileRouteTypes {
     | '/_app/tournaments/'
     | '/_app/admin/tickets/$ticketId'
     | '/_app/admin/tickets/'
+    | '/_app/admin/deposits'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -617,6 +629,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminTicketsTicketIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/deposits': {
+      id: '/_app/admin/deposits'
+      path: '/admin/deposits'
+      fullPath: '/admin/deposits'
+      preLoaderRoute: typeof AppAdminDepositsRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -651,6 +670,7 @@ interface AppRouteChildren {
   AppTournamentsIndexRoute: typeof AppTournamentsIndexRoute
   AppAdminTicketsTicketIdRoute: typeof AppAdminTicketsTicketIdRoute
   AppAdminTicketsIndexRoute: typeof AppAdminTicketsIndexRoute
+  AppAdminDepositsRoute: typeof AppAdminDepositsRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -684,6 +704,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTournamentsIndexRoute: AppTournamentsIndexRoute,
   AppAdminTicketsTicketIdRoute: AppAdminTicketsTicketIdRoute,
   AppAdminTicketsIndexRoute: AppAdminTicketsIndexRoute,
+  AppAdminDepositsRoute: AppAdminDepositsRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
