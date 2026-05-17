@@ -11,8 +11,8 @@ export const createUpiDeposit = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
     const { userId, amount, description } = data as any;
 
-    if (!amount || amount < 100) {
-      throw new Error("Minimum deposit amount is ₹100");
+    if (!amount || amount < 1) {
+      throw new Error("Deposit amount must be at least ₹1");
     }
 
     const txnRef = `CG${userId}${Date.now()}`;

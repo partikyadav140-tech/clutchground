@@ -9,7 +9,7 @@ import {
   Smartphone, ArrowRight, Clock, ShieldCheck,
 } from "lucide-react";
 
-const predefinedAmounts = [100, 200, 500, 1000, 2000, 5000];
+const predefinedAmounts = [10, 50, 100, 200, 500, 1000];
 
 type Step = "amount" | "pay" | "utr" | "done";
 
@@ -43,7 +43,9 @@ export function WalletDepositDialog({
   /* ── Step 1: Create deposit request ── */
   const handleProceed = async () => {
     if (!user) return toast.error("Please log in first");
-    if (!finalAmount || finalAmount < 100) return toast.error("Minimum deposit is ₹100");
+    if (!finalAmount || finalAmount < 1) {
+      return toast.error("Please enter a valid amount");
+    }
 
     setLoading(true);
     try {
@@ -149,14 +151,14 @@ export function WalletDepositDialog({
               </label>
               <input
                 type="number"
-                min="100"
-                step="10"
+                min="1"
+                step="1"
                 value={customAmount}
                 onChange={(e) => {
                   setCustomAmount(e.target.value);
                   if (e.target.value) setAmount(0);
                 }}
-                placeholder="Enter amount (min ₹100)"
+                placeholder="Enter custom amount"
                 className="w-full bg-background border border-border focus:border-primary outline-none px-4 h-11 rounded-xl text-sm"
               />
             </div>
