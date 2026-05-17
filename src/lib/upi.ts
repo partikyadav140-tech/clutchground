@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { db } from "./db";
 
 // Your platform UPI ID
-export const PLATFORM_UPI_ID = process.env.UPI_ID || "8307224756@fam";
+export const PLATFORM_UPI_ID = process.env.UPI_ID || "8307224756.wallet@phonepe";
 export const PLATFORM_NAME = "CLUTCHGROUND";
 
 /** Create a pending UPI deposit request */
@@ -36,13 +36,14 @@ export const createUpiDeposit = createServerFn({ method: "POST" }).handler(
   },
 );
 
-/** User submits their UTR after paying */
+/** User submits their sender UPI ID after paying (stored in utr column for backward-compat) */
 export const submitUpiUtr = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
-    const { txnRef, utr } = data as any;
+    const { txnRef, utr: senderUpiId } = data as any;
 
-    if (!utr || utr.trim().length < 6) {
-      throw new Error("Please enter a valid UTR / Transaction ID");
+    const upiIdRegex = /^[a-zA-Z0-9._\-]+@[a-zA-Z0-9]+$/;
+    if (!senderUpiId || !upiIdRegex.test(senderUpiId.trim())) {
+      throw new Error("Please enter a valid UPI ID (e.g. name@upi)");
     }
 
     const deposit = (await db
@@ -58,7 +59,7 @@ export const submitUpiUtr = createServerFn({ method: "POST" }).handler(
       .prepare(
         "UPDATE upi_deposits SET utr = ?, status = 'submitted', submitted_at = CURRENT_TIMESTAMP WHERE txn_ref = ?",
       )
-      .run(utr.trim(), txnRef);
+      .run(senderUpiId.trim(), txnRef);
 
     return { success: true };
   },

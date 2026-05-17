@@ -11,7 +11,7 @@ import {
 
 const predefinedAmounts = [10, 50, 100, 200, 500, 1000];
 
-type Step = "amount" | "pay" | "utr" | "done";
+type Step = "amount" | "pay" | "upiid" | "done";
 
 export function WalletDepositDialog({
   trigger,
@@ -35,7 +35,7 @@ export function WalletDepositDialog({
     amount: number;
   } | null>(null);
 
-  const [utr, setUtr] = useState("");
+  const [senderUpiId, setSenderUpiId] = useState("");
   const { user } = useAuth();
 
   const finalAmount = customAmount ? parseInt(customAmount) : amount;
@@ -65,20 +65,21 @@ export function WalletDepositDialog({
     }
   };
 
-  /* ── Step 2: Submit UTR ── */
-  const handleSubmitUtr = async () => {
+  /* ── Step 2: Submit Sender UPI ID ── */
+  const handleSubmitUpiId = async () => {
     if (!payData) return;
-    if (!utr.trim() || utr.trim().length < 6) {
-      return toast.error("Please enter a valid UTR / Transaction ID");
+    const upiIdRegex = /^[a-zA-Z0-9._\-]+@[a-zA-Z0-9]+$/;
+    if (!senderUpiId.trim() || !upiIdRegex.test(senderUpiId.trim())) {
+      return toast.error("Please enter a valid UPI ID (e.g. name@upi)");
     }
     setLoading(true);
     try {
       await (submitUpiUtr as any)({
-        data: { txnRef: payData.txnRef, utr: utr.trim() },
+        data: { txnRef: payData.txnRef, utr: senderUpiId.trim() },
       });
       setStep("done");
     } catch (err: any) {
-      toast.error(err.message || "Failed to submit UTR");
+      toast.error(err.message || "Failed to submit UPI ID");
     } finally {
       setLoading(false);
     }
@@ -89,7 +90,7 @@ export function WalletDepositDialog({
     setAmount(500);
     setCustomAmount("");
     setPayData(null);
-    setUtr("");
+    setSenderUpiId("");
     setOpen(false);
     onSuccess?.();
   };
@@ -116,7 +117,7 @@ export function WalletDepositDialog({
           <DialogTitle className="font-display text-xl font-black">
             {step === "amount" && <span className="text-fire-gradient">ADD FUNDS</span>}
             {step === "pay"    && <span className="text-fire-gradient">PAY VIA UPI</span>}
-            {step === "utr"    && <span className="text-fire-gradient">CONFIRM PAYMENT</span>}
+            {step === "upiid"  && <span className="text-fire-gradient">CONFIRM PAYMENT</span>}
             {step === "done"   && <span style={{ color: "#10b981" }}>PAYMENT SUBMITTED</span>}
           </DialogTitle>
         </DialogHeader>
@@ -265,7 +266,7 @@ export function WalletDepositDialog({
                 <ExternalLink className="w-3 h-3" />
               </a>
               <Button
-                onClick={() => setStep("utr")}
+                onClick={() => setStep("upiid")}
                 className="flex-1 bg-primary text-white font-display rounded-xl"
               >
                 I've Paid →
@@ -274,28 +275,34 @@ export function WalletDepositDialog({
           </div>
         )}
 
-        {/* ════════════ STEP 3: UTR ════════════ */}
-        {step === "utr" && payData && (
+        {/* ════════════ STEP 3: Sender UPI ID ════════════ */}
+        {step === "upiid" && payData && (
           <div className="space-y-4 py-2">
-            <div className="bg-amber-500/10 border border-amber-500/25 rounded-xl p-3 text-xs text-foreground/80 flex items-start gap-2">
-              <Clock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-              <span>After paying, enter the <strong className="text-foreground">UTR / Transaction ID</strong> from your UPI app's payment receipt.</span>
+            {/* Why we ask banner */}
+            <div className="bg-blue-500/10 border border-blue-500/25 rounded-xl p-3 text-xs text-foreground/80 flex items-start gap-2">
+              <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+              <span>
+                <strong className="text-foreground block mb-0.5">Why do we ask for your UPI ID?</strong>
+                We use your UPI ID to match your payment with your account and prevent fraud. Your UPI ID is never shared with third parties.
+              </span>
             </div>
 
             <div>
               <label className="block text-[10px] uppercase tracking-widest font-display font-bold text-muted-foreground mb-2">
-                UTR / Transaction ID
+                Your Sender UPI ID
               </label>
               <input
                 type="text"
-                value={utr}
-                onChange={(e) => setUtr(e.target.value)}
-                placeholder="e.g. 416123456789"
-                maxLength={24}
+                value={senderUpiId}
+                onChange={(e) => setSenderUpiId(e.target.value.trim())}
+                placeholder="e.g. yourname@upi or 9876543210@paytm"
+                maxLength={50}
+                autoCapitalize="none"
+                autoCorrect="off"
                 className="w-full bg-background border border-border focus:border-primary outline-none px-4 h-12 rounded-xl text-sm font-mono tracking-wide"
               />
               <p className="text-[10px] text-muted-foreground mt-1.5 ml-1">
-                Find in: UPI App → Transactions → Payment Details → UTR Number
+                Find in: UPI App → Profile / Settings → Your UPI ID
               </p>
             </div>
 
@@ -315,13 +322,13 @@ export function WalletDepositDialog({
                 ← Back
               </Button>
               <Button
-                onClick={handleSubmitUtr}
-                disabled={loading || utr.trim().length < 6}
+                onClick={handleSubmitUpiId}
+                disabled={loading || !senderUpiId.trim().includes("@")}
                 className="flex-1 bg-primary text-white font-display rounded-xl"
               >
                 {loading ? (
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : "Submit UTR"}
+                ) : "Confirm Payment"}
               </Button>
             </div>
           </div>
@@ -339,7 +346,7 @@ export function WalletDepositDialog({
             <div>
               <p className="font-display font-black text-lg text-foreground mb-1">Payment Submitted!</p>
               <p className="text-sm text-muted-foreground">
-                Your UTR has been received. Coins will be credited to your wallet after admin verification — usually within <strong className="text-foreground">30 minutes</strong>.
+                Your payment is under review. Coins will be credited to your wallet after admin verification — usually within <strong className="text-foreground">30 minutes</strong>.
               </p>
             </div>
             <div className="bg-secondary/50 border border-border rounded-xl p-3 w-full text-left text-xs space-y-1">
@@ -348,8 +355,8 @@ export function WalletDepositDialog({
                 <span className="font-bold">₹{payData?.amount}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">UTR:</span>
-                <span className="font-mono font-bold">{utr}</span>
+                <span className="text-muted-foreground">Sender UPI ID:</span>
+                <span className="font-mono font-bold">{senderUpiId}</span>
               </div>
             </div>
             <Button onClick={resetDialog} className="w-full bg-primary text-white font-display rounded-xl">

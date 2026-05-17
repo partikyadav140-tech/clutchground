@@ -180,10 +180,10 @@ function AdminDepositsPage() {
 
                   {d.utr && (
                     <div className="flex items-center justify-between border-t border-border pt-2">
-                      <span className="text-muted-foreground">UTR</span>
+                      <span className="text-muted-foreground">Sender UPI ID</span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-bold text-foreground">{d.utr}</span>
-                        <button onClick={() => copy(d.utr, "UTR")} className="p-1 rounded bg-primary/10 text-primary">
+                        <button onClick={() => copy(d.utr, "Sender UPI ID")} className="p-1 rounded bg-primary/10 text-primary">
                           <Copy className="w-3 h-3" />
                         </button>
                       </div>
