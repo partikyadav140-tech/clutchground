@@ -16,7 +16,7 @@ function SignupPage() {
   const [step, setStep] = useState(1); // 2-step onboarding
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [form, setForm] = useState({ username: "", ign: "", uid: "", email: "", phone: "", password: "" });
+  const [form, setForm] = useState({ username: "", ign: "", uid: "", email: "", phone: "", password: "", security_question: "What is your childhood nickname?", security_answer: "" });
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -100,6 +100,18 @@ function SignupPage() {
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              <div className="relative">
+                <select
+                  value={form.security_question}
+                  onChange={set("security_question")}
+                  className="w-full h-14 bg-secondary border border-border focus:border-primary/60 rounded-2xl px-4 text-sm font-semibold text-foreground outline-none transition-all appearance-none"
+                >
+                  <option value="What is your childhood nickname?">What is your childhood nickname?</option>
+                  <option value="What is the name of your favorite childhood friend?">What is the name of your favorite childhood friend?</option>
+                  <option value="What was the name of your first pet?">What was the name of your first pet?</option>
+                </select>
+              </div>
+              <AppInput icon={Lock} placeholder="Security Answer (for password reset)" value={form.security_answer} onChange={set("security_answer")} required />
             </>
           ) : (
             <>

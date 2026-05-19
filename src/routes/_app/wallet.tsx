@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_app/wallet")({
 });
 
 function WalletPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, setUser } = useAuth();
   const router = useRouter();
 
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -77,6 +77,7 @@ function WalletPage() {
     try {
       await (saveUpiId as any)({ data: { userId: user!.id, upiId: primaryUpi.trim() } });
       toast.success("Primary UPI ID saved!");
+      setUser({ ...user, upi_id: primaryUpi.trim() });
       setUpiSettingsOpen(false);
     } catch (err: any) {
       toast.error("Failed to save UPI ID");

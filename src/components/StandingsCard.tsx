@@ -92,239 +92,220 @@ function drawStandings(
   mode: string,
   results: ResultRow[]
 ) {
-  const W        = 800;
-  const ROW_H    = 54;
-  const PAD      = 28;
-  const HEADER_H = 130;
-  const FOOTER_H = 48;
-  const H        = HEADER_H + results.length * ROW_H + FOOTER_H + PAD;
+  const showPoints = mode === "Squad";
 
-  canvas.width  = W;
-  canvas.height = H;
-
-  const ctx = canvas.getContext("2d")!;
-
-  /* ── 1. Background ── */
-  ctx.fillStyle = DARK_BG;
-  ctx.fillRect(0, 0, W, H);
-
-  /* subtle grid lines */
-  ctx.strokeStyle = rgba(NEON, 0.04);
-  ctx.lineWidth   = 1;
-  for (let x = 0; x < W; x += 40) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-  }
-  for (let y = 0; y < H; y += 40) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-  }
-
-  /* top neon bar */
-  const bar = ctx.createLinearGradient(0, 0, W, 0);
-  bar.addColorStop(0,   ACCENT_1);
-  bar.addColorStop(0.5, NEON);
-  bar.addColorStop(1,   ACCENT_1);
-  ctx.fillStyle = bar;
-  ctx.fillRect(0, 0, W, 4);
-
-  /* ── 2. Header ── */
-  /* glow orb */
-  const orb = ctx.createRadialGradient(W / 2, 70, 10, W / 2, 70, 180);
-  orb.addColorStop(0, rgba(NEON, 0.12));
-  orb.addColorStop(1, rgba(NEON, 0));
-  ctx.fillStyle = orb;
-  ctx.fillRect(0, 0, W, HEADER_H);
-
-  /* CLUTCHGROUND wordmark */
-  ctx.font      = "bold 11px monospace";
-  ctx.fillStyle = rgba(NEON, 0.6);
-  ctx.letterSpacing = "4px";
-  ctx.textAlign = "center";
-  ctx.fillText("CLUTCHGROUND  ·  ESPORTS ARENA", W / 2, 30);
-  ctx.letterSpacing = "0px";
-
-  /* Tournament name */
-  ctx.font      = "bold 30px 'Arial Black', Arial, sans-serif";
-  ctx.fillStyle = WHITE;
-  ctx.textAlign = "center";
-  ctx.fillText(tournamentName.toUpperCase(), W / 2, 72);
-
-  /* "FINAL RESULTS" badge */
-  const badgeW = 160, badgeH = 24, badgeX = W / 2 - badgeW / 2, badgeY = 84;
-  const badgeGrad = ctx.createLinearGradient(badgeX, 0, badgeX + badgeW, 0);
-  badgeGrad.addColorStop(0, rgba(ACCENT_1, 0.85));
-  badgeGrad.addColorStop(1, rgba(NEON,     0.85));
-  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 12);
-  ctx.fillStyle = badgeGrad;
-  ctx.fill();
-
-  ctx.font      = "bold 10px monospace";
-  ctx.fillStyle = WHITE;
-  ctx.letterSpacing = "3px";
-  ctx.textAlign = "center";
-  ctx.fillText("FINAL RESULTS", W / 2, badgeY + 16);
-  ctx.letterSpacing = "0px";
-
-  /* divider */
-  const div = ctx.createLinearGradient(PAD, 0, W - PAD, 0);
-  div.addColorStop(0,   rgba(NEON, 0));
-  div.addColorStop(0.5, rgba(NEON, 0.4));
-  div.addColorStop(1,   rgba(NEON, 0));
-  ctx.strokeStyle = div;
-  ctx.lineWidth   = 1;
-  ctx.beginPath();
-  ctx.moveTo(PAD, HEADER_H - 8);
-  ctx.lineTo(W - PAD, HEADER_H - 8);
-  ctx.stroke();
-
-  /* ── 3. Column headers ── */
-  const COL_RANK = 60;
-  const COL_NAME = 240;
-  const COL_MODE = 380;
-  const COL_KILL = 520;
-  const COL_POS  = 640;
-  const COL_PTS  = 740;
-
-  const hdrY = HEADER_H + 18;
-  ctx.font      = "bold 10px monospace";
-  ctx.fillStyle = rgba(WHITE, 0.3);
-  ctx.letterSpacing = "2px";
-  ctx.textAlign = "center";
-  const hdrs: [string, number][] = [
-    ["RANK", COL_RANK],
-    ["PLAYER / TEAM", 300],
-    ["MODE", COL_MODE],
-    ["KILLS", COL_KILL],
-    ["POS", COL_POS],
-    ["POINTS", COL_PTS],
-  ];
-  hdrs.forEach(([label, x]) => ctx.fillText(label, x, hdrY));
-  ctx.letterSpacing = "0px";
-
-  /* ── 4. Rows ── */
-  results.forEach((r, idx) => {
-    const rowY   = HEADER_H + 28 + idx * ROW_H;
-    const isTop3 = idx < 3;
-    const clr    = isTop3 ? MEDAL_CLR[idx] : rgba(WHITE, 0.06);
-    const name   = (mode === "Squad" ? r.team_name || r.username : r.username) || "?";
-
-    /* row background */
-    if (isTop3) {
-      const rg = ctx.createLinearGradient(PAD, rowY, W - PAD, rowY);
-      rg.addColorStop(0, rgba(clr, 0.12));
-      rg.addColorStop(0.5, rgba(clr, 0.06));
-      rg.addColorStop(1, rgba(clr, 0.0));
-      roundRect(ctx, PAD, rowY + 2, W - PAD * 2, ROW_H - 4, 10);
-      ctx.fillStyle = rg;
-      ctx.fill();
-
-      /* left accent */
-      roundRect(ctx, PAD, rowY + 2, 4, ROW_H - 4, 2);
-      ctx.fillStyle = clr;
-      ctx.fill();
-    } else {
-      /* subtle separator */
-      ctx.strokeStyle = rgba(WHITE, 0.04);
-      ctx.lineWidth   = 1;
-      ctx.beginPath();
-      ctx.moveTo(PAD, rowY + ROW_H - 1);
-      ctx.lineTo(W - PAD, rowY + ROW_H - 1);
-      ctx.stroke();
-    }
-
-    const midY = rowY + ROW_H / 2 + 1;
-
-    /* rank medal / number */
-    const medals = ["🥇", "🥈", "🥉"];
-    ctx.textAlign = "center";
-    if (isTop3) {
-      ctx.font = "22px serif";
-      ctx.fillText(medals[idx], COL_RANK, midY + 8);
-    } else {
-      ctx.font      = "bold 14px 'Arial Black', Arial, sans-serif";
-      ctx.fillStyle = rgba(WHITE, 0.35);
-      ctx.fillText(String(idx + 1), COL_RANK, midY + 5);
-    }
-
-    /* avatar circle */
-    const avX = 108, avR = 17;
-    ctx.beginPath();
-    ctx.arc(avX, midY, avR, 0, Math.PI * 2);
-    ctx.fillStyle = isTop3 ? rgba(clr, 0.18) : rgba(WHITE, 0.06);
-    ctx.fill();
-    ctx.strokeStyle = isTop3 ? rgba(clr, 0.5) : rgba(WHITE, 0.1);
-    ctx.lineWidth   = isTop3 ? 2 : 1;
-    ctx.stroke();
-
-    ctx.font      = "bold 14px Arial, sans-serif";
-    ctx.fillStyle = isTop3 ? clr : rgba(WHITE, 0.4);
-    ctx.textAlign = "center";
-    ctx.fillText(name[0].toUpperCase(), avX, midY + 5);
-
-    /* name */
-    ctx.textAlign = "left";
-    ctx.font      = `bold 14px 'Arial Black', Arial, sans-serif`;
-    ctx.fillStyle = isTop3 ? clr : rgba(WHITE, 0.85);
-    const nameMaxW = 190;
-    // truncate if needed
-    let displayName = name;
-    while (ctx.measureText(displayName).width > nameMaxW && displayName.length > 2) {
-      displayName = displayName.slice(0, -1);
-    }
-    if (displayName !== name) displayName += "…";
-    ctx.fillText(displayName, 132, midY + 5);
-
-    /* mode pill */
-    const modeW = 58, modeH = 22;
-    const modeX = COL_MODE - modeW / 2, modeY2 = midY - modeH / 2;
-    roundRect(ctx, modeX, modeY2, modeW, modeH, 11);
-    ctx.fillStyle = rgba(NEON, 0.1);
-    ctx.fill();
-    ctx.strokeStyle = rgba(NEON, 0.3);
-    ctx.lineWidth   = 1;
-    ctx.stroke();
-    ctx.font      = "bold 9px monospace";
-    ctx.fillStyle = NEON;
-    ctx.letterSpacing = "1px";
-    ctx.textAlign = "center";
-    ctx.fillText(mode.toUpperCase(), COL_MODE, midY + 4);
-    ctx.letterSpacing = "0px";
-
-    /* kills */
-    ctx.textAlign = "center";
-    ctx.font      = `bold 16px 'Arial Black', Arial, sans-serif`;
-    ctx.fillStyle = isTop3 ? clr : rgba(WHITE, 0.9);
-    ctx.fillText(String(r.kills ?? 0), COL_KILL, midY + 6);
-
-    /* position */
-    ctx.font      = `bold 16px 'Arial Black', Arial, sans-serif`;
-    ctx.fillStyle = rgba(WHITE, 0.55);
-    ctx.fillText(r.position ? `#${r.position}` : "–", COL_POS, midY + 6);
-
-    /* points */
-    ctx.font      = `bold 18px 'Arial Black', Arial, sans-serif`;
-    ctx.fillStyle = isTop3 ? clr : NEON;
-    ctx.fillText(String(r.points ?? 0), COL_PTS, midY + 6);
+  const sortedData = [...results].sort((a, b) => {
+    if (b.points !== a.points) return (b.points || 0) - (a.points || 0);
+    return (b.kills || 0) - (a.kills || 0);
   });
 
-  /* ── 5. Footer ── */
-  const footY = H - FOOTER_H;
-  ctx.fillStyle = rgba(NEON, 0.03);
-  ctx.fillRect(0, footY, W, FOOTER_H);
+  const SCALE = 2;
+  const W = 900;
+  const HEADER_H = 160;
+  const ROW_H = 56;
+  const FOOTER_H = 60;
+  const PADDING = 32;
+  const H = HEADER_H + sortedData.length * ROW_H + FOOTER_H + PADDING;
 
-  const footDiv = ctx.createLinearGradient(PAD, 0, W - PAD, 0);
-  footDiv.addColorStop(0,   rgba(NEON, 0));
-  footDiv.addColorStop(0.5, rgba(NEON, 0.25));
-  footDiv.addColorStop(1,   rgba(NEON, 0));
-  ctx.strokeStyle = footDiv;
-  ctx.lineWidth   = 1;
-  ctx.beginPath(); ctx.moveTo(PAD, footY); ctx.lineTo(W - PAD, footY); ctx.stroke();
+  canvas.width = W * SCALE;
+  canvas.height = H * SCALE;
+  const ctx = canvas.getContext("2d")!;
+  ctx.scale(SCALE, SCALE);
 
-  ctx.font      = "bold 11px monospace";
-  ctx.fillStyle = rgba(WHITE, 0.2);
+  // Background
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, "#0f0c1a");
+  bg.addColorStop(0.5, "#16102a");
+  bg.addColorStop(1, "#0a0a14");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Subtle grid lines
+  ctx.strokeStyle = "rgba(255,255,255,0.03)";
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+  // Header gradient bar
+  const headerGrad = ctx.createLinearGradient(0, 0, W, 0);
+  headerGrad.addColorStop(0, "#ff6b00");
+  headerGrad.addColorStop(0.5, "#ff4d6d");
+  headerGrad.addColorStop(1, "#7c3aed");
+  ctx.fillStyle = headerGrad;
+  ctx.fillRect(0, 0, W, 6);
+
+  // Glow under top bar
+  const glowGrad = ctx.createLinearGradient(0, 6, 0, 80);
+  glowGrad.addColorStop(0, "rgba(255,107,0,0.18)");
+  glowGrad.addColorStop(1, "transparent");
+  ctx.fillStyle = glowGrad;
+  ctx.fillRect(0, 6, W, 74);
+
+  // Logo / Brand
+  ctx.font = "bold 13px 'Arial', sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.textAlign = "left";
+  ctx.fillText("GOD ESPORTS ARENA", PADDING, 36);
+
+  // Trophy icon area (decorative circle)
+  ctx.beginPath();
+  ctx.arc(W - PADDING - 20, 44, 24, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(255,107,0,0.15)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,107,0,0.4)";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.font = "bold 20px Arial";
   ctx.textAlign = "center";
-  ctx.letterSpacing = "3px";
-  ctx.fillText("CLUTCHGROUND  ·  INDIA'S #1 FREE FIRE ARENA", W / 2, footY + 30);
+  ctx.fillStyle = "#ff6b00";
+  ctx.fillText("🏆", W - PADDING - 20, 50);
+
+  // Tournament title
+  ctx.textAlign = "left";
+  ctx.font = "bold 28px 'Arial Black', Arial, sans-serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(tournamentName || "Tournament Results", PADDING, 76);
+
+  // Sub-info
+  ctx.font = "14px Arial";
+  ctx.fillStyle = "rgba(255,255,255,0.5)";
+  const modeLabel = `${mode} • Free Fire • Final Standings`;
+  ctx.fillText(modeLabel, PADDING, 100);
+
+  // Divider
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  ctx.fillRect(PADDING, 114, W - PADDING * 2, 1);
+
+  // Column config
+  const cols = showPoints
+    ? [
+        { label: "RANK",  x: PADDING,       w: 60,  align: "center" as CanvasTextAlign },
+        { label: "SQUAD / PLAYER", x: PADDING + 70, w: 340, align: "left" as CanvasTextAlign },
+        { label: "KILLS", x: PADDING + 430, w: 100, align: "center" as CanvasTextAlign },
+        { label: "POSITION", x: PADDING + 550, w: 110, align: "center" as CanvasTextAlign },
+        { label: "POINTS", x: W - PADDING - 90, w: 90, align: "right" as CanvasTextAlign },
+      ]
+    : [
+        { label: "RANK",  x: PADDING,       w: 60,  align: "center" as CanvasTextAlign },
+        { label: "PLAYER / SQUAD", x: PADDING + 70, w: 430, align: "left" as CanvasTextAlign },
+        { label: "KILLS", x: PADDING + 530, w: 140, align: "center" as CanvasTextAlign },
+        { label: "POSITION", x: W - PADDING - 120, w: 120, align: "center" as CanvasTextAlign },
+      ];
+
+  // Column headers
+  const tableTop = 126;
+  ctx.font = "bold 10px Arial";
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.letterSpacing = "2px";
+  cols.forEach((col) => {
+    ctx.textAlign = col.align;
+    const tx = col.align === "right" ? col.x + col.w : col.align === "center" ? col.x + col.w / 2 : col.x;
+    ctx.fillText(col.label, tx, tableTop);
+  });
   ctx.letterSpacing = "0px";
+
+  // Rows
+  const rowStart = tableTop + 16;
+  sortedData.forEach((r: any, i: number) => {
+    const rowY = rowStart + i * ROW_H;
+    const isTop3 = i < 3;
+
+    // Row background
+    if (i % 2 === 0) {
+      ctx.fillStyle = "rgba(255,255,255,0.03)";
+      ctx.beginPath();
+      ctx.roundRect(PADDING - 8, rowY - 2, W - PADDING * 2 + 16, ROW_H - 4, 10);
+      ctx.fill();
+    }
+
+    // Top-3 accent left border
+    if (isTop3) {
+      const rankColors = ["#FFD700", "#C0C0C0", "#CD7F32"];
+      ctx.fillStyle = rankColors[i];
+      ctx.beginPath();
+      ctx.roundRect(PADDING - 8, rowY - 2, 3, ROW_H - 4, 2);
+      ctx.fill();
+    }
+
+    const cellMidY = rowY + ROW_H / 2 - 4;
+
+    // RANK
+    const rankColors3 = ["#FFD700", "#C0C0C0", "#CD7F32"];
+    ctx.textAlign = "center";
+    if (isTop3) {
+      ctx.font = "bold 18px Arial";
+      ctx.fillStyle = rankColors3[i];
+      const rankEmojis = ["🥇", "🥈", "🥉"];
+      ctx.fillText(rankEmojis[i], PADDING + 30, cellMidY + 8);
+    } else {
+      ctx.font = "bold 15px Arial";
+      ctx.fillStyle = "rgba(255,255,255,0.35)";
+      ctx.fillText(`#${i + 1}`, PADDING + 30, cellMidY + 6);
+    }
+
+    // Squad / Player name
+    const name = r.team_name || r.username || "Unknown";
+    ctx.textAlign = "left";
+    ctx.font = isTop3 ? "bold 15px Arial" : "600 14px Arial";
+    ctx.fillStyle = isTop3 ? "#ffffff" : "rgba(255,255,255,0.8)";
+    let displayName = name;
+    const maxNameW = cols[1].w - 10;
+    while (ctx.measureText(displayName).width > maxNameW && displayName.length > 4) {
+      displayName = displayName.slice(0, -4) + "...";
+    }
+    ctx.fillText(displayName, cols[1].x, cellMidY + 6);
+
+    // Kills
+    const killsCol = cols[2];
+    ctx.textAlign = "center";
+    ctx.font = "bold 14px 'Courier New', monospace";
+    ctx.fillStyle = "#f97316";
+    ctx.fillText(String(r.kills || 0), killsCol.x + killsCol.w / 2, cellMidY + 6);
+
+    // Position
+    const posCol = cols[3];
+    ctx.textAlign = "center";
+    ctx.font = "14px Arial";
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.fillText(r.position ? `#${r.position}` : "—", posCol.x + posCol.w / 2, cellMidY + 6);
+
+    // Points (Squad only, skip 0)
+    if (showPoints) {
+      const ptsCol = cols[4];
+      const pts = r.points || 0;
+      ctx.textAlign = "right";
+      ctx.font = "bold 16px Arial";
+      ctx.fillStyle = pts > 0 ? "#a78bfa" : "rgba(255,255,255,0.2)";
+      ctx.fillText(pts > 0 ? String(pts) : "—", ptsCol.x + ptsCol.w, cellMidY + 6);
+    }
+
+    // Row divider
+    if (i < sortedData.length - 1) {
+      ctx.fillStyle = "rgba(255,255,255,0.05)";
+      ctx.fillRect(PADDING, rowY + ROW_H - 6, W - PADDING * 2, 1);
+    }
+  });
+
+  // Footer
+  const footerY = rowStart + sortedData.length * ROW_H + 16;
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  ctx.fillRect(PADDING, footerY, W - PADDING * 2, 1);
+  ctx.font = "12px Arial";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(255,255,255,0.25)";
+  ctx.fillText(
+    `godEsportsArena.com  •  Generated ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`,
+    W / 2,
+    footerY + 28,
+  );
+
+  // Bottom gradient bar
+  const bottomGrad = ctx.createLinearGradient(0, 0, W, 0);
+  bottomGrad.addColorStop(0, "#7c3aed");
+  bottomGrad.addColorStop(0.5, "#ff4d6d");
+  bottomGrad.addColorStop(1, "#ff6b00");
+  ctx.fillStyle = bottomGrad;
+  ctx.fillRect(0, H - 4, W, 4);
 }
 
 /* ─── React component ─── */

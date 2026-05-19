@@ -320,6 +320,8 @@ async function initDb() {
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS winning_balance INTEGER DEFAULT 0;`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS banned BOOLEAN DEFAULT false;`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS upi_id TEXT;`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS security_question TEXT;`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS security_answer TEXT;`);
       
       // Ticket system migrations
       await pool.query(`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'open';`);

@@ -51,13 +51,14 @@ export const loginUser = createServerFn({ method: "POST" }).handler(async ({ dat
     phone: user.phone,
     avatar_url: user.avatar_url,
     deposit_balance: user.deposit_balance,
-    winning_balance: user.winning_balance
+    winning_balance: user.winning_balance,
+    upi_id: user.upi_id
   } };
 });
 
 export const signupUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { username, password, ign, uid, email, phone } = data as any;
+  const { username, password, ign, uid, email, phone, security_question, security_answer } = data as any;
   const normalizedPhone = typeof phone === "string" ? phone.trim() : phone;
 
   if (!normalizedPhone) {
@@ -81,7 +82,7 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
   }
 
   const insertStmt = db.prepare(
-    "INSERT INTO users (username, password, ign, uid, email, phone) VALUES (?, ?, ?, ?, ?, ?)",
+    "INSERT INTO users (username, password, ign, uid, email, phone, security_question, security_answer) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
   );
   const result = await insertStmt.run(
     username,
@@ -90,6 +91,8 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
     uid || null,
     email || null,
     normalizedPhone,
+    security_question || null,
+    security_answer || null,
   );
   const userId = result.lastInsertRowid;
 
@@ -101,6 +104,28 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
     .run(sessionId, userId, expiresAt);
 
   return { sessionId, user: { id: userId, username, role: "user" } };
+});
+
+export const resetPassword = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { phone, security_question, security_answer, new_password } = data as any;
+  const normalizedPhone = typeof phone === "string" ? phone.trim() : phone;
+
+  const user = await db.prepare("SELECT id, security_question, security_answer FROM users WHERE phone = ?").get(normalizedPhone) as any;
+  if (!user) {
+    throw new Error("No user found with this phone number");
+  }
+
+  // Ensure case-insensitive comparison for answer, trim whitespace
+  const storedAnswer = (user.security_answer || "").toLowerCase().trim();
+  const providedAnswer = (security_answer || "").toLowerCase().trim();
+
+  if (user.security_question !== security_question || storedAnswer !== providedAnswer) {
+    throw new Error("Incorrect security question or answer");
+  }
+
+  await db.prepare("UPDATE users SET password = ? WHERE id = ?").run(new_password, user.id);
+  return { success: true };
 });
 
 // Temporary function to create admin user - remove after use
@@ -155,7 +180,7 @@ export const getUserFromSession = createServerFn({ method: "GET" }).handler(asyn
   if (!sessionId) return null;
 
   const stmt = db.prepare(`
-      SELECT users.id, users.username, users.role, users.deposit_balance, users.winning_balance, users.banned, users.ign, users.uid, users.email, users.phone, users.avatar_url
+      SELECT users.id, users.username, users.role, users.deposit_balance, users.winning_balance, users.banned, users.ign, users.uid, users.email, users.phone, users.avatar_url, users.upi_id, users.security_question
       FROM sessions 
       JOIN users ON sessions.user_id = users.id 
       WHERE sessions.id = ? AND sessions.expires_at > ?
@@ -665,7 +690,7 @@ export const getProfile = createServerFn({ method: "POST" }).handler(async ({ da
   const userId = data as unknown as number;
   return (await db
     .prepare(
-      "SELECT id, username, role, ign, uid, email, phone, avatar_url, created_at, deposit_balance, winning_balance FROM users WHERE id = ?",
+      "SELECT id, username, role, ign, uid, email, phone, avatar_url, created_at, deposit_balance, winning_balance, upi_id FROM users WHERE id = ?",
     )
     .get(userId)) as any;
 });

@@ -22,6 +22,7 @@ import { Route as AppNotificationsRouteImport } from './routes/_app/notification
 import { Route as AppMatchesRouteImport } from './routes/_app/matches'
 import { Route as AppLoginRouteImport } from './routes/_app/login'
 import { Route as AppLeaderboardRouteImport } from './routes/_app/leaderboard'
+import { Route as AppForgotPasswordRouteImport } from './routes/_app/forgot-password'
 import { Route as AppContactRouteImport } from './routes/_app/contact'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
 import { Route as AppAntiCheatRouteImport } from './routes/_app/anti-cheat'
@@ -104,6 +105,11 @@ const AppLoginRoute = AppLoginRouteImport.update({
 const AppLeaderboardRoute = AppLeaderboardRouteImport.update({
   id: '/leaderboard',
   path: '/leaderboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppForgotPasswordRoute = AppForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => AppRoute,
 } as any)
 const AppContactRoute = AppContactRouteImport.update({
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/anti-cheat': typeof AppAntiCheatRoute
   '/chat': typeof AppChatRoute
   '/contact': typeof AppContactRoute
+  '/forgot-password': typeof AppForgotPasswordRoute
   '/leaderboard': typeof AppLeaderboardRoute
   '/login': typeof AppLoginRoute
   '/matches': typeof AppMatchesRoute
@@ -239,6 +246,7 @@ export interface FileRoutesByTo {
   '/anti-cheat': typeof AppAntiCheatRoute
   '/chat': typeof AppChatRoute
   '/contact': typeof AppContactRoute
+  '/forgot-password': typeof AppForgotPasswordRoute
   '/leaderboard': typeof AppLeaderboardRoute
   '/login': typeof AppLoginRoute
   '/matches': typeof AppMatchesRoute
@@ -274,6 +282,7 @@ export interface FileRoutesById {
   '/_app/anti-cheat': typeof AppAntiCheatRoute
   '/_app/chat': typeof AppChatRoute
   '/_app/contact': typeof AppContactRoute
+  '/_app/forgot-password': typeof AppForgotPasswordRoute
   '/_app/leaderboard': typeof AppLeaderboardRoute
   '/_app/login': typeof AppLoginRoute
   '/_app/matches': typeof AppMatchesRoute
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
     | '/anti-cheat'
     | '/chat'
     | '/contact'
+    | '/forgot-password'
     | '/leaderboard'
     | '/login'
     | '/matches'
@@ -342,6 +352,7 @@ export interface FileRouteTypes {
     | '/anti-cheat'
     | '/chat'
     | '/contact'
+    | '/forgot-password'
     | '/leaderboard'
     | '/login'
     | '/matches'
@@ -376,6 +387,7 @@ export interface FileRouteTypes {
     | '/_app/anti-cheat'
     | '/_app/chat'
     | '/_app/contact'
+    | '/_app/forgot-password'
     | '/_app/leaderboard'
     | '/_app/login'
     | '/_app/matches'
@@ -501,6 +513,13 @@ declare module '@tanstack/react-router' {
       path: '/leaderboard'
       fullPath: '/leaderboard'
       preLoaderRoute: typeof AppLeaderboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/forgot-password': {
+      id: '/_app/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof AppForgotPasswordRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/contact': {
@@ -643,6 +662,7 @@ interface AppRouteChildren {
   AppAntiCheatRoute: typeof AppAntiCheatRoute
   AppChatRoute: typeof AppChatRoute
   AppContactRoute: typeof AppContactRoute
+  AppForgotPasswordRoute: typeof AppForgotPasswordRoute
   AppLeaderboardRoute: typeof AppLeaderboardRoute
   AppLoginRoute: typeof AppLoginRoute
   AppMatchesRoute: typeof AppMatchesRoute
@@ -677,6 +697,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAntiCheatRoute: AppAntiCheatRoute,
   AppChatRoute: AppChatRoute,
   AppContactRoute: AppContactRoute,
+  AppForgotPasswordRoute: AppForgotPasswordRoute,
   AppLeaderboardRoute: AppLeaderboardRoute,
   AppLoginRoute: AppLoginRoute,
   AppMatchesRoute: AppMatchesRoute,
