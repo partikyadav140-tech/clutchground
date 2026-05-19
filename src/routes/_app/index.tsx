@@ -226,10 +226,10 @@ function HomePage() {
           <div className="pt-3 border-t border-border">
             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Designed & Developed by</p>
             <p className="font-display font-black text-sm text-foreground">Pratikk Yadav</p>
-            <a href="tel:+918307224756"
+            <a href="mailto:clutchgroundofficial@gmail.com"
               className="inline-flex items-center gap-1.5 mt-1.5 text-[10px] font-bold press-effect active:scale-95 transition-all"
               style={{ color: "var(--primary)" }}>
-              📞 +91 83072 24756
+              📧 clutchgroundofficial@gmail.com
             </a>
           </div>
         </div>
