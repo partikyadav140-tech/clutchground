@@ -76,6 +76,14 @@ function RootShell({ children }: { children: React.ReactNode }) {
         {/* Anti-flash theme script — runs before CSS */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         <HeadContent />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <script dangerouslySetInnerHTML={{ __html: `
+          if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+              navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(console.error);
+            });
+          }
+        `}} />
       </head>
       <body>
         <ThemeProvider>
