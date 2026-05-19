@@ -13,28 +13,45 @@ export async function showBrowserNotification(title: string, body: string) {
   if (Notification.permission === "granted") {
     try {
       if ('serviceWorker' in navigator) {
-        const registration = await navigator.serviceWorker.ready;
-        if (registration && registration.showNotification) {
-          registration.showNotification(title, {
-            body,
-            vibrate: [80, 40, 80],
-            tag: "cg-notification",
-            icon: "/pwa-192x192.png",
-            badge: "/pwa-192x192.png"
-          } as any);
-          return;
+        let registration = await navigator.serviceWorker.getRegistration();
+        
+        // Force register if not found (needed for some mobile browsers or dev mode)
+        if (!registration) {
+          try {
+            registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+          } catch (e) {
+            console.error('SW registration failed in notification-utils:', e);
+          }
+        }
+        
+        if (registration) {
+          // Sometimes it takes a moment to be active
+          if (!registration.active) {
+            registration = await navigator.serviceWorker.ready;
+          }
+          
+          if (registration.showNotification) {
+            await registration.showNotification(title, {
+              body,
+              vibrate: [80, 40, 80],
+              tag: `cg-${Date.now()}`,
+              icon: "/pwa-192x192.png",
+              badge: "/pwa-192x192.png"
+            } as any);
+            return;
+          }
         }
       }
       // Fallback for desktop/browsers without SW
       new Notification(title, {
         body,
         vibrate: [80, 40, 80],
-        tag: "cg-notification",
+        tag: `cg-${Date.now()}`,
       } as any);
     } catch (err) {
       console.error("Failed to show notification:", err);
       // Fallback
-      new Notification(title, { body, tag: "cg-notification" });
+      new Notification(title, { body, tag: `cg-${Date.now()}` });
     }
   }
 }
