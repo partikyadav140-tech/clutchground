@@ -1,18 +1,17 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Download, MonitorSmartphone, X, Share, PlusSquare } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Download, X } from "lucide-react";
+import { toast } from "sonner";
+import { Logo } from "@/components/Logo";
 
 export function InstallPwaDialog() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showDialog, setShowDialog] = useState(false);
-  const [showManualInstructions, setShowManualInstructions] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
   useEffect(() => {
     const hasPrompted = localStorage.getItem("pwaPrompted");
 
-    // Show the dialog automatically after 2.5 seconds if they haven't dismissed it before
     if (hasPrompted !== "true") {
       const timer = setTimeout(() => {
         setShowDialog(true);
@@ -35,18 +34,16 @@ export function InstallPwaDialog() {
 
   const handleInstall = async () => {
     if (deferredPrompt) {
-      // Browser supports native install prompt and it's ready
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      console.log(`User response to the install prompt: ${outcome}`);
       setDeferredPrompt(null);
       if (outcome === 'accepted') {
         setShowDialog(false);
         localStorage.setItem("pwaPrompted", "true");
       }
     } else {
-      // Fallback manual instructions for iOS Safari or dev mode
-      setShowManualInstructions(true);
+      toast.info("Native install unavailable. Tap 'Share' and 'Add to Home Screen' in your browser menu.");
+      setShowDialog(false);
     }
   };
 
@@ -55,104 +52,71 @@ export function InstallPwaDialog() {
     if (dontShowAgain) {
       localStorage.setItem("pwaPrompted", "true");
     } else {
-      // Just for this session, they can be prompted again later unless they clicked "Don't show again"
       sessionStorage.setItem("pwaSessionPrompted", "true");
     }
   };
 
-  const handleDismissForever = () => {
-    localStorage.setItem("pwaPrompted", "true");
-    setShowDialog(false);
-  };
-
   return (
     <Dialog open={showDialog} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-md bg-card border-border shadow-2xl rounded-3xl overflow-hidden p-0">
-        <div className="relative">
-          {/* Header Graphic */}
-          <div className="h-32 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent flex items-center justify-center border-b border-border relative overflow-hidden">
-            <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 mix-blend-overlay"></div>
-            <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center ring-4 ring-primary/10 shadow-[0_0_30px_rgba(255,107,0,0.3)]">
-              <MonitorSmartphone className="w-8 h-8 text-primary" />
-            </div>
+      <DialogContent className="sm:max-w-sm bg-black/90 backdrop-blur-2xl border border-white/10 shadow-[0_0_60px_rgba(255,107,0,0.15)] rounded-[2rem] p-0 overflow-hidden">
+        {/* Glow Effects */}
+        <div className="absolute -top-32 -left-32 w-64 h-64 bg-primary/20 rounded-full blur-[80px] pointer-events-none" />
+        <div className="absolute -bottom-32 -right-32 w-64 h-64 bg-purple-500/10 rounded-full blur-[80px] pointer-events-none" />
+
+        <div className="relative p-8 flex flex-col items-center text-center">
+          <button 
+            onClick={handleClose}
+            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-all press-effect"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center border border-primary/20 shadow-[0_0_30px_rgba(255,107,0,0.2)] mb-6">
+            <Logo size={48} withText={false} />
+          </div>
+
+          <h2 className="font-display font-black text-2xl text-white uppercase tracking-wider mb-2">
+            Get The App
+          </h2>
+          
+          <p className="text-sm text-white/60 mb-8 font-medium leading-relaxed max-w-[260px]">
+            Install <strong className="text-primary font-bold">CLUTCHGROUND</strong> for a faster, fullscreen esports experience with instant push alerts.
+          </p>
+
+          <button 
+            onClick={handleInstall}
+            className="w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest text-white shadow-[0_0_20px_rgba(255,107,0,0.3)] hover:shadow-[0_0_30px_rgba(255,107,0,0.5)] border border-primary/50 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 press-effect relative overflow-hidden group"
+            style={{ background: "linear-gradient(135deg, var(--primary), #cc5500)" }}
+          >
+            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
+            <Download className="w-5 h-5 relative z-10" />
+            <span className="relative z-10">Install Now</span>
+          </button>
+          
+          <div className="mt-5 flex flex-col items-center gap-4 w-full">
+            <label className="flex items-center gap-2.5 cursor-pointer group px-2">
+              <div className="relative flex items-center justify-center">
+                <input 
+                  type="checkbox" 
+                  checked={dontShowAgain}
+                  onChange={(e) => setDontShowAgain(e.target.checked)}
+                  className="peer appearance-none w-5 h-5 rounded-md border border-white/20 bg-white/5 checked:bg-primary checked:border-primary transition-all cursor-pointer" 
+                />
+                <svg className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" viewBox="0 0 14 14" fill="none">
+                  <path d="M2 7L5.5 10.5L12 3" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <span className="text-xs font-semibold text-white/50 group-hover:text-white/80 transition-colors">
+                Don't show this again
+              </span>
+            </label>
             
             <button 
               onClick={handleClose}
-              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-black/20 text-white hover:bg-black/40 transition-colors backdrop-blur-md"
+              className="text-xs font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors py-2 px-4 rounded-full hover:bg-white/5"
             >
-              <X className="w-4 h-4" />
+              Maybe Later
             </button>
-          </div>
-
-          <div className="p-6 text-center space-y-4">
-            <DialogHeader>
-              <DialogTitle className="font-display font-black text-2xl text-foreground uppercase tracking-wider">
-                Install ClutchGround
-              </DialogTitle>
-              <DialogDescription className="text-sm font-medium text-muted-foreground pt-2">
-                Get the ultimate esports experience! Install the ClutchGround app on your device for lightning-fast access, offline capabilities, and instant notifications.
-              </DialogDescription>
-            </DialogHeader>
-
-            {showManualInstructions ? (
-              <div className="bg-secondary border border-border rounded-2xl p-4 text-left animate-in fade-in slide-in-from-bottom-4">
-                <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3 text-center">How to install manually</p>
-                <ol className="text-sm text-foreground space-y-3">
-                  <li className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-background border border-border flex items-center justify-center font-black text-xs shrink-0">1</div>
-                    <span className="flex-1">Tap the <Share className="w-4 h-4 inline mx-1" /> <b>Share</b> button in your browser menu.</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-background border border-border flex items-center justify-center font-black text-xs shrink-0">2</div>
-                    <span className="flex-1">Scroll down and tap <PlusSquare className="w-4 h-4 inline mx-1" /> <b>Add to Home Screen</b>.</span>
-                  </li>
-                  <li className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-full bg-background border border-border flex items-center justify-center font-black text-xs shrink-0">3</div>
-                    <span className="flex-1">Confirm and enjoy the app!</span>
-                  </li>
-                </ol>
-              </div>
-            ) : (
-              <div className="pt-2">
-                <Button 
-                  onClick={handleInstall}
-                  className="w-full h-12 rounded-xl font-black text-sm uppercase tracking-widest bg-cta-gradient text-cta-foreground shadow-[0_0_20px_rgba(255,107,0,0.3)] border border-primary/50 hover:scale-[1.02] transition-transform"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download App Now
-                </Button>
-                
-                <div className="mt-4 flex flex-col items-center gap-3">
-                  <label className="flex items-center gap-2 cursor-pointer group">
-                    <input 
-                      type="checkbox" 
-                      checked={dontShowAgain}
-                      onChange={(e) => setDontShowAgain(e.target.checked)}
-                      className="w-4 h-4 rounded border-border bg-secondary accent-primary" 
-                    />
-                    <span className="text-xs font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
-                      Don't show this again
-                    </span>
-                  </label>
-                  
-                  {dontShowAgain ? (
-                    <button 
-                      onClick={handleDismissForever}
-                      className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      Dismiss
-                    </button>
-                  ) : (
-                    <button 
-                      onClick={handleClose}
-                      className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      Maybe Later
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </DialogContent>
