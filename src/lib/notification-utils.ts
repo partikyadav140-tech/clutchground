@@ -1,26 +1,46 @@
 export async function requestBrowserNotificationPermission(): Promise<NotificationPermission | undefined> {
   if (typeof window === "undefined" || !("Notification" in window)) return;
   if (Notification.permission === "default") {
-    return Notification.requestPermission().catch(() => "denied");
+    return Notification.requestPermission().catch(() => "denied" as NotificationPermission);
   }
 
   return Notification.permission;
 }
 
-export function showBrowserNotification(title: string, body: string) {
+export async function showBrowserNotification(title: string, body: string) {
   if (typeof window === "undefined" || !("Notification" in window)) return;
 
   if (Notification.permission === "granted") {
-    new Notification(title, {
-      body,
-      vibrate: [80, 40, 80],
-      tag: "cg-notification",
-    });
+    try {
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+        if (registration && registration.showNotification) {
+          registration.showNotification(title, {
+            body,
+            vibrate: [80, 40, 80],
+            tag: "cg-notification",
+            icon: "/pwa-192x192.png",
+            badge: "/pwa-192x192.png"
+          } as any);
+          return;
+        }
+      }
+      // Fallback for desktop/browsers without SW
+      new Notification(title, {
+        body,
+        vibrate: [80, 40, 80],
+        tag: "cg-notification",
+      } as any);
+    } catch (err) {
+      console.error("Failed to show notification:", err);
+      // Fallback
+      new Notification(title, { body, tag: "cg-notification" });
+    }
   }
 }
 
 export function playNotificationTone() {
-  if (typeof window === "undefined" || !window.AudioContext && !window.webkitAudioContext) return;
+  if (typeof window === "undefined" || (!window.AudioContext && !(window as any).webkitAudioContext)) return;
 
   const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
   const ctx = new AudioCtx();
