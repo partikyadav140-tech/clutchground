@@ -6,10 +6,10 @@ import {
 import { toast } from "sonner";
 import { GodCoin } from "@/components/GodCoin";
 import { useAuth } from "../../lib/auth-client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { WalletDepositDialog } from "@/components/WalletDepositDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { processWithdrawal, getTransactionHistory } from "../../api";
+import { processWithdrawal, getTransactionHistory, saveUpiId } from "../../api";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const Route = createFileRoute("/_app/wallet")({
@@ -29,6 +29,10 @@ function WalletPage() {
   const [upiPhone, setUpiPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const [upiSettingsOpen, setUpiSettingsOpen] = useState(false);
+  const [primaryUpi, setPrimaryUpi] = useState("");
+  const [savingUpi, setSavingUpi] = useState(false);
+
   const depositBal  = (user as any)?.deposit_balance  || 0;
   const winBal      = (user as any)?.winning_balance   || 0;
   const totalBal    = depositBal + winBal;
@@ -47,8 +51,39 @@ function WalletPage() {
 
   useEffect(() => {
     if (!authLoading && !user) { router.navigate({ to: "/login" }); return; }
-    if (user) loadTx();
+    if (user) {
+      loadTx();
+      if ((user as any).upi_id) setPrimaryUpi((user as any).upi_id);
+    }
   }, [user, authLoading]);
+
+  const transactionsWithBalance = useMemo(() => {
+    let runningBal = totalBal;
+    return transactions.slice(0, 10).map(tx => {
+      const isCredit = ["deposit_added","winnings_added","tournament_prize","refund"].includes(tx.type);
+      const balanceAfter = runningBal;
+      if (isCredit) {
+        runningBal -= tx.amount;
+      } else {
+        runningBal += tx.amount;
+      }
+      return { ...tx, balanceAfter, isCredit };
+    });
+  }, [transactions, totalBal]);
+
+  const handleSaveUpi = async () => {
+    if (!primaryUpi.trim()) return toast.error("Please enter a valid UPI ID");
+    setSavingUpi(true);
+    try {
+      await (saveUpiId as any)({ data: { userId: user!.id, upiId: primaryUpi.trim() } });
+      toast.success("Primary UPI ID saved!");
+      setUpiSettingsOpen(false);
+    } catch (err: any) {
+      toast.error("Failed to save UPI ID");
+    } finally {
+      setSavingUpi(false);
+    }
+  };
 
   const handleWithdraw = async () => {
     const amt = parseInt(amount, 10);
@@ -125,27 +160,55 @@ function WalletPage() {
         </motion.div>
       </div>
 
+      {/* ── Payment Settings ── */}
+      <div className="px-4 mb-5">
+        <div className="bg-card border border-border rounded-2xl p-4 shadow-card">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-display font-black text-sm text-foreground uppercase tracking-wide">Primary UPI ID</h2>
+            <button onClick={() => setUpiSettingsOpen(true)} className="text-[10px] font-black uppercase tracking-widest text-primary press-effect">
+              {primaryUpi ? "Edit" : "Set Now"}
+            </button>
+          </div>
+          {primaryUpi ? (
+            <p className="font-mono text-sm font-bold text-foreground bg-secondary/50 px-3 py-2 rounded-xl mb-3 border border-white/5">{primaryUpi}</p>
+          ) : (
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-3">
+              <p className="text-xs font-bold text-red-500">Not configured</p>
+              <p className="text-[10px] text-red-500/80 mt-0.5">Please set your UPI ID before adding or withdrawing funds.</p>
+            </div>
+          )}
+          <p className="text-[10px] text-muted-foreground leading-relaxed font-medium">
+            <strong className="text-foreground">Important:</strong> You can add and withdraw money by this UPI <span className="text-primary">only</span>. During deposits, only payments made from this exact UPI ID will be accepted and credited.
+          </p>
+        </div>
+      </div>
+
       {/* ── Action Buttons ── */}
       <div className="px-4 mb-5">
         <div className="grid grid-cols-2 gap-3">
-          <WalletDepositDialog
-            trigger={
-              <button className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 w-full press-effect active:scale-95 transition-all hover:border-primary/40 shadow-card">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: "rgba(0,200,255,0.1)", color: "var(--primary)" }}>
-                  <ArrowDownToLine className="w-5 h-5" />
-                </div>
-                <div className="text-left">
-                  <p className="font-black text-sm text-foreground">Add Cash</p>
-                  <p className="text-[10px] text-muted-foreground font-semibold">Deposit coins</p>
-                </div>
-              </button>
-            }
-            onSuccess={loadTx}
-          />
+          <div onClick={(e) => { if (!primaryUpi) { e.preventDefault(); e.stopPropagation(); toast.error("Please set your Primary UPI ID first"); setUpiSettingsOpen(true); } }}>
+            <WalletDepositDialog
+              primaryUpi={primaryUpi}
+              trigger={
+                <button disabled={!primaryUpi} className={`flex items-center gap-3 bg-card border border-border rounded-2xl p-4 w-full press-effect active:scale-95 transition-all shadow-card ${!primaryUpi ? "opacity-50 cursor-not-allowed" : "hover:border-primary/40"}`}>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: "rgba(0,200,255,0.1)", color: "var(--primary)" }}>
+                    <ArrowDownToLine className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-black text-sm text-foreground">Add Cash</p>
+                    <p className="text-[10px] text-muted-foreground font-semibold">Deposit coins</p>
+                  </div>
+                </button>
+              }
+              onSuccess={loadTx}
+            />
+          </div>
           <button
             onClick={() => {
+              if (!primaryUpi) { toast.error("Please set your Primary UPI ID first"); setUpiSettingsOpen(true); return; }
               if (winBal <= 0) return toast.error("No winnings to withdraw. Win tournaments first!");
+              setUpiId(primaryUpi);
               setWithdrawOpen(true);
             }}
             className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 w-full press-effect active:scale-95 transition-all hover:border-emerald-500/40 shadow-card"
@@ -175,24 +238,24 @@ function WalletPage() {
       <div className="px-4">
         <div className="flex items-center gap-2 mb-3">
           <div className="w-1 h-5 rounded-full" style={{ background: "var(--gradient-primary)" }} />
-          <h2 className="font-display font-black text-sm text-foreground uppercase tracking-wide">Transactions</h2>
+          <h2 className="font-display font-black text-sm text-foreground uppercase tracking-wide">Recent Transactions (Last 10)</h2>
         </div>
 
         {loadingTx ? (
           <div className="flex justify-center py-12">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : transactions.length > 0 ? (
+        ) : transactionsWithBalance.length > 0 ? (
           <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-card">
-            {transactions.map((tx, i) => {
-              const isCredit = ["deposit_added","winnings_added","tournament_prize","refund"].includes(tx.type);
+            {transactionsWithBalance.map((tx, i) => {
+              const { isCredit, balanceAfter } = tx;
               return (
                 <motion.div
                   key={tx.id}
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: Math.min(i * 0.03, 0.4) }}
-                  className={`flex items-center gap-3 px-4 py-3.5 ${i < transactions.length - 1 ? "border-b border-border" : ""}`}
+                  className={`flex items-center gap-3 px-4 py-3.5 ${i < transactionsWithBalance.length - 1 ? "border-b border-border" : ""}`}
                 >
                   <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
                     isCredit ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"
@@ -205,10 +268,15 @@ function WalletPage() {
                       {new Date(tx.created_at).toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" })}
                     </p>
                   </div>
-                  <span className={`font-display font-black text-sm tabular-nums shrink-0 ${isCredit ? "text-emerald-500" : "text-red-500"}`}>
-                    {isCredit ? "+" : "-"}{tx.amount}
-                    <GodCoin className="w-3 h-3 inline ml-1" />
-                  </span>
+                  <div className="text-right shrink-0">
+                    <span className={`block font-display font-black text-sm tabular-nums ${isCredit ? "text-emerald-500" : "text-red-500"}`}>
+                      {isCredit ? "+" : "-"}{tx.amount}
+                      <GodCoin className="w-3 h-3 inline ml-1 mb-0.5" />
+                    </span>
+                    <span className="text-[10px] font-bold text-muted-foreground">
+                      Bal: {balanceAfter} <GodCoin className="w-2.5 h-2.5 inline opacity-50 mb-0.5" />
+                    </span>
+                  </div>
                 </motion.div>
               );
             })}
@@ -271,10 +339,9 @@ function WalletPage() {
                 <AtSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="yourname@upi"
-                  value={upiId}
-                  onChange={e => setUpiId(e.target.value)}
-                  className="w-full h-14 bg-secondary border border-border focus:border-primary/60 rounded-2xl pl-12 pr-4 text-sm font-semibold text-foreground outline-none transition-all"
+                  value={primaryUpi}
+                  disabled
+                  className="w-full h-14 bg-secondary border border-border rounded-2xl pl-12 pr-4 text-sm font-semibold text-muted-foreground outline-none cursor-not-allowed"
                 />
               </div>
             </div>
@@ -303,6 +370,41 @@ function WalletPage() {
                 ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Processing...</>
                 : "Confirm Withdrawal"
               }
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── UPI Settings Dialog ── */}
+      <Dialog open={upiSettingsOpen} onOpenChange={setUpiSettingsOpen}>
+        <DialogContent className="rounded-3xl border border-border bg-card">
+          <DialogHeader>
+            <DialogTitle className="font-display font-black text-xl text-foreground">Payment Settings</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1.5 ml-1">Primary UPI ID</label>
+              <div className="relative">
+                <AtSign className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="e.g. phone@paytm"
+                  value={primaryUpi}
+                  onChange={e => setPrimaryUpi(e.target.value)}
+                  className="w-full h-14 bg-secondary border border-border focus:border-primary/60 rounded-2xl pl-12 pr-4 text-sm font-semibold text-foreground outline-none transition-all"
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">
+                Make sure you enter your correct active UPI ID. You must use this exact same UPI to add funds to your wallet.
+              </p>
+            </div>
+            <button
+              onClick={handleSaveUpi}
+              disabled={savingUpi}
+              className="w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest text-white flex items-center justify-center gap-2 press-effect active:scale-95"
+              style={{ background: savingUpi ? "var(--secondary)" : "var(--gradient-primary)" }}
+            >
+              {savingUpi ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Save UPI ID"}
             </button>
           </div>
         </DialogContent>

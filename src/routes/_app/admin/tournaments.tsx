@@ -129,30 +129,232 @@ function AdminTournamentsPage() {
     }
   };
 
-  const downloadResultsExcel = () => {
+  const downloadResultsImage = () => {
     if (!resultsData || resultsData.length === 0) return;
-    const headers = ["Rank", "Team / Player", "Kills", "Match Position", "Points"];
+    const mode = resultsTId?.mode || "Squad";
+    const showPoints = mode === "Squad";
+
     const sortedData = [...resultsData].sort((a, b) => {
       if (b.points !== a.points) return (b.points || 0) - (a.points || 0);
       return (b.kills || 0) - (a.kills || 0);
     });
 
-    const rows = sortedData.map((r: any, i: number) => [
-      i + 1,
-      `"${(r.team_name || r.username).replace(/"/g, '""')}"`,
-      r.kills || 0,
-      r.position || "-",
-      r.points || 0,
-    ]);
-    const csvContent = [headers.join(","), ...rows.map((r: any) => r.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `${resultsTId.title.replace(/\s+/g, "_")}_Standings.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const SCALE = 2;
+    const W = 900;
+    const HEADER_H = 160;
+    const ROW_H = 56;
+    const FOOTER_H = 60;
+    const PADDING = 32;
+    const H = HEADER_H + sortedData.length * ROW_H + FOOTER_H + PADDING;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = W * SCALE;
+    canvas.height = H * SCALE;
+    const ctx = canvas.getContext("2d")!;
+    ctx.scale(SCALE, SCALE);
+
+    // Background
+    const bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, "#0f0c1a");
+    bg.addColorStop(0.5, "#16102a");
+    bg.addColorStop(1, "#0a0a14");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle grid lines
+    ctx.strokeStyle = "rgba(255,255,255,0.03)";
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    // Header gradient bar
+    const headerGrad = ctx.createLinearGradient(0, 0, W, 0);
+    headerGrad.addColorStop(0, "#ff6b00");
+    headerGrad.addColorStop(0.5, "#ff4d6d");
+    headerGrad.addColorStop(1, "#7c3aed");
+    ctx.fillStyle = headerGrad;
+    ctx.fillRect(0, 0, W, 6);
+
+    // Glow under top bar
+    const glowGrad = ctx.createLinearGradient(0, 6, 0, 80);
+    glowGrad.addColorStop(0, "rgba(255,107,0,0.18)");
+    glowGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = glowGrad;
+    ctx.fillRect(0, 6, W, 74);
+
+    // Logo / Brand
+    ctx.font = "bold 13px 'Arial', sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.4)";
+    ctx.textAlign = "left";
+    ctx.fillText("GOD ESPORTS ARENA", PADDING, 36);
+
+    // Trophy icon area (decorative circle)
+    ctx.beginPath();
+    ctx.arc(W - PADDING - 20, 44, 24, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255,107,0,0.15)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,107,0,0.4)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.font = "bold 20px Arial";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ff6b00";
+    ctx.fillText("🏆", W - PADDING - 20, 50);
+
+    // Tournament title
+    ctx.textAlign = "left";
+    ctx.font = "bold 28px 'Arial Black', Arial, sans-serif";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(resultsTId?.title || "Tournament Results", PADDING, 76);
+
+    // Sub-info
+    ctx.font = "14px Arial";
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    const modeLabel = `${mode} • ${resultsTId?.game || "Free Fire"} • Final Standings`;
+    ctx.fillText(modeLabel, PADDING, 100);
+
+    // Divider
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.fillRect(PADDING, 114, W - PADDING * 2, 1);
+
+    // Column config
+    const cols = showPoints
+      ? [
+          { label: "RANK",  x: PADDING,       w: 60,  align: "center" as CanvasTextAlign },
+          { label: "SQUAD / PLAYER", x: PADDING + 70, w: 340, align: "left" as CanvasTextAlign },
+          { label: "KILLS", x: PADDING + 430, w: 100, align: "center" as CanvasTextAlign },
+          { label: "POSITION", x: PADDING + 550, w: 110, align: "center" as CanvasTextAlign },
+          { label: "POINTS", x: W - PADDING - 90, w: 90, align: "right" as CanvasTextAlign },
+        ]
+      : [
+          { label: "RANK",  x: PADDING,       w: 60,  align: "center" as CanvasTextAlign },
+          { label: "SQUAD / PLAYER", x: PADDING + 70, w: 430, align: "left" as CanvasTextAlign },
+          { label: "KILLS", x: PADDING + 530, w: 140, align: "center" as CanvasTextAlign },
+          { label: "POSITION", x: W - PADDING - 120, w: 120, align: "center" as CanvasTextAlign },
+        ];
+
+    // Column headers
+    const tableTop = 126;
+    ctx.font = "bold 10px Arial";
+    ctx.fillStyle = "rgba(255,255,255,0.35)";
+    ctx.letterSpacing = "2px";
+    cols.forEach((col) => {
+      ctx.textAlign = col.align;
+      const tx = col.align === "right" ? col.x + col.w : col.align === "center" ? col.x + col.w / 2 : col.x;
+      ctx.fillText(col.label, tx, tableTop);
+    });
+    ctx.letterSpacing = "0px";
+
+    // Rows
+    const rowStart = tableTop + 16;
+    sortedData.forEach((r: any, i: number) => {
+      const rowY = rowStart + i * ROW_H;
+      const isTop3 = i < 3;
+
+      // Row background
+      if (i % 2 === 0) {
+        ctx.fillStyle = "rgba(255,255,255,0.03)";
+        ctx.beginPath();
+        ctx.roundRect(PADDING - 8, rowY - 2, W - PADDING * 2 + 16, ROW_H - 4, 10);
+        ctx.fill();
+      }
+
+      // Top-3 accent left border
+      if (isTop3) {
+        const rankColors = ["#FFD700", "#C0C0C0", "#CD7F32"];
+        ctx.fillStyle = rankColors[i];
+        ctx.beginPath();
+        ctx.roundRect(PADDING - 8, rowY - 2, 3, ROW_H - 4, 2);
+        ctx.fill();
+      }
+
+      const cellMidY = rowY + ROW_H / 2 - 4;
+
+      // RANK
+      const rankColors3 = ["#FFD700", "#C0C0C0", "#CD7F32"];
+      ctx.textAlign = "center";
+      if (isTop3) {
+        ctx.font = "bold 18px Arial";
+        ctx.fillStyle = rankColors3[i];
+        const rankEmojis = ["🥇", "🥈", "🥉"];
+        ctx.fillText(rankEmojis[i], PADDING + 30, cellMidY + 8);
+      } else {
+        ctx.font = "bold 15px Arial";
+        ctx.fillStyle = "rgba(255,255,255,0.35)";
+        ctx.fillText(`#${i + 1}`, PADDING + 30, cellMidY + 6);
+      }
+
+      // Squad / Player name
+      const name = r.display_name || r.team_name || r.username || "Unknown";
+      ctx.textAlign = "left";
+      ctx.font = isTop3 ? "bold 15px Arial" : "600 14px Arial";
+      ctx.fillStyle = isTop3 ? "#ffffff" : "rgba(255,255,255,0.8)";
+      // Truncate long names
+      let displayName = name;
+      const maxNameW = cols[1].w - 10;
+      while (ctx.measureText(displayName).width > maxNameW && displayName.length > 4) {
+        displayName = displayName.slice(0, -4) + "...";
+      }
+      ctx.fillText(displayName, cols[1].x, cellMidY + 6);
+
+      // Kills
+      const killsCol = cols[2];
+      ctx.textAlign = "center";
+      ctx.font = "bold 14px 'Courier New', monospace";
+      ctx.fillStyle = "#f97316";
+      ctx.fillText(String(r.kills || 0), killsCol.x + killsCol.w / 2, cellMidY + 6);
+
+      // Position
+      const posCol = cols[3];
+      ctx.textAlign = "center";
+      ctx.font = "14px Arial";
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.fillText(r.position ? `#${r.position}` : "—", posCol.x + posCol.w / 2, cellMidY + 6);
+
+      // Points (Squad only, skip 0)
+      if (showPoints) {
+        const ptsCol = cols[4];
+        const pts = r.points || 0;
+        ctx.textAlign = "right";
+        ctx.font = "bold 16px Arial";
+        ctx.fillStyle = pts > 0 ? "#a78bfa" : "rgba(255,255,255,0.2)";
+        ctx.fillText(pts > 0 ? String(pts) : "—", ptsCol.x + ptsCol.w, cellMidY + 6);
+      }
+
+      // Row divider
+      if (i < sortedData.length - 1) {
+        ctx.fillStyle = "rgba(255,255,255,0.05)";
+        ctx.fillRect(PADDING, rowY + ROW_H - 6, W - PADDING * 2, 1);
+      }
+    });
+
+    // Footer
+    const footerY = rowStart + sortedData.length * ROW_H + 16;
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    ctx.fillRect(PADDING, footerY, W - PADDING * 2, 1);
+    ctx.font = "12px Arial";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.fillText(
+      `godEsportsArena.com  •  Generated ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`,
+      W / 2,
+      footerY + 28,
+    );
+
+    // Bottom gradient bar
+    const bottomGrad = ctx.createLinearGradient(0, 0, W, 0);
+    bottomGrad.addColorStop(0, "#7c3aed");
+    bottomGrad.addColorStop(0.5, "#ff4d6d");
+    bottomGrad.addColorStop(1, "#ff6b00");
+    ctx.fillStyle = bottomGrad;
+    ctx.fillRect(0, H - 4, W, 4);
+
+    // Download
+    const dataUrl = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = `${(resultsTId?.title || "Results").replace(/\s+/g, "_")}_Standings.png`;
+    a.click();
   };
 
   const [formData, setFormData] = useState({
@@ -749,16 +951,15 @@ function AdminTournamentsPage() {
                   {resultsTId?.title}
                 </span>
               </DialogTitle>
-              {resultsTId?.status === "completed" && (
-                <Button
+              <Button
                   variant="outline"
                   size="sm"
-                  onClick={downloadResultsExcel}
+                  onClick={downloadResultsImage}
                   className="h-9 rounded-xl font-bold bg-card shadow-sm"
+                  disabled={resultsData.length === 0}
                 >
-                  <Download className="w-4 h-4 mr-2" /> Export
+                  <Download className="w-4 h-4 mr-2" /> Download Image
                 </Button>
-              )}
             </div>
           </DialogHeader>
 
@@ -909,36 +1110,40 @@ function AdminTournamentsPage() {
                       <thead className="text-[10px] uppercase tracking-widest text-muted-foreground bg-secondary/50 border-b border-border">
                         <tr>
                           <th className="px-4 py-3 font-bold text-center">#</th>
-                          <th className="px-4 py-3 font-bold">Squad</th>
+                          <th className="px-4 py-3 font-bold">Squad / Player</th>
                           <th className="px-4 py-3 font-bold text-center">Kills</th>
-                          <th className="px-4 py-3 font-bold text-center">Pos</th>
+                          <th className="px-4 py-3 font-bold text-center">Position</th>
                           <th className="px-4 py-3 font-bold text-center">Manual Pts</th>
-                          <th className="px-4 py-3 font-bold text-right text-cta">Points</th>
+                          {resultsTId?.mode === "Squad" && (
+                            <th className="px-4 py-3 font-bold text-right text-cta">Points</th>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/50">
                         {resultsData.map((r, i) => (
                           <tr key={r.id} className="hover:bg-secondary/30 transition-colors">
                             <td className="px-4 py-3.5 font-display font-black text-muted-foreground text-center">
-                              {i + 1}
+                              {i < 3 ? ["🥇","🥈","🥉"][i] : i + 1}
                             </td>
                             <td className="px-4 py-3.5 font-bold text-foreground">
                               {r.display_name || r.team_name || r.username}
                             </td>
-                            <td className="px-4 py-3.5 text-center font-mono font-semibold">
+                            <td className="px-4 py-3.5 text-center font-mono font-semibold text-orange-400">
                               {r.kills || 0}
                             </td>
                             <td className="px-4 py-3.5 text-center font-mono font-semibold">
-                              {r.position || "-"}
+                              {r.position ? `#${r.position}` : "—"}
                             </td>
                             <td className="px-4 py-3.5 text-center font-mono font-semibold">
                               {typeof r.manualPoints !== "undefined" && r.manualPoints !== null
                                 ? r.manualPoints
                                 : "—"}
                             </td>
-                            <td className="px-4 py-3.5 text-right font-display font-black text-cta text-lg">
-                              {r.points || 0}
-                            </td>
+                            {resultsTId?.mode === "Squad" && (
+                              <td className="px-4 py-3.5 text-right font-display font-black text-cta text-lg">
+                                {(r.points || 0) > 0 ? r.points : "—"}
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>

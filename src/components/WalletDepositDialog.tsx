@@ -16,9 +16,11 @@ type Step = "amount" | "pay" | "upiid" | "done";
 export function WalletDepositDialog({
   trigger,
   onSuccess,
+  primaryUpi,
 }: {
   trigger: React.ReactNode;
   onSuccess?: () => void;
+  primaryUpi?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("amount");
@@ -68,14 +70,11 @@ export function WalletDepositDialog({
   /* ── Step 2: Submit Sender UPI ID ── */
   const handleSubmitUpiId = async () => {
     if (!payData) return;
-    const upiIdRegex = /^[a-zA-Z0-9._\-]+@[a-zA-Z0-9]+$/;
-    if (!senderUpiId.trim() || !upiIdRegex.test(senderUpiId.trim())) {
-      return toast.error("Please enter a valid UPI ID (e.g. name@upi)");
-    }
+    if (!primaryUpi) return toast.error("Primary UPI ID not found. Please set it in wallet settings.");
     setLoading(true);
     try {
       await (submitUpiUtr as any)({
-        data: { txnRef: payData.txnRef, utr: senderUpiId.trim() },
+        data: { txnRef: payData.txnRef, utr: primaryUpi },
       });
       setStep("done");
     } catch (err: any) {
@@ -90,7 +89,6 @@ export function WalletDepositDialog({
     setAmount(500);
     setCustomAmount("");
     setPayData(null);
-    setSenderUpiId("");
     setOpen(false);
     onSuccess?.();
   };
@@ -256,15 +254,17 @@ export function WalletDepositDialog({
 
             <div className="flex gap-2">
               {/* Open UPI app directly */}
-              <a
-                href={payData.upiLink}
-                className="flex-1 h-11 rounded-xl font-display font-bold text-sm flex items-center justify-center gap-2 text-white"
+              <button
+                onClick={() => {
+                  window.location.href = payData.upiLink;
+                }}
+                className="flex-1 h-11 rounded-xl font-display font-bold text-sm flex items-center justify-center gap-2 text-white transition-opacity hover:opacity-90 active:scale-95"
                 style={{ background: "linear-gradient(135deg, #6B48FF, #FF6B6B)" }}
               >
                 <Smartphone className="w-4 h-4" />
                 Open UPI App
                 <ExternalLink className="w-3 h-3" />
-              </a>
+              </button>
               <Button
                 onClick={() => setStep("upiid")}
                 className="flex-1 bg-primary text-white font-display rounded-xl"
@@ -293,16 +293,12 @@ export function WalletDepositDialog({
               </label>
               <input
                 type="text"
-                value={senderUpiId}
-                onChange={(e) => setSenderUpiId(e.target.value.trim())}
-                placeholder="e.g. yourname@upi or 9876543210@paytm"
-                maxLength={50}
-                autoCapitalize="none"
-                autoCorrect="off"
-                className="w-full bg-background border border-border focus:border-primary outline-none px-4 h-12 rounded-xl text-sm font-mono tracking-wide"
+                value={primaryUpi || ""}
+                disabled
+                className="w-full bg-secondary border border-border outline-none px-4 h-12 rounded-xl text-sm font-mono tracking-wide text-muted-foreground cursor-not-allowed"
               />
               <p className="text-[10px] text-muted-foreground mt-1.5 ml-1">
-                Find in: UPI App → Profile / Settings → Your UPI ID
+                This is your Primary UPI ID configured in Wallet settings.
               </p>
             </div>
 
@@ -323,7 +319,7 @@ export function WalletDepositDialog({
               </Button>
               <Button
                 onClick={handleSubmitUpiId}
-                disabled={loading || !senderUpiId.trim().includes("@")}
+                disabled={loading || !primaryUpi}
                 className="flex-1 bg-primary text-white font-display rounded-xl"
               >
                 {loading ? (
@@ -356,7 +352,7 @@ export function WalletDepositDialog({
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Sender UPI ID:</span>
-                <span className="font-mono font-bold">{senderUpiId}</span>
+                <span className="font-mono font-bold">{primaryUpi}</span>
               </div>
             </div>
             <Button onClick={resetDialog} className="w-full bg-primary text-white font-display rounded-xl">

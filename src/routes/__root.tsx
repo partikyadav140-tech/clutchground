@@ -1,4 +1,4 @@
-import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, createRootRoute, HeadContent, Scripts, ScrollRestoration } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { SplashScreen } from "@/components/SplashScreen";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
@@ -91,6 +91,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
             }}
           />
         </ThemeProvider>
+        <ScrollRestoration />
         <Scripts />
       </body>
     </html>

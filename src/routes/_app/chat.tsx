@@ -9,7 +9,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   getFriends, getFriendRequests, searchUsers, sendFriendRequest, resolveFriendRequest,
-  getMyTeam, getChatMessages, sendMessage
+  getMyTeam, getChatMessages, sendMessage, markChatMessagesAsRead
 } from "../../api";
 
 export const Route = createFileRoute("/_app/chat")({
@@ -102,6 +102,18 @@ function ChatPage() {
     const interval = setInterval(fetchMessages, 3000); // Poll every 3 seconds
 
     return () => clearInterval(interval);
+  }, [activeChat, user]);
+
+  // Mark messages as read when opening a friend chat
+  useEffect(() => {
+    if (activeChat && activeChat.type === 'friend' && user) {
+      (markChatMessagesAsRead as any)({
+        data: {
+          userId: user.id,
+          otherUserId: activeChat.id
+        }
+      }).catch(() => {});
+    }
   }, [activeChat, user]);
 
   const handleSearch = async (e: React.FormEvent) => {

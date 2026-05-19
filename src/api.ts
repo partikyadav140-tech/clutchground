@@ -1970,3 +1970,32 @@ export const sendMessage = createServerFn({ method: "POST" }).handler(async ({ d
   
   return { success: true, messageId: res.lastInsertRowid };
 });
+
+export const getUnreadChatCount = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const userId = data as unknown as number;
+  const res = (await db.prepare(`
+    SELECT COUNT(*) as count 
+    FROM chat_messages 
+    WHERE receiver_id = ? AND is_read = false
+  `).get(userId)) as any;
+  return res ? Number(res.count) : 0;
+});
+
+export const markChatMessagesAsRead = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { userId, otherUserId } = data as any;
+  await db.prepare(`
+    UPDATE chat_messages 
+    SET is_read = true 
+    WHERE receiver_id = ? AND sender_id = ? AND is_read = false
+  `).run(userId, otherUserId);
+  return { success: true };
+});
+
+export const saveUpiId = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { userId, upiId } = data as any;
+  await db.prepare("UPDATE users SET upi_id = ? WHERE id = ?").run(upiId, userId);
+  return { success: true };
+});

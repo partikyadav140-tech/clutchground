@@ -5,7 +5,7 @@ import { Logo } from "./Logo";
 import { GodCoin } from "./GodCoin";
 import { useAuth } from "../lib/auth-client";
 import { useTheme } from "../lib/theme";
-import { getNotifications } from "../api";
+import { getNotifications, getUnreadChatCount } from "../api";
 import {
   requestBrowserNotificationPermission,
   showBrowserNotification,
@@ -29,6 +29,7 @@ export function Navbar() {
   const router            = useRouter();
   const path              = router.state.location.pathname;
   const [unread, setUnread] = useState(0);
+  const [unreadChats, setUnreadChats] = useState(0);
   const notifsRef         = useRef<string[]>([]);
 
   const balance = user
@@ -43,6 +44,10 @@ export function Navbar() {
       try {
         const notifs = await (getNotifications as any)({ data: user.id });
         setUnread(notifs.filter((n: any) => !n.is_read).length);
+
+        const chatUnread = await (getUnreadChatCount as any)({ data: user.id });
+        setUnreadChats(chatUnread);
+
         const ids    = notifs.map((n: any) => n.id);
         const prev   = notifsRef.current;
         const newOnes = notifs.filter((n: any) => !prev.includes(n.id) && !n.is_read);
@@ -132,9 +137,17 @@ export function Navbar() {
             {/* Chat */}
             <Link
               to={"/chat" as any}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
+              className="relative w-8 h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
             >
               <MessageCircle className="w-4 h-4" />
+              {unreadChats > 0 && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[8px] font-black grid place-items-center"
+                  style={{ background: "var(--primary)", color: "#fff" }}
+                >
+                  {unreadChats > 9 ? "9+" : unreadChats}
+                </span>
+              )}
             </Link>
 
             {/* Notifications */}

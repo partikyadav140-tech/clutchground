@@ -24,7 +24,13 @@ export const createUpiDeposit = createServerFn({ method: "POST" }).handler(
       )
       .run(userId, amount, txnRef, description || "Wallet Deposit");
 
-    const upiLink = `upi://pay?pa=${PLATFORM_UPI_ID}&pn=${encodeURIComponent(PLATFORM_NAME)}&am=${amount}&cu=INR&tn=${encodeURIComponent("ClutchGround Wallet")}&tr=${txnRef}`;
+    const safePlatformName = encodeURIComponent(PLATFORM_NAME.trim().replace(/\s+/g, ''));
+    const safeTxnRef = encodeURIComponent(txnRef.trim());
+    const safeNote = encodeURIComponent("Wallet_Deposit");
+    const safeUpiId = encodeURIComponent(PLATFORM_UPI_ID.trim());
+
+    // standard UPI intent
+    const upiLink = `upi://pay?pa=${safeUpiId}&pn=${safePlatformName}&am=${amount}&cu=INR&tn=${safeNote}&tr=${safeTxnRef}`;
 
     return {
       txnRef,

@@ -305,7 +305,7 @@ function TournamentCard({ t, i }: { t: any; i: number }) {
 
         {/* Fill bar */}
         <div className="h-1.5 bg-secondary relative overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-700" style={{ width: `${fillPct}%`, background: isFull ? "#ef4444" : mc.gradient }}>
+          <div className="h-full rounded-full transition-all duration-700 relative overflow-hidden" style={{ width: `${fillPct}%`, background: isFull ? "#ef4444" : mc.gradient }}>
             {!isFull && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent animate-shimmer" />}
           </div>
         </div>

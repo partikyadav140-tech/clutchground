@@ -424,26 +424,26 @@ export function JoinBattleDialog({
                   className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
                     selectedPlayers.has(idx)
                       ? "bg-primary/20 border-primary text-cta shadow-[0_0_10px_rgba(255,0,85,0.3)]"
-                      : "bg-black/30 border-white/5 hover:border-white/20 hover:bg-black/50"
+                      : "bg-secondary border-border hover:border-primary/50 hover:bg-secondary/80"
                   }`}
                 >
                   <div className="flex items-center gap-3 text-left">
                     <div
                       className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                        selectedPlayers.has(idx) ? "bg-primary border-primary" : "border-white/20"
+                        selectedPlayers.has(idx) ? "bg-primary border-primary" : "border-border"
                       }`}
                     >
-                      {selectedPlayers.has(idx) && <Check className="w-3 h-3 text-white" />}
+                      {selectedPlayers.has(idx) && <Check className="w-3 h-3 text-primary-foreground" />}
                     </div>
                     <div>
-                      <div className="font-bold text-sm text-white">{m.ign}</div>
+                      <div className="font-bold text-sm text-foreground">{m.ign}</div>
                       <div className="text-[10px] text-muted-foreground font-mono font-semibold">
                         UID: {m.uid}
                       </div>
                     </div>
                   </div>
                   {selectedPlayers.has(idx) && (
-                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-primary text-white rounded">
+                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-primary text-primary-foreground rounded">
                       Selected
                     </span>
                   )}
@@ -458,7 +458,7 @@ export function JoinBattleDialog({
                   setAvailableMembers([]);
                   setSelectedPlayers(new Set());
                 }}
-                className="flex-1 rounded-xl border-white/10 text-white font-bold bg-transparent hover:bg-white/5 uppercase tracking-widest text-xs"
+                className="flex-1 rounded-xl border-border text-foreground font-bold bg-transparent hover:bg-secondary uppercase tracking-widest text-xs"
               >
                 Cancel
               </Button>
@@ -498,7 +498,7 @@ export function JoinBattleDialog({
             <div className="bg-secondary border border-border rounded-2xl p-4 space-y-3 shadow-inner">
               <div className="flex items-center gap-2 mb-3">
                 <Crown className="w-4 h-4 text-amber-500" />
-                <span className="text-[10px] font-black text-white uppercase tracking-widest">
+                <span className="text-[10px] font-black text-foreground uppercase tracking-widest">
                   Captain (You)
                 </span>
               </div>
@@ -521,13 +521,13 @@ export function JoinBattleDialog({
             </div>
 
             {/* Teammates Details */}
-            <div className="bg-black/40 border border-white/5 rounded-[1.25rem] p-4 space-y-3 shadow-inner">
+            <div className="bg-secondary border border-border rounded-[1.25rem] p-4 space-y-3 shadow-inner">
               <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-3">
                 Team Members
               </div>
               {teammates.slice(0, teamCount).map((t, i) => (
-                <div key={i} className="pb-3 border-b border-white/5 last:border-b-0 last:pb-0">
-                  <div className="text-[10px] font-black text-white uppercase tracking-widest mb-2">
+                <div key={i} className="pb-3 border-b border-border last:border-b-0 last:pb-0">
+                  <div className="text-[10px] font-black text-foreground uppercase tracking-widest mb-2">
                     Player {i + 2}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -586,10 +586,10 @@ export function JoinBattleDialog({
               <Users className="w-4 h-4" />
               <span className="text-xs font-black uppercase tracking-widest text-glow">Team Roster</span>
             </div>
-            <div className="bg-black/40 border border-white/5 rounded-[1.25rem] overflow-hidden shadow-inner">
+            <div className="bg-secondary border border-border rounded-[1.25rem] overflow-hidden shadow-inner">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-white/5 hover:bg-black/20">
+                  <TableRow className="border-border hover:bg-muted/50">
                     <TableHead className="text-[9px] uppercase font-black text-muted-foreground tracking-widest">
                       Position
                     </TableHead>
@@ -602,28 +602,28 @@ export function JoinBattleDialog({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow className="border-white/5 hover:bg-black/20">
-                    <TableCell className="text-xs font-black text-white">
+                  <TableRow className="border-border hover:bg-muted/50">
+                    <TableCell className="text-xs font-black text-foreground">
                       <Crown className="w-4 h-4 inline mr-2 text-amber-500" />
                       Captain
                     </TableCell>
-                    <TableCell className="text-xs font-bold text-white">{leader.ign}</TableCell>
-                    <TableCell className="text-xs font-mono font-bold text-white">{leader.uid}</TableCell>
+                    <TableCell className="text-xs font-bold text-foreground">{leader.ign}</TableCell>
+                    <TableCell className="text-xs font-mono font-bold text-foreground">{leader.uid}</TableCell>
                   </TableRow>
                   {teammates.slice(0, teamCount).map((t, i) => (
-                    <TableRow key={i} className="border-white/5 hover:bg-black/20">
-                      <TableCell className="text-xs font-black text-white">
+                    <TableRow key={i} className="border-border hover:bg-muted/50">
+                      <TableCell className="text-xs font-black text-foreground">
                         Player {i + 2}
                       </TableCell>
-                      <TableCell className="text-xs font-bold text-white">{t.ign}</TableCell>
-                      <TableCell className="text-xs font-mono font-bold text-white">{t.uid}</TableCell>
+                      <TableCell className="text-xs font-bold text-foreground">{t.ign}</TableCell>
+                      <TableCell className="text-xs font-mono font-bold text-foreground">{t.uid}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             </div>
             <div className="bg-primary/10 border border-primary/30 rounded-xl p-3 shadow-[0_0_10px_rgba(255,0,85,0.1)]">
-              <p className="text-xs font-semibold text-white/80">
+              <p className="text-xs font-semibold text-foreground/80">
                 <Check className="w-3 h-3 inline mr-2 text-cta" />
                 Review your team roster. Click "Next" to confirm registration details.
               </p>
@@ -660,7 +660,7 @@ export function JoinBattleDialog({
                 type="checkbox"
                 checked={agree}
                 onChange={(e) => setAgree(e.target.checked)}
-                className="accent-primary mt-0.5 shrink-0 w-3.5 h-3.5 rounded bg-black/40 border-white/10"
+                className="accent-primary mt-0.5 shrink-0 w-3.5 h-3.5 rounded bg-secondary border-border"
               />
               <span className="font-semibold leading-relaxed">
                 I confirm all UIDs are accurate. I accept the <span className="text-cta font-bold">rules</span>, <span className="text-cta font-bold">anti-cheat policy</span>, and consent
@@ -671,9 +671,9 @@ export function JoinBattleDialog({
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-4 mt-2 border-t border-white/5">
+        <div className="flex items-center justify-between pt-4 mt-2 border-t border-border">
           {(step === "team-preview" || step === "confirm") && (
-            <Button variant="outline" onClick={handlePreviousStep} className="rounded-xl border-white/10 bg-transparent text-white font-bold hover:bg-white/5 text-xs uppercase tracking-widest">
+            <Button variant="outline" onClick={handlePreviousStep} className="rounded-xl border-border bg-transparent text-foreground font-bold hover:bg-secondary text-xs uppercase tracking-widest">
               <ChevronLeft className="w-4 h-4 mr-2" /> Back
             </Button>
           )}
