@@ -132,7 +132,7 @@ function AdminTournamentsPage() {
   const downloadResultsImage = () => {
     if (!resultsData || resultsData.length === 0) return;
     const mode = resultsTId?.mode || "Squad";
-    const showPoints = mode?.toLowerCase() === "squad";
+    const showPoints = !["solo", "duo"].includes(mode?.toLowerCase() || "");
 
     const sortedData = [...resultsData].sort((a, b) => {
       if (b.points !== a.points) return (b.points || 0) - (a.points || 0);

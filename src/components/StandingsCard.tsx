@@ -92,7 +92,7 @@ function drawStandings(
   mode: string,
   results: ResultRow[]
 ) {
-  const showPoints = mode?.toLowerCase() === "squad";
+  const showPoints = !["solo", "duo"].includes(mode?.toLowerCase() || "");
 
   const sortedData = [...results].sort((a, b) => {
     if (b.points !== a.points) return (b.points || 0) - (a.points || 0);
