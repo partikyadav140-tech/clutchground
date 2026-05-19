@@ -253,21 +253,9 @@ export function WalletDepositDialog({
             </div>
 
             <div className="flex gap-2">
-              {/* Open UPI app directly */}
-              <button
-                onClick={() => {
-                  window.location.href = payData.upiLink;
-                }}
-                className="flex-1 h-11 rounded-xl font-display font-bold text-sm flex items-center justify-center gap-2 text-white transition-opacity hover:opacity-90 active:scale-95"
-                style={{ background: "linear-gradient(135deg, #6B48FF, #FF6B6B)" }}
-              >
-                <Smartphone className="w-4 h-4" />
-                Open UPI App
-                <ExternalLink className="w-3 h-3" />
-              </button>
               <Button
                 onClick={() => setStep("upiid")}
-                className="flex-1 bg-primary text-white font-display rounded-xl"
+                className="w-full bg-primary text-white font-display rounded-xl h-11 text-sm font-bold active:scale-95 transition-transform"
               >
                 I've Paid →
               </Button>

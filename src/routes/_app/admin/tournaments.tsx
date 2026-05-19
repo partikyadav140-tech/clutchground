@@ -311,14 +311,14 @@ function AdminTournamentsPage() {
       ctx.fillStyle = "rgba(255,255,255,0.55)";
       ctx.fillText(r.position ? `#${r.position}` : "—", posCol.x + posCol.w / 2, cellMidY + 6);
 
-      // Points (Squad only, skip 0)
+      // Points (Squad only)
       if (showPoints) {
         const ptsCol = cols[4];
         const pts = r.points || 0;
         ctx.textAlign = "right";
         ctx.font = "bold 16px Arial";
-        ctx.fillStyle = pts > 0 ? "#a78bfa" : "rgba(255,255,255,0.2)";
-        ctx.fillText(pts > 0 ? String(pts) : "—", ptsCol.x + ptsCol.w, cellMidY + 6);
+        ctx.fillStyle = "#a78bfa";
+        ctx.fillText(String(pts), ptsCol.x + ptsCol.w, cellMidY + 6);
       }
 
       // Row divider
