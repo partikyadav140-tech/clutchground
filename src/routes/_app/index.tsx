@@ -1,5 +1,6 @@
+import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { getTournaments, getGlobalLeaderboard } from "../../api";
+import { getTournaments, getGlobalLeaderboard, getMyMatches } from "../../api";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { Trophy, Users, Crown, Wallet, ChevronRight, Clock, Flame, Zap, Shield, Star } from "lucide-react";
@@ -42,6 +43,15 @@ const MODE: Record<string, { color: string; glow: string; gradient: string; bg: 
 function HomePage() {
   const { ts: allT, lb } = Route.useLoaderData();
   const { user } = useAuth();
+  const [joinedMatches, setJoinedMatches] = React.useState<number[]>([]);
+
+  React.useEffect(() => {
+    if (user) {
+      (getMyMatches as any)({ data: user.id })
+        .then((matches: any[]) => setJoinedMatches(matches.map(m => m.id)))
+        .catch(console.error);
+    }
+  }, [user]);
 
   /* ── Carousels ── */
   const [featuredRef] = useEmblaCarousel(
@@ -137,7 +147,7 @@ function HomePage() {
             <div className="flex gap-3">
               {featured.map((t: any, i: number) => (
                 <div key={t.id} className="flex-[0_0_78%] min-w-0">
-                  <TournamentCard t={t} i={i} />
+                  <TournamentCard t={t} i={i} isJoined={joinedMatches.includes(t.id)} />
                 </div>
               ))}
             </div>
@@ -161,7 +171,7 @@ function HomePage() {
             <div className="flex gap-3">
               {battles.map((t: any, i: number) => (
                 <div key={t.id} className="flex-[0_0_78%] min-w-0">
-                  <TournamentCard t={t} i={i} />
+                  <TournamentCard t={t} i={i} isJoined={joinedMatches.includes(t.id)} />
                 </div>
               ))}
             </div>
@@ -233,7 +243,7 @@ function HomePage() {
 /* ════════════════════════════════════════════════
    SHARED TOURNAMENT CARD — identical to Arena page
 ════════════════════════════════════════════════ */
-function TournamentCard({ t, i }: { t: any; i: number }) {
+function TournamentCard({ t, i, isJoined }: { t: any; i: number; isJoined?: boolean }) {
   const poster  = POSTERS[t.id % POSTERS.length];
   const slots   = Number(t.slots) || 1;
   const filled  = Number(t.filled) || 0;
@@ -326,7 +336,11 @@ function TournamentCard({ t, i }: { t: any; i: number }) {
               </button>
             </Link>
             <div className="flex-1">
-              {isFull ? (
+              {isJoined ? (
+                <Link to={`/matches`} className="w-full h-10 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center bg-green-500/10 text-green-500 border border-green-500/20 press-effect">
+                  Already Joined
+                </Link>
+              ) : isFull ? (
                 <button disabled className="w-full h-10 rounded-2xl text-[10px] font-black uppercase bg-secondary text-muted-foreground border border-border cursor-not-allowed">Full</button>
               ) : (
                 <JoinBattleDialog

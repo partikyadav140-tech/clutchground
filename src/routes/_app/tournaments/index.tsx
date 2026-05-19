@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { getTournaments } from "../../../api";
+import * as React from "react";
+import { getTournaments, getMyMatches } from "../../../api";
+import { useAuth } from "../../../lib/auth-client";
 import {
   Search, Filter, Zap, Clock, Users, ChevronRight,
   Star, Shield, Swords,
@@ -30,9 +31,19 @@ const MODE: Record<string, { label: string; color: string; glow: string; gradien
 
 function TournamentsPage() {
   const tournaments = Route.useLoaderData();
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
-  const [q, setQ]           = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
+  const { user } = useAuth();
+  const [filter, setFilter] = React.useState<(typeof FILTERS)[number]>("All");
+  const [q, setQ]           = React.useState("");
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  const [joinedMatches, setJoinedMatches] = React.useState<number[]>([]);
+
+  React.useEffect(() => {
+    if (user) {
+      (getMyMatches as any)({ data: user.id })
+        .then((matches: any[]) => setJoinedMatches(matches.map(m => m.id)))
+        .catch(console.error);
+    }
+  }, [user]);
 
   const filtered = (tournaments as any[]).filter((t) => {
     if (t.status === "completed" || t.status === "locked") return false;
@@ -139,7 +150,7 @@ function TournamentsPage() {
               </button>
             </motion.div>
           ) : (
-            filtered.map((t: any, i: number) => <TournamentCard key={t.id} t={t} i={i} />)
+            filtered.map((t: any, i: number) => <TournamentCard key={t.id} t={t} i={i} isJoined={joinedMatches.includes(t.id)} />)
           )}
         </AnimatePresence>
       </div>
@@ -150,7 +161,7 @@ function TournamentsPage() {
 /* ═══════════════════════════════════════════════════
    PREMIUM TOURNAMENT CARD — Full redesign
 ═══════════════════════════════════════════════════ */
-function TournamentCard({ t, i }: { t: any; i: number }) {
+function TournamentCard({ t, i, isJoined }: { t: any; i: number; isJoined?: boolean }) {
   const poster   = POSTERS[t.id % POSTERS.length];
   const slots    = Number(t.slots) || 1;
   const filled   = Number(t.filled) || 0;
@@ -323,7 +334,11 @@ function TournamentCard({ t, i }: { t: any; i: number }) {
               </Link>
 
               <div className="flex-1">
-                {isFull ? (
+                {isJoined ? (
+                  <Link to={`/matches`} className="w-full h-12 rounded-2xl text-[12px] font-black uppercase flex items-center justify-center bg-green-500/10 text-green-500 border border-green-500/20 press-effect shadow-inner">
+                    Already Joined
+                  </Link>
+                ) : isFull ? (
                   <button
                     disabled
                     className="w-full h-12 rounded-2xl text-xs font-black uppercase tracking-widest bg-secondary text-muted-foreground border border-border cursor-not-allowed"
