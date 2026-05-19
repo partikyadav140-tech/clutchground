@@ -5,6 +5,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useEffect } from "react";
 import { trackWebVitals } from "@/lib/performance";
 import { ThemeProvider, themeInitScript } from "@/lib/theme";
+import { InstallPwaDialog } from "@/components/InstallPwaDialog";
 
 import appCss from "../styles.css?url";
 
@@ -79,6 +80,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
       <body>
         <ThemeProvider>
           <SplashScreen />
+          <InstallPwaDialog />
           {children}
           <ConfirmDialog />
           <Toaster
