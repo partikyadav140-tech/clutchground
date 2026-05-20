@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Mail, MessageCircle, Send, HeadphonesIcon, Hash, ArrowRight, MapPin, Clock, Building2 } from "lucide-react";
 import { toast } from "sonner";
-import { useState } from "react";
-import { saveContactMessage } from "../../api";
+import { useState, useEffect } from "react";
+import { saveContactMessage, getSocialLinks } from "../../api";
 import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/_app/contact")({
@@ -10,19 +10,66 @@ export const Route = createFileRoute("/_app/contact")({
   component: ContactPage,
 });
 
-const CHANNELS = [
-  { icon: Mail,            label: "Email Support",     value: "clutchgroundofficial@gmail.com", href: "mailto:clutchgroundofficial@gmail.com", color: "#60a5fa", bg: "rgba(96,165,250,0.1)", bd: "rgba(96,165,250,0.2)" },
-  { icon: MessageCircle,  label: "WhatsApp Channel",  value: "ClutchGround Updates",          href: "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s", color: "#34d399", bg: "rgba(52,211,153,0.1)", bd: "rgba(52,211,153,0.2)" },
-  { icon: Send,           label: "Telegram Group",    value: "@clutchground",                  href: "https://t.me/clutchground", color: "#38bdf8", bg: "rgba(56,189,248,0.1)", bd: "rgba(56,189,248,0.2)" },
-  { icon: Hash,           label: "Discord Server",    value: "ClutchGround Community",        href: "https://discord.gg/uYXFJswHdg", color: "#818cf8", bg: "rgba(129,140,248,0.1)", bd: "rgba(129,140,248,0.2)" },
-];
-
 function ContactPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+
+  const [socialLinks, setSocialLinks] = useState({
+    whatsapp: "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s",
+    discord: "https://discord.gg/uYXFJswHdg",
+    telegram: "https://t.me/clutchground",
+    email: "clutchgroundofficial@gmail.com"
+  });
+
+  useEffect(() => {
+    getSocialLinks().then(links => {
+      if (links) {
+        setSocialLinks(links);
+      }
+    });
+  }, []);
+
+  const channels = [
+    { 
+      icon: Mail, 
+      label: "Email Support", 
+      value: socialLinks.email, 
+      href: socialLinks.email.startsWith("mailto:") ? socialLinks.email : `mailto:${socialLinks.email}`, 
+      color: "#60a5fa", 
+      bg: "rgba(96,165,250,0.1)", 
+      bd: "rgba(96,165,250,0.2)" 
+    },
+    { 
+      icon: MessageCircle, 
+      label: "WhatsApp Channel", 
+      value: "ClutchGround Updates", 
+      href: socialLinks.whatsapp, 
+      color: "#34d399", 
+      bg: "rgba(52,211,153,0.1)", 
+      bd: "rgba(52,211,153,0.2)" 
+    },
+    { 
+      icon: Send, 
+      label: "Telegram Group", 
+      value: socialLinks.telegram.startsWith("http") ? socialLinks.telegram.split("/").pop() || "@clutchground" : (socialLinks.telegram.startsWith("@") ? socialLinks.telegram : `@${socialLinks.telegram}`), 
+      href: socialLinks.telegram.startsWith("http") ? socialLinks.telegram : `https://t.me/${socialLinks.telegram.replace("@", "")}`, 
+      color: "#38bdf8", 
+      bg: "rgba(56,189,248,0.1)", 
+      bd: "rgba(56,189,248,0.2)" 
+    },
+    { 
+      icon: Hash, 
+      label: "Discord Server", 
+      value: "ClutchGround Community", 
+      href: socialLinks.discord, 
+      color: "#818cf8", 
+      bg: "rgba(129,140,248,0.1)", 
+      bd: "rgba(129,140,248,0.2)" 
+    },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +105,7 @@ function ContactPage() {
             {[
               { icon: Building2, title: "CLUTCHGROUND", sub: "Skill-Based Esports Platform" },
               { icon: MapPin,    title: "Registered Address", sub: "Haryana, India — 126102" },
-              { icon: Mail,      title: "clutchgroundofficial@gmail.com", sub: "Official contact for disputes & refunds" },
+              { icon: Mail,      title: socialLinks.email, sub: "Official contact for disputes & refunds" },
               { icon: Clock,     title: "Support Hours", sub: "Mon – Sat, 10:00 AM – 8:00 PM IST" },
             ].map(({ icon: Icon, title, sub }) => (
               <div key={title} className="flex items-start gap-3">
@@ -78,7 +125,7 @@ function ContactPage() {
         <div>
           <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 ml-1">Direct Channels</p>
           <div className="flex flex-col gap-3">
-            {CHANNELS.map((c, i) => (
+            {channels.map((c, i) => (
               <motion.a
                 key={c.label}
                 href={c.href}

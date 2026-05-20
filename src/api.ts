@@ -2094,3 +2094,20 @@ export const getHeroBanners = createServerFn({ method: "GET" }).handler(async ()
   }
   return ["/hero-banner.png"];
 });
+
+export const getSocialLinks = createServerFn({ method: "GET" }).handler(async () => {
+  const { db } = await import("./lib/db");
+  const row = await db.prepare("SELECT value FROM site_settings WHERE key = 'social_links'").get();
+  const defaultLinks = {
+    whatsapp: "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s",
+    discord: "https://discord.gg/uYXFJswHdg",
+    telegram: "https://t.me/clutchground",
+    email: "clutchgroundofficial@gmail.com"
+  };
+  if (row) {
+    try {
+      return { ...defaultLinks, ...JSON.parse((row as any).value) };
+    } catch {}
+  }
+  return defaultLinks;
+});

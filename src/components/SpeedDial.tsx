@@ -1,33 +1,48 @@
-import { useState } from "react";
-import { MessageCircle, Send, Plus, Mail, Hash, Users } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MessageCircle, Send, Plus, Mail, Hash } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { getSocialLinks } from "../api";
 
 export function SpeedDial() {
   const [open, setOpen] = useState(false);
+  const [socialLinks, setSocialLinks] = useState({
+    whatsapp: "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s",
+    discord: "https://discord.gg/uYXFJswHdg",
+    telegram: "https://t.me/clutchground",
+    email: "clutchgroundofficial@gmail.com"
+  });
+
+  useEffect(() => {
+    getSocialLinks().then(links => {
+      if (links) {
+        setSocialLinks(links);
+      }
+    });
+  }, []);
 
   const links = [
     {
       name: "WhatsApp",
       icon: MessageCircle,
-      url: "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s",
+      url: socialLinks.whatsapp,
       color: "bg-[#25D366]",
     },
     {
       name: "Discord",
       icon: Hash,
-      url: "https://discord.gg/uYXFJswHdg",
+      url: socialLinks.discord,
       color: "bg-[#5865F2]",
     },
     {
       name: "Telegram",
       icon: Send,
-      url: "https://t.me/clutchground",
+      url: socialLinks.telegram.startsWith("http") ? socialLinks.telegram : `https://t.me/${socialLinks.telegram.replace("@", "")}`,
       color: "bg-[#0088cc]",
     },
     {
       name: "Email",
       icon: Mail,
-      url: "mailto:clutchgroundofficial@gmail.com",
+      url: socialLinks.email.startsWith("mailto:") ? socialLinks.email : `mailto:${socialLinks.email}`,
       color: "bg-[#D44638]",
     },
   ];

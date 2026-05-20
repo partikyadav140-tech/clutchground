@@ -1,4 +1,17 @@
+import { useState, useEffect } from "react";
+import { getSocialLinks } from "../api";
+
 export function Footer() {
+  const [email, setEmail] = useState("clutchgroundofficial@gmail.com");
+
+  useEffect(() => {
+    getSocialLinks().then(links => {
+      if (links?.email) {
+        setEmail(links.email);
+      }
+    });
+  }, []);
+
   return (
     <footer className="relative border-t border-border/60 bg-card/40 mt-24">
       <div className="absolute inset-x-0 top-0 h-px bg-fire-gradient opacity-50" />
@@ -117,7 +130,7 @@ export function Footer() {
             <div className="space-y-3 text-sm text-muted-foreground">
               <p>
                 <span className="block font-semibold text-foreground">Email</span>
-               clutchgroundofficial@gmail.com
+                {email}
               </p>
               <p>
                 <span className="block font-semibold text-foreground">Phone</span>

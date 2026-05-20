@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import {
   Settings, Bell, CreditCard, AlertTriangle, Save, X,
   Shield, Megaphone, ArrowLeft, ToggleLeft, ToggleRight, Trash2,
-  Image, Plus, Edit,
+  Image, Plus, Edit, Send,
 } from "lucide-react";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,12 @@ function AdminSiteSettingsPage() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingUrl, setEditingUrl] = useState("");
 
+  // Social Links
+  const [socialWhatsapp, setSocialWhatsapp] = useState("");
+  const [socialDiscord, setSocialDiscord] = useState("");
+  const [socialTelegram, setSocialTelegram] = useState("");
+  const [socialEmail, setSocialEmail] = useState("");
+
   useEffect(() => {
     try {
       const upiCfg = JSON.parse(initialSettings.upi_config || "{}");
@@ -91,6 +97,14 @@ function AdminSiteSettingsPage() {
     } catch {
       setHeroBanners(["/hero-banner.png"]);
     }
+
+    try {
+      const socialCfg = JSON.parse(initialSettings.social_links || "{}");
+      setSocialWhatsapp(socialCfg.whatsapp || "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s");
+      setSocialDiscord(socialCfg.discord || "https://discord.gg/uYXFJswHdg");
+      setSocialTelegram(socialCfg.telegram || "https://t.me/clutchground");
+      setSocialEmail(socialCfg.email || "clutchgroundofficial@gmail.com");
+    } catch {}
   }, [initialSettings]);
 
   if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
@@ -193,6 +207,25 @@ function AdminSiteSettingsPage() {
       toast.success("Hero banners successfully saved to database!");
     } catch (e: any) {
       toast.error(e.message || "Failed to save hero banners");
+    }
+  };
+
+  const saveSocialLinksConfig = async () => {
+    try {
+      await (saveSiteSetting as any)({
+        data: {
+          key: "social_links",
+          value: JSON.stringify({
+            whatsapp: socialWhatsapp,
+            discord: socialDiscord,
+            telegram: socialTelegram,
+            email: socialEmail
+          }),
+        },
+      });
+      toast.success("Social & Contact links saved to database!");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save links");
     }
   };
 
@@ -362,6 +395,22 @@ function AdminSiteSettingsPage() {
           </div>
         </SectionCard>
 
+        {/* ─── Social & Contact Links ─── */}
+        <SectionCard title="Social & Contact Links" icon={Send} color="text-sky-500" bg="bg-sky-500/10">
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground font-semibold">
+              Manage redirect links for WhatsApp, Discord, Telegram, and Email contact points.
+            </p>
+            <InputField label="WhatsApp URL" value={socialWhatsapp} onChange={e => setSocialWhatsapp(e.target.value)} placeholder="https://whatsapp.com/channel/..." />
+            <InputField label="Discord Invite URL" value={socialDiscord} onChange={e => setSocialDiscord(e.target.value)} placeholder="https://discord.gg/..." />
+            <InputField label="Telegram URL / Username" value={socialTelegram} onChange={e => setSocialTelegram(e.target.value)} placeholder="https://t.me/... or @username" />
+            <InputField label="Contact Email Address" value={socialEmail} onChange={e => setSocialEmail(e.target.value)} placeholder="support@clutchground.com" />
+
+            <Button className="w-full h-10 rounded-xl font-bold text-xs bg-sky-500 hover:bg-sky-600 text-white" onClick={saveSocialLinksConfig}>
+              <Save className="w-3.5 h-3.5 mr-1.5" /> Save Social Links
+            </Button>
+          </div>
+        </SectionCard>
 
         {/* ─── Maintenance Mode ─── */}
         <SectionCard title="Maintenance Mode" icon={Shield} color="text-purple-500" bg="bg-purple-500/10">
