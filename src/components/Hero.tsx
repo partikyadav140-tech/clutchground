@@ -1,10 +1,11 @@
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { Trophy, Zap, ChevronDown, Flame, Star } from "lucide-react";
 import { JoinBattleDialog } from "./JoinBattleDialog";
 import { useAuth } from "../lib/auth-client";
 import { toast } from "sonner";
+import { getHeroBanners } from "../api";
 
 const stats = [
   { v: "120K+", l: "Players", icon: "👾" },
@@ -17,6 +18,25 @@ export function Hero() {
   const reduce = useReducedMotion();
   const { user } = useAuth();
 
+  const [banners, setBanners] = useState<string[]>(["/hero-banner.png"]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    getHeroBanners().then((res) => {
+      if (res && res.length > 0) {
+        setBanners(res);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % banners.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [banners]);
+
   const t = (delay: number, duration = 0.6) => ({
     duration: reduce ? 0 : duration,
     delay: reduce ? 0 : delay,
@@ -25,13 +45,20 @@ export function Hero() {
 
   return (
     <section className="relative w-full min-h-[100svh] overflow-hidden bg-background">
-      {/* Background Image */}
+      {/* Background Image Carousel */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-black">
-        <img
-          src="/hero-banner.png"
-          alt="Hero Banner"
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-60"
-        />
+        <AnimatePresence mode="popLayout">
+          <motion.img
+            key={banners[currentIndex]}
+            src={banners[currentIndex]}
+            alt="Hero Banner"
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 0.6, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            className="absolute inset-0 w-full h-full object-cover object-center"
+          />
+        </AnimatePresence>
         {/* Gradient overlays for mobile readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/20 to-background z-10" />
         <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-transparent z-10 hidden sm:block" />
@@ -172,6 +199,22 @@ export function Hero() {
         <span className="text-[10px] font-display uppercase tracking-[0.3em]">Scroll</span>
         <ChevronDown className="w-4 h-4" />
       </motion.div>
+      {/* Dots Indicator */}
+      {banners.length > 1 && (
+        <div className="absolute bottom-10 left-6 z-20 flex gap-2 sm:left-12">
+          {banners.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentIndex(idx)}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                currentIndex === idx
+                  ? "bg-primary w-5 shadow-[0_0_8px_var(--primary)]"
+                  : "bg-muted-foreground/45 hover:bg-muted-foreground/80"
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

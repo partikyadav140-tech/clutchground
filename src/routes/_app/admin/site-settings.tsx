@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import {
   Settings, Bell, CreditCard, AlertTriangle, Save, X,
   Shield, Megaphone, ArrowLeft, ToggleLeft, ToggleRight, Trash2,
+  Image, Plus, Edit,
 } from "lucide-react";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,12 @@ function AdminSiteSettingsPage() {
   // Maintenance
   const [maintenance, setMaintenance] = useState(initialSettings.maintenance_mode === "true");
 
+  // Hero Banners
+  const [heroBanners, setHeroBanners] = useState<string[]>([]);
+  const [newBannerUrl, setNewBannerUrl] = useState("");
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingUrl, setEditingUrl] = useState("");
+
   useEffect(() => {
     try {
       const upiCfg = JSON.parse(initialSettings.upi_config || "{}");
@@ -74,6 +81,16 @@ function AdminSiteSettingsPage() {
       setMinDeposit(upiCfg.minDeposit || "50");
       setMaxDeposit(upiCfg.maxDeposit || "10000");
     } catch {}
+
+    try {
+      if (initialSettings.hero_banners) {
+        setHeroBanners(JSON.parse(initialSettings.hero_banners));
+      } else {
+        setHeroBanners(["/hero-banner.png"]);
+      }
+    } catch {
+      setHeroBanners(["/hero-banner.png"]);
+    }
   }, [initialSettings]);
 
   if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
@@ -134,6 +151,48 @@ function AdminSiteSettingsPage() {
       toast.success(newVal ? "Maintenance mode ON" : "Maintenance mode OFF");
     } catch (e: any) {
       toast.error(e.message || "Failed to toggle maintenance mode");
+    }
+  };
+
+  const addHeroBanner = () => {
+    if (!newBannerUrl.trim()) return toast.error("Please enter a valid banner URL.");
+    setHeroBanners([...heroBanners, newBannerUrl.trim()]);
+    setNewBannerUrl("");
+    toast.success("Banner added to list. Remember to save changes!");
+  };
+
+  const removeHeroBanner = (index: number) => {
+    const updated = heroBanners.filter((_, idx) => idx !== index);
+    setHeroBanners(updated);
+    toast.success("Banner removed from list. Remember to save changes!");
+  };
+
+  const startEditing = (index: number) => {
+    setEditingIndex(index);
+    setEditingUrl(heroBanners[index]);
+  };
+
+  const saveEdit = (index: number) => {
+    if (!editingUrl.trim()) return toast.error("URL cannot be empty.");
+    const updated = [...heroBanners];
+    updated[index] = editingUrl.trim();
+    setHeroBanners(updated);
+    setEditingIndex(null);
+    setEditingUrl("");
+    toast.success("Banner URL updated in list. Remember to save changes!");
+  };
+
+  const saveHeroBanners = async () => {
+    try {
+      await (saveSiteSetting as any)({
+        data: {
+          key: "hero_banners",
+          value: JSON.stringify(heroBanners),
+        },
+      });
+      toast.success("Hero banners successfully saved to database!");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save hero banners");
     }
   };
 
@@ -222,6 +281,87 @@ function AdminSiteSettingsPage() {
             </Button>
           </div>
         </SectionCard>
+
+        {/* ─── Hero Banners ─── */}
+        <SectionCard title="Hero Banners" icon={Image} color="text-blue-500" bg="bg-blue-500/10">
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground font-semibold">
+              Manage the background images displayed in the main homepage hero section. If multiple banners exist, they will automatically cycle every 3 seconds.
+            </p>
+
+            {/* List of current banners */}
+            <div className="space-y-2">
+              <label className="block text-[9px] uppercase tracking-widest font-black text-muted-foreground">Active Banners ({heroBanners.length})</label>
+              {heroBanners.length === 0 ? (
+                <div className="text-center py-6 bg-secondary/20 rounded-xl border border-border/50 text-xs text-muted-foreground font-semibold">
+                  No active banners. Click add below.
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {heroBanners.map((url, idx) => (
+                    <div key={idx} className="flex flex-col gap-2 p-3 bg-secondary/35 rounded-xl border border-border/50">
+                      {editingIndex === idx ? (
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={editingUrl}
+                            onChange={e => setEditingUrl(e.target.value)}
+                            className="flex-1 bg-background/50 border border-border focus:border-primary outline-none px-3 py-1.5 text-xs rounded-lg font-semibold"
+                            placeholder="Image URL"
+                          />
+                          <Button className="h-8 px-3 rounded-lg font-bold text-xs bg-emerald-500 text-white" onClick={() => saveEdit(idx)}>
+                            Save
+                          </Button>
+                          <Button variant="outline" className="h-8 px-3 rounded-lg font-bold text-xs border-border" onClick={() => setEditingIndex(null)}>
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <img src={url} alt={`Banner ${idx}`} className="w-12 h-8 rounded object-cover shrink-0 bg-black/40 border border-border" onError={(e) => { (e.target as HTMLImageElement).src = '/hero-banner.png'; }} />
+                            <span className="text-xs font-mono font-semibold text-foreground truncate">{url}</span>
+                          </div>
+                          <div className="flex gap-1.5">
+                            <button onClick={() => startEditing(idx)} className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => removeHeroBanner(idx)} className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Add new banner */}
+            <div className="bg-secondary/20 rounded-xl p-3 border border-border/50 space-y-2">
+              <label className="block text-[9px] uppercase tracking-widest font-black text-muted-foreground">Add New Banner</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newBannerUrl}
+                  onChange={e => setNewBannerUrl(e.target.value)}
+                  className="flex-1 bg-background/50 border border-border focus:border-primary outline-none px-3 py-2 text-xs rounded-lg font-semibold"
+                  placeholder="e.g. /my-banner.jpg or https://image-url.png"
+                />
+                <Button className="h-9 px-3 rounded-lg font-bold text-xs bg-blue-500 hover:bg-blue-600 text-white" onClick={addHeroBanner}>
+                  <Plus className="w-4 h-4 mr-1" /> Add
+                </Button>
+              </div>
+            </div>
+
+            {/* Save Button */}
+            <Button className="w-full h-10 rounded-xl font-bold text-xs bg-primary text-white" onClick={saveHeroBanners}>
+              <Save className="w-3.5 h-3.5 mr-1.5" /> Save Banners to DB
+            </Button>
+          </div>
+        </SectionCard>
+
 
         {/* ─── Maintenance Mode ─── */}
         <SectionCard title="Maintenance Mode" icon={Shield} color="text-purple-500" bg="bg-purple-500/10">

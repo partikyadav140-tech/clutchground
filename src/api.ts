@@ -2083,3 +2083,14 @@ export const saveUpiId = createServerFn({ method: "POST" }).handler(async ({ dat
   await db.prepare("UPDATE users SET upi_id = ? WHERE id = ?").run(upiId, userId);
   return { success: true };
 });
+
+export const getHeroBanners = createServerFn({ method: "GET" }).handler(async () => {
+  const { db } = await import("./lib/db");
+  const row = await db.prepare("SELECT value FROM site_settings WHERE key = 'hero_banners'").get();
+  if (row) {
+    try {
+      return JSON.parse((row as any).value) as string[];
+    } catch {}
+  }
+  return ["/hero-banner.png"];
+});
