@@ -1,10 +1,10 @@
 import * as React from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { getTournaments, getGlobalLeaderboard, getMyMatches } from "../../api";
+import { getTournaments, getGlobalLeaderboard, getMyMatches, getHeroBanners } from "../../api";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { Trophy, Users, Crown, Wallet, ChevronRight, Clock, Flame, Zap, Shield, Star } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { useAuth } from "../../lib/auth-client";
 import { GodCoin } from "@/components/GodCoin";
@@ -44,6 +44,24 @@ function HomePage() {
   const { ts: allT, lb } = Route.useLoaderData();
   const { user } = useAuth();
   const [joinedMatches, setJoinedMatches] = React.useState<number[]>([]);
+  const [banners, setBanners] = React.useState<string[]>(["/new-banner.png"]);
+  const [currentBannerIdx, setCurrentBannerIdx] = React.useState(0);
+
+  React.useEffect(() => {
+    getHeroBanners().then((res) => {
+      if (res && res.length > 0) {
+        setBanners(res);
+      }
+    });
+  }, []);
+
+  React.useEffect(() => {
+    if (banners.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentBannerIdx((prev) => (prev + 1) % banners.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [banners]);
 
   React.useEffect(() => {
     if (user) {
@@ -124,10 +142,42 @@ function HomePage() {
         </div>
       </div>
 
-      {/* ── Banner ── */}
+      {/* ── Banner Carousel ── */}
       <div className="px-4 mb-5">
-        <div className="rounded-2xl overflow-hidden border border-border shadow-card">
-          <img src="/new-banner.png" alt="CLUTCHGROUND Banner" className="w-full h-auto block" style={{ maxHeight: 200, objectFit: "cover", objectPosition: "center" }} />
+        <div className="relative rounded-2xl overflow-hidden border border-border shadow-card bg-black/10" style={{ height: 160 }}>
+          <AnimatePresence mode="popLayout">
+            <motion.img
+              key={banners[currentBannerIdx]}
+              src={banners[currentBannerIdx]}
+              alt="CLUTCHGROUND Banner"
+              initial={{ opacity: 0, scale: 1.02 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.6, ease: "easeInOut" }}
+              className="absolute inset-0 w-full h-full object-cover object-center"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/new-banner.png'; }}
+            />
+          </AnimatePresence>
+          
+          {/* Overlay to darken slightly for a premium feel */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+
+          {/* Dots Indicator */}
+          {banners.length > 1 && (
+            <div className="absolute bottom-3 right-3 z-20 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm">
+              {banners.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentBannerIdx(idx)}
+                  className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                    currentBannerIdx === idx
+                      ? "bg-primary w-3"
+                      : "bg-white/50 hover:bg-white/80"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
