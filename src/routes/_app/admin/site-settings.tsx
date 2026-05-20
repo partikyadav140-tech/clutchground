@@ -372,19 +372,76 @@ function AdminSiteSettingsPage() {
             </div>
 
             {/* Add new banner */}
-            <div className="bg-secondary/20 rounded-xl p-3 border border-border/50 space-y-2">
+            <div className="bg-secondary/20 rounded-xl p-3 border border-border/50 space-y-3">
               <label className="block text-[9px] uppercase tracking-widest font-black text-muted-foreground">Add New Banner</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newBannerUrl}
-                  onChange={e => setNewBannerUrl(e.target.value)}
-                  className="flex-1 bg-background/50 border border-border focus:border-primary outline-none px-3 py-2 text-xs rounded-lg font-semibold"
-                  placeholder="e.g. /my-banner.jpg or https://image-url.png"
-                />
-                <Button className="h-9 px-3 rounded-lg font-bold text-xs bg-blue-500 hover:bg-blue-600 text-white" onClick={addHeroBanner}>
-                  <Plus className="w-4 h-4 mr-1" /> Add
-                </Button>
+              
+              <div className="flex flex-col gap-2">
+                {/* File Upload Button */}
+                <label className="flex items-center justify-center gap-2 h-10 px-4 rounded-xl border border-dashed border-border hover:border-primary/60 bg-secondary/40 cursor-pointer text-xs font-bold text-muted-foreground hover:text-foreground transition-all">
+                  <Plus className="w-4 h-4 text-primary" />
+                  <span>Choose Photo from Device</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      
+                      const toastId = toast.loading("Processing image...");
+                      try {
+                        const reader = new FileReader();
+                        reader.onload = async (ev) => {
+                          const img = new window.Image();
+                          img.src = ev.target?.result as string;
+                          img.onload = () => {
+                            const canvas = document.createElement("canvas");
+                            // Scale down to max 1200 width to keep size small
+                            const MAX_WIDTH = 1200;
+                            let width = img.width;
+                            let height = img.height;
+                            if (width > MAX_WIDTH) {
+                              height = Math.round((height * MAX_WIDTH) / width);
+                              width = MAX_WIDTH;
+                            }
+                            canvas.width = width;
+                            canvas.height = height;
+                            
+                            const context = canvas.getContext("2d");
+                            context?.drawImage(img, 0, 0, width, height);
+                            const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.75);
+                            
+                            setHeroBanners([...heroBanners, compressedDataUrl]);
+                            toast.success("Photo added successfully! Click save below to persist.", { id: toastId });
+                          };
+                        };
+                        reader.readAsDataURL(file);
+                      } catch {
+                        toast.error("Failed to process image.", { id: toastId });
+                      }
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+                
+                <div className="relative flex py-1 items-center">
+                  <div className="flex-grow border-t border-border/40"></div>
+                  <span className="flex-shrink mx-3 text-[8px] font-black uppercase text-muted-foreground/60 tracking-wider">or enter URL</span>
+                  <div className="flex-grow border-t border-border/40"></div>
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newBannerUrl}
+                    onChange={e => setNewBannerUrl(e.target.value)}
+                    className="flex-1 bg-background/50 border border-border focus:border-primary outline-none px-3 py-2 text-xs rounded-lg font-semibold"
+                    placeholder="e.g. /my-banner.jpg or https://image-url.png"
+                  />
+                  <Button className="h-9 px-3 rounded-lg font-bold text-xs bg-blue-500 hover:bg-blue-600 text-white" onClick={addHeroBanner}>
+                    <Plus className="w-4 h-4 mr-1" /> Add URL
+                  </Button>
+                </div>
               </div>
             </div>
 
