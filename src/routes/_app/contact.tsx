@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Mail, MessageCircle, Send, HeadphonesIcon, Hash, ArrowRight, MapPin, Clock, Building2 } from "lucide-react";
+import { Mail, MessageCircle, Send, HeadphonesIcon, Hash, ArrowRight, MapPin, Clock, Building2, Instagram } from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { saveContactMessage, getSocialLinks } from "../../api";
@@ -21,7 +21,8 @@ function ContactPage() {
     whatsapp: "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s",
     discord: "https://discord.gg/uYXFJswHdg",
     telegram: "https://t.me/clutchground",
-    email: "clutchgroundofficial@gmail.com"
+    email: "clutchgroundofficial@gmail.com",
+    instagram: "https://instagram.com/clutchground"
   });
 
   useEffect(() => {
@@ -68,6 +69,15 @@ function ContactPage() {
       color: "#818cf8", 
       bg: "rgba(129,140,248,0.1)", 
       bd: "rgba(129,140,248,0.2)" 
+    },
+    { 
+      icon: Instagram, 
+      label: "Instagram Page", 
+      value: socialLinks.instagram.startsWith("http") ? socialLinks.instagram.split("/").filter(Boolean).pop() || "@clutchground" : (socialLinks.instagram.startsWith("@") ? socialLinks.instagram : `@${socialLinks.instagram}`), 
+      href: socialLinks.instagram.startsWith("http") ? socialLinks.instagram : `https://instagram.com/${socialLinks.instagram.replace("@", "")}`, 
+      color: "#ec4899", 
+      bg: "rgba(236,72,153,0.1)", 
+      bd: "rgba(236,72,153,0.2)" 
     },
   ];
 

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import {
   Settings, Bell, CreditCard, AlertTriangle, Save, X,
   Shield, Megaphone, ArrowLeft, ToggleLeft, ToggleRight, Trash2,
-  Image, Plus, Edit, Send,
+  Image, Plus, Edit, Send, Instagram,
 } from "lucide-react";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -78,6 +78,7 @@ function AdminSiteSettingsPage() {
   const [socialDiscord, setSocialDiscord] = useState("");
   const [socialTelegram, setSocialTelegram] = useState("");
   const [socialEmail, setSocialEmail] = useState("");
+  const [socialInstagram, setSocialInstagram] = useState("");
 
   useEffect(() => {
     try {
@@ -104,6 +105,7 @@ function AdminSiteSettingsPage() {
       setSocialDiscord(socialCfg.discord || "https://discord.gg/uYXFJswHdg");
       setSocialTelegram(socialCfg.telegram || "https://t.me/clutchground");
       setSocialEmail(socialCfg.email || "clutchgroundofficial@gmail.com");
+      setSocialInstagram(socialCfg.instagram || "https://instagram.com/clutchground");
     } catch {}
   }, [initialSettings]);
 
@@ -219,7 +221,8 @@ function AdminSiteSettingsPage() {
             whatsapp: socialWhatsapp,
             discord: socialDiscord,
             telegram: socialTelegram,
-            email: socialEmail
+            email: socialEmail,
+            instagram: socialInstagram
           }),
         },
       });
@@ -462,6 +465,7 @@ function AdminSiteSettingsPage() {
             <InputField label="Discord Invite URL" value={socialDiscord} onChange={e => setSocialDiscord(e.target.value)} placeholder="https://discord.gg/..." />
             <InputField label="Telegram URL / Username" value={socialTelegram} onChange={e => setSocialTelegram(e.target.value)} placeholder="https://t.me/... or @username" />
             <InputField label="Contact Email Address" value={socialEmail} onChange={e => setSocialEmail(e.target.value)} placeholder="support@clutchground.com" />
+            <InputField label="Instagram URL / Username" value={socialInstagram} onChange={e => setSocialInstagram(e.target.value)} placeholder="https://instagram.com/... or username" />
 
             <Button className="w-full h-10 rounded-xl font-bold text-xs bg-sky-500 hover:bg-sky-600 text-white" onClick={saveSocialLinksConfig}>
               <Save className="w-3.5 h-3.5 mr-1.5" /> Save Social Links
