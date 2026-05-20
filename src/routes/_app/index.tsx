@@ -144,7 +144,7 @@ function HomePage() {
 
       {/* ── Banner Carousel ── */}
       <div className="px-4 mb-5">
-        <div className="relative w-full aspect-square rounded-3xl overflow-hidden border border-border shadow-card bg-black/10">
+        <div className="relative w-full aspect-video rounded-3xl overflow-hidden border border-border shadow-card bg-black/10">
           <AnimatePresence mode="popLayout">
             <motion.img
               key={banners[currentBannerIdx]}

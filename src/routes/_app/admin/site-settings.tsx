@@ -385,7 +385,7 @@ function AdminSiteSettingsPage() {
                       ) : (
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2 overflow-hidden">
-                            <img src={url} alt={`Banner ${idx}`} className="w-12 h-12 rounded-lg object-cover shrink-0 bg-black/40 border border-border" onError={(e) => { (e.target as HTMLImageElement).src = '/hero-banner.png'; }} />
+                            <img src={url} alt={`Banner ${idx}`} className="w-16 h-10 rounded-lg object-cover shrink-0 bg-black/40 border border-border" onError={(e) => { (e.target as HTMLImageElement).src = '/hero-banner.png'; }} />
                             <span className="text-xs font-mono font-semibold text-foreground truncate">{url}</span>
                           </div>
                           <div className="flex gap-1.5">
