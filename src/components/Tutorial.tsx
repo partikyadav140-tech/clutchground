@@ -81,7 +81,6 @@ export function Tutorial() {
           allowClose: true,
           popoverClass: "driverjs-theme",
           overlayColor: "rgba(0,0,0,0.72)",
-          topOffset: 64,
           steps: steps as any,
           onDestroyStarted: async () => {
             if (!driverObj.hasNextStep()) {

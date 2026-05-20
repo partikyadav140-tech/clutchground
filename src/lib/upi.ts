@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { db } from "./db";
 
 // Your platform UPI ID
-export const PLATFORM_UPI_ID = process.env.UPI_ID || "8307224756.wallet@phonepe";
+export const PLATFORM_UPI_ID = process.env.UPI_ID || "clutchground@nyes";
 export const PLATFORM_NAME = "CLUTCHGROUND";
 
 /** Create a pending UPI deposit request */
@@ -71,7 +71,7 @@ export const submitUpiUtr = createServerFn({ method: "POST" }).handler(
   },
 );
 
-/** Admin: get all pending UPI deposits */
+/** Admin: get all UPI deposits */
 export const getPendingUpiDeposits = createServerFn({ method: "GET" }).handler(
   async () => {
     return (await db
@@ -79,7 +79,6 @@ export const getPendingUpiDeposits = createServerFn({ method: "GET" }).handler(
         `SELECT d.*, u.username, u.phone
          FROM upi_deposits d
          JOIN users u ON d.user_id = u.id
-         WHERE d.status IN ('submitted', 'pending')
          ORDER BY d.created_at DESC`,
       )
       .all()) as any[];

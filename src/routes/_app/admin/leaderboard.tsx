@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { GodCoin } from "@/components/GodCoin";
+import { AdminNavBar } from "@/components/AdminNavBar";
 
 export const Route = createFileRoute("/_app/admin/leaderboard")({
   head: () => ({ meta: [{ title: "Leaderboard Admin — Professional Esports Arena" }] }),
@@ -194,6 +195,7 @@ function AdminLeaderboardPage() {
           </div>
         )}
       </div>
+      <AdminNavBar />
     </div>
   );
 }

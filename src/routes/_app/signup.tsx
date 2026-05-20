@@ -17,7 +17,7 @@ function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [form, setForm] = useState({ username: "", ign: "", uid: "", email: "", phone: "", password: "", security_question: "What is your childhood nickname?", security_answer: "" });
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [k]: e.target.value }));
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();

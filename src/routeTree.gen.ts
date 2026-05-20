@@ -40,6 +40,7 @@ import { Route as AppAdminNotificationsRouteImport } from './routes/_app/admin/n
 import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin/messages'
 import { Route as AppAdminLeaderboardRouteImport } from './routes/_app/admin/leaderboard'
 import { Route as AppAdminDepositsRouteImport } from './routes/_app/admin/deposits'
+import { Route as AppAdminSiteSettingsRouteImport } from './routes/_app/admin/site-settings'
 import { Route as AppAdminTicketsIndexRouteImport } from './routes/_app/admin/tickets.index'
 import { Route as AppAdminTicketsTicketIdRouteImport } from './routes/_app/admin/tickets.$ticketId'
 
@@ -197,6 +198,11 @@ const AppAdminDepositsRoute = AppAdminDepositsRouteImport.update({
   path: '/admin/deposits',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminSiteSettingsRoute = AppAdminSiteSettingsRouteImport.update({
+  id: '/admin/site-settings',
+  path: '/admin/site-settings',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminTicketsIndexRoute = AppAdminTicketsIndexRouteImport.update({
   id: '/admin/tickets/',
   path: '/admin/tickets/',
@@ -226,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof AppTermsRoute
   '/wallet': typeof AppWalletRoute
   '/admin/deposits': typeof AppAdminDepositsRoute
+  '/admin/site-settings': typeof AppAdminSiteSettingsRoute
   '/admin/leaderboard': typeof AppAdminLeaderboardRoute
   '/admin/messages': typeof AppAdminMessagesRoute
   '/admin/notifications': typeof AppAdminNotificationsRoute
@@ -260,6 +267,7 @@ export interface FileRoutesByTo {
   '/wallet': typeof AppWalletRoute
   '/': typeof AppIndexRoute
   '/admin/deposits': typeof AppAdminDepositsRoute
+  '/admin/site-settings': typeof AppAdminSiteSettingsRoute
   '/admin/leaderboard': typeof AppAdminLeaderboardRoute
   '/admin/messages': typeof AppAdminMessagesRoute
   '/admin/notifications': typeof AppAdminNotificationsRoute
@@ -296,6 +304,7 @@ export interface FileRoutesById {
   '/_app/wallet': typeof AppWalletRoute
   '/_app/': typeof AppIndexRoute
   '/_app/admin/deposits': typeof AppAdminDepositsRoute
+  '/_app/admin/site-settings': typeof AppAdminSiteSettingsRoute
   '/_app/admin/leaderboard': typeof AppAdminLeaderboardRoute
   '/_app/admin/messages': typeof AppAdminMessagesRoute
   '/_app/admin/notifications': typeof AppAdminNotificationsRoute
@@ -332,6 +341,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/wallet'
     | '/admin/deposits'
+    | '/admin/site-settings'
     | '/admin/leaderboard'
     | '/admin/messages'
     | '/admin/notifications'
@@ -366,6 +376,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/'
     | '/admin/deposits'
+    | '/admin/site-settings'
     | '/admin/leaderboard'
     | '/admin/messages'
     | '/admin/notifications'
@@ -401,6 +412,7 @@ export interface FileRouteTypes {
     | '/_app/wallet'
     | '/_app/'
     | '/_app/admin/deposits'
+    | '/_app/admin/site-settings'
     | '/_app/admin/leaderboard'
     | '/_app/admin/messages'
     | '/_app/admin/notifications'
@@ -641,6 +653,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminDepositsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/site-settings': {
+      id: '/_app/admin/site-settings'
+      path: '/admin/site-settings'
+      fullPath: '/admin/site-settings'
+      preLoaderRoute: typeof AppAdminSiteSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/tickets/': {
       id: '/_app/admin/tickets/'
       path: '/admin/tickets'
@@ -676,6 +695,7 @@ interface AppRouteChildren {
   AppWalletRoute: typeof AppWalletRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAdminDepositsRoute: typeof AppAdminDepositsRoute
+  AppAdminSiteSettingsRoute: typeof AppAdminSiteSettingsRoute
   AppAdminLeaderboardRoute: typeof AppAdminLeaderboardRoute
   AppAdminMessagesRoute: typeof AppAdminMessagesRoute
   AppAdminNotificationsRoute: typeof AppAdminNotificationsRoute
@@ -711,6 +731,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppWalletRoute: AppWalletRoute,
   AppIndexRoute: AppIndexRoute,
   AppAdminDepositsRoute: AppAdminDepositsRoute,
+  AppAdminSiteSettingsRoute: AppAdminSiteSettingsRoute,
   AppAdminLeaderboardRoute: AppAdminLeaderboardRoute,
   AppAdminMessagesRoute: AppAdminMessagesRoute,
   AppAdminNotificationsRoute: AppAdminNotificationsRoute,

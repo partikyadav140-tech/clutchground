@@ -4,6 +4,7 @@ import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { getContactMessages } from "../../../api";
 import { motion } from "framer-motion";
+import { AdminNavBar } from "@/components/AdminNavBar";
 
 export const Route = createFileRoute("/_app/admin/messages")({
   head: () => ({ meta: [{ title: "Admin: Messages — Professional Esports Arena" }] }),
@@ -117,6 +118,7 @@ function AdminMessages() {
           </div>
         )}
       </div>
+      <AdminNavBar />
     </div>
   );
 }

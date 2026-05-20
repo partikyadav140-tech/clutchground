@@ -1,226 +1,208 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Banknote, CheckCircle, XCircle, Clock, ShieldAlert } from "lucide-react";
+import { useState, useMemo } from "react";
+import { ArrowLeft, Banknote, CheckCircle, XCircle, ShieldAlert, IndianRupee } from "lucide-react";
 import { getPayouts, updatePayoutStatus } from "../../../api";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { GodCoin } from "@/components/GodCoin";
 import { toast } from "sonner";
 import { confirmDialog } from "@/components/ConfirmDialog";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { AdminNavBar } from "@/components/AdminNavBar";
 
 export const Route = createFileRoute("/_app/admin/payouts")({
-  head: () => ({ meta: [{ title: "Payouts Admin — Professional Esports Arena" }] }),
+  head: () => ({ meta: [{ title: "Payouts Admin — CLUTCHGROUND" }] }),
   loader: async () => await getPayouts(),
   component: AdminPayoutsPage,
 });
 
+type FilterTab = "pending" | "completed" | "rejected" | "all";
+
+const STATUS_PILL: Record<string, string> = {
+  pending:   "bg-amber-500/10 text-amber-600 border-amber-500/30",
+  completed: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
+  rejected:  "bg-red-500/10 text-red-500 border-red-500/30",
+};
+
 function AdminPayoutsPage() {
-  const payouts = Route.useLoaderData();
+  const payouts = Route.useLoaderData() as any[];
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [tab, setTab] = useState<FilterTab>("pending");
 
   if (loading)
-    return (
-      <div className="flex items-center justify-center min-h-[60vh] bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   if (!user || user.role !== "admin") {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 text-center">
-        <div className="w-20 h-20 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
-          <ShieldAlert className="w-10 h-10 text-destructive" />
-        </div>
-        <h1 className="text-3xl font-display font-black text-foreground mb-2">Access Denied</h1>
-        <p className="text-muted-foreground font-semibold mb-8 max-w-sm">
-          You must be logged in as an administrator to view this page.
-        </p>
-        <Link to="/login">
-          <Button className="h-12 px-8 rounded-xl font-bold bg-primary text-white shadow-primary">
-            Return to Login
-          </Button>
-        </Link>
+        <ShieldAlert className="w-10 h-10 text-destructive mb-4" />
+        <h1 className="text-2xl font-display font-black text-foreground mb-4">Access Denied</h1>
+        <Link to="/login"><Button className="bg-primary text-white rounded-xl font-bold h-12 px-8">Return to Login</Button></Link>
       </div>
     );
   }
 
-  const handleResolve = async (
-    payoutId: number,
-    userId: number,
-    amount: number,
-    status: string,
-  ) => {
+  const handleResolve = async (payoutId: number, userId: number, amount: number, status: string) => {
     const yes = await confirmDialog({
-      title: "Resolve Payout?",
-      description: `Are you sure you want to mark this payout as ${status.toUpperCase()}?`,
-      confirmText: status.toUpperCase(),
+      title: `Mark as ${status === "completed" ? "Paid" : "Rejected"}?`,
+      description: status === "completed"
+        ? `Confirm payment of ₹${amount} was sent to this user's UPI?`
+        : `Reject this withdrawal of ₹${amount}? Coins will be refunded.`,
+      confirmText: status === "completed" ? "Mark Paid" : "Reject & Refund",
       isDestructive: status === "rejected",
     });
     if (!yes) return;
-
     try {
       await (updatePayoutStatus as any)({ data: { payoutId, status, userId, amount } });
-      toast.success(`Payout marked as ${status}!`);
+      toast.success(status === "completed" ? "Payout marked as paid!" : "Rejected & refunded.");
       router.invalidate();
-    } catch (e: any) {
-      toast.error(e.message || "Failed to update payout status");
-    }
+    } catch (e: any) { toast.error(e.message || "Failed"); }
   };
 
   const pendingCount = payouts.filter((p: any) => p.status === "pending").length;
+  const pendingTotal = payouts.reduce((s: number, p: any) => s + (p.status === "pending" ? p.amount : 0), 0);
+  const paidTotal = payouts.reduce((s: number, p: any) => s + (p.status === "completed" ? p.amount : 0), 0);
+
+  const TABS: { key: FilterTab; label: string; count: number }[] = [
+    { key: "pending",   label: "Pending",   count: payouts.filter((p: any) => p.status === "pending").length },
+    { key: "completed", label: "Completed", count: payouts.filter((p: any) => p.status === "completed").length },
+    { key: "rejected",  label: "Rejected",  count: payouts.filter((p: any) => p.status === "rejected").length },
+    { key: "all",       label: "All",       count: payouts.length },
+  ];
+
+  const filtered = useMemo(() =>
+    tab === "all" ? payouts : payouts.filter((p: any) => p.status === tab),
+    [payouts, tab]
+  );
 
   return (
-    <div className="bg-background min-h-screen pb-24">
-      {/* ─── Top Header (Mobile First) ─── */}
-      <div className="bg-card rounded-b-[2rem] shadow-[0_4px_24px_oklch(0_0_0/0.04)] pt-6 pb-6 px-4 relative overflow-hidden z-10">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-
-        <Link
-          to="/admin"
-          className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground hover:text-cta mb-4 relative z-10 transition-colors bg-secondary/50 px-3 py-1.5 rounded-full"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+    <div className="bg-background min-h-screen pb-2">
+      {/* Header */}
+      <div className="bg-card border-b border-border pt-6 pb-5 px-4 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/3" />
+        <Link to="/admin" className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground mb-4 bg-secondary/50 px-3 py-1.5 rounded-full transition-colors">
+          <ArrowLeft className="w-3.5 h-3.5" /> Back
         </Link>
-
-        <div className="relative z-10 flex flex-col items-center text-center">
-          <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mb-3">
-            <Banknote className="w-6 h-6" />
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-emerald-500/10 text-emerald-500 rounded-xl flex items-center justify-center">
+            <Banknote className="w-5 h-5" />
           </div>
-          <h1 className="font-display text-3xl font-black text-foreground">Payouts</h1>
-          <p className="text-sm text-muted-foreground mt-1 font-semibold">Financial Requests</p>
+          <div>
+            <h1 className="font-display text-2xl font-black text-foreground">Payouts</h1>
+            <p className="text-xs text-muted-foreground font-semibold">Withdrawal requests</p>
+          </div>
         </div>
 
-        <div className="mt-6 flex items-center justify-center">
-          <div className="bg-secondary/50 px-4 py-2 rounded-xl flex items-center gap-2">
-            <div
-              className={`w-2.5 h-2.5 rounded-full ${pendingCount > 0 ? "bg-amber-500 animate-pulse" : "bg-green-500"}`}
-            />
-            <span className="text-sm font-bold text-foreground">
-              {pendingCount} Pending Requests
-            </span>
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="bg-secondary/40 rounded-xl p-2.5 text-center">
+            <div className={`font-display font-black text-lg ${pendingCount > 0 ? "text-amber-500" : "text-foreground"}`}>{pendingCount}</div>
+            <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Pending</div>
+            {pendingCount > 0 && <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse mx-auto mt-1" />}
+          </div>
+          <div className="bg-secondary/40 rounded-xl p-2.5 text-center">
+            <div className="font-display font-black text-lg text-amber-500 text-sm">₹{pendingTotal}</div>
+            <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Pending ₹</div>
+          </div>
+          <div className="bg-secondary/40 rounded-xl p-2.5 text-center">
+            <div className="font-display font-black text-lg text-emerald-500 text-sm">₹{paidTotal}</div>
+            <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Paid Out</div>
           </div>
         </div>
       </div>
 
-      <div className="px-4 mt-6">
-        {payouts.length === 0 ? (
-          <div className="text-center py-12 bg-card rounded-[1.5rem] border border-border shadow-sm">
-            <Banknote className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
-            <p className="text-foreground font-semibold">No withdrawal requests found.</p>
+      <div className="px-4 pt-4">
+        {/* Tabs */}
+        <div className="flex gap-1.5 mb-4 overflow-x-auto hide-scrollbar pb-1">
+          {TABS.map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-3 py-1.5 rounded-full font-bold text-xs whitespace-nowrap flex items-center gap-1.5 transition-colors shrink-0 ${
+                tab === t.key ? "bg-primary text-white" : "bg-card border border-border text-muted-foreground hover:bg-secondary"
+              }`}
+            >
+              {t.label}
+              <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black ${tab === t.key ? "bg-white/20" : "bg-secondary"}`}>{t.count}</span>
+            </button>
+          ))}
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="text-center py-16 bg-card rounded-2xl border border-border">
+            <Banknote className="w-10 h-10 mx-auto mb-2 text-muted-foreground/30" />
+            <p className="font-semibold text-foreground">No {tab === "all" ? "" : tab} payouts</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {payouts.map((p: any, i: number) => (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, delay: i * 0.05 }}
-                key={p.id}
-                className={`bg-card rounded-[1.5rem] border ${p.status === "pending" ? "border-amber-200 shadow-md" : "border-border shadow-sm"} overflow-hidden group`}
-              >
-                <div className="p-5">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <h3 className="font-display font-black text-xl text-foreground truncate">
-                          {p.username}
-                        </h3>
-                        <span
-                          className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full border ${
-                            p.status === "pending"
-                              ? "bg-amber-50 text-amber-700 border-amber-200"
-                              : p.status === "completed"
-                                ? "bg-green-50 text-green-700 border-green-200"
-                                : "bg-red-50 text-red-700 border-red-200"
-                          }`}
-                        >
-                          {p.status}
-                        </span>
+          <div className="space-y-3">
+            <AnimatePresence>
+              {filtered.map((p: any, i: number) => (
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.15, delay: Math.min(i * 0.04, 0.3) }}
+                  className={`bg-card rounded-2xl border overflow-hidden ${p.status === "pending" ? "border-amber-400/30 shadow-md" : "border-border/50 shadow-sm"}`}
+                >
+                  <div className="p-4">
+                    {/* Top row */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <h3 className="font-display font-black text-foreground">{p.username}</h3>
+                          <span className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-full border ${STATUS_PILL[p.status] || ""}`}>{p.status}</span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground font-semibold">{p.phone || p.email || "—"}</p>
                       </div>
-
-                      <div className="bg-secondary/30 rounded-xl p-4 border border-border space-y-2.5">
-                        <div className="flex flex-col sm:flex-row sm:gap-6 gap-2.5 text-xs">
-                          <div className="truncate">
-                            <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px] block mb-0.5">
-                              Contact
-                            </span>
-                            <span className="font-semibold text-foreground">
-                              {p.phone || p.email || "N/A"}
-                            </span>
-                          </div>
-                          <div className="truncate">
-                            <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px] block mb-0.5">
-                              Requested At
-                            </span>
-                            <span className="font-semibold text-foreground">
-                              {new Date(p.created_at).toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="h-px bg-border w-full" />
-                        <div className="flex flex-col sm:flex-row sm:gap-6 gap-2.5 text-xs">
-                          <div className="truncate">
-                            <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px] block mb-0.5">
-                              UPI ID
-                            </span>
-                            <span className="font-mono font-semibold text-cta bg-primary/5 px-1.5 py-0.5 rounded">
-                              {p.upi_id}
-                            </span>
-                          </div>
-                          {p.upi_number && (
-                            <div className="truncate">
-                              <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px] block mb-0.5">
-                                UPI Number
-                              </span>
-                              <span className="font-mono font-semibold text-foreground">
-                                {p.upi_number}
-                              </span>
-                            </div>
-                          )}
-                        </div>
+                      <div className="flex items-center gap-1 font-display font-black text-xl text-foreground">
+                        <GodCoin className="w-5 h-5" /> {p.amount}
                       </div>
                     </div>
 
-                    <div className="flex flex-col sm:items-end justify-between min-w-[140px] shrink-0 border-t sm:border-t-0 border-border pt-4 sm:pt-0">
-                      <div className="text-left sm:text-right mb-4">
-                        <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">
-                          Transfer Amount
-                        </div>
-                        <div className="font-display text-2xl font-black text-foreground flex items-center justify-start sm:justify-end gap-1.5">
-                          <GodCoin className="w-5 h-5" /> {p.amount}
-                        </div>
-                        <div className="text-xs font-semibold text-muted-foreground mt-0.5">
-                          ≈ {p.amount} INR
-                        </div>
+                    {/* Details */}
+                    <div className="bg-secondary/30 rounded-xl p-3 space-y-2 text-xs mb-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">UPI ID</span>
+                        <span className="font-mono font-bold text-cta bg-primary/5 px-2 py-0.5 rounded">{p.upi_id}</span>
                       </div>
-
-                      {p.status === "pending" && (
-                        <div className="flex flex-col gap-2 w-full">
-                          <Button
-                            variant="outline"
-                            className="rounded-xl font-bold h-11 bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:border-green-300 w-full"
-                            onClick={() => handleResolve(p.id, p.user_id, p.amount, "completed")}
-                          >
-                            <CheckCircle className="w-4 h-4 mr-2" /> Mark Paid
-                          </Button>
-                          <Button
-                            variant="outline"
-                            className="rounded-xl font-bold h-10 bg-card text-destructive border-destructive/20 hover:bg-destructive/10 w-full"
-                            onClick={() => handleResolve(p.id, p.user_id, p.amount, "rejected")}
-                          >
-                            <XCircle className="w-4 h-4 mr-2" /> Reject & Refund
-                          </Button>
+                      {p.upi_number && (
+                        <div className="flex items-center justify-between border-t border-border pt-2">
+                          <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">UPI Phone</span>
+                          <span className="font-mono font-bold text-foreground">{p.upi_number}</span>
                         </div>
                       )}
+                      <div className="flex items-center justify-between border-t border-border pt-2">
+                        <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">Requested</span>
+                        <span className="text-foreground font-semibold">{new Date(p.created_at).toLocaleString("en-IN")}</span>
+                      </div>
                     </div>
+
+                    {p.status === "pending" && (
+                      <div className="flex gap-2">
+                        <Button
+                          className="flex-1 h-10 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-600 text-white"
+                          onClick={() => handleResolve(p.id, p.user_id, p.amount, "completed")}
+                        >
+                          <CheckCircle className="w-3.5 h-3.5 mr-1.5" /> Mark Paid
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="flex-1 h-10 rounded-xl font-bold text-xs text-destructive border-destructive/20 hover:bg-destructive/10"
+                          onClick={() => handleResolve(p.id, p.user_id, p.amount, "rejected")}
+                        >
+                          <XCircle className="w-3.5 h-3.5 mr-1.5" /> Reject
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>
+      <AdminNavBar pendingPayouts={pendingCount} />
     </div>
   );
 }

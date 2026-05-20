@@ -5,6 +5,7 @@ import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { AdminNavBar } from "@/components/AdminNavBar";
 
 export const Route = createFileRoute("/_app/admin/registrations")({
   head: () => ({ meta: [{ title: "Registrations Admin — Professional Esports Arena" }] }),
@@ -256,6 +257,7 @@ function AdminRegistrationsPage() {
           </div>
         )}
       </div>
+      <AdminNavBar />
     </div>
   );
 }

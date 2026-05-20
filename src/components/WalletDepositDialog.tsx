@@ -252,16 +252,34 @@ export function WalletDepositDialog({
               </div>
             </div>
 
+            {/* ⚠️ Professional Warning Note */}
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 flex items-start gap-2.5">
+              <div className="shrink-0 mt-0.5">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </div>
+              <div className="text-xs leading-snug">
+                <p className="font-black text-amber-600 uppercase tracking-wide text-[10px] mb-1">Important Notice</p>
+                <p className="text-foreground/80 font-semibold">
+                  Click <strong className="text-foreground">"I've Paid"</strong> <em>only after you have successfully completed the payment.</em> Clicking this button without making the actual payment will result in your deposit request being <strong className="text-red-500">automatically rejected</strong> by our admin team.
+                </p>
+              </div>
+            </div>
+
             <div className="flex gap-2">
               <Button
                 onClick={() => setStep("upiid")}
                 className="w-full bg-primary text-white font-display rounded-xl h-11 text-sm font-bold active:scale-95 transition-transform"
               >
-                I've Paid →
+                ✅ I've Paid — Submit Request
               </Button>
             </div>
           </div>
         )}
+
 
         {/* ════════════ STEP 3: Sender UPI ID ════════════ */}
         {step === "upiid" && payData && (

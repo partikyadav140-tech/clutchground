@@ -1,16 +1,65 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Users, Trophy, ClipboardList, Banknote, Mail, ShieldAlert, RefreshCw, Bell, LifeBuoy, IndianRupee } from "lucide-react";
+import {
+  Users, Trophy, ClipboardList, Banknote, Mail, ShieldAlert,
+  RefreshCw, Bell, LifeBuoy, IndianRupee, Settings, TrendingUp,
+  AlertCircle, Activity, Zap, Crown,
+} from "lucide-react";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { getAdminStats } from "../../../api";
+import { AdminNavBar } from "@/components/AdminNavBar";
 
 export const Route = createFileRoute("/_app/admin/")({
   head: () => ({ meta: [{ title: "Command Center — CLUTCHGROUND" }] }),
+  loader: async () => await (getAdminStats as any)(),
   component: AdminDashboard,
-});
+} as any);
+
+function StatCard({
+  icon: Icon, label, value, color, bg, urgent = false, to,
+}: {
+  icon: any; label: string; value: number | string; color: string; bg: string;
+  urgent?: boolean; to?: string;
+}) {
+  const inner = (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`relative bg-card rounded-2xl border overflow-hidden p-4 transition-all active:scale-95 ${urgent && Number(value) > 0 ? "border-amber-400/40 shadow-amber-500/10 shadow-lg" : "border-border/50 shadow-sm"}`}
+    >
+      {urgent && Number(value) > 0 && (
+        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+      )}
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${bg} ${color}`}>
+        <Icon className="w-4.5 h-4.5 w-[18px] h-[18px]" />
+      </div>
+      <div className={`font-display font-black text-2xl leading-none mb-1 ${urgent && Number(value) > 0 ? "text-amber-500" : "text-foreground"}`}>
+        {value}
+      </div>
+      <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground leading-tight">
+        {label}
+      </div>
+    </motion.div>
+  );
+
+  if (to) return <Link to={to} className="block">{inner}</Link>;
+  return inner;
+}
+
+function SectionHeader({ label, icon: Icon, color }: { label: string; icon: any; color: string }) {
+  return (
+    <div className={`flex items-center gap-2 mb-3 mt-6`}>
+      <Icon className={`w-4 h-4 ${color}`} />
+      <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">{label}</span>
+      <div className="flex-1 h-px bg-border/50" />
+    </div>
+  );
+}
 
 function AdminDashboard() {
   const { user, loading } = useAuth();
+  const stats = Route.useLoaderData() as any;
 
   if (loading)
     return (
@@ -38,117 +87,103 @@ function AdminDashboard() {
     );
   }
 
-  const adminLinks = [
-    {
-      to: "/admin/tournaments",
-      icon: Trophy,
-      title: "Manage Tournaments",
-      desc: "Create, edit, and delete events.",
-      color: "text-amber-500",
-      bg: "bg-amber-500/10",
-    },
-    {
-      to: "/admin/leaderboard",
-      icon: RefreshCw,
-      title: "Leaderboard Standings",
-      desc: "Review and adjust weekly points.",
-      color: "text-violet-500",
-      bg: "bg-violet-500/10",
-    },
-    {
-      to: "/admin/registrations",
-      icon: ClipboardList,
-      title: "Registrations",
-      desc: "View registered squads and players.",
-      color: "text-blue-500",
-      bg: "bg-blue-500/10",
-    },
-    {
-      to: "/admin/payouts",
-      icon: Banknote,
-      title: "Payouts",
-      desc: "Process player withdrawal requests.",
-      color: "text-emerald-500",
-      bg: "bg-emerald-500/10",
-    },
-    {
-      to: "/admin/users",
-      icon: Users,
-      title: "Registered Users",
-      desc: "View and manage all platform users.",
-      color: "text-purple-500",
-      bg: "bg-purple-500/10",
-    },
-    {
-      to: "/admin/messages",
-      icon: Mail,
-      title: "Messages",
-      desc: "View contact messages from users.",
-      color: "text-sky-500",
-      bg: "bg-sky-500/10",
-    },
-    {
-      to: "/admin/notifications",
-      icon: Bell,
-      title: "Push Notifications",
-      desc: "Broadcast alerts to users.",
-      color: "text-pink-500",
-      bg: "bg-pink-500/10",
-    },
-    {
-      to: "/admin/tickets",
-      icon: LifeBuoy,
-      title: "Support Tickets",
-      desc: "Manage user help requests.",
-      color: "text-teal-500",
-      bg: "bg-teal-500/10",
-    },
-    {
-      to: "/admin/deposits",
-      icon: IndianRupee,
-      title: "UPI Deposits",
-      desc: "Approve or reject user deposit requests.",
-      color: "text-blue-500",
-      bg: "bg-blue-500/10",
-    },
-  ];
+  const hasPendingActions = (stats?.pendingDeposits || 0) + (stats?.pendingPayouts || 0) + (stats?.openTickets || 0) > 0;
 
   return (
-    <div className="bg-background min-h-screen pt-2 pb-safe">
-      {/* ─── Minimal App Header ─── */}
-      <div className="px-4 mb-6">
-        <div className="flex items-center gap-2 text-cta font-bold mb-1">
-          <ShieldAlert className="w-5 h-5" /> Admin
+    <div className="bg-background min-h-screen pb-2">
+      {/* ─── Hero Header ─── */}
+      <div className="relative overflow-hidden bg-card border-b border-border pt-6 pb-6 px-4">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 right-0 w-48 h-48 rounded-full blur-3xl opacity-20" style={{ background: "var(--neon)" }} />
+          <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full blur-2xl opacity-10" style={{ background: "var(--primary)" }} />
         </div>
-        <h1 className="text-2xl font-display font-black text-foreground">Command Center</h1>
+
+        <div className="relative z-10">
+          <div className="flex items-center gap-2 text-cta font-black text-xs uppercase tracking-widest mb-2">
+            <Crown className="w-4 h-4" /> Admin Panel
+          </div>
+          <h1 className="text-3xl font-display font-black text-foreground">Command Center</h1>
+          <p className="text-sm text-muted-foreground font-semibold mt-1">Full platform control. Welcome, {user.username}.</p>
+
+          {hasPendingActions && (
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="mt-4 bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-2.5 flex items-center gap-2.5"
+            >
+              <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+              <span className="text-xs font-bold text-amber-600">
+                {[
+                  stats?.pendingDeposits > 0 && `${stats.pendingDeposits} pending deposit${stats.pendingDeposits > 1 ? "s" : ""}`,
+                  stats?.pendingPayouts > 0 && `${stats.pendingPayouts} pending payout${stats.pendingPayouts > 1 ? "s" : ""}`,
+                  stats?.openTickets > 0 && `${stats.openTickets} open ticket${stats.openTickets > 1 ? "s" : ""}`,
+                ].filter(Boolean).join(" • ")} — action needed
+              </span>
+            </motion.div>
+          )}
+        </div>
       </div>
 
-      <div className="px-4">
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {adminLinks.map((link, i) => (
+      <div className="px-4 pt-4">
+
+        {/* ─── Urgent Actions ─── */}
+        <SectionHeader label="Needs Attention" icon={AlertCircle} color="text-amber-500" />
+        <div className="grid grid-cols-3 gap-2.5">
+          <StatCard icon={IndianRupee} label="Deposits" value={stats?.pendingDeposits ?? 0} color="text-blue-500" bg="bg-blue-500/10" urgent to="/admin/deposits" />
+          <StatCard icon={Banknote} label="Payouts" value={stats?.pendingPayouts ?? 0} color="text-emerald-500" bg="bg-emerald-500/10" urgent to="/admin/payouts" />
+          <StatCard icon={LifeBuoy} label="Tickets" value={stats?.openTickets ?? 0} color="text-teal-500" bg="bg-teal-500/10" urgent to="/admin/tickets" />
+        </div>
+
+        {/* ─── Platform Overview ─── */}
+        <SectionHeader label="Platform Overview" icon={Activity} color="text-primary" />
+        <div className="grid grid-cols-2 gap-2.5">
+          <StatCard icon={Users} label="Total Users" value={stats?.totalUsers ?? 0} color="text-purple-500" bg="bg-purple-500/10" to="/admin/users" />
+          <StatCard icon={ShieldAlert} label="Banned" value={stats?.bannedUsers ?? 0} color="text-red-500" bg="bg-red-500/10" to="/admin/users" />
+          <StatCard icon={Trophy} label="Live Events" value={stats?.liveTournaments ?? 0} color="text-amber-500" bg="bg-amber-500/10" to="/admin/tournaments" />
+          <StatCard icon={Zap} label="Open Slots" value={stats?.openTournaments ?? 0} color="text-sky-500" bg="bg-sky-500/10" to="/admin/tournaments" />
+        </div>
+
+        {/* ─── Finance ─── */}
+        <SectionHeader label="Finance" icon={TrendingUp} color="text-emerald-500" />
+        <div className="grid grid-cols-2 gap-2.5">
+          <StatCard icon={IndianRupee} label="Total Deposited" value={`₹${stats?.totalRevenue ?? 0}`} color="text-emerald-500" bg="bg-emerald-500/10" to="/admin/deposits" />
+          <StatCard icon={Banknote} label="Total Paid Out" value={`₹${stats?.totalPayouts ?? 0}`} color="text-rose-500" bg="bg-rose-500/10" to="/admin/payouts" />
+        </div>
+
+        {/* ─── Quick Actions Grid ─── */}
+        <SectionHeader label="Quick Actions" icon={Zap} color="text-violet-500" />
+        <div className="grid grid-cols-2 gap-2.5 mb-4">
+          {[
+            { to: "/admin/tournaments", icon: Trophy, title: "Manage Tournaments", desc: "Create, edit & delete events", color: "text-amber-500", bg: "bg-amber-500/10" },
+            { to: "/admin/registrations", icon: ClipboardList, title: "Registrations", desc: "View player rosters", color: "text-blue-500", bg: "bg-blue-500/10" },
+            { to: "/admin/leaderboard", icon: RefreshCw, title: "Leaderboard", desc: "Adjust weekly standings", color: "text-violet-500", bg: "bg-violet-500/10" },
+            { to: "/admin/notifications", icon: Bell, title: "Broadcast", desc: "Push alerts to users", color: "text-pink-500", bg: "bg-pink-500/10" },
+            { to: "/admin/messages", icon: Mail, title: "Messages", desc: "User contact inbox", color: "text-sky-500", bg: "bg-sky-500/10" },
+            { to: "/admin/site-settings", icon: Settings, title: "Site Settings", desc: "UPI, announcements, etc.", color: "text-orange-500", bg: "bg-orange-500/10" },
+          ].map((link, i) => (
             <Link key={link.to} to={link.to} className="block">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: i * 0.05 }}
-                className="bg-card rounded-[1.25rem] border border-white/5 shadow-lg hover:shadow-xl hover:border-white/10 transition-all p-4 flex flex-col h-full group active:scale-95"
+                transition={{ duration: 0.3, delay: i * 0.04 }}
+                className="bg-card rounded-2xl border border-border/50 shadow-sm hover:shadow-md hover:border-border transition-all p-4 flex flex-col h-full group active:scale-95"
               >
-                <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${link.bg} ${link.color}`}
-                >
-                  <link.icon className="w-5 h-5" />
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${link.bg} ${link.color}`}>
+                  <link.icon className="w-[18px] h-[18px]" />
                 </div>
-                <h3 className="font-display font-black text-[13px] text-white leading-tight mb-1">
-                  {link.title}
-                </h3>
-                <p className="text-[10px] font-bold text-muted-foreground leading-snug">
-                  {link.desc}
-                </p>
+                <h3 className="font-display font-black text-[13px] text-foreground leading-tight mb-1">{link.title}</h3>
+                <p className="text-[10px] font-bold text-muted-foreground leading-snug">{link.desc}</p>
               </motion.div>
             </Link>
           ))}
         </div>
       </div>
+
+      <AdminNavBar
+        pendingDeposits={stats?.pendingDeposits ?? 0}
+        pendingPayouts={stats?.pendingPayouts ?? 0}
+        openTickets={stats?.openTickets ?? 0}
+      />
     </div>
   );
 }

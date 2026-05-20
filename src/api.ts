@@ -1785,6 +1785,35 @@ export const deleteAllUsers = createServerFn({ method: "POST" }).handler(async (
   return { success: true };
 });
 
+export const unbanUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { id } = data as unknown as { id: number };
+  await db.prepare("UPDATE users SET banned = false WHERE id = ?").run(id);
+  return { success: true };
+});
+
+export const updateUserRole = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { id, role } = data as unknown as { id: number; role: string };
+  await db.prepare("UPDATE users SET role = ? WHERE id = ?").run(role, id);
+  return { success: true };
+});
+
+export const getAdminStats = createServerFn({ method: "GET" }).handler(async () => {
+  const { db } = await import("./lib/db");
+  const totalUsers = ((await db.prepare("SELECT COUNT(*) as c FROM users WHERE role != 'admin'").get()) as any)?.c || 0;
+  const bannedUsers = ((await db.prepare("SELECT COUNT(*) as c FROM users WHERE banned = true").get()) as any)?.c || 0;
+  const totalTournaments = ((await db.prepare("SELECT COUNT(*) as c FROM tournaments").get()) as any)?.c || 0;
+  const liveTournaments = ((await db.prepare("SELECT COUNT(*) as c FROM tournaments WHERE status = 'live'").get()) as any)?.c || 0;
+  const openTournaments = ((await db.prepare("SELECT COUNT(*) as c FROM tournaments WHERE status = 'open'").get()) as any)?.c || 0;
+  const pendingDeposits = ((await db.prepare("SELECT COUNT(*) as c FROM upi_deposits WHERE status = 'submitted'").get()) as any)?.c || 0;
+  const pendingPayouts = ((await db.prepare("SELECT COUNT(*) as c FROM withdrawals WHERE status = 'pending'").get()) as any)?.c || 0;
+  const openTickets = ((await db.prepare("SELECT COUNT(*) as c FROM tickets WHERE status = 'open'").get()) as any)?.c || 0;
+  const totalRevenue = ((await db.prepare("SELECT COALESCE(SUM(amount), 0) as s FROM upi_deposits WHERE status = 'approved'").get()) as any)?.s || 0;
+  const totalPayouts = ((await db.prepare("SELECT COALESCE(SUM(amount), 0) as s FROM withdrawals WHERE status = 'completed'").get()) as any)?.s || 0;
+  return { totalUsers, bannedUsers, totalTournaments, liveTournaments, openTournaments, pendingDeposits, pendingPayouts, openTickets, totalRevenue, totalPayouts };
+});
+
 export const deleteAllTournaments = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   await db.prepare("DELETE FROM tournaments").run();
