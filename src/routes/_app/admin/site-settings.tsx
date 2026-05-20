@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import {
   Settings, Bell, CreditCard, AlertTriangle, Save, X,
@@ -53,61 +53,85 @@ function InputField({ label, ...props }: { label: string } & React.InputHTMLAttr
 function AdminSiteSettingsPage() {
   const initialSettings = Route.useLoaderData() as Record<string, string>;
   const { user, loading } = useAuth();
+  const router = useRouter();
 
   // Announcement
   const [announcement, setAnnouncement] = useState(initialSettings.announcement || "");
   const [savedAnnouncement, setSavedAnnouncement] = useState(initialSettings.announcement || "");
 
   // UPI config
-  const [upiId, setUpiId] = useState("");
-  const [upiName, setUpiName] = useState("");
-  const [minDeposit, setMinDeposit] = useState("50");
-  const [maxDeposit, setMaxDeposit] = useState("10000");
+  const [upiId, setUpiId] = useState(() => {
+    try {
+      const upiCfg = JSON.parse(initialSettings.upi_config || "{}");
+      return upiCfg.upiId || "";
+    } catch { return ""; }
+  });
+  const [upiName, setUpiName] = useState(() => {
+    try {
+      const upiCfg = JSON.parse(initialSettings.upi_config || "{}");
+      return upiCfg.upiName || "";
+    } catch { return ""; }
+  });
+  const [minDeposit, setMinDeposit] = useState(() => {
+    try {
+      const upiCfg = JSON.parse(initialSettings.upi_config || "{}");
+      return upiCfg.minDeposit || "50";
+    } catch { return "50"; }
+  });
+  const [maxDeposit, setMaxDeposit] = useState(() => {
+    try {
+      const upiCfg = JSON.parse(initialSettings.upi_config || "{}");
+      return upiCfg.maxDeposit || "10000";
+    } catch { return "10000"; }
+  });
 
   // Maintenance
   const [maintenance, setMaintenance] = useState(initialSettings.maintenance_mode === "true");
 
   // Hero Banners
-  const [heroBanners, setHeroBanners] = useState<string[]>([]);
+  const [heroBanners, setHeroBanners] = useState<string[]>(() => {
+    try {
+      if (initialSettings.hero_banners) {
+        return JSON.parse(initialSettings.hero_banners);
+      }
+    } catch {}
+    return ["/hero-banner.png"];
+  });
   const [newBannerUrl, setNewBannerUrl] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingUrl, setEditingUrl] = useState("");
 
   // Social Links
-  const [socialWhatsapp, setSocialWhatsapp] = useState("");
-  const [socialDiscord, setSocialDiscord] = useState("");
-  const [socialTelegram, setSocialTelegram] = useState("");
-  const [socialEmail, setSocialEmail] = useState("");
-  const [socialInstagram, setSocialInstagram] = useState("");
-
-  useEffect(() => {
-    try {
-      const upiCfg = JSON.parse(initialSettings.upi_config || "{}");
-      setUpiId(upiCfg.upiId || "");
-      setUpiName(upiCfg.upiName || "");
-      setMinDeposit(upiCfg.minDeposit || "50");
-      setMaxDeposit(upiCfg.maxDeposit || "10000");
-    } catch {}
-
-    try {
-      if (initialSettings.hero_banners) {
-        setHeroBanners(JSON.parse(initialSettings.hero_banners));
-      } else {
-        setHeroBanners(["/hero-banner.png"]);
-      }
-    } catch {
-      setHeroBanners(["/hero-banner.png"]);
-    }
-
+  const [socialWhatsapp, setSocialWhatsapp] = useState(() => {
     try {
       const socialCfg = JSON.parse(initialSettings.social_links || "{}");
-      setSocialWhatsapp(socialCfg.whatsapp || "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s");
-      setSocialDiscord(socialCfg.discord || "https://discord.gg/uYXFJswHdg");
-      setSocialTelegram(socialCfg.telegram || "https://t.me/clutchground");
-      setSocialEmail(socialCfg.email || "clutchgroundofficial@gmail.com");
-      setSocialInstagram(socialCfg.instagram || "https://instagram.com/clutchground");
-    } catch {}
-  }, [initialSettings]);
+      return socialCfg.whatsapp || "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s";
+    } catch { return "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s"; }
+  });
+  const [socialDiscord, setSocialDiscord] = useState(() => {
+    try {
+      const socialCfg = JSON.parse(initialSettings.social_links || "{}");
+      return socialCfg.discord || "https://discord.gg/uYXFJswHdg";
+    } catch { return "https://discord.gg/uYXFJswHdg"; }
+  });
+  const [socialTelegram, setSocialTelegram] = useState(() => {
+    try {
+      const socialCfg = JSON.parse(initialSettings.social_links || "{}");
+      return socialCfg.telegram || "https://t.me/clutchground";
+    } catch { return "https://t.me/clutchground"; }
+  });
+  const [socialEmail, setSocialEmail] = useState(() => {
+    try {
+      const socialCfg = JSON.parse(initialSettings.social_links || "{}");
+      return socialCfg.email || "clutchgroundofficial@gmail.com";
+    } catch { return "clutchgroundofficial@gmail.com"; }
+  });
+  const [socialInstagram, setSocialInstagram] = useState(() => {
+    try {
+      const socialCfg = JSON.parse(initialSettings.social_links || "{}");
+      return socialCfg.instagram || "https://instagram.com/clutchground";
+    } catch { return "https://instagram.com/clutchground"; }
+  });
 
   if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
@@ -126,6 +150,7 @@ function AdminSiteSettingsPage() {
       await (saveSiteSetting as any)({ data: { key: "announcement", value: announcement } });
       setSavedAnnouncement(announcement);
       toast.success("Announcement saved to database!");
+      await router.invalidate();
     } catch (e: any) {
       toast.error(e.message || "Failed to save announcement");
     }
@@ -137,6 +162,7 @@ function AdminSiteSettingsPage() {
       setAnnouncement("");
       setSavedAnnouncement("");
       toast.success("Announcement cleared from database.");
+      await router.invalidate();
     } catch (e: any) {
       toast.error(e.message || "Failed to clear announcement");
     }
@@ -152,6 +178,7 @@ function AdminSiteSettingsPage() {
         },
       });
       toast.success("UPI config saved to database!");
+      await router.invalidate();
     } catch (e: any) {
       toast.error(e.message || "Failed to save UPI config");
     }
@@ -165,6 +192,7 @@ function AdminSiteSettingsPage() {
       });
       setMaintenance(newVal);
       toast.success(newVal ? "Maintenance mode ON" : "Maintenance mode OFF");
+      await router.invalidate();
     } catch (e: any) {
       toast.error(e.message || "Failed to toggle maintenance mode");
     }
@@ -207,6 +235,7 @@ function AdminSiteSettingsPage() {
         },
       });
       toast.success("Hero banners successfully saved to database!");
+      await router.invalidate();
     } catch (e: any) {
       toast.error(e.message || "Failed to save hero banners");
     }
@@ -227,6 +256,7 @@ function AdminSiteSettingsPage() {
         },
       });
       toast.success("Social & Contact links saved to database!");
+      await router.invalidate();
     } catch (e: any) {
       toast.error(e.message || "Failed to save links");
     }
