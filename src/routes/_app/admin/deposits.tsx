@@ -196,7 +196,7 @@ function AdminDepositsPage() {
                       </div>
                     </div>
 
-                    {(d.status === "submitted" || d.status === "pending") && (
+                    {d.status === "submitted" && (
                       <div className="flex gap-2">
                         <Button className="flex-1 h-10 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-600 text-white" onClick={() => handleApprove(d.id, d.amount)}>
                           <CheckCircle className="w-3.5 h-3.5 mr-1.5" /> Approve
@@ -204,6 +204,12 @@ function AdminDepositsPage() {
                         <Button variant="outline" className="flex-1 h-10 rounded-xl font-bold text-xs text-destructive border-destructive/20 hover:bg-destructive/10" onClick={() => handleReject(d.id)}>
                           <XCircle className="w-3.5 h-3.5 mr-1.5" /> Reject
                         </Button>
+                      </div>
+                    )}
+
+                    {d.status === "pending" && (
+                      <div className="text-center text-[10px] font-semibold text-muted-foreground bg-secondary/30 py-2.5 rounded-xl border border-border/50">
+                        Awaiting user confirmation (User hasn't clicked "I have paid")
                       </div>
                     )}
                   </div>
