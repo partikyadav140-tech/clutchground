@@ -1820,7 +1820,7 @@ export const deleteAllTournaments = createServerFn({ method: "POST" }).handler(a
   return { success: true };
 });
 
-export const getSiteSettings = createServerFn({ method: "GET" }).handler(async () => {
+export const getSiteSettings = createServerFn({ method: "POST" }).handler(async () => {
   const { db } = await import("./lib/db");
   const rows = (await db.prepare("SELECT key, value FROM site_settings").all()) as any[];
   const settings: Record<string, string> = {};
@@ -2084,7 +2084,7 @@ export const saveUpiId = createServerFn({ method: "POST" }).handler(async ({ dat
   return { success: true };
 });
 
-export const getHeroBanners = createServerFn({ method: "GET" }).handler(async () => {
+export const getHeroBanners = createServerFn({ method: "POST" }).handler(async () => {
   const { db } = await import("./lib/db");
   const row = await db.prepare("SELECT value FROM site_settings WHERE key = 'hero_banners'").get();
   if (row) {
@@ -2095,7 +2095,7 @@ export const getHeroBanners = createServerFn({ method: "GET" }).handler(async ()
   return ["/hero-banner.png"];
 });
 
-export const getSocialLinks = createServerFn({ method: "GET" }).handler(async () => {
+export const getSocialLinks = createServerFn({ method: "POST" }).handler(async () => {
   const { db } = await import("./lib/db");
   const row = await db.prepare("SELECT value FROM site_settings WHERE key = 'social_links'").get();
   const defaultLinks = {
