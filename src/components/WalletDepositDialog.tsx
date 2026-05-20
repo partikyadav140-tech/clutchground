@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { createUpiDeposit, submitUpiUtr, getWalletBalance } from "../api";
+import { createUpiDeposit, submitUpiUtr, getWalletBalance, getActiveUpiConfig } from "../api";
 import { useAuth } from "../lib/auth-client";
 import {
   CreditCard, Wallet, CheckCircle2, Copy, ExternalLink,
@@ -40,6 +40,25 @@ export function WalletDepositDialog({
   const [senderUpiId, setSenderUpiId] = useState("");
   const { user } = useAuth();
 
+  const [upiConfig, setUpiConfig] = useState<{
+    upiId: string;
+    upiName: string;
+    minDeposit: string;
+    maxDeposit: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      getActiveUpiConfig().then((cfg) => {
+        setUpiConfig(cfg);
+        const minVal = parseInt(cfg.minDeposit) || 50;
+        if (amount < minVal) {
+          setAmount(minVal);
+        }
+      });
+    }
+  }, [open]);
+
   const finalAmount = customAmount ? parseInt(customAmount) : amount;
 
   /* ── Step 1: Create deposit request ── */
@@ -47,6 +66,14 @@ export function WalletDepositDialog({
     if (!user) return toast.error("Please log in first");
     if (!finalAmount || finalAmount < 1) {
       return toast.error("Please enter a valid amount");
+    }
+
+    if (upiConfig) {
+      const minVal = parseInt(upiConfig.minDeposit) || 50;
+      const maxVal = parseInt(upiConfig.maxDeposit) || 10000;
+      if (finalAmount < minVal || finalAmount > maxVal) {
+        return toast.error(`Deposit amount must be between ₹${minVal} and ₹${maxVal}`);
+      }
     }
 
     setLoading(true);
@@ -150,16 +177,20 @@ export function WalletDepositDialog({
               </label>
               <input
                 type="number"
-                min="1"
+                min={upiConfig?.minDeposit || "50"}
+                max={upiConfig?.maxDeposit || "10000"}
                 step="1"
                 value={customAmount}
                 onChange={(e) => {
                   setCustomAmount(e.target.value);
                   if (e.target.value) setAmount(0);
                 }}
-                placeholder="Enter custom amount"
+                placeholder={`e.g. ${upiConfig?.minDeposit || "50"}`}
                 className="w-full bg-background border border-border focus:border-primary outline-none px-4 h-11 rounded-xl text-sm"
               />
+              <p className="text-[10px] text-muted-foreground font-semibold mt-1.5 pl-1">
+                Limit: ₹{upiConfig?.minDeposit || "50"} to ₹{upiConfig?.maxDeposit || "10000"} per transaction
+              </p>
             </div>
 
             {/* Summary */}

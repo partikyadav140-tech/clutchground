@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { AdminNavBar } from "@/components/AdminNavBar";
 import { motion } from "framer-motion";
+import { getSiteSettings, saveSiteSetting, clearSiteSetting } from "../../../api";
 
 export const Route = createFileRoute("/_app/admin/site-settings")({
   head: () => ({ meta: [{ title: "Site Settings — Admin" }] }),
+  loader: async () => await getSiteSettings(),
   component: AdminSiteSettingsPage,
 });
 
@@ -48,11 +50,12 @@ function InputField({ label, ...props }: { label: string } & React.InputHTMLAttr
 }
 
 function AdminSiteSettingsPage() {
+  const initialSettings = Route.useLoaderData() as Record<string, string>;
   const { user, loading } = useAuth();
 
   // Announcement
-  const [announcement, setAnnouncement] = useState("");
-  const [savedAnnouncement, setSavedAnnouncement] = useState("");
+  const [announcement, setAnnouncement] = useState(initialSettings.announcement || "");
+  const [savedAnnouncement, setSavedAnnouncement] = useState(initialSettings.announcement || "");
 
   // UPI config
   const [upiId, setUpiId] = useState("");
@@ -61,23 +64,17 @@ function AdminSiteSettingsPage() {
   const [maxDeposit, setMaxDeposit] = useState("10000");
 
   // Maintenance
-  const [maintenance, setMaintenance] = useState(false);
+  const [maintenance, setMaintenance] = useState(initialSettings.maintenance_mode === "true");
 
   useEffect(() => {
-    const ann = localStorage.getItem("admin_announcement") || "";
-    setSavedAnnouncement(ann);
-    setAnnouncement(ann);
-
     try {
-      const upiCfg = JSON.parse(localStorage.getItem("admin_upi_config") || "{}");
+      const upiCfg = JSON.parse(initialSettings.upi_config || "{}");
       setUpiId(upiCfg.upiId || "");
       setUpiName(upiCfg.upiName || "");
       setMinDeposit(upiCfg.minDeposit || "50");
       setMaxDeposit(upiCfg.maxDeposit || "10000");
     } catch {}
-
-    setMaintenance(localStorage.getItem("admin_maintenance_mode") === "true");
-  }, []);
+  }, [initialSettings]);
 
   if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
@@ -91,30 +88,53 @@ function AdminSiteSettingsPage() {
     );
   }
 
-  const saveAnnouncement = () => {
-    localStorage.setItem("admin_announcement", announcement);
-    setSavedAnnouncement(announcement);
-    toast.success("Announcement saved!");
+  const saveAnnouncement = async () => {
+    try {
+      await (saveSiteSetting as any)({ data: { key: "announcement", value: announcement } });
+      setSavedAnnouncement(announcement);
+      toast.success("Announcement saved to database!");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save announcement");
+    }
   };
 
-  const clearAnnouncement = () => {
-    localStorage.removeItem("admin_announcement");
-    setAnnouncement("");
-    setSavedAnnouncement("");
-    toast.success("Announcement cleared.");
+  const clearAnnouncement = async () => {
+    try {
+      await (clearSiteSetting as any)({ data: { key: "announcement" } });
+      setAnnouncement("");
+      setSavedAnnouncement("");
+      toast.success("Announcement cleared from database.");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to clear announcement");
+    }
   };
 
-  const saveUpiConfig = () => {
+  const saveUpiConfig = async () => {
     if (!upiId.trim()) return toast.error("UPI ID is required.");
-    localStorage.setItem("admin_upi_config", JSON.stringify({ upiId, upiName, minDeposit, maxDeposit }));
-    toast.success("UPI config saved!");
+    try {
+      await (saveSiteSetting as any)({
+        data: {
+          key: "upi_config",
+          value: JSON.stringify({ upiId, upiName, minDeposit, maxDeposit }),
+        },
+      });
+      toast.success("UPI config saved to database!");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save UPI config");
+    }
   };
 
-  const toggleMaintenance = () => {
+  const toggleMaintenance = async () => {
     const newVal = !maintenance;
-    setMaintenance(newVal);
-    localStorage.setItem("admin_maintenance_mode", String(newVal));
-    toast.success(newVal ? "Maintenance mode ON" : "Maintenance mode OFF");
+    try {
+      await (saveSiteSetting as any)({
+        data: { key: "maintenance_mode", value: String(newVal) },
+      });
+      setMaintenance(newVal);
+      toast.success(newVal ? "Maintenance mode ON" : "Maintenance mode OFF");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to toggle maintenance mode");
+    }
   };
 
   return (

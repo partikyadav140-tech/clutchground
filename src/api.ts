@@ -2,7 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 export { getWalletBalance, getTransactionHistory } from "./lib/razorpay";
-export { createUpiDeposit, submitUpiUtr, getPendingUpiDeposits, approveUpiDeposit, rejectUpiDeposit, getUserUpiDeposits } from "./lib/upi";
+export { createUpiDeposit, submitUpiUtr, getPendingUpiDeposits, approveUpiDeposit, rejectUpiDeposit, getUserUpiDeposits, getActiveUpiConfig } from "./lib/upi";
 
 export const loginUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
@@ -1817,6 +1817,35 @@ export const getAdminStats = createServerFn({ method: "GET" }).handler(async () 
 export const deleteAllTournaments = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   await db.prepare("DELETE FROM tournaments").run();
+  return { success: true };
+});
+
+export const getSiteSettings = createServerFn({ method: "GET" }).handler(async () => {
+  const { db } = await import("./lib/db");
+  const rows = (await db.prepare("SELECT key, value FROM site_settings").all()) as any[];
+  const settings: Record<string, string> = {};
+  rows.forEach((r) => {
+    settings[r.key] = r.value;
+  });
+  return settings;
+});
+
+export const saveSiteSetting = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { key, value } = data as unknown as { key: string; value: string };
+  await db.prepare(`
+    INSERT INTO site_settings (key, value)
+    VALUES (?, ?)
+    ON CONFLICT (key)
+    DO UPDATE SET value = EXCLUDED.value
+  `).run(key, value);
+  return { success: true };
+});
+
+export const clearSiteSetting = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { key } = data as unknown as { key: string };
+  await db.prepare("DELETE FROM site_settings WHERE key = ?").run(key);
   return { success: true };
 });
 

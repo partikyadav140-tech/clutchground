@@ -307,6 +307,11 @@ async function initDb() {
         FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
       );
+
+      CREATE TABLE IF NOT EXISTS site_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
     `);
 
     // Ensure columns exist (for SQLite/Postgres compatibility we use separate ALTER statements if needed, but in Postgres ADD COLUMN IF NOT EXISTS works)

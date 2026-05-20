@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Suspense, useEffect, useRef } from "react";
 import { Navbar } from "@/components/Navbar";
 
+import { getSiteSettings } from "../api";
+
 const PageSpinner = () => (
   <div className="h-[60vh] flex items-center justify-center">
     <div className="w-8 h-8 border-[3px] border-primary border-t-transparent rounded-full animate-spin" />
@@ -10,7 +12,15 @@ const PageSpinner = () => (
 );
 
 export const Route = createFileRoute("/_app")({
+  loader: async () => {
+    try {
+      return await getSiteSettings();
+    } catch {
+      return {};
+    }
+  },
   component: () => {
+    const settings = Route.useLoaderData() as Record<string, string>;
     const router = useRouter();
     const path = router.state.location.pathname;
     const scrollRef = useRef<HTMLElement>(null);
@@ -18,6 +28,9 @@ export const Route = createFileRoute("/_app")({
     const isAuthRoute = ["/login", "/signup"].includes(path);
     const isMainTab   = ["", "/", "/tournaments", "/matches", "/leaderboard", "/profile", "/wallet"].includes(path);
     const isChatPage  = path.startsWith("/support/") || path.startsWith("/admin/tickets/") || path === "/chat";
+
+    const announcement = settings?.announcement;
+    const isMaintenance = settings?.maintenance_mode === "true";
 
     // Scroll to top on route change
     useEffect(() => {
@@ -27,6 +40,20 @@ export const Route = createFileRoute("/_app")({
     return (
       <div className="h-[100dvh] flex flex-col bg-background text-foreground overflow-hidden">
         {!isAuthRoute && <Navbar />}
+
+        {announcement && !isAuthRoute && (
+          <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-500 px-4 py-2 text-xs font-semibold flex items-center justify-center gap-2 relative z-50">
+            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-ping shrink-0" />
+            <span className="text-center">{announcement}</span>
+          </div>
+        )}
+
+        {isMaintenance && !isAuthRoute && (
+          <div className="bg-red-500/10 border-b border-red-500/20 text-red-500 px-4 py-2 text-xs font-bold flex items-center justify-center gap-2 relative z-50 animate-pulse">
+            <span>⚠️</span>
+            <span className="text-center">System Maintenance: Some features may be temporarily offline.</span>
+          </div>
+        )}
 
         <main
           id="app-scroll-container"

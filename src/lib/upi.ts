@@ -6,6 +6,28 @@ import { db } from "./db";
 export const PLATFORM_UPI_ID = process.env.UPI_ID || "clutchground@nyes";
 export const PLATFORM_NAME = "CLUTCHGROUND";
 
+/** Get active UPI configuration */
+export const getActiveUpiConfig = createServerFn({ method: "GET" }).handler(async () => {
+  const row = await db.prepare("SELECT value FROM site_settings WHERE key = 'upi_config'").get();
+  if (row) {
+    try {
+      const parsed = JSON.parse((row as any).value);
+      return {
+        upiId: parsed.upiId || "clutchground@nyes",
+        upiName: parsed.upiName || "CLUTCHGROUND",
+        minDeposit: parsed.minDeposit || "50",
+        maxDeposit: parsed.maxDeposit || "10000"
+      };
+    } catch {}
+  }
+  return {
+    upiId: "clutchground@nyes",
+    upiName: "CLUTCHGROUND",
+    minDeposit: "50",
+    maxDeposit: "10000"
+  };
+});
+
 /** Create a pending UPI deposit request */
 export const createUpiDeposit = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
@@ -13,6 +35,15 @@ export const createUpiDeposit = createServerFn({ method: "POST" }).handler(
 
     if (!amount || amount < 1) {
       throw new Error("Deposit amount must be at least ₹1");
+    }
+
+    // Load active settings from DB
+    const upiCfg = await getActiveUpiConfig();
+    const minVal = parseInt(upiCfg.minDeposit) || 50;
+    const maxVal = parseInt(upiCfg.maxDeposit) || 10000;
+
+    if (amount < minVal || amount > maxVal) {
+      throw new Error(`Deposit amount must be between ₹${minVal} and ₹${maxVal}`);
     }
 
     const txnRef = `CG${userId}${Date.now()}`;
@@ -24,10 +55,10 @@ export const createUpiDeposit = createServerFn({ method: "POST" }).handler(
       )
       .run(userId, amount, txnRef, description || "Wallet Deposit");
 
-    const safePlatformName = encodeURIComponent(PLATFORM_NAME.trim().replace(/\s+/g, ''));
+    const safePlatformName = encodeURIComponent(upiCfg.upiName.trim().replace(/\s+/g, ''));
     const safeTxnRef = encodeURIComponent(txnRef.trim());
     const safeNote = encodeURIComponent("Wallet_Deposit");
-    const safeUpiId = encodeURIComponent(PLATFORM_UPI_ID.trim());
+    const safeUpiId = encodeURIComponent(upiCfg.upiId.trim());
 
     // standard UPI intent
     const upiLink = `upi://pay?pa=${safeUpiId}&pn=${safePlatformName}&am=${amount}&cu=INR&tn=${safeNote}&tr=${safeTxnRef}`;
@@ -35,8 +66,8 @@ export const createUpiDeposit = createServerFn({ method: "POST" }).handler(
     return {
       txnRef,
       amount,
-      upiId: PLATFORM_UPI_ID,
-      platformName: PLATFORM_NAME,
+      upiId: upiCfg.upiId,
+      platformName: upiCfg.upiName,
       upiLink,
     };
   },

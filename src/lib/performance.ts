@@ -38,7 +38,7 @@ export const trackWebVitals = () => {
     // Track basic performance metrics
     window.addEventListener('load', () => {
       setTimeout(() => {
-        const perfData = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+        const perfData = performance.getEntriesByType('navigation')[0] as any;
         if (perfData) {
           console.log('Page Load Performance:', {
             'DNS Lookup': perfData.domainLookupEnd - perfData.domainLookupStart,
