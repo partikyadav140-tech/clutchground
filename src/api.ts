@@ -1838,6 +1838,7 @@ export const saveSiteSetting = createServerFn({ method: "POST" }).handler(async 
     VALUES (?, ?)
     ON CONFLICT (key)
     DO UPDATE SET value = EXCLUDED.value
+    RETURNING key
   `).run(key, value);
   return { success: true };
 });
