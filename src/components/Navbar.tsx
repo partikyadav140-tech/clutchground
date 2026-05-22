@@ -67,10 +67,11 @@ export function Navbar() {
     return () => clearInterval(id);
   }, [user]);
 
-  const isMain = MAIN_TABS.includes(path);
-  const isAuth = ["/login", "/signup"].includes(path);
+  const cleanPath         = path === "/" ? "/" : path.replace(/\/$/, "");
+  const isMain = MAIN_TABS.includes(cleanPath);
+  const isAuth = ["/login", "/signup"].includes(cleanPath);
   // Hide bottom nav on ticket/chat detail pages (like WhatsApp)
-  const isTicketChat = /^\/support\/[^/]+/.test(path);
+  const isTicketChat = /^\/support\/[^/]+/.test(cleanPath);
 
   if (isAuth) return null;
 
@@ -83,7 +84,7 @@ export function Navbar() {
          ══════════════════════════════════════════════════════ */}
       <header
         className={`absolute top-0 inset-x-0 z-50 border-b border-border/60 ${
-          isMain ? "" : "max-lg:hidden lg:block"
+          isMain ? "block" : "hidden lg:block"
         }`}
         style={{
           background:

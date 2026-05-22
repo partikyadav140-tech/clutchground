@@ -295,8 +295,8 @@ function TournamentDetailPage() {
                 <ul className="flex flex-col gap-2.5">
                   {[
                     "Verify your Free Fire UID before registering.",
+                    "Your Free Fire ID must be level 40+ to participate.",
                     "Room ID & password released 10 minutes before match start.",
-                    "Submit kill & placement screenshots after the match.",
                     "Hacking, teaming, or stream sniping = permanent ban.",
                     "Admin verdicts are final. No disputes accepted after 24h.",
                     "Prizes credited to wallet within 24h of verification.",

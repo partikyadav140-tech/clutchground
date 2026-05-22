@@ -23,11 +23,12 @@ export const Route = createFileRoute("/_app")({
     const settings = Route.useLoaderData() as Record<string, string>;
     const router = useRouter();
     const path = router.state.location.pathname;
+    const cleanPath = path === "/" ? "/" : path.replace(/\/$/, "");
     const scrollRef = useRef<HTMLElement>(null);
 
-    const isAuthRoute = ["/login", "/signup"].includes(path);
-    const isMainTab   = ["", "/", "/tournaments", "/matches", "/leaderboard", "/profile", "/wallet"].includes(path);
-    const isChatPage  = path.startsWith("/support/") || path.startsWith("/admin/tickets/") || path === "/chat";
+    const isAuthRoute = ["/login", "/signup"].includes(cleanPath);
+    const isMainTab   = ["/", "/tournaments", "/matches", "/leaderboard", "/profile", "/wallet"].includes(cleanPath);
+    const isChatPage  = cleanPath.startsWith("/support/") || cleanPath.startsWith("/admin/tickets/") || cleanPath === "/chat";
 
     const announcement = settings?.announcement;
     const isMaintenance = settings?.maintenance_mode === "true";
@@ -63,7 +64,8 @@ export const Route = createFileRoute("/_app")({
           id="app-scroll-container"
           ref={scrollRef}
           className={[
-            "flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar relative",
+            "flex-1 overflow-x-hidden hide-scrollbar relative",
+            isChatPage ? "h-full flex flex-col overflow-hidden" : "overflow-y-auto",
             /* Mobile: pt-16 only on main tabs | Desktop (lg+): pt-16 on ALL non-auth pages */
             !isAuthRoute && !isChatPage
               ? isMainTab
@@ -72,7 +74,6 @@ export const Route = createFileRoute("/_app")({
               : "",
             /* Mobile: bottom-nav padding | Desktop: no bottom nav */
             !isAuthRoute && !isChatPage ? "pb-[60px] lg:pb-0" : "",
-            isChatPage ? "overflow-hidden" : "",
           ].filter(Boolean).join(" ")}
         >
           {/*
@@ -83,6 +84,7 @@ export const Route = createFileRoute("/_app")({
           <div className={[
             "mx-auto w-full",
             !isAuthRoute ? "max-w-[480px] lg:max-w-5xl" : "",
+            isChatPage ? "h-full flex flex-col overflow-hidden" : "",
           ].filter(Boolean).join(" ")}>
             <Suspense fallback={<PageSpinner />}>
               <AnimatePresence mode="wait" initial={false}>
