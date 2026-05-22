@@ -134,6 +134,10 @@ function RootComponent() {
   useEffect(() => {
     trackWebVitals();
 
+    if (typeof window !== "undefined") {
+      window.history.scrollRestoration = "manual";
+    }
+
     if (typeof window !== "undefined" && "requestIdleCallback" in window) {
       requestIdleCallback(() => {
         const links = document.querySelectorAll('a[href^="/"]');

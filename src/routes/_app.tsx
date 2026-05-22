@@ -94,9 +94,10 @@ export const Route = createFileRoute("/_app")({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.18, ease: "easeOut" }}
-                  onAnimationStart={(def) => {
-                    if (def === "animate" && scrollRef.current) {
+                  onAnimationStart={() => {
+                    if (scrollRef.current) {
                       scrollRef.current.scrollTop = 0;
+                      scrollRef.current.scrollTo({ top: 0, behavior: "instant" });
                     }
                   }}
                   className={isChatPage ? "h-full flex flex-col" : "min-h-full"}
