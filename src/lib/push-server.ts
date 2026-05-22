@@ -1,14 +1,36 @@
 import webpush from "web-push";
 
-// Load configuration keys from environment variables
-const publicVapidKey = process.env.VITE_VAPID_PUBLIC_KEY;
-const privateVapidKey = process.env.VAPID_PRIVATE_KEY;
-const vapidSubject = process.env.VAPID_SUBJECT || "mailto:support@clutchground.com";
+let isVapidInitialized = false;
 
-if (publicVapidKey && privateVapidKey) {
-  webpush.setVapidDetails(vapidSubject, publicVapidKey, privateVapidKey);
-} else {
-  console.warn("VAPID keys not configured in environment. Web Push notifications will be disabled.");
+function ensureVapidInitialized() {
+  if (isVapidInitialized) return true;
+
+  let publicVapidKey = process.env.VITE_VAPID_PUBLIC_KEY;
+  let privateVapidKey = process.env.VAPID_PRIVATE_KEY;
+  let vapidSubject = process.env.VAPID_SUBJECT || "https://clutchground.onrender.com";
+
+  // Clean quotes if any are present
+  if (publicVapidKey) publicVapidKey = publicVapidKey.replace(/['"]/g, "").trim();
+  if (privateVapidKey) privateVapidKey = privateVapidKey.replace(/['"]/g, "").trim();
+  if (vapidSubject) vapidSubject = vapidSubject.replace(/['"]/g, "").trim();
+
+  if (publicVapidKey && privateVapidKey) {
+    try {
+      webpush.setVapidDetails(vapidSubject, publicVapidKey, privateVapidKey);
+      isVapidInitialized = true;
+      console.log(`[Push Server] VAPID details successfully configured with subject: ${vapidSubject}`);
+      return true;
+    } catch (err) {
+      console.error("[Push Server] Failed to initialize web-push VAPID details:", err);
+      return false;
+    }
+  } else {
+    console.warn(
+      "[Push Server] VAPID keys not configured in environment. Web Push notifications will be disabled.",
+      { publicVapidKeyExists: !!publicVapidKey, privateVapidKeyExists: !!privateVapidKey }
+    );
+    return false;
+  }
 }
 
 /**
@@ -22,6 +44,11 @@ export async function triggerPushNotification(
 ) {
   const { db } = await import("./db");
   try {
+    if (!ensureVapidInitialized()) {
+      console.warn("[Push Server] Skipping push dispatch because VAPID is not initialized.");
+      return;
+    }
+
     const subs = (await db
       .prepare("SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_id = ?")
       .all(userId)) as any[];
