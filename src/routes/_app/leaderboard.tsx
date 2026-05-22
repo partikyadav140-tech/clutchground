@@ -134,9 +134,13 @@ function LeaderboardPage() {
 
                     {/* Player */}
                     <div className="col-span-8 flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-2xl flex items-center justify-center font-display font-black text-sm shrink-0"
+                      <div className="w-9 h-9 rounded-2xl flex items-center justify-center font-display font-black text-sm shrink-0 overflow-hidden"
                         style={{ background: isMe ? "var(--gradient-primary)" : "var(--secondary)", color: isMe ? "white" : "var(--muted-foreground)" }}>
-                        {(p.team || "T")[0].toUpperCase()}
+                        {p.logo ? (
+                          <img src={p.logo} className="w-full h-full object-cover" />
+                        ) : (
+                          (p.team || "T")[0].toUpperCase()
+                        )}
                       </div>
                       <div className="min-w-0">
                         <div className="font-bold text-sm text-foreground truncate flex items-center gap-1.5">
@@ -183,10 +187,14 @@ function PodiumPillar({ p, rank, cfg, height, featured = false }: {
 
       {/* Avatar */}
       <div
-        className={`${cfg.size} rounded-2xl flex items-center justify-center font-display font-black text-foreground border-2 mb-2 transition-transform`}
+        className={`${cfg.size} rounded-2xl flex items-center justify-center font-display font-black text-foreground border-2 mb-2 transition-transform overflow-hidden`}
         style={{ background: cfg.bg, borderColor: cfg.color, boxShadow: cfg.glow }}
       >
-        {(p.team || "T")[0].toUpperCase()}
+        {p.logo ? (
+          <img src={p.logo} className="w-full h-full object-cover" />
+        ) : (
+          (p.team || "T")[0].toUpperCase()
+        )}
       </div>
 
       {/* Name */}

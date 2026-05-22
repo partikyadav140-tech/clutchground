@@ -114,7 +114,7 @@ function ContactPage() {
           <div className="space-y-2.5">
             {[
               { icon: Building2, title: "CLUTCHGROUND", sub: "Skill-Based Esports Platform" },
-              { icon: MapPin,    title: "Registered Address", sub: "Haryana, India — 126102" },
+              { icon: MapPin,    title: "Registered Address", sub: "Haryana, India — 124103" },
               { icon: Mail,      title: socialLinks.email, sub: "Official contact for disputes & refunds" },
               { icon: Clock,     title: "Support Hours", sub: "Mon – Sat, 10:00 AM – 8:00 PM IST" },
             ].map(({ icon: Icon, title, sub }) => (

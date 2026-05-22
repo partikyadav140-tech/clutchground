@@ -3,14 +3,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { getTournaments, getGlobalLeaderboard, getMyMatches, getHeroBanners } from "../../api";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
-import { Trophy, Users, Crown, Wallet, ChevronRight, Clock, Flame, Zap, Shield, Star } from "lucide-react";
+import { Trophy, Users, Crown, Wallet, ChevronRight, Clock, Flame, Zap, Shield, Star, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { useAuth } from "../../lib/auth-client";
 import { GodCoin } from "@/components/GodCoin";
 
 export const Route = createFileRoute("/_app/")({
-  head: () => ({ meta: [{ title: "CLUTCHGROUND — Esports Arena" }] }),
+  head: () => ({ meta: [{ title: "Clutch Ground | Rule the Battleground" }] }),
   loader: async () => {
     const [ts, lb] = await Promise.allSettled([
       getTournaments(),
@@ -46,6 +46,7 @@ function HomePage() {
   const [joinedMatches, setJoinedMatches] = React.useState<number[]>([]);
   const [banners, setBanners] = React.useState<string[]>(["/new-banner.png"]);
   const [currentBannerIdx, setCurrentBannerIdx] = React.useState(0);
+  const [lightboxImg, setLightboxImg] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     getHeroBanners().then((res) => {
@@ -144,7 +145,8 @@ function HomePage() {
 
       {/* ── Banner Carousel ── */}
       <div className="px-4 mb-5">
-        <div className="relative w-full aspect-video rounded-3xl overflow-hidden border border-border shadow-card bg-black/10">
+        <div className="relative w-full aspect-video rounded-3xl overflow-hidden border border-border shadow-card bg-black/10 cursor-pointer group"
+             onClick={() => setLightboxImg(banners[currentBannerIdx])}>
           <AnimatePresence mode="popLayout">
             <motion.img
               key={banners[currentBannerIdx]}
@@ -154,7 +156,7 @@ function HomePage() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
               transition={{ duration: 0.6, ease: "easeInOut" }}
-              className="absolute inset-0 w-full h-full object-cover object-center"
+              className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
               onError={(e) => { (e.target as HTMLImageElement).src = '/new-banner.png'; }}
             />
           </AnimatePresence>
@@ -164,7 +166,8 @@ function HomePage() {
 
           {/* Dots Indicator */}
           {banners.length > 1 && (
-            <div className="absolute bottom-3 right-3 z-20 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm">
+            <div className="absolute bottom-3 right-3 z-20 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm"
+                 onClick={(e) => e.stopPropagation()}>
               {banners.map((_, idx) => (
                 <button
                   key={idx}
@@ -247,8 +250,12 @@ function HomePage() {
               return (
                 <div key={p.user_id || i} className="flex items-center gap-3 px-4 py-3">
                   <span className="text-lg w-6 text-center">{medals[i]}</span>
-                  <div className="w-8 h-8 rounded-xl bg-secondary flex items-center justify-center font-display font-black text-xs text-foreground shrink-0">
-                    {(p.team || "T")[0].toUpperCase()}
+                  <div className="w-8 h-8 rounded-xl bg-secondary flex items-center justify-center font-display font-black text-xs text-foreground shrink-0 overflow-hidden">
+                    {p.logo ? (
+                      <img src={p.logo} className="w-full h-full object-cover" />
+                    ) : (
+                      (p.team || "T")[0].toUpperCase()
+                    )}
                   </div>
                   <p className="flex-1 font-bold text-sm text-foreground truncate">{p.team || "Unknown"}</p>
                   <span className="font-display font-black text-sm" style={{ color: "var(--primary)" }}>
@@ -286,6 +293,43 @@ function HomePage() {
       </footer>
 
       <div className="h-2" />
+
+      {/* ── Hero Image Lightbox ── */}
+      <AnimatePresence>
+        {lightboxImg && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setLightboxImg(null)}
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            {/* Close button */}
+            <button
+              onClick={() => setLightboxImg(null)}
+              className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white flex items-center justify-center transition-all cursor-pointer active:scale-90"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Premium Image Container */}
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-4xl w-full aspect-video rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-primary/10 bg-card"
+            >
+              <img
+                src={lightboxImg}
+                alt="Bigger preview"
+                className="w-full h-full object-contain bg-black/60"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -127,7 +127,8 @@ async function initDb() {
         is_hero BOOLEAN DEFAULT false,
         hosted_by TEXT,
         per_kill_coin INTEGER DEFAULT 0,
-        first_place_coin INTEGER DEFAULT 0
+        first_place_coin INTEGER DEFAULT 0,
+        results_announced BOOLEAN DEFAULT false
       );
 
       CREATE TABLE IF NOT EXISTS sessions (
@@ -333,6 +334,9 @@ async function initDb() {
       await pool.query(`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
       await pool.query(`ALTER TABLE ticket_replies ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;`);
       await pool.query(`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT false;`);
+
+      // Tournaments results status migration
+      await pool.query(`ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS results_announced BOOLEAN DEFAULT false;`);
     } catch (e) {
       console.log("Column addition skipped or failed:", e);
     }

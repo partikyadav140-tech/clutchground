@@ -35,8 +35,8 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ClutchGround | India's #1 Free Fire Tournament & Esports Arena" },
+      { name: "viewport", content: "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" },
+      { title: "Clutch Ground | Rule the Battleground" },
       {
         name: "description",
         content:
@@ -51,6 +51,22 @@ export const Route = createRootRoute({
         name: "robots",
         content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
       },
+      { property: "og:title", content: "Clutch Ground | Rule the Battleground" },
+      {
+        property: "og:description",
+        content:
+          "Join ClutchGround to compete in top-tier Free Fire and Free Fire MAX tournaments. Win massive real cash prizes, join elite esports teams, and climb the Leaderboard.",
+      },
+      { property: "og:image", content: "/new-banner.png" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Clutch Ground | Rule the Battleground" },
+      {
+        name: "twitter:description",
+        content:
+          "Join ClutchGround to compete in top-tier Free Fire and Free Fire MAX tournaments. Win massive real cash prizes, join elite esports teams, and climb the Leaderboard.",
+      },
+      { name: "twitter:image", content: "/new-banner.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

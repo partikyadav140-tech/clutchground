@@ -54,6 +54,7 @@ function AdminTournamentsPage() {
   const [isEditingResults, setIsEditingResults] = useState(false);
   const [q, setQ] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [completedSubTab, setCompletedSubTab] = useState<"all" | "pending" | "announced">("all");
 
   useEffect(() => {
     setTournaments(initialTournaments);
@@ -93,12 +94,29 @@ function AdminTournamentsPage() {
     }
   };
 
-  const filteredTournaments = tournaments.filter(
-    (t: any) =>
-      (activeTab === "all" || t.status === activeTab) &&
-      (t.title.toLowerCase().includes(q.toLowerCase()) ||
-       t.game.toLowerCase().includes(q.toLowerCase())),
-  );
+  const filteredTournaments = tournaments.filter((t: any) => {
+    const matchesMainTab =
+      activeTab === "all" ||
+      (activeTab === "open"
+        ? (t.status === "open" || t.status === "locked")
+        : t.status === activeTab);
+
+    if (!matchesMainTab) return false;
+
+    if (activeTab === "completed") {
+      if (completedSubTab === "pending") {
+        return !t.results_announced;
+      }
+      if (completedSubTab === "announced") {
+        return !!t.results_announced;
+      }
+    }
+
+    return (
+      t.title.toLowerCase().includes(q.toLowerCase()) ||
+      t.game.toLowerCase().includes(q.toLowerCase())
+    );
+  });
 
   const openResults = async (t: any) => {
     setResultsTId(t);
@@ -186,7 +204,7 @@ function AdminTournamentsPage() {
     ctx.font = "bold 13px 'Arial', sans-serif";
     ctx.fillStyle = "rgba(255,255,255,0.4)";
     ctx.textAlign = "left";
-    ctx.fillText("GOD ESPORTS ARENA", PADDING, 36);
+    ctx.fillText("CLUTCHGROUND", PADDING, 36);
 
     // Trophy icon area (decorative circle)
     ctx.beginPath();
@@ -336,7 +354,7 @@ function AdminTournamentsPage() {
     ctx.textAlign = "center";
     ctx.fillStyle = "rgba(255,255,255,0.25)";
     ctx.fillText(
-      `godEsportsArena.com  •  Generated ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`,
+      `clutchground.onrender.com  •  Generated ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`,
       W / 2,
       footerY + 28,
     );
@@ -765,12 +783,15 @@ function AdminTournamentsPage() {
           </motion.div>
         ) : (
           <>
-            {/* Tabs */}
+             {/* Tabs */}
             <div className="flex overflow-x-auto gap-2 mb-6 pb-2 hide-scrollbar">
               {["all", "open", "upcoming", "live", "rescheduled", "completed"].map((tab) => (
                 <button
                   key={tab}
-                  onClick={() => setActiveTab(tab)}
+                  onClick={() => {
+                    setActiveTab(tab);
+                    if (tab !== "completed") setCompletedSubTab("all");
+                  }}
                   className={`px-4 py-2 rounded-full font-bold text-sm whitespace-nowrap transition-colors ${
                     activeTab === tab
                       ? "bg-primary text-white"
@@ -781,6 +802,28 @@ function AdminTournamentsPage() {
                 </button>
               ))}
             </div>
+
+            {activeTab === "completed" && (
+              <div className="flex bg-secondary/40 p-1 rounded-xl mb-6 max-w-md gap-1">
+                {[
+                  { id: "all", label: "All Completed" },
+                  { id: "pending", label: "Pending Results ⏳" },
+                  { id: "announced", label: "Results Announced 🏆" }
+                ].map((subTab) => (
+                  <button
+                    key={subTab.id}
+                    onClick={() => setCompletedSubTab(subTab.id as any)}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                      completedSubTab === subTab.id
+                        ? "bg-primary/20 text-foreground shadow-sm font-black"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {subTab.label}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div className="relative mb-6">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

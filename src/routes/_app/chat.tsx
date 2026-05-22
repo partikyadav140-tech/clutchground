@@ -94,6 +94,18 @@ function ChatPage() {
           });
           lastMessageIdRef.current = newMsgs[newMsgs.length - 1].id;
           setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+
+          if (activeChat.type === 'friend') {
+            (markChatMessagesAsRead as any)({
+              data: {
+                userId: user.id,
+                otherUserId: activeChat.id
+              }
+            }).then(() => {
+              // Refresh friends list to update unread badge counts immediately
+              (getFriends as any)({ data: user.id }).then(setFriends).catch(() => {});
+            }).catch(() => {});
+          }
         }
       } catch(e) {}
     };
@@ -112,9 +124,29 @@ function ChatPage() {
           userId: user.id,
           otherUserId: activeChat.id
         }
+      }).then(() => {
+        // Refresh friends list to clear unread counts immediately
+        (getFriends as any)({ data: user.id }).then(setFriends).catch(() => {});
       }).catch(() => {});
     }
   }, [activeChat, user]);
+
+  // Background polling for friends list and requests (every 4 seconds) to update badges
+  useEffect(() => {
+    if (!user) return;
+    const interval = setInterval(async () => {
+      try {
+        const [f, r] = await Promise.all([
+          (getFriends as any)({ data: user.id }),
+          (getFriendRequests as any)({ data: user.id })
+        ]);
+        setFriends(f || []);
+        setRequests(r || []);
+      } catch(e) {}
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -315,10 +347,15 @@ function ChatPage() {
                     <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center font-display font-black text-xl text-muted-foreground overflow-hidden shrink-0">
                       {f.avatar_url ? <img src={f.avatar_url} className="w-full h-full object-cover" /> : (f.ign ? f.ign[0].toUpperCase() : f.username[0].toUpperCase())}
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <div className="font-bold text-foreground">{f.ign || f.username}</div>
                       <div className="text-xs text-muted-foreground font-mono">UID: {f.uid || 'Unknown'}</div>
                     </div>
+                    {Number(f.unread_count || 0) > 0 && (
+                      <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] font-black flex items-center justify-center animate-bounce shadow-md shrink-0">
+                        {f.unread_count}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { signupUser } from "../../api";
 import { setSessionId } from "../../lib/auth-client";
-import { Eye, EyeOff, ArrowRight, User, Phone, Lock, Gamepad2, Mail, Hash, ChevronLeft } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, User, Phone, Lock, Gamepad2, Mail, Hash, ChevronLeft, ChevronDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/Logo";
 
@@ -104,12 +104,13 @@ function SignupPage() {
                 <select
                   value={form.security_question}
                   onChange={set("security_question")}
-                  className="w-full h-14 bg-secondary border border-border focus:border-primary/60 rounded-2xl px-4 text-sm font-semibold text-foreground outline-none transition-all appearance-none"
+                  className="w-full h-14 bg-secondary border border-border focus:border-primary/60 rounded-2xl pl-4 pr-10 text-sm font-semibold text-foreground outline-none transition-all appearance-none"
                 >
                   <option value="What is your childhood nickname?">What is your childhood nickname?</option>
                   <option value="What is the name of your favorite childhood friend?">What is the name of your favorite childhood friend?</option>
                   <option value="What was the name of your first pet?">What was the name of your first pet?</option>
                 </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
               </div>
               <AppInput icon={Lock} placeholder="Security Answer (for password reset)" value={form.security_answer} onChange={set("security_answer")} required />
             </>

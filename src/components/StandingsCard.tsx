@@ -145,7 +145,7 @@ function drawStandings(
   ctx.font = "bold 13px 'Arial', sans-serif";
   ctx.fillStyle = "rgba(255,255,255,0.4)";
   ctx.textAlign = "left";
-  ctx.fillText("GOD ESPORTS ARENA", PADDING, 36);
+  ctx.fillText("CLUTCHGROUND", PADDING, 36);
 
   // Trophy icon area (decorative circle)
   ctx.beginPath();
@@ -294,7 +294,7 @@ function drawStandings(
   ctx.textAlign = "center";
   ctx.fillStyle = "rgba(255,255,255,0.25)";
   ctx.fillText(
-    `godEsportsArena.com  •  Generated ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`,
+    `clutchground.onrender.com  •  Generated ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`,
     W / 2,
     footerY + 28,
   );

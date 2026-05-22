@@ -33,6 +33,7 @@ import { Route as AppTournamentsIdRouteImport } from './routes/_app/tournaments/
 import { Route as AppSupportTicketIdRouteImport } from './routes/_app/support.$ticketId'
 import { Route as AppAdminUsersRouteImport } from './routes/_app/admin/users'
 import { Route as AppAdminTournamentsRouteImport } from './routes/_app/admin/tournaments'
+import { Route as AppAdminSiteSettingsRouteImport } from './routes/_app/admin/site-settings'
 import { Route as AppAdminSetupRouteImport } from './routes/_app/admin/setup'
 import { Route as AppAdminRegistrationsRouteImport } from './routes/_app/admin/registrations'
 import { Route as AppAdminPayoutsRouteImport } from './routes/_app/admin/payouts'
@@ -40,7 +41,6 @@ import { Route as AppAdminNotificationsRouteImport } from './routes/_app/admin/n
 import { Route as AppAdminMessagesRouteImport } from './routes/_app/admin/messages'
 import { Route as AppAdminLeaderboardRouteImport } from './routes/_app/admin/leaderboard'
 import { Route as AppAdminDepositsRouteImport } from './routes/_app/admin/deposits'
-import { Route as AppAdminSiteSettingsRouteImport } from './routes/_app/admin/site-settings'
 import { Route as AppAdminTicketsIndexRouteImport } from './routes/_app/admin/tickets.index'
 import { Route as AppAdminTicketsTicketIdRouteImport } from './routes/_app/admin/tickets.$ticketId'
 
@@ -163,6 +163,11 @@ const AppAdminTournamentsRoute = AppAdminTournamentsRouteImport.update({
   path: '/admin/tournaments',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminSiteSettingsRoute = AppAdminSiteSettingsRouteImport.update({
+  id: '/admin/site-settings',
+  path: '/admin/site-settings',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminSetupRoute = AppAdminSetupRouteImport.update({
   id: '/admin/setup',
   path: '/admin/setup',
@@ -198,11 +203,6 @@ const AppAdminDepositsRoute = AppAdminDepositsRouteImport.update({
   path: '/admin/deposits',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAdminSiteSettingsRoute = AppAdminSiteSettingsRouteImport.update({
-  id: '/admin/site-settings',
-  path: '/admin/site-settings',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppAdminTicketsIndexRoute = AppAdminTicketsIndexRouteImport.update({
   id: '/admin/tickets/',
   path: '/admin/tickets/',
@@ -232,13 +232,13 @@ export interface FileRoutesByFullPath {
   '/terms': typeof AppTermsRoute
   '/wallet': typeof AppWalletRoute
   '/admin/deposits': typeof AppAdminDepositsRoute
-  '/admin/site-settings': typeof AppAdminSiteSettingsRoute
   '/admin/leaderboard': typeof AppAdminLeaderboardRoute
   '/admin/messages': typeof AppAdminMessagesRoute
   '/admin/notifications': typeof AppAdminNotificationsRoute
   '/admin/payouts': typeof AppAdminPayoutsRoute
   '/admin/registrations': typeof AppAdminRegistrationsRoute
   '/admin/setup': typeof AppAdminSetupRoute
+  '/admin/site-settings': typeof AppAdminSiteSettingsRoute
   '/admin/tournaments': typeof AppAdminTournamentsRoute
   '/admin/users': typeof AppAdminUsersRoute
   '/support/$ticketId': typeof AppSupportTicketIdRoute
@@ -267,13 +267,13 @@ export interface FileRoutesByTo {
   '/wallet': typeof AppWalletRoute
   '/': typeof AppIndexRoute
   '/admin/deposits': typeof AppAdminDepositsRoute
-  '/admin/site-settings': typeof AppAdminSiteSettingsRoute
   '/admin/leaderboard': typeof AppAdminLeaderboardRoute
   '/admin/messages': typeof AppAdminMessagesRoute
   '/admin/notifications': typeof AppAdminNotificationsRoute
   '/admin/payouts': typeof AppAdminPayoutsRoute
   '/admin/registrations': typeof AppAdminRegistrationsRoute
   '/admin/setup': typeof AppAdminSetupRoute
+  '/admin/site-settings': typeof AppAdminSiteSettingsRoute
   '/admin/tournaments': typeof AppAdminTournamentsRoute
   '/admin/users': typeof AppAdminUsersRoute
   '/support/$ticketId': typeof AppSupportTicketIdRoute
@@ -304,13 +304,13 @@ export interface FileRoutesById {
   '/_app/wallet': typeof AppWalletRoute
   '/_app/': typeof AppIndexRoute
   '/_app/admin/deposits': typeof AppAdminDepositsRoute
-  '/_app/admin/site-settings': typeof AppAdminSiteSettingsRoute
   '/_app/admin/leaderboard': typeof AppAdminLeaderboardRoute
   '/_app/admin/messages': typeof AppAdminMessagesRoute
   '/_app/admin/notifications': typeof AppAdminNotificationsRoute
   '/_app/admin/payouts': typeof AppAdminPayoutsRoute
   '/_app/admin/registrations': typeof AppAdminRegistrationsRoute
   '/_app/admin/setup': typeof AppAdminSetupRoute
+  '/_app/admin/site-settings': typeof AppAdminSiteSettingsRoute
   '/_app/admin/tournaments': typeof AppAdminTournamentsRoute
   '/_app/admin/users': typeof AppAdminUsersRoute
   '/_app/support/$ticketId': typeof AppSupportTicketIdRoute
@@ -341,13 +341,13 @@ export interface FileRouteTypes {
     | '/terms'
     | '/wallet'
     | '/admin/deposits'
-    | '/admin/site-settings'
     | '/admin/leaderboard'
     | '/admin/messages'
     | '/admin/notifications'
     | '/admin/payouts'
     | '/admin/registrations'
     | '/admin/setup'
+    | '/admin/site-settings'
     | '/admin/tournaments'
     | '/admin/users'
     | '/support/$ticketId'
@@ -376,13 +376,13 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/'
     | '/admin/deposits'
-    | '/admin/site-settings'
     | '/admin/leaderboard'
     | '/admin/messages'
     | '/admin/notifications'
     | '/admin/payouts'
     | '/admin/registrations'
     | '/admin/setup'
+    | '/admin/site-settings'
     | '/admin/tournaments'
     | '/admin/users'
     | '/support/$ticketId'
@@ -412,13 +412,13 @@ export interface FileRouteTypes {
     | '/_app/wallet'
     | '/_app/'
     | '/_app/admin/deposits'
-    | '/_app/admin/site-settings'
     | '/_app/admin/leaderboard'
     | '/_app/admin/messages'
     | '/_app/admin/notifications'
     | '/_app/admin/payouts'
     | '/_app/admin/registrations'
     | '/_app/admin/setup'
+    | '/_app/admin/site-settings'
     | '/_app/admin/tournaments'
     | '/_app/admin/users'
     | '/_app/support/$ticketId'
@@ -604,6 +604,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminTournamentsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/site-settings': {
+      id: '/_app/admin/site-settings'
+      path: '/admin/site-settings'
+      fullPath: '/admin/site-settings'
+      preLoaderRoute: typeof AppAdminSiteSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/setup': {
       id: '/_app/admin/setup'
       path: '/admin/setup'
@@ -653,13 +660,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminDepositsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/admin/site-settings': {
-      id: '/_app/admin/site-settings'
-      path: '/admin/site-settings'
-      fullPath: '/admin/site-settings'
-      preLoaderRoute: typeof AppAdminSiteSettingsRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/admin/tickets/': {
       id: '/_app/admin/tickets/'
       path: '/admin/tickets'
@@ -695,13 +695,13 @@ interface AppRouteChildren {
   AppWalletRoute: typeof AppWalletRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAdminDepositsRoute: typeof AppAdminDepositsRoute
-  AppAdminSiteSettingsRoute: typeof AppAdminSiteSettingsRoute
   AppAdminLeaderboardRoute: typeof AppAdminLeaderboardRoute
   AppAdminMessagesRoute: typeof AppAdminMessagesRoute
   AppAdminNotificationsRoute: typeof AppAdminNotificationsRoute
   AppAdminPayoutsRoute: typeof AppAdminPayoutsRoute
   AppAdminRegistrationsRoute: typeof AppAdminRegistrationsRoute
   AppAdminSetupRoute: typeof AppAdminSetupRoute
+  AppAdminSiteSettingsRoute: typeof AppAdminSiteSettingsRoute
   AppAdminTournamentsRoute: typeof AppAdminTournamentsRoute
   AppAdminUsersRoute: typeof AppAdminUsersRoute
   AppSupportTicketIdRoute: typeof AppSupportTicketIdRoute
@@ -731,13 +731,13 @@ const AppRouteChildren: AppRouteChildren = {
   AppWalletRoute: AppWalletRoute,
   AppIndexRoute: AppIndexRoute,
   AppAdminDepositsRoute: AppAdminDepositsRoute,
-  AppAdminSiteSettingsRoute: AppAdminSiteSettingsRoute,
   AppAdminLeaderboardRoute: AppAdminLeaderboardRoute,
   AppAdminMessagesRoute: AppAdminMessagesRoute,
   AppAdminNotificationsRoute: AppAdminNotificationsRoute,
   AppAdminPayoutsRoute: AppAdminPayoutsRoute,
   AppAdminRegistrationsRoute: AppAdminRegistrationsRoute,
   AppAdminSetupRoute: AppAdminSetupRoute,
+  AppAdminSiteSettingsRoute: AppAdminSiteSettingsRoute,
   AppAdminTournamentsRoute: AppAdminTournamentsRoute,
   AppAdminUsersRoute: AppAdminUsersRoute,
   AppSupportTicketIdRoute: AppSupportTicketIdRoute,

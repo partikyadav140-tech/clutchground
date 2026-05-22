@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { Trophy, Calendar, Crosshair, Swords, Info, Clock, Zap, ListChecks, CheckCircle2 } from "lucide-react";
+import { Trophy, Calendar, Crosshair, Swords, Info, Clock, Zap, ListChecks, CheckCircle2, Star, Shield, Users } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../lib/auth-client";
 import { getMyMatches, getTournamentResults } from "../../api";
@@ -8,6 +8,17 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { GodCoin } from "@/components/GodCoin";
 import { StandingsCard } from "@/components/StandingsCard";
+
+const POSTERS = [
+  "/posters/poster1.jpg", "/posters/poster2.jpg", "/posters/poster3.jpg",
+  "/posters/poster4.jpg", "/posters/poster5.jpg", "/posters/poster6.jpg",
+];
+
+const MODE: Record<string, { color: string; glow: string; gradient: string; bg: string }> = {
+  Solo:  { color: "#00c8ff", glow: "rgba(0,200,255,0.35)",   gradient: "linear-gradient(135deg,#00c8ff,#0080ff)", bg: "rgba(0,200,255,0.08)" },
+  Duo:   { color: "#a78bfa", glow: "rgba(167,139,250,0.35)", gradient: "linear-gradient(135deg,#a78bfa,#7c3aed)", bg: "rgba(167,139,250,0.08)" },
+  Squad: { color: "#ff6b00", glow: "rgba(255,107,0,0.35)",   gradient: "linear-gradient(135deg,#ff6b00,#ff0055)", bg: "rgba(255,107,0,0.08)" },
+};
 
 export const Route = createFileRoute("/_app/matches")({
   head: () => ({ meta: [{ title: "My Matches — CLUTCHGROUND" }] }),
@@ -103,46 +114,7 @@ function MatchesPage() {
               ) : (
                 <div className="flex flex-col gap-3">
                   {history.map((m, i) => (
-                    <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                      <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-card">
-                        {/* Top */}
-                        <Link to={`/tournaments/${String(m.id)}` as any}
-                          className="flex items-start justify-between p-4 border-b border-border active:bg-secondary/40 transition-colors">
-                          <div className="flex-1 min-w-0 pr-3">
-                            <h3 className="font-display font-black text-sm text-foreground leading-tight truncate">{m.name}</h3>
-                            <div className="flex items-center gap-1 mt-1">
-                              <Calendar className="w-3 h-3 text-muted-foreground" />
-                              <span className="text-[10px] text-muted-foreground font-semibold">
-                                {new Date(m.date).toLocaleDateString([], { day: "numeric", month: "short" })}
-                              </span>
-                            </div>
-                          </div>
-                          <span className="text-[9px] font-black px-2.5 py-1 rounded-full border shrink-0 mt-0.5"
-                            style={{ background: "rgba(100,116,139,0.1)", color: "#94a3b8", borderColor: "rgba(100,116,139,0.2)" }}>
-                            Completed
-                          </span>
-                        </Link>
-
-                        {/* Stats */}
-                        <div className="flex items-stretch divide-x divide-border">
-                          {[
-                            { label: "Kills",    value: m.kills    || 0 },
-                            { label: "Position", value: `#${m.position || "-"}` },
-                            { label: "Points",   value: m.points   || 0, highlight: true },
-                          ].map(({ label, value, highlight }) => (
-                            <div key={label} className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5">
-                              <span className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">{label}</span>
-                              <span className={`font-display font-black text-base ${highlight ? "text-primary" : "text-foreground"}`}>{value}</span>
-                            </div>
-                          ))}
-                          <button onClick={() => openStandings(m)}
-                            className="px-4 flex flex-col items-center justify-center gap-0.5 active:bg-secondary/60 transition-colors press-effect">
-                            <ListChecks className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">Board</span>
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
+                    <HistoryMatchCard key={i} m={m} i={i} openStandings={openStandings} />
                   ))}
                 </div>
               )}
@@ -183,6 +155,15 @@ function MatchesPage() {
 }
 
 function MatchCard({ m, i }: { m: any; i: number }) {
+  const poster  = POSTERS[m.id % POSTERS.length];
+  const slots   = Number(m.slots) || 1;
+  const filled  = Number(m.filled) || 0;
+  const fillPct = Math.min(100, Math.round((filled / slots) * 100));
+  const isFull  = filled >= slots;
+  const isLive  = m.match_status === "live";
+  const isFree  = m.entry === 0;
+  const mc      = MODE[m.mode] || MODE.Solo;
+
   const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
     live:        { label: "LIVE",        color: "#f87171", bg: "rgba(239,68,68,0.1)",  border: "rgba(239,68,68,0.25)" },
     pending:     { label: "PENDING",     color: "#fbbf24", bg: "rgba(251,191,36,0.1)", border: "rgba(251,191,36,0.25)" },
@@ -193,63 +174,208 @@ function MatchCard({ m, i }: { m: any; i: number }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-      <Link to={`/tournaments/${String(m.id)}` as any}
-        className="block bg-card rounded-2xl border border-border overflow-hidden shadow-card press-effect active:scale-[0.98] transition-transform">
-        {/* Header */}
-        <div className="p-4">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <h3 className="font-display font-black text-sm text-foreground leading-tight flex-1 truncate">{m.name}</h3>
-            <span className="text-[9px] font-black px-2.5 py-1 rounded-full border shrink-0"
-              style={{ color: s.color, background: s.bg, borderColor: s.border }}>
-              {s.label === "LIVE" ? (
-                <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" /> {s.label}
-                </span>
-              ) : s.label}
-            </span>
-          </div>
-          <div className="flex items-center gap-3 text-[10px] font-semibold text-muted-foreground">
-            <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{new Date(m.date).toLocaleDateString([], { dateStyle: "short" })}</span>
-            <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(m.date).toLocaleTimeString([], { timeStyle: "short" })}</span>
-            <span className="flex items-center gap-1"><Crosshair className="w-3 h-3" />{m.format}</span>
-          </div>
-        </div>
+      <div
+        className="rounded-3xl p-[1.5px] group cursor-pointer"
+        style={{ background: `linear-gradient(135deg, ${mc.color}44, transparent 60%, ${mc.color}22)` }}
+        onMouseEnter={e => (e.currentTarget.style.boxShadow = `0 0 28px ${mc.glow}, 0 8px 32px rgba(0,0,0,0.3)`)}
+        onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
+      >
+        <div className="rounded-[calc(1.5rem-1.5px)] overflow-hidden bg-card">
 
-        {/* Room details */}
-        {(m.room_id || m.room_pass) && m.reg_status !== "pending" && (
-          <div className="px-4 pb-3">
-            <div className="rounded-2xl p-3 border flex gap-3" style={{ background: "rgba(0,200,255,0.05)", borderColor: "rgba(0,200,255,0.15)" }}>
-              <div className="flex items-center gap-1 mb-1">
-                <Info className="w-3 h-3" style={{ color: "var(--primary)" }} />
-                <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "var(--primary)" }}>Room Details</span>
+          {/* Banner */}
+          <div className="relative overflow-hidden" style={{ height: 150 }}>
+            <img src={poster} alt={m.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 60%, rgba(8,12,20,0.97) 100%)" }} />
+
+            {/* Badges */}
+            <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+              {isLive ? (
+                <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase text-white bg-red-500/90 backdrop-blur-md">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />LIVE
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase backdrop-blur-md border"
+                  style={{ color: s.color, background: s.bg, borderColor: s.border }}>
+                  {s.label}
+                </span>
+              )}
+              <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase text-white bg-black/55 backdrop-blur-md border border-white/10"
+                style={{ borderColor: `${mc.color}44` }}>
+                {m.mode}
+              </span>
+            </div>
+            {isFree && (
+              <div className="absolute top-2.5 right-2.5">
+                <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase bg-emerald-500/90 text-white">FREE</span>
               </div>
-              <div className="flex gap-3">
-                {m.room_id && (
-                  <div>
-                    <p className="text-[8px] text-muted-foreground font-black uppercase tracking-widest mb-0.5">Room ID</p>
-                    <p className="font-mono font-black text-sm text-foreground">{m.room_id}</p>
-                  </div>
-                )}
-                {m.room_pass && (
-                  <div>
-                    <p className="text-[8px] text-muted-foreground font-black uppercase tracking-widest mb-0.5">Password</p>
-                    <p className="font-mono font-black text-sm text-foreground">{m.room_pass}</p>
-                  </div>
-                )}
+            )}
+
+            {/* Title */}
+            <div className="absolute bottom-2.5 left-3 right-3">
+              <div className="flex items-center gap-1 mb-1 text-[8px] font-black uppercase tracking-widest" style={{ color: mc.color }}>
+                <Star className="w-2.5 h-2.5" />Free Fire
               </div>
+              <h3 className="font-display font-black text-base leading-tight line-clamp-1 drop-shadow-lg text-white">{m.name}</h3>
             </div>
           </div>
-        )}
 
-        {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-2.5 bg-secondary/30 border-t border-border">
-          <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{m.mode}</span>
-          <span className="flex items-center gap-1 text-xs font-black" style={{ color: "var(--primary)" }}>
-            <GodCoin className="w-3.5 h-3.5" />
-            {m.mode === "Solo" ? `${m.per_kill_coin}/kill` : m.prize}
-          </span>
+          {/* Stats bar */}
+          <div className="flex items-stretch divide-x divide-border">
+            {[
+              { label: "Entry", value: isFree ? "FREE" : m.entry, coin: !isFree, clr: isFree ? "#10b981" : mc.color },
+              { label: "Prize", value: m.mode === "Solo" ? `${m.per_kill_coin}/kill` : m.prize, coin: true, clr: "#f59e0b" },
+              { label: "Starts", value: m.date ? new Date(m.date).toLocaleString([], { dateStyle: "short", timeStyle: "short" }) : "TBD", coin: false, clr: mc.color },
+            ].map(({ label, value, coin, clr }) => (
+              <div key={label} className="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5">
+                <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
+                <span className="font-display font-black text-xs text-foreground flex items-center gap-0.5">
+                  {coin && <GodCoin className="w-2.5 h-2.5 text-amber-400" />}
+                  <span style={{ color: clr }}>{value}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Fill bar */}
+          <div className="h-1.5 bg-secondary relative overflow-hidden">
+            <div className="h-full rounded-full transition-all duration-700 relative overflow-hidden" style={{ width: `${fillPct}%`, background: isFull ? "#ef4444" : mc.gradient }}>
+              {!isFull && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent animate-shimmer" />}
+            </div>
+          </div>
+
+          {/* Slots + Room info & Action Button */}
+          <div className="p-3">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[9px] font-semibold text-muted-foreground flex items-center gap-1">
+                <Users className="w-2.5 h-2.5" />{filled}/{slots}
+              </span>
+              <span className="text-[9px] font-black" style={{ color: isFull ? "#ef4444" : mc.color }}>{isFull ? "FULL" : `${fillPct}%`}</span>
+            </div>
+
+            {/* Room details */}
+            {(m.room_id || m.room_pass) && m.reg_status !== "pending" && (
+              <div className="mb-3">
+                <div className="rounded-2xl p-3 border flex flex-col gap-2 bg-sky-500/5 border-sky-500/15">
+                  <div className="flex items-center gap-1">
+                    <Info className="w-3 h-3 text-sky-400" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-sky-400">Room Details</span>
+                  </div>
+                  <div className="flex gap-4">
+                    {m.room_id && (
+                      <div>
+                        <p className="text-[8px] text-muted-foreground font-black uppercase tracking-widest mb-0.5">Room ID</p>
+                        <p className="font-mono font-black text-sm text-foreground">{m.room_id}</p>
+                      </div>
+                    )}
+                    {m.room_pass && (
+                      <div>
+                        <p className="text-[8px] text-muted-foreground font-black uppercase tracking-widest mb-0.5">Password</p>
+                        <p className="font-mono font-black text-sm text-foreground">{m.room_pass}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Link to={`/tournaments/${m.id}` as any} className="flex-1">
+                <button className="w-full h-10 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-border text-foreground bg-secondary press-effect active:scale-95 flex items-center justify-center gap-1">
+                  <Shield className="w-3.5 h-3.5" />View Details
+                </button>
+              </Link>
+              {m.reg_status === "pending" && (
+                <div className="flex-[0_0_auto]">
+                  <span className="h-10 px-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                    Pending Approval
+                  </span>
+                </div>
+              )}
+              {m.reg_status === "approved" && (
+                <div className="flex-[0_0_auto]">
+                  <span className="h-10 px-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center bg-green-500/10 text-green-500 border border-green-500/20">
+                    Registered
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
-      </Link>
+      </div>
+    </motion.div>
+  );
+}
+
+function HistoryMatchCard({ m, i, openStandings }: { m: any; i: number; openStandings: (m: any) => void }) {
+  const poster  = POSTERS[m.id % POSTERS.length];
+  const mc      = MODE[m.mode] || MODE.Solo;
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+      <div
+        className="rounded-3xl p-[1.5px] group"
+        style={{ background: `linear-gradient(135deg, rgba(100,116,139,0.2), transparent 60%, rgba(100,116,139,0.1))` }}
+      >
+        <div className="rounded-[calc(1.5rem-1.5px)] overflow-hidden bg-card">
+
+          {/* Banner */}
+          <div className="relative overflow-hidden" style={{ height: 120 }}>
+            <img src={poster} alt={m.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 60%, rgba(8,12,20,0.97) 100%)" }} />
+
+            {/* Badges */}
+            <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+              <span className="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-slate-500/60 text-white backdrop-blur-md">
+                Completed
+              </span>
+              <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase text-white bg-black/55 backdrop-blur-md border border-white/10"
+                style={{ borderColor: `${mc.color}44` }}>
+                {m.mode}
+              </span>
+            </div>
+
+            {/* Title */}
+            <div className="absolute bottom-2.5 left-3 right-3">
+              <div className="flex items-center gap-1 mb-1 text-[8px] font-black uppercase tracking-widest text-muted-foreground">
+                <Star className="w-2.5 h-2.5" />Free Fire
+              </div>
+              <h3 className="font-display font-black text-sm leading-tight line-clamp-1 drop-shadow-lg text-white">{m.name}</h3>
+            </div>
+          </div>
+
+          {/* Stats strip */}
+          <div className="flex items-stretch divide-x divide-border border-b border-border">
+            {[
+              { label: "Kills",    value: m.kills || 0, clr: "text-foreground" },
+              { label: "Position", value: `#${m.position || "-"}`, clr: "text-foreground" },
+              { label: "Points",   value: m.points || 0, clr: "text-primary" },
+            ].map(({ label, value, clr }) => (
+              <div key={label} className="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5">
+                <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
+                <span className={`font-display font-black text-sm ${clr}`}>{value}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Footer buttons */}
+          <div className="p-3 flex gap-2">
+            <Link to={`/tournaments/${m.id}` as any} className="flex-1">
+              <button className="w-full h-10 rounded-xl text-[10px] font-black uppercase tracking-widest border border-border text-foreground bg-secondary press-effect active:scale-95 flex items-center justify-center gap-1">
+                <Shield className="w-3.5 h-3.5" />Details
+              </button>
+            </Link>
+            <button
+              onClick={() => openStandings(m)}
+              className="flex-1 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white hover:opacity-95 press-effect active:scale-95 flex items-center justify-center gap-1.5"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              <Trophy className="w-3.5 h-3.5 text-amber-300 animate-pulse" />View Full Standings
+            </button>
+          </div>
+
+        </div>
+      </div>
     </motion.div>
   );
 }

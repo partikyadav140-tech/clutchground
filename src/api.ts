@@ -347,15 +347,34 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
 
   if ((room_id && room_id !== old?.room_id) || (room_pass && room_pass !== old?.room_pass)) {
     const registrations = (await db
-      .prepare("SELECT user_id FROM registrations WHERE tournament_id = ?")
+      .prepare("SELECT user_id, players_json FROM registrations WHERE tournament_id = ?")
       .all(id)) as any[];
     const insertNotif = db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)");
     const notifMsg =
       `🔑 Room details for ${title} updated! ` +
       (room_id ? `ID: ${room_id} ` : "") +
       (room_pass ? `Pass: ${room_pass}` : "");
+    
+    const notifiedUsers = new Set<number>();
     for (const r of registrations) {
-      await insertNotif.run(r.user_id, notifMsg.trim(), `/tournaments/${id}`);
+      if (!notifiedUsers.has(r.user_id)) {
+        await insertNotif.run(r.user_id, notifMsg.trim(), `/tournaments/${id}`);
+        notifiedUsers.add(r.user_id);
+      }
+      if (r.players_json) {
+        try {
+          const players = JSON.parse(r.players_json);
+          for (const p of players) {
+            if (p.uid) {
+              const u = await db.prepare("SELECT id FROM users WHERE uid = ?").get(p.uid) as any;
+              if (u && !notifiedUsers.has(u.id)) {
+                await insertNotif.run(u.id, notifMsg.trim(), `/tournaments/${id}`);
+                notifiedUsers.add(u.id);
+              }
+            }
+          }
+        } catch(e) {}
+      }
     }
   }
 
@@ -1107,7 +1126,7 @@ export const getMyMatches = createServerFn({ method: "POST" }).handler(async ({ 
     .prepare(
       `
       SELECT t.id, t.title as name, t.startsAt as date, t.status as match_status, t.prize, t.mode, t.format, t.room_id, t.room_pass, t.per_kill_coin, t.first_place_coin,
-             r.kills, r.position, r.points, 'approved' as reg_status
+             t.slots, t.filled, t.entry, r.kills, r.position, r.points, 'approved' as reg_status
       FROM registrations r
       JOIN tournaments t ON r.tournament_id = t.id
       WHERE r.user_id = ? OR r.players_json LIKE ?
@@ -1115,7 +1134,7 @@ export const getMyMatches = createServerFn({ method: "POST" }).handler(async ({ 
       UNION ALL
 
       SELECT t.id, t.title as name, t.startsAt as date, t.status as match_status, t.prize, t.mode, t.format, null as room_id, null as room_pass, t.per_kill_coin, t.first_place_coin,
-             0 as kills, 0 as position, 0 as points, req.status as reg_status
+             t.slots, t.filled, t.entry, 0 as kills, 0 as position, 0 as points, req.status as reg_status
       FROM tournament_requests req
       JOIN tournaments t ON req.tournament_id = t.id
       WHERE req.status = 'pending' AND (req.requested_by = ? OR req.players_json LIKE ?)
@@ -1336,7 +1355,7 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
 
       // Optionally mark tournament as finished here if you want
       await tx
-        .prepare("UPDATE tournaments SET status = 'completed' WHERE id = ?")
+        .prepare("UPDATE tournaments SET status = 'completed', results_announced = true WHERE id = ?")
         .run(tournamentId);
     });
     return { success: true };
@@ -1452,7 +1471,7 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
     const t = (await db
       .prepare(
         `
-        SELECT t.name
+        SELECT t.name, t.logo
         FROM team_members tm
         JOIN teams t ON t.id = tm.team_id
         WHERE tm.user_id = ?
@@ -1461,11 +1480,13 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
       .get(rows[i].user_id)) as any;
     if (!t) {
       const t2 = (await db
-        .prepare("SELECT name FROM teams WHERE leader_id = ?")
+        .prepare("SELECT name, logo FROM teams WHERE leader_id = ?")
         .get(rows[i].user_id)) as any;
       rows[i].team = t2 ? t2.name : "Free Agent";
+      rows[i].logo = t2 ? t2.logo : null;
     } else {
       rows[i].team = t.name;
+      rows[i].logo = t.logo;
     }
     rows[i].rank = i + 1;
 
@@ -1973,6 +1994,17 @@ export const sendFriendRequest = createServerFn({ method: "POST" }).handler(asyn
   const existing = await db.prepare("SELECT * FROM friendships WHERE (user_id1 = ? AND user_id2 = ?) OR (user_id1 = ? AND user_id2 = ?)").get(fromUserId, toUserId, toUserId, fromUserId);
   if (existing) throw new Error("Friendship or request already exists.");
   await db.prepare("INSERT INTO friendships (user_id1, user_id2) VALUES (?, ?)").run(fromUserId, toUserId);
+  
+  // Insert friend request notification
+  try {
+    const sender = await db.prepare("SELECT ign, username FROM users WHERE id = ?").get(fromUserId) as any;
+    const senderName = sender ? (sender.ign || sender.username) : "A player";
+    await db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+      .run(toUserId, `👥 ${senderName} sent you a friend request!`, "/chat");
+  } catch (err) {
+    console.error("Failed to notify user of friend request:", err);
+  }
+
   return { success: true };
 });
 
@@ -1990,10 +2022,24 @@ export const getFriendRequests = createServerFn({ method: "POST" }).handler(asyn
 export const resolveFriendRequest = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const { requestId, status } = data as any; // status can be 'accepted' or 'rejected'
-  if (status === 'rejected') {
-    await db.prepare("DELETE FROM friendships WHERE id = ?").run(requestId);
-  } else {
+  
+  if (status === 'accepted') {
+    const f = await db.prepare("SELECT user_id1, user_id2 FROM friendships WHERE id = ?").get(requestId) as any;
     await db.prepare("UPDATE friendships SET status = 'accepted' WHERE id = ?").run(requestId);
+    
+    // Insert accept notification
+    if (f) {
+      try {
+        const accepter = await db.prepare("SELECT ign, username FROM users WHERE id = ?").get(f.user_id2) as any;
+        const accepterName = accepter ? (accepter.ign || accepter.username) : "A player";
+        await db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+          .run(f.user_id1, `🤝 ${accepterName} accepted your friend request!`, "/chat");
+      } catch (err) {
+        console.error("Failed to notify user of accepted friend request:", err);
+      }
+    }
+  } else {
+    await db.prepare("DELETE FROM friendships WHERE id = ?").run(requestId);
   }
   return { success: true };
 });
@@ -2005,11 +2051,12 @@ export const getFriends = createServerFn({ method: "POST" }).handler(async ({ da
     SELECT 
       f.id as friendship_id,
       u.id as user_id, 
-      u.username, u.ign, u.uid, u.avatar_url
+      u.username, u.ign, u.uid, u.avatar_url,
+      (SELECT COUNT(*) FROM chat_messages WHERE sender_id = u.id AND receiver_id = ? AND is_read = false) as unread_count
     FROM friendships f
     JOIN users u ON (u.id = f.user_id1 OR u.id = f.user_id2) AND u.id != ?
     WHERE (f.user_id1 = ? OR f.user_id2 = ?) AND f.status = 'accepted'
-  `).all(userId, userId, userId);
+  `).all(userId, userId, userId, userId);
 });
 
 export const getChatMessages = createServerFn({ method: "POST" }).handler(async ({ data }) => {

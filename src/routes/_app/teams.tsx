@@ -307,15 +307,16 @@ function TeamsPage() {
             <div className="p-5">
               <div className="space-y-5">
                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                  <div className="relative w-24 h-24 shrink-0 rounded-[1rem] bg-gradient-to-br from-primary to-[#d95a00] flex items-center justify-center font-display font-black text-4xl text-white shadow-lg overflow-hidden group">
-                    {teamData.logo ? (
-                      <img src={teamData.logo} className="w-full h-full object-cover" />
-                    ) : (
-                      teamData.name ? teamData.name.slice(0, 2).toUpperCase() : "?"
-                    )}
-                    <label className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Edit3 className="w-6 h-6 text-white mb-1" />
-                      <span className="text-[9px] font-bold uppercase text-white tracking-widest">Logo</span>
+                  <div className="relative shrink-0 group">
+                    <div className="w-24 h-24 rounded-[1rem] bg-gradient-to-br from-primary to-[#d95a00] flex items-center justify-center font-display font-black text-4xl text-white shadow-lg overflow-hidden">
+                      {teamData.logo ? (
+                        <img src={teamData.logo} className="w-full h-full object-cover" />
+                      ) : (
+                        teamData.name ? teamData.name.slice(0, 2).toUpperCase() : "?"
+                      )}
+                    </div>
+                    <label className="absolute -bottom-1.5 -right-1.5 w-8 h-8 rounded-full bg-primary border-2 border-card flex items-center justify-center cursor-pointer shadow-md text-white hover:bg-primary/90 hover:scale-105 transition-all z-10">
+                      <Edit3 className="w-3.5 h-3.5" />
                       <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
                     </label>
                   </div>
