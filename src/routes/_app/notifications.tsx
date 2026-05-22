@@ -20,6 +20,8 @@ function NotificationsPage() {
   const [browserPerm, setBrowserPerm] = useState<NotificationPermission>(
     typeof window !== "undefined" && "Notification" in window ? Notification.permission : "denied"
   );
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [checkingSub, setCheckingSub] = useState(true);
 
   useEffect(() => {
     if (!authLoading && !user) { router.navigate({ to: "/login" }); return; }
@@ -35,7 +37,21 @@ function NotificationsPage() {
   }, [user, authLoading]);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window) setBrowserPerm(Notification.permission);
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setBrowserPerm(Notification.permission);
+    }
+
+    if (typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window) {
+      navigator.serviceWorker.ready.then(async (reg) => {
+        const sub = await reg.pushManager.getSubscription();
+        setIsSubscribed(!!sub);
+        setCheckingSub(false);
+      }).catch(() => {
+        setCheckingSub(false);
+      });
+    } else {
+      setCheckingSub(false);
+    }
   }, []);
 
   const enableAlerts = async () => {
@@ -44,13 +60,38 @@ function NotificationsPage() {
       const cur = p ?? Notification.permission;
       setBrowserPerm(cur);
       if (cur === "granted") {
-        toast.success("Browser alerts enabled!");
         if (user) {
-          subscribeUserToPush(user.id);
+          toast.loading("Activating push notifications...", { id: "push-register" });
+          const sub = await subscribeUserToPush(user.id);
+          setIsSubscribed(!!sub);
+          if (sub) {
+            toast.success("Push notifications activated successfully!", { id: "push-register" });
+          } else {
+            toast.error("Failed to register device subscription. Check VAPID settings.", { id: "push-register" });
+          }
         }
       } else {
-        toast.error("Permission not granted.");
+        toast.error("Browser notification permission denied.");
       }
+    }
+  };
+
+  const disableAlerts = async () => {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+    try {
+      toast.loading("Deactivating push notifications...", { id: "push-unregister" });
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await sub.unsubscribe();
+        const { removePushSubscription } = await import("../../api");
+        await (removePushSubscription as any)({ data: { endpoint: sub.endpoint } });
+      }
+      setIsSubscribed(false);
+      toast.success("Push notifications deactivated successfully.", { id: "push-unregister" });
+    } catch (err) {
+      console.error("Failed to deactivate push notifications:", err);
+      toast.error("Failed to cleanly deactivate notifications.", { id: "push-unregister" });
     }
   };
 
@@ -97,19 +138,30 @@ function NotificationsPage() {
             <div>
               <p className="font-black text-sm text-foreground">Push Alerts</p>
               <p className="text-[10px] text-muted-foreground font-semibold">
-                Status: <span className={browserPerm === "granted" ? "text-emerald-400" : "text-muted-foreground"}>
-                  {browserPerm}
+                Status: <span className={browserPerm === "granted" && isSubscribed ? "text-emerald-400" : "text-muted-foreground"}>
+                  {checkingSub ? "checking..." : browserPerm === "granted" && isSubscribed ? "Active" : "Inactive"}
                 </span>
               </p>
             </div>
           </div>
-          <button
-            onClick={enableAlerts}
-            className="h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-white press-effect active:scale-95"
-            style={{ background: browserPerm === "granted" ? "var(--secondary)" : "var(--gradient-primary)", color: browserPerm === "granted" ? "var(--muted-foreground)" : "white" }}
-          >
-            {browserPerm === "granted" ? "Enabled" : "Enable"}
-          </button>
+          {checkingSub ? (
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mr-3" />
+          ) : browserPerm === "granted" && isSubscribed ? (
+            <button
+              onClick={disableAlerts}
+              className="h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-red-400 border border-red-500/20 bg-red-500/5 press-effect active:scale-95"
+            >
+              Disable
+            </button>
+          ) : (
+            <button
+              onClick={enableAlerts}
+              className="h-8 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-white press-effect active:scale-95"
+              style={{ background: "var(--gradient-primary)" }}
+            >
+              Enable
+            </button>
+          )}
         </div>
       </div>
 
