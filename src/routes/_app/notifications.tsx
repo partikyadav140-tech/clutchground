@@ -73,12 +73,17 @@ function NotificationsPage() {
       if (cur === "granted") {
         if (user) {
           toast.loading("Activating push notifications...", { id: "push-register" });
-          const sub = await subscribeUserToPush(user.id);
-          setIsSubscribed(!!sub);
-          if (sub) {
-            toast.success("Push notifications activated successfully!", { id: "push-register" });
-          } else {
-            toast.error("Failed to register device subscription. Check VAPID settings.", { id: "push-register" });
+          try {
+            const sub = await subscribeUserToPush(user.id);
+            setIsSubscribed(!!sub);
+            if (sub) {
+              toast.success("Push notifications activated successfully!", { id: "push-register" });
+            } else {
+              toast.error("Failed to register device subscription. Check VAPID settings.", { id: "push-register" });
+            }
+          } catch (err: any) {
+            console.error("Subscription error detail:", err);
+            toast.error(`Subscription failed: ${err?.message || err}`, { id: "push-register" });
           }
         }
       } else {

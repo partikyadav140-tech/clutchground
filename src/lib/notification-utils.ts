@@ -198,8 +198,7 @@ export async function subscribeUserToPush(userId: number): Promise<PushSubscript
     const vapidKeyRes = await (getVapidPublicKey as any)();
     const publicVapidKey = vapidKeyRes?.publicKey;
     if (!publicVapidKey) {
-      console.error("[Push] VAPID public key is not configured on the server.");
-      return;
+      throw new Error("VAPID public key is not configured on the server. Please check environment variables.");
     }
 
     // Step 5: Subscribe the browser
@@ -223,8 +222,9 @@ export async function subscribeUserToPush(userId: number): Promise<PushSubscript
     }
 
     return subscription;
-  } catch (err) {
+  } catch (err: any) {
     console.error("[Push] Failed to subscribe user to push notifications:", err);
+    throw err;
   }
 }
 
