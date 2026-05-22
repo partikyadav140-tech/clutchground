@@ -115,6 +115,16 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
         );
     });
 
+    try {
+      const { triggerPushNotification } = await import("./push-server");
+      triggerPushNotification(
+        userId,
+        "💰 Wallet Deposit",
+        `💰 ₹${order.amount} deposited — ${order.amount} CG Coins added to your wallet!`,
+        "/wallet"
+      ).catch(e => console.error("Razorpay deposit push error:", e));
+    } catch(e) {}
+
     return { success: true, amount: order.amount };
   },
 );

@@ -279,6 +279,21 @@ export const addTournament = createServerFn({ method: "POST" }).handler(async ({
         "/tournaments",
       );
     }
+
+    // Asynchronously push to all users
+    (async () => {
+      try {
+        const { triggerPushNotification } = await import("./lib/push-server");
+        for (const user of users as any[]) {
+          triggerPushNotification(
+            user.id,
+            "📣 New Tournament Announced!",
+            `📣 New tournament: ${title} (${mode} / ${format}) is open for registration!`,
+            "/tournaments"
+          ).catch(() => {});
+        }
+      } catch(e) {}
+    })();
   }
 
   // Clear tournaments cache to ensure new tournament appears
@@ -823,6 +838,7 @@ export const getMyTeam = createServerFn({ method: "POST" }).handler(async ({ dat
 export const saveMyTeam = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const { userId, teamName, logo, members } = data as any;
+  const removedMembers: number[] = [];
 
   await db.transaction(async (tx) => {
     let team = (await tx.prepare("SELECT id FROM teams WHERE leader_id = ?").get(userId)) as any;
@@ -875,16 +891,34 @@ export const saveMyTeam = createServerFn({ method: "POST" }).handler(async ({ da
       for (const ex of existingMembers) {
         if (!newUids.has(ex.uid)) {
           await insertNotif.run(ex.user_id, `❌ You have been removed from the team ${teamName}.`, "/teams");
+          if (ex.user_id) {
+            removedMembers.push(ex.user_id);
+          }
         }
       }
     }
   });
+
+  try {
+    const { triggerPushNotification } = await import("./lib/push-server");
+    for (const memberId of removedMembers) {
+      triggerPushNotification(
+        memberId,
+        "❌ Team Update",
+        `❌ You have been removed from the team ${teamName}.`,
+        "/teams"
+      ).catch(e => console.error("Remove member push failed:", e));
+    }
+  } catch(e) {}
+
   return { success: true };
 });
 
 export const leaveTeam = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const { userId, teamId } = data as any;
+  let leaderId: number | null = null;
+  let notifMsg = "";
 
   await db.transaction(async (tx) => {
     const user = (await tx
@@ -899,16 +933,31 @@ export const leaveTeam = createServerFn({ method: "POST" }).handler(async ({ dat
     await tx
       .prepare("DELETE FROM team_members WHERE team_id = ? AND user_id = ?")
       .run(teamId, userId);
+    
+    notifMsg = `⚠️ ${user.ign || user.username} has left your team ${team.name}.`;
+    leaderId = team.leader_id;
+
     await tx
       .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
-      .run(team.leader_id, `⚠️ ${user.ign || user.username} has left your team ${team.name}.`, "/teams");
+      .run(team.leader_id, notifMsg, "/teams");
   });
+
+  if (leaderId) {
+    try {
+      const { triggerPushNotification } = await import("./lib/push-server");
+      triggerPushNotification(leaderId, "⚠️ Team Update", notifMsg, "/teams")
+        .catch(e => console.error("Leave team push failed:", e));
+    } catch(e) {}
+  }
+
   return { success: true };
 });
 
 export const deleteTeam = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const { userId, teamId } = data as any;
+  const notifiedMembers: number[] = [];
+  let teamName = "";
 
   await db.transaction(async (tx) => {
     const team = (await tx
@@ -916,6 +965,8 @@ export const deleteTeam = createServerFn({ method: "POST" }).handler(async ({ da
       .get(teamId)) as any;
     if (!team) throw new Error("Team not found");
     if (team.leader_id !== userId) throw new Error("Only the captain can delete the team");
+
+    teamName = team.name;
 
     const members = (await tx
       .prepare("SELECT user_id FROM team_members WHERE team_id = ? AND user_id IS NOT NULL")
@@ -933,9 +984,23 @@ export const deleteTeam = createServerFn({ method: "POST" }).handler(async ({ da
           `⚠️ The team ${team.name} has been deleted by the captain.`,
           "/teams",
         );
+        notifiedMembers.push(m.user_id);
       }
     }
   });
+
+  try {
+    const { triggerPushNotification } = await import("./lib/push-server");
+    for (const mId of notifiedMembers) {
+      triggerPushNotification(
+        mId,
+        "⚠️ Team Deleted",
+        `⚠️ The team ${teamName} has been deleted by the captain.`,
+        "/teams"
+      ).catch(e => console.error("Delete team push failed:", e));
+    }
+  } catch(e) {}
+
   return { success: true };
 });
 
@@ -988,6 +1053,16 @@ export const requestJoinTeam = createServerFn({ method: "POST" }).handler(async 
         `📩 ${ign} has requested to join your team ${team.name}. Go to your Profile to review.`,
         "/teams",
       );
+
+    try {
+      const { triggerPushNotification } = await import("./lib/push-server");
+      triggerPushNotification(
+        team.leader_id,
+        "📩 Team Join Request",
+        `📩 ${ign} requested to join your team ${team.name}.`,
+        "/teams"
+      ).catch(e => console.error("Join request push failed:", e));
+    } catch(e) {}
   }
 
   return { success: true };
@@ -1235,6 +1310,7 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
     const { db } = await import("./lib/db");
     const { tournamentId, results } = data as any;
+    const pushTargets: any[] = [];
 
     await db.transaction(async (tx) => {
       const tourney = (await tx
@@ -1361,6 +1437,12 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
                 `💰 Prize earned for ${tourney.title}: ${awardedPrize} CG Coins awarded for finishing #${rankForPrize}. ${positionMsg}.`,
                 "/wallet",
               );
+            pushTargets.push({
+              userId: r.user_id,
+              title: "💰 Prize Earned!",
+              body: `💰 Prize earned for ${tourney.title}: ${awardedPrize} CG Coins awarded for finishing #${rankForPrize}.`,
+              url: "/wallet",
+            });
           } else if (prizeDiff > 0) {
             const msg = tourney.mode === "Duo"
               ? `your new prize is ${awardedPrize}.`
@@ -1374,6 +1456,12 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
                 `💰 Prize updated for ${tourney.title}: your prize increased by ${prizeDiff} CG Coins to ${awardedPrize}. ${msg}`,
                 "/wallet",
               );
+            pushTargets.push({
+              userId: r.user_id,
+              title: "💰 Prize Updated",
+              body: `💰 Prize updated for ${tourney.title}: your prize increased to ${awardedPrize} CG Coins.`,
+              url: "/wallet",
+            });
           } else if (prizeDiff < 0) {
             const msg = tourney.mode === "Duo"
               ? `your new prize is ${awardedPrize}.`
@@ -1387,6 +1475,12 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
                 `📉 Prize updated for ${tourney.title}: your prize decreased by ${Math.abs(prizeDiff)} CG Coins to ${awardedPrize}. ${msg}`,
                 "/wallet",
               );
+            pushTargets.push({
+              userId: r.user_id,
+              title: "📉 Prize Adjusted",
+              body: `📉 Prize adjusted for ${tourney.title}: your prize is now ${awardedPrize} CG Coins.`,
+              url: "/wallet",
+            });
           }
         }
 
@@ -1399,6 +1493,12 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
               `🏆 Match scored for ${tourney.title}: ${r.calculatedPoints} points earned with ${r.killsNum} kills and position ${r.matchPosition}. Final rank #${overallRank}.`,
               "/leaderboard",
             );
+          pushTargets.push({
+            userId: r.user_id,
+            title: "🏆 Match Scored!",
+            body: `🏆 Match scored for ${tourney.title}: ${r.calculatedPoints} points earned! Final rank #${overallRank}.`,
+            url: "/leaderboard",
+          });
         } else if (pointsDiff !== 0) {
           const dir = pointsDiff > 0 ? "increased" : "decreased";
           await tx
@@ -1408,6 +1508,12 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
               `📊 Score updated for ${tourney.title}: points ${dir} by ${Math.abs(pointsDiff)} to ${r.calculatedPoints}.`,
               "/leaderboard",
             );
+          pushTargets.push({
+            userId: r.user_id,
+            title: "📊 Score Updated",
+            body: `📊 Score updated for ${tourney.title}: points ${dir} to ${r.calculatedPoints}.`,
+            url: "/leaderboard",
+          });
         }
       }
 
@@ -1416,6 +1522,14 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
         .prepare("UPDATE tournaments SET status = 'completed', results_announced = true WHERE id = ?")
         .run(tournamentId);
     });
+
+    try {
+      const { triggerPushNotification } = await import("./lib/push-server");
+      for (const t of pushTargets) {
+        triggerPushNotification(t.userId, t.title, t.body, t.url).catch(e => console.error("Results push failed:", e));
+      }
+    } catch(e) {}
+
     return { success: true };
   },
 );
@@ -1423,10 +1537,13 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
 export const rescheduleTournament = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const id = data as unknown as number;
+  const userIds: number[] = [];
+  let tourneyTitle = "";
 
   await db.transaction(async (tx) => {
     const tourney = (await tx.prepare("SELECT title FROM tournaments WHERE id = ?").get(id)) as any;
     if (!tourney) throw new Error("Tournament not found");
+    tourneyTitle = tourney.title;
 
     await tx.prepare("UPDATE tournaments SET status = 'rescheduled' WHERE id = ?").run(id);
     await tx
@@ -1443,8 +1560,21 @@ export const rescheduleTournament = createServerFn({ method: "POST" }).handler(a
 
     for (const r of registrations) {
       await insertNotif.run(r.user_id, notifMsg);
+      userIds.push(r.user_id);
     }
   });
+
+  try {
+    const { triggerPushNotification } = await import("./lib/push-server");
+    for (const uId of userIds) {
+      triggerPushNotification(
+        uId,
+        "⚠️ Match Rescheduled",
+        `⚠️ The match ${tourneyTitle} has been RESCHEDULED.`,
+        "/matches"
+      ).catch(e => console.error("Reschedule push failed:", e));
+    }
+  } catch(e) {}
 
   // Clear tournaments cache to ensure updated data is fetched
   const { apiCache } = await import("./lib/cache");
@@ -1642,6 +1772,16 @@ export const updateLeaderboardPoints = createServerFn({ method: "POST" }).handle
         `📊 Admin adjusted your leaderboard display points to ${targetPoints} for this week. Match standings remain unchanged.`,
       );
 
+    try {
+      const { triggerPushNotification } = await import("./lib/push-server");
+      triggerPushNotification(
+        userId,
+        "📊 Points Adjusted",
+        `📊 Admin adjusted your leaderboard display points to ${targetPoints} for this week.`,
+        "/leaderboard"
+      ).catch(e => console.error("Adjust points push failed:", e));
+    } catch(e) {}
+
     return { success: true };
   },
 );
@@ -1813,6 +1953,17 @@ export const processWithdrawal = createServerFn({ method: "POST" }).handler(asyn
         "/wallet",
       );
   });
+
+  try {
+    const { triggerPushNotification } = await import("./lib/push-server");
+    triggerPushNotification(
+      userId,
+      "💸 Withdrawal Requested",
+      `💸 Withdrawal requested: ${amount} CG Coins to UPI ${upiId}. Processing time 2-3 working days.`,
+      "/wallet"
+    ).catch(e => console.error("Withdrawal push error:", e));
+  } catch (e) {}
+
   return { success: true };
 });
 
@@ -1867,6 +2018,16 @@ export const updatePayoutStatus = createServerFn({ method: "POST" }).handler(asy
         );
     }
   });
+
+  try {
+    const { triggerPushNotification } = await import("./lib/push-server");
+    const msg = status === "completed"
+      ? `✅ Withdrawal completed: ${amount} CG Coins has been sent to your UPI. Please check your bank statement.`
+      : `❌ Your withdrawal of ${amount} CG Coins was rejected. The coins have been refunded to your wallet.`;
+    triggerPushNotification(userId, status === "completed" ? "✅ Withdrawal Success" : "❌ Withdrawal Rejected", msg, "/wallet")
+      .catch(e => console.error("Payout status push error:", e));
+  } catch (e) {}
+
   return { success: true };
 });
 
@@ -2099,6 +2260,10 @@ export const sendFriendRequest = createServerFn({ method: "POST" }).handler(asyn
     const senderName = sender ? (sender.ign || sender.username) : "A player";
     await db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
       .run(toUserId, `👥 ${senderName} sent you a friend request!`, "/chat");
+
+    const { triggerPushNotification } = await import("./lib/push-server");
+    triggerPushNotification(toUserId, "👥 Friend Request", `👥 ${senderName} sent you a friend request!`, "/chat")
+      .catch(e => console.error("Friend request push failed:", e));
   } catch (err) {
     console.error("Failed to notify user of friend request:", err);
   }
@@ -2132,6 +2297,10 @@ export const resolveFriendRequest = createServerFn({ method: "POST" }).handler(a
         const accepterName = accepter ? (accepter.ign || accepter.username) : "A player";
         await db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
           .run(f.user_id1, `🤝 ${accepterName} accepted your friend request!`, "/chat");
+
+        const { triggerPushNotification } = await import("./lib/push-server");
+        triggerPushNotification(f.user_id1, "🤝 Friend Request Accepted", `🤝 ${accepterName} accepted your friend request!`, "/chat")
+          .catch(e => console.error("Friend request accepted push failed:", e));
       } catch (err) {
         console.error("Failed to notify user of accepted friend request:", err);
       }

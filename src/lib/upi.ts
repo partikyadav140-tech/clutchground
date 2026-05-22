@@ -160,6 +160,16 @@ export const approveUpiDeposit = createServerFn({ method: "POST" }).handler(
         );
     });
 
+    try {
+      const { triggerPushNotification } = await import("./push-server");
+      triggerPushNotification(
+        deposit.user_id,
+        "💰 Wallet Deposit",
+        `💰 ₹${deposit.amount} deposited — ${deposit.amount} CG Coins added to your wallet!`,
+        "/wallet"
+      ).catch(e => console.error("UPI deposit approval push error:", e));
+    } catch(e) {}
+
     return { success: true };
   },
 );
@@ -188,6 +198,16 @@ export const rejectUpiDeposit = createServerFn({ method: "POST" }).handler(
         `❌ Your deposit of ₹${deposit.amount} was rejected. Reason: ${reason || "Payment not verified"}. Contact support if you believe this is an error.`,
         "/wallet",
       );
+
+    try {
+      const { triggerPushNotification } = await import("./push-server");
+      triggerPushNotification(
+        deposit.user_id,
+        "❌ Deposit Rejected",
+        `❌ Your deposit of ₹${deposit.amount} was rejected. Reason: ${reason || "Payment not verified"}.`,
+        "/wallet"
+      ).catch(e => console.error("UPI deposit rejection push error:", e));
+    } catch(e) {}
 
     return { success: true };
   },
