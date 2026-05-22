@@ -1,6 +1,17 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Home, Trophy, Crosshair, User, Crown, Bell, MessageCircle, Sun, Moon, Wallet } from "lucide-react";
+import {
+  Home,
+  Trophy,
+  Crosshair,
+  User,
+  Crown,
+  Bell,
+  MessageCircle,
+  Sun,
+  Moon,
+  Wallet,
+} from "lucide-react";
 import { Logo } from "./Logo";
 import { GodCoin } from "./GodCoin";
 import { useAuth } from "../lib/auth-client";
@@ -14,26 +25,27 @@ import {
 } from "../lib/notification-utils";
 
 const NAV_ITEMS = [
-  { to: "/",            label: "Home",     icon: Home },
-  { to: "/tournaments", label: "Arena",    icon: Trophy },
-  { to: "/matches",     label: "Matches",  icon: Crosshair },
-  { to: "/leaderboard", label: "Ranks",    icon: Crown },
-  { to: "/profile",     label: "Profile",  icon: User },
+  { to: "/", label: "Home", icon: Home },
+  { to: "/tournaments", label: "Arena", icon: Trophy },
+  { to: "/matches", label: "Matches", icon: Crosshair },
+  { to: "/leaderboard", label: "Ranks", icon: Crown },
+  { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
 const MAIN_TABS = ["/", "/tournaments", "/matches", "/leaderboard", "/profile", "/wallet"];
 
 export function Navbar() {
-  const { user }          = useAuth();
+  const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const router            = useRouter();
-  const path              = router.state.location.pathname;
+  const router = useRouter();
+  const path = router.state.location.pathname;
   const [unread, setUnread] = useState(0);
   const [unreadChats, setUnreadChats] = useState(0);
-  const notifsRef         = useRef<string[]>([]);
+  const notifsRef = useRef<string[]>([]);
 
   const balance = user
-    ? ((user as any).deposit_balance || 0) + ((user as any).winning_balance || 0)
+    ? ((user as { deposit_balance?: number }).deposit_balance || 0) +
+      ((user as { winning_balance?: number }).winning_balance || 0)
     : 0;
 
   useEffect(() => {
@@ -42,24 +54,52 @@ export function Navbar() {
 
     async function poll() {
       try {
-        const notifs = await (getNotifications as any)({ data: user.id });
-        setUnread(notifs.filter((n: any) => !n.is_read).length);
+        const notifsFetch = getNotifications as unknown as (args: { data: number }) => Promise<
+          {
+            id: string;
+            is_read: boolean;
+            message?: string;
+            action_type?: string;
+            redirect_url?: string;
+          }[]
+        >;
+        const unreadChatsFetch = getUnreadChatCount as unknown as (args: {
+          data: number;
+        }) => Promise<number>;
 
-        const chatUnread = await (getUnreadChatCount as any)({ data: user.id });
+        const notifs = await notifsFetch({ data: user.id });
+        setUnread(notifs.filter((n) => !n.is_read).length);
+
+        const chatUnread = await unreadChatsFetch({ data: user.id });
         setUnreadChats(chatUnread);
 
-        const ids    = notifs.map((n: any) => n.id);
-        const prev   = notifsRef.current;
-        const newOnes = notifs.filter((n: any) => !prev.includes(n.id) && !n.is_read);
+        const ids = notifs.map((n) => n.id);
+        const prev = notifsRef.current;
+        const newOnes = notifs.filter((n) => !prev.includes(n.id) && !n.is_read);
+
         if (prev.length > 0 && newOnes.length > 0) {
-          newOnes.slice(-3).forEach((n: any) => {
-            showBrowserNotification("ClutchGround", n.message || "New notification");
-            playNotificationTone();
-            vibrateNotification();
+          newOnes.slice(-3).forEach((n) => {
+            const important =
+              n.action_type === "tournament_request" ||
+              (n.message &&
+                (n.message.startsWith("❌") ||
+                  n.message.startsWith("⚠️") ||
+                  n.message.startsWith("🏆")));
+
+            showBrowserNotification("🎮 ClutchGround", {
+              body: n.message || "You have a new notification",
+              url: n.redirect_url || "/notifications",
+              tag: `cg-notif-${n.id}`,
+              important: !!important,
+            });
+            playNotificationTone(!!important);
+            vibrateNotification(!!important);
           });
         }
         notifsRef.current = ids;
-      } catch {}
+      } catch {
+        // Ignore polling errors
+      }
     }
 
     poll();
@@ -67,7 +107,7 @@ export function Navbar() {
     return () => clearInterval(id);
   }, [user]);
 
-  const cleanPath         = path === "/" ? "/" : path.replace(/\/$/, "");
+  const cleanPath = path === "/" ? "/" : path.replace(/\/$/, "");
   const isMain = MAIN_TABS.includes(cleanPath);
   const isAuth = ["/login", "/signup"].includes(cleanPath);
   // Hide bottom nav on ticket/chat detail pages (like WhatsApp)
@@ -87,17 +127,13 @@ export function Navbar() {
           isMain ? "block" : "hidden lg:block"
         }`}
         style={{
-          background:
-            theme === "dark"
-              ? "rgba(8,12,20,0.92)"
-              : "rgba(255,255,255,0.92)",
+          background: theme === "dark" ? "rgba(8,12,20,0.92)" : "rgba(255,255,255,0.92)",
           backdropFilter: isMain ? "blur(20px)" : undefined,
           WebkitBackdropFilter: isMain ? "blur(20px)" : undefined,
         }}
       >
         {/* Inner content — constrained to max-w-5xl on desktop */}
         <div className="flex items-center justify-between px-4 h-16 max-w-[480px] lg:max-w-5xl mx-auto w-full">
-
           {/* Logo */}
           <Link to="/" className="flex items-center active:opacity-80 transition-opacity">
             <Logo size={44} withText={false} />
@@ -133,13 +169,15 @@ export function Navbar() {
                 className="flex items-center gap-1.5 px-3 h-8 rounded-full border border-border bg-card hover:border-primary/50 transition-all active:scale-95 press-effect"
               >
                 <GodCoin className="w-3.5 h-3.5" />
-                <span className="text-xs font-black font-display text-foreground tabular-nums">{balance}</span>
+                <span className="text-xs font-black font-display text-foreground tabular-nums">
+                  {balance}
+                </span>
               </Link>
             )}
 
             {/* Chat */}
             <Link
-              to={"/chat" as any}
+              to="/chat"
               className="relative w-8 h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
             >
               <MessageCircle className="w-4 h-4" />
@@ -176,7 +214,11 @@ export function Navbar() {
               aria-label="Toggle theme"
               className="w-8 h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
             >
-              {theme === "dark" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+              {theme === "dark" ? (
+                <Sun className="w-3.5 h-3.5" />
+              ) : (
+                <Moon className="w-3.5 h-3.5" />
+              )}
             </button>
           </div>
         </div>
@@ -190,10 +232,7 @@ export function Navbar() {
       <nav
         className={`absolute bottom-0 inset-x-0 z-50 border-t border-border lg:hidden ${isTicketChat ? "hidden" : ""}`}
         style={{
-          background:
-            theme === "dark"
-              ? "rgba(8,12,20,0.97)"
-              : "rgba(255,255,255,0.97)",
+          background: theme === "dark" ? "rgba(8,12,20,0.97)" : "rgba(255,255,255,0.97)",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
         }}
@@ -207,16 +246,22 @@ export function Navbar() {
                 to={to}
                 className="relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full press-effect active:scale-90 transition-all duration-150"
               >
-                <div className={`relative flex items-center justify-center w-10 h-7 rounded-xl transition-all duration-200 ${
-                  isActive ? "bg-primary/15" : ""
-                }`}>
-                  <Icon className={`w-5 h-5 transition-all duration-200 ${
-                    isActive ? "text-primary scale-110" : "text-muted-foreground"
-                  }`} />
+                <div
+                  className={`relative flex items-center justify-center w-10 h-7 rounded-xl transition-all duration-200 ${
+                    isActive ? "bg-primary/15" : ""
+                  }`}
+                >
+                  <Icon
+                    className={`w-5 h-5 transition-all duration-200 ${
+                      isActive ? "text-primary scale-110" : "text-muted-foreground"
+                    }`}
+                  />
                 </div>
-                <span className={`text-[9px] font-bold tracking-wide transition-colors ${
-                  isActive ? "text-primary" : "text-muted-foreground"
-                }`}>
+                <span
+                  className={`text-[9px] font-bold tracking-wide transition-colors ${
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  }`}
+                >
                   {label}
                 </span>
                 {isActive && (

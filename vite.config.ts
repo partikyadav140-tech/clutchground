@@ -12,69 +12,57 @@ export default defineConfig({
     tailwindcss(),
     tsconfigPaths(),
     VitePWA({
-      registerType: 'autoUpdate',
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/api\./,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24, // 24 hours
-              },
-            },
-          },
-          {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'images-cache',
-              expiration: {
-                maxEntries: 200,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
-              },
-            },
-          },
-        ],
+      registerType: "autoUpdate",
+      // Use injectManifest so our custom sw.ts handles both caching AND notification clicks
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
+      injectManifest: {
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
       },
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: [
+        "favicon.ico",
+        "apple-touch-icon.png",
+        "masked-icon.svg",
+        "pwa-192x192.png",
+        "pwa-512x512.png",
+      ],
       manifest: {
-        name: 'ClutchGround Esports',
-        short_name: 'ClutchGround',
-        description: 'India\'s #1 Free Fire Tournament & Esports Arena',
-        theme_color: '#ff6b35',
-        background_color: '#0a0a0a',
-        display: 'standalone',
+        name: "ClutchGround Esports",
+        short_name: "ClutchGround",
+        description: "India's #1 Free Fire Tournament & Esports Arena",
+        theme_color: "#ff6b35",
+        background_color: "#0a0a0a",
+        display: "standalone",
         icons: [
           {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any maskable'
+            src: "pwa-192x192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "any maskable",
           },
           {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable'
-          }
+            src: "pwa-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any maskable",
+          },
         ],
-        start_url: '/',
-        scope: '/'
+        start_url: "/",
+        scope: "/",
+        // Tell Android Chrome this app handles notifications
+        display_override: ["window-controls-overlay", "standalone"],
       },
       devOptions: {
         enabled: true,
-        type: 'module',
-        navigateFallback: '/',
+        type: "module",
+        navigateFallback: "/",
       },
     }),
   ],
   build: {
     chunkSizeWarningLimit: 1000,
-    minify: 'terser',
+    minify: "terser",
     terserOptions: {
       compress: {
         drop_console: true,
