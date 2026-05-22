@@ -479,6 +479,9 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
       }
     }
 
+    // Collect push targets; fired after transaction to avoid DB lock issues
+    const pushTargets: Array<{ userId: number; title: string; body: string; url: string }> = [];
+
     await db.transaction(async (tx) => {
       // Handle Entry Fee Deduction
       if (t.entry > 0) {
@@ -570,6 +573,15 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
             reqId.toString(),
             `/tournaments/${tournamentId}`,
           );
+        // Queue push to captain for after-transaction firing
+        if (leaderId) {
+          pushTargets.push({
+            userId: leaderId as number,
+            title: "🎮 ClutchGround",
+            body: `⚠️ ${requester.username} wants to register your team for ${tourney.title}. Tap to approve.`,
+            url: `/tournaments/${tournamentId}`,
+          });
+        }
       } else {
         // Insert registration immediately
         await tx
@@ -594,6 +606,13 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
             `✅ Registration confirmed for ${t.title} (${t.mode}). Entry fee ${t.entry} CG. See your Upcoming Matches and prepare to compete!`,
             "/matches",
           );
+        // Queue push to registrant
+        pushTargets.push({
+          userId,
+          title: "🎮 ClutchGround",
+          body: `✅ You're registered for ${t.title}! Check Upcoming Matches.`,
+          url: "/matches",
+        });
 
         // Give notification to team members
         const team = (await tx
@@ -615,11 +634,30 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
                 `🏆 ${requester.username} registered your team for ${t.title} (${t.mode}). Check Upcoming Matches for date and room details.`,
                 "/matches",
               );
+              // Queue push to each team member
+              pushTargets.push({
+                userId: m.user_id,
+                title: "🎮 ClutchGround",
+                body: `🏆 ${requester.username} registered your team for ${t.title}! Check Upcoming Matches.`,
+                url: "/matches",
+              });
             }
           }
         }
       }
     });
+
+    // Fire push notifications after transaction commits
+    try {
+      const { triggerPushNotification } = await import("./lib/push-server");
+      for (const target of pushTargets) {
+        triggerPushNotification(target.userId, target.title, target.body, target.url).catch((e) =>
+          console.error("[Push] Registration notification failed:", e),
+        );
+      }
+    } catch (e) {
+      console.error("[Push] Failed to import push-server for registration:", e);
+    }
 
     // Clear tournaments cache to ensure filled count is updated
     const { apiCache } = await import("./lib/cache");
@@ -996,12 +1034,11 @@ export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(asy
   const { db } = await import("./lib/db");
   const { requestId, status } = data as any;
 
-  await db.transaction(async (tx) => {
-    const req = (await tx
-      .prepare("SELECT * FROM team_requests WHERE id = ?")
-      .get(requestId)) as any;
-    if (!req) throw new Error("Request not found");
+  // Pre-fetch outside transaction so we can fire push after it commits
+  const req = (await db.prepare("SELECT * FROM team_requests WHERE id = ?").get(requestId)) as any;
+  if (!req) throw new Error("Request not found");
 
+  await db.transaction(async (tx) => {
     await tx.prepare("UPDATE team_requests SET status = ? WHERE id = ?").run(status, requestId);
 
     if (status === "approved") {
@@ -1038,6 +1075,29 @@ export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(asy
         .run(req.user_id, "❌ Your request to join the team was declined.", "/teams");
     }
   });
+
+  // Fire push notification after transaction commits
+  try {
+    const { triggerPushNotification } = await import("./lib/push-server");
+    if (status === "approved") {
+      await triggerPushNotification(
+        req.user_id,
+        "🎮 ClutchGround",
+        "🎉 Your request to join the team has been approved!",
+        "/teams",
+      );
+    } else {
+      await triggerPushNotification(
+        req.user_id,
+        "🎮 ClutchGround",
+        "❌ Your request to join the team was declined.",
+        "/teams",
+      );
+    }
+  } catch (e) {
+    console.error("[Push] Team request notification failed:", e);
+  }
+
   return { success: true };
 });
 
@@ -1591,13 +1651,13 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" }).handl
     const { db } = await import("./lib/db");
     const { requestId, status } = data as any;
 
-    await db.transaction(async (tx) => {
-      const req = (await tx
-        .prepare("SELECT * FROM tournament_requests WHERE id = ?")
-        .get(requestId)) as any;
-      if (!req) throw new Error("Request not found");
-      if (req.status !== "pending") throw new Error("Request already resolved");
+    // Pre-fetch outside transaction so we can fire push after it commits
+    const req = (await db.prepare("SELECT * FROM tournament_requests WHERE id = ?").get(requestId)) as any;
+    if (!req) throw new Error("Request not found");
+    if (req.status !== "pending") throw new Error("Request already resolved");
+    const tourney = (await db.prepare("SELECT title, entry FROM tournaments WHERE id = ?").get(req.tournament_id)) as any;
 
+    await db.transaction(async (tx) => {
       await tx
         .prepare("UPDATE tournament_requests SET status = ? WHERE id = ?")
         .run(status, requestId);
@@ -1607,9 +1667,6 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" }).handl
         )
         .run(requestId.toString());
 
-      const tourney = (await tx
-        .prepare("SELECT title, entry FROM tournaments WHERE id = ?")
-        .get(req.tournament_id)) as any;
       const insertNotif = tx.prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)");
 
       if (status === "approved") {
@@ -1672,6 +1729,48 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" }).handl
         }
       }
     });
+
+    // Fire push notifications after transaction commits
+    try {
+      const { triggerPushNotification } = await import("./lib/push-server");
+      if (status === "approved") {
+        // Notify the person who requested registration
+        await triggerPushNotification(
+          req.requested_by,
+          "🎮 ClutchGround",
+          `🎉 Your Captain approved the team registration for ${tourney.title}!`,
+          `/tournaments/${req.tournament_id}`,
+        );
+        // Notify all other team members
+        const members = await db
+          .prepare("SELECT user_id FROM team_members WHERE team_id = ? AND user_id IS NOT NULL")
+          .all(req.team_id) as any[];
+        for (const m of members) {
+          if (m.user_id !== req.requested_by) {
+            triggerPushNotification(
+              m.user_id,
+              "🎮 ClutchGround",
+              `🏆 Your Captain registered the team for ${tourney.title}! Check your matches.`,
+              "/matches",
+            ).catch((e) => console.error("[Push] Team member notification failed:", e));
+          }
+        }
+      } else {
+        const msg =
+          tourney.entry > 0
+            ? `❌ Your Captain rejected the registration for ${tourney.title}. Entry fee refunded.`
+            : `❌ Your Captain rejected the registration for ${tourney.title}.`;
+        await triggerPushNotification(
+          req.requested_by,
+          "🎮 ClutchGround",
+          msg,
+          `/tournaments/${req.tournament_id}`,
+        );
+      }
+    } catch (e) {
+      console.error("[Push] Tournament request notification failed:", e);
+    }
+
     return { success: true };
   },
 );
