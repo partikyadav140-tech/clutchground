@@ -22,6 +22,7 @@ import {
   showBrowserNotification,
   playNotificationTone,
   vibrateNotification,
+  subscribeUserToPush,
 } from "../lib/notification-utils";
 
 const NAV_ITEMS = [
@@ -50,7 +51,11 @@ export function Navbar() {
 
   useEffect(() => {
     if (!user) return;
-    requestBrowserNotificationPermission();
+    requestBrowserNotificationPermission().then((permission) => {
+      if (permission === "granted") {
+        subscribeUserToPush(user.id);
+      }
+    });
 
     async function poll() {
       try {

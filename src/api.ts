@@ -349,7 +349,7 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
     const registrations = (await db
       .prepare("SELECT user_id, players_json FROM registrations WHERE tournament_id = ?")
       .all(id)) as any[];
-    const insertNotif = db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)");
+    const { sendNotificationHelper } = await import("./lib/push-server");
     const notifMsg =
       `🔑 Room details for ${title} updated! ` +
       (room_id ? `ID: ${room_id} ` : "") +
@@ -358,7 +358,7 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
     const notifiedUsers = new Set<number>();
     for (const r of registrations) {
       if (!notifiedUsers.has(r.user_id)) {
-        await insertNotif.run(r.user_id, notifMsg.trim(), `/tournaments/${id}`);
+        await sendNotificationHelper(r.user_id, notifMsg.trim(), `/tournaments/${id}`);
         notifiedUsers.add(r.user_id);
       }
       if (r.players_json) {
@@ -368,7 +368,7 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
             if (p.uid) {
               const u = await db.prepare("SELECT id FROM users WHERE uid = ?").get(p.uid) as any;
               if (u && !notifiedUsers.has(u.id)) {
-                await insertNotif.run(u.id, notifMsg.trim(), `/tournaments/${id}`);
+                await sendNotificationHelper(u.id, notifMsg.trim(), `/tournaments/${id}`);
                 notifiedUsers.add(u.id);
               }
             }
@@ -1065,20 +1065,19 @@ export const sendPushNotification = createServerFn({ method: "POST" }).handler(a
   if (!adminCheck || adminCheck.role !== "admin") throw new Error("Unauthorized");
 
   const notifyUrl = redirectUrl || null;
+  const { sendNotificationHelper } = await import("./lib/push-server");
 
   if (targetType === "all") {
     const users = await db.prepare("SELECT id FROM users").all() as any[];
     for (const u of users) {
-      await db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
-        .run(u.id, message, notifyUrl);
+      await sendNotificationHelper(u.id, message, notifyUrl);
     }
   } else if (targetType === "users") {
     const usernames = targetData.split(",").map((s: string) => s.trim()).filter(Boolean);
     for (const username of usernames) {
       const user = await db.prepare("SELECT id FROM users WHERE username = ? OR uid = ?").get(username, username) as any;
       if (user) {
-        await db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
-          .run(user.id, message, notifyUrl);
+        await sendNotificationHelper(user.id, message, notifyUrl);
       }
     }
   } else if (targetType === "tournament") {
@@ -1089,8 +1088,7 @@ export const sendPushNotification = createServerFn({ method: "POST" }).handler(a
     // Notify the user who registered
     for (const reg of regs) {
       if (!notifiedUsers.has(reg.user_id)) {
-        await db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
-          .run(reg.user_id, message, notifyUrl);
+        await sendNotificationHelper(reg.user_id, message, notifyUrl);
         notifiedUsers.add(reg.user_id);
       }
       // Notify teammates found in players_json
@@ -1101,8 +1099,7 @@ export const sendPushNotification = createServerFn({ method: "POST" }).handler(a
             if (p.uid) {
               const u = await db.prepare("SELECT id FROM users WHERE uid = ?").get(p.uid) as any;
               if (u && !notifiedUsers.has(u.id)) {
-                await db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
-                  .run(u.id, message, notifyUrl);
+                await sendNotificationHelper(u.id, message, notifyUrl);
                 notifiedUsers.add(u.id);
               }
             }
@@ -1949,7 +1946,8 @@ export const replyTicket = createServerFn({ method: "POST" }).handler(async ({ d
     if (isAdmin) {
       const ticket = await tx.prepare("SELECT user_id, subject FROM tickets WHERE id = ?").get(tId);
       if (ticket) {
-        await tx.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)").run(ticket.user_id, `📩 Support Agent replied to your ticket: ${ticket.subject}`, `/support/${tId}`);
+        const { sendNotificationHelper } = await import("./lib/push-server");
+        await sendNotificationHelper(ticket.user_id, `📩 Support Agent replied to your ticket: ${ticket.subject}`, `/support/${tId}`);
       }
     }
   });
@@ -2157,4 +2155,29 @@ export const getSocialLinks = createServerFn({ method: "POST" }).handler(async (
     } catch {}
   }
   return defaultLinks;
+});
+
+export const savePushSubscription = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { userId, subscription } = data as {
+    userId: number;
+    subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
+  };
+
+  await db
+    .prepare(`
+      INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT (endpoint) DO UPDATE SET user_id = EXCLUDED.user_id
+    `)
+    .run(userId, subscription.endpoint, subscription.keys.p256dh, subscription.keys.auth);
+
+  return { success: true };
+});
+
+export const removePushSubscription = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { endpoint } = data as { endpoint: string };
+  await db.prepare("DELETE FROM push_subscriptions WHERE endpoint = ?").run(endpoint);
+  return { success: true };
 });

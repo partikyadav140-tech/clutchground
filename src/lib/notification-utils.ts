@@ -129,3 +129,79 @@ export function vibrateNotification(important = false) {
   if (typeof window === "undefined" || !navigator.vibrate) return;
   navigator.vibrate(important ? [200, 100, 200, 100, 400] : [40, 20, 80]);
 }
+
+/** Convert base64 VAPID public key to Uint8Array for browser push manager */
+export function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+/** Subscribe the current browser to Web Push notifications and register it on the server */
+export async function subscribeUserToPush(userId: number): Promise<PushSubscription | undefined> {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+    return;
+  }
+
+  try {
+    const { savePushSubscription } = await import("../api");
+    const reg = await navigator.serviceWorker.ready;
+    let existingSub = await reg.pushManager.getSubscription();
+
+    if (existingSub) {
+      const raw = existingSub.toJSON();
+      if (raw.keys?.p256dh && raw.keys?.auth) {
+        await (savePushSubscription as any)({
+          data: {
+            userId,
+            subscription: {
+              endpoint: existingSub.endpoint,
+              keys: {
+                p256dh: raw.keys.p256dh,
+                auth: raw.keys.auth,
+              },
+            },
+          },
+        });
+      }
+      return existingSub;
+    }
+
+    const publicVapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+    if (!publicVapidKey) {
+      console.warn("VITE_VAPID_PUBLIC_KEY is not defined in client environment.");
+      return;
+    }
+
+    const subscription = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicVapidKey),
+    });
+
+    const raw = subscription.toJSON();
+    if (raw.keys?.p256dh && raw.keys?.auth) {
+      await (savePushSubscription as any)({
+        data: {
+          userId,
+          subscription: {
+            endpoint: subscription.endpoint,
+            keys: {
+              p256dh: raw.keys.p256dh,
+              auth: raw.keys.auth,
+            },
+          },
+        },
+      });
+    }
+
+    return subscription;
+  } catch (err) {
+    console.error("Failed to subscribe user to push notifications:", err);
+  }
+}
+

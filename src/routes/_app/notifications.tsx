@@ -3,7 +3,7 @@ import { Bell, Check, X, ShieldCheck, AlertTriangle, Zap } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../lib/auth-client";
 import { getNotifications, markNotificationsRead, resolveTournamentRequest } from "../../api";
-import { requestBrowserNotificationPermission } from "../../lib/notification-utils";
+import { requestBrowserNotificationPermission, subscribeUserToPush } from "../../lib/notification-utils";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
@@ -43,7 +43,14 @@ function NotificationsPage() {
     if ("Notification" in window) {
       const cur = p ?? Notification.permission;
       setBrowserPerm(cur);
-      cur === "granted" ? toast.success("Browser alerts enabled!") : toast.error("Permission not granted.");
+      if (cur === "granted") {
+        toast.success("Browser alerts enabled!");
+        if (user) {
+          subscribeUserToPush(user.id);
+        }
+      } else {
+        toast.error("Permission not granted.");
+      }
     }
   };
 
