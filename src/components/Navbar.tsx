@@ -83,15 +83,15 @@ export function Navbar() {
          ══════════════════════════════════════════════════════ */}
       <header
         className={`absolute top-0 inset-x-0 z-50 border-b border-border/60 ${
-          isMain ? "" : "hidden lg:block"
+          isMain ? "" : "max-lg:hidden lg:block"
         }`}
         style={{
           background:
             theme === "dark"
               ? "rgba(8,12,20,0.92)"
               : "rgba(255,255,255,0.92)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
+          backdropFilter: isMain ? "blur(20px)" : undefined,
+          WebkitBackdropFilter: isMain ? "blur(20px)" : undefined,
         }}
       >
         {/* Inner content — constrained to max-w-5xl on desktop */}

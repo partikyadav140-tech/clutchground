@@ -102,7 +102,7 @@ function TournamentDetailPage() {
         }} />
 
         {/* Back button */}
-        <div className="absolute top-4 left-4">
+        <div className="absolute left-4" style={{ top: "max(16px, env(safe-area-inset-top, 16px))" }}>
           <Link to="/tournaments"
             className="flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-black uppercase tracking-widest press-effect active:scale-95"
             style={{ background: "rgba(0,0,0,0.52)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.15)", color: "#ffffff" }}>
@@ -112,7 +112,7 @@ function TournamentDetailPage() {
 
         {/* Live badge */}
         {isLive && (
-          <div className="absolute top-4 right-4">
+          <div className="absolute right-4" style={{ top: "max(16px, env(safe-area-inset-top, 16px))" }}>
             <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[9px] font-black uppercase" style={{ background: "rgba(239,68,68,0.85)", backdropFilter: "blur(8px)", color: "#ffffff" }}>
               <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#ffffff" }} />LIVE
             </span>
@@ -136,7 +136,7 @@ function TournamentDetailPage() {
       </div>
 
       {/* ── QUICK STATS ROW ── */}
-      <div className="mx-4 -mt-2 bg-card rounded-2xl border border-border overflow-hidden shadow-card">
+      <div className="mx-4 mt-3 bg-card rounded-2xl border border-border overflow-hidden shadow-card">
         <div className="flex items-stretch divide-x divide-border">
           {[
             { label: "Entry",  value: isFree ? "FREE" : t.entry, coin: !isFree, accent: isFree ? "#10b981" : mc.color },
