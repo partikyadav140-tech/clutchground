@@ -41,17 +41,28 @@ function NotificationsPage() {
       setBrowserPerm(Notification.permission);
     }
 
+    // Timeout fallback — resolve after 2s max so mobile doesn't hang
+    const timeout = setTimeout(() => setCheckingSub(false), 2000);
+
     if (typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window) {
-      navigator.serviceWorker.ready.then(async (reg) => {
-        const sub = await reg.pushManager.getSubscription();
-        setIsSubscribed(!!sub);
+      // Use getRegistration (non-blocking) instead of .ready which can hang
+      navigator.serviceWorker.getRegistration("/").then(async (reg) => {
+        clearTimeout(timeout);
+        if (reg) {
+          const sub = await reg.pushManager.getSubscription();
+          setIsSubscribed(!!sub);
+        }
         setCheckingSub(false);
       }).catch(() => {
+        clearTimeout(timeout);
         setCheckingSub(false);
       });
     } else {
+      clearTimeout(timeout);
       setCheckingSub(false);
     }
+
+    return () => clearTimeout(timeout);
   }, []);
 
   const enableAlerts = async () => {
