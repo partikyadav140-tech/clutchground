@@ -2181,3 +2181,11 @@ export const removePushSubscription = createServerFn({ method: "POST" }).handler
   await db.prepare("DELETE FROM push_subscriptions WHERE endpoint = ?").run(endpoint);
   return { success: true };
 });
+
+export const getVapidPublicKey = createServerFn({ method: "GET" }).handler(async () => {
+  let key = process.env.VITE_VAPID_PUBLIC_KEY;
+  if (key) {
+    key = key.replace(/['"]/g, "").trim();
+  }
+  return { publicKey: key || null };
+});

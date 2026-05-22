@@ -149,7 +149,7 @@ export async function subscribeUserToPush(userId: number): Promise<PushSubscript
   }
 
   try {
-    const { savePushSubscription } = await import("../api");
+    const { savePushSubscription, getVapidPublicKey } = await import("../api");
     const reg = await navigator.serviceWorker.ready;
     let existingSub = await reg.pushManager.getSubscription();
 
@@ -172,9 +172,10 @@ export async function subscribeUserToPush(userId: number): Promise<PushSubscript
       return existingSub;
     }
 
-    const publicVapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+    const vapidKeyRes = await (getVapidPublicKey as any)();
+    const publicVapidKey = vapidKeyRes?.publicKey;
     if (!publicVapidKey) {
-      console.warn("VITE_VAPID_PUBLIC_KEY is not defined in client environment.");
+      console.warn("VAPID public key is not configured on the server.");
       return;
     }
 
