@@ -1,7 +1,8 @@
 "use server";
 import { Pool } from "pg";
+import { getEnvVar } from "./env";
 
-let connString = process.env.DATABASE_URL;
+let connString = getEnvVar("DATABASE_URL");
 
 if (!connString || connString.includes("arena.db")) {
   // Fallback to the known correct database URL if undefined or incorrect local SQLite path is set

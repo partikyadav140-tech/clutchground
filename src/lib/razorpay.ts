@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createHmac } from "crypto";
 import { db } from "./db";
+import { getEnvVar } from "./env";
 
 export const createRazorpayOrder = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
@@ -11,8 +12,8 @@ export const createRazorpayOrder = createServerFn({ method: "POST" }).handler(
       throw new Error("Minimum deposit amount is ₹100");
     }
 
-    const keyId = process.env.RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keyId = getEnvVar("RAZORPAY_KEY_ID");
+    const keySecret = getEnvVar("RAZORPAY_KEY_SECRET");
 
     if (!keyId || !keySecret) {
       throw new Error("Razorpay credentials not configured on server");
@@ -65,7 +66,7 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
       throw new Error("Missing payment fields");
     }
 
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const keySecret = getEnvVar("RAZORPAY_KEY_SECRET");
     if (!keySecret) {
       throw new Error("Razorpay secret not configured on server");
     }

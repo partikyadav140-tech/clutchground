@@ -1,13 +1,14 @@
 import webpush from "web-push";
+import { getEnvVar } from "./env";
 
 let isVapidInitialized = false;
 
 function ensureVapidInitialized() {
   if (isVapidInitialized) return true;
 
-  let publicVapidKey = process.env.VITE_VAPID_PUBLIC_KEY;
-  let privateVapidKey = process.env.VAPID_PRIVATE_KEY;
-  let vapidSubject = process.env.VAPID_SUBJECT || "https://clutchground.onrender.com";
+  let publicVapidKey = getEnvVar("VITE_VAPID_PUBLIC_KEY");
+  let privateVapidKey = getEnvVar("VAPID_PRIVATE_KEY");
+  let vapidSubject = getEnvVar("VAPID_SUBJECT") || "https://clutchground.onrender.com";
 
   // Clean quotes if any are present
   if (publicVapidKey) publicVapidKey = publicVapidKey.replace(/['"]/g, "").trim();

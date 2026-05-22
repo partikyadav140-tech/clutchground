@@ -1,9 +1,10 @@
 "use server";
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "./db";
+import { getEnvVar } from "./env";
 
 // Your platform UPI ID
-export const PLATFORM_UPI_ID = process.env.UPI_ID || "clutchground@nyes";
+export const PLATFORM_UPI_ID = getEnvVar("UPI_ID") || "clutchground@nyes";
 export const PLATFORM_NAME = "CLUTCHGROUND";
 
 /** Get active UPI configuration */

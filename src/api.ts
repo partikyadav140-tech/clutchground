@@ -1,6 +1,7 @@
 "use server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { getEnvVar } from "./lib/env";
 export { getWalletBalance, getTransactionHistory } from "./lib/razorpay";
 export { createUpiDeposit, submitUpiUtr, getPendingUpiDeposits, approveUpiDeposit, rejectUpiDeposit, getUserUpiDeposits, getActiveUpiConfig } from "./lib/upi";
 
@@ -2183,7 +2184,7 @@ export const removePushSubscription = createServerFn({ method: "POST" }).handler
 });
 
 export const getVapidPublicKey = createServerFn({ method: "GET" }).handler(async () => {
-  let key = process.env.VITE_VAPID_PUBLIC_KEY;
+  let key = getEnvVar("VITE_VAPID_PUBLIC_KEY");
   if (key) {
     key = key.replace(/['"]/g, "").trim();
   }
