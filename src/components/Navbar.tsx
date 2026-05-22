@@ -69,6 +69,8 @@ export function Navbar() {
 
   const isMain = MAIN_TABS.includes(path);
   const isAuth = ["/login", "/signup"].includes(path);
+  // Hide bottom nav on ticket/chat detail pages (like WhatsApp)
+  const isTicketChat = /^\/support\/[^/]+/.test(path);
 
   if (isAuth) return null;
 
@@ -185,7 +187,7 @@ export function Navbar() {
           • Desktop → hidden (navigation is in the top header)
          ══════════════════════════════════════════════════════ */}
       <nav
-        className="absolute bottom-0 inset-x-0 z-50 border-t border-border lg:hidden"
+        className={`absolute bottom-0 inset-x-0 z-50 border-t border-border lg:hidden ${isTicketChat ? "hidden" : ""}`}
         style={{
           background:
             theme === "dark"
