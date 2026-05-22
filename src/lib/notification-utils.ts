@@ -145,14 +145,39 @@ export function urlBase64ToUint8Array(base64String: string) {
 /** Subscribe the current browser to Web Push notifications and register it on the server */
 export async function subscribeUserToPush(userId: number): Promise<PushSubscription | undefined> {
   if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+    console.warn("[Push] Browser does not support push notifications.");
     return;
   }
 
   try {
     const { savePushSubscription, getVapidPublicKey } = await import("../api");
-    const reg = await navigator.serviceWorker.ready;
-    let existingSub = await reg.pushManager.getSubscription();
 
+    // Step 1: Get or register Service Worker (non-blocking, no .ready hang)
+    let reg = await navigator.serviceWorker.getRegistration("/");
+    if (!reg) {
+      console.log("[Push] No SW found, registering...");
+      reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+    }
+
+    // Step 2: Wait for SW to become active with a 5s timeout
+    if (!reg.active) {
+      await Promise.race([
+        new Promise<void>((resolve) => {
+          const sw = reg!.installing || reg!.waiting;
+          if (!sw) { resolve(); return; }
+          sw.addEventListener("statechange", function handler(e) {
+            if ((e.target as ServiceWorker).state === "activated") {
+              sw.removeEventListener("statechange", handler);
+              resolve();
+            }
+          });
+        }),
+        new Promise<void>((_, reject) => setTimeout(() => reject(new Error("SW activation timeout")), 5000)),
+      ]).catch(() => console.warn("[Push] SW activation timed out, proceeding anyway."));
+    }
+
+    // Step 3: Check for an existing subscription
+    let existingSub = await reg.pushManager.getSubscription();
     if (existingSub) {
       const raw = existingSub.toJSON();
       if (raw.keys?.p256dh && raw.keys?.auth) {
@@ -161,10 +186,7 @@ export async function subscribeUserToPush(userId: number): Promise<PushSubscript
             userId,
             subscription: {
               endpoint: existingSub.endpoint,
-              keys: {
-                p256dh: raw.keys.p256dh,
-                auth: raw.keys.auth,
-              },
+              keys: { p256dh: raw.keys.p256dh, auth: raw.keys.auth },
             },
           },
         });
@@ -172,18 +194,21 @@ export async function subscribeUserToPush(userId: number): Promise<PushSubscript
       return existingSub;
     }
 
+    // Step 4: Fetch the VAPID public key from the server at runtime
     const vapidKeyRes = await (getVapidPublicKey as any)();
     const publicVapidKey = vapidKeyRes?.publicKey;
     if (!publicVapidKey) {
-      console.warn("VAPID public key is not configured on the server.");
+      console.error("[Push] VAPID public key is not configured on the server.");
       return;
     }
 
+    // Step 5: Subscribe the browser
     const subscription = await reg.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(publicVapidKey),
     });
 
+    // Step 6: Save subscription to DB
     const raw = subscription.toJSON();
     if (raw.keys?.p256dh && raw.keys?.auth) {
       await (savePushSubscription as any)({
@@ -191,10 +216,7 @@ export async function subscribeUserToPush(userId: number): Promise<PushSubscript
           userId,
           subscription: {
             endpoint: subscription.endpoint,
-            keys: {
-              p256dh: raw.keys.p256dh,
-              auth: raw.keys.auth,
-            },
+            keys: { p256dh: raw.keys.p256dh, auth: raw.keys.auth },
           },
         },
       });
@@ -202,7 +224,7 @@ export async function subscribeUserToPush(userId: number): Promise<PushSubscript
 
     return subscription;
   } catch (err) {
-    console.error("Failed to subscribe user to push notifications:", err);
+    console.error("[Push] Failed to subscribe user to push notifications:", err);
   }
 }
 
