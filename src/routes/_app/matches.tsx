@@ -224,7 +224,18 @@ function MatchCard({ m, i }: { m: any; i: number }) {
             {[
               { label: "Entry", value: isFree ? "FREE" : m.entry, coin: !isFree, clr: isFree ? "#10b981" : mc.color },
               { label: "Prize", value: m.mode === "Solo" ? `${m.per_kill_coin}/kill` : m.prize, coin: true, clr: "#f59e0b" },
-              { label: "Starts", value: m.date ? new Date(m.date).toLocaleString([], { dateStyle: "short", timeStyle: "short" }) : "TBD", coin: false, clr: mc.color },
+              {
+                label: "Starts",
+                value: (() => {
+                  if (!m.date) return "TBD";
+                  const parsed = new Date(m.date);
+                  return isNaN(parsed.getTime())
+                    ? m.date
+                    : parsed.toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+                })(),
+                coin: false,
+                clr: mc.color,
+              },
             ].map(({ label, value, coin, clr }) => (
               <div key={label} className="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5">
                 <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
