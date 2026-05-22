@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useLayoutEffect, useRef } from "react";
 import { Navbar } from "@/components/Navbar";
 
 import { getSiteSettings } from "../api";
@@ -32,9 +32,13 @@ export const Route = createFileRoute("/_app")({
     const announcement = settings?.announcement;
     const isMaintenance = settings?.maintenance_mode === "true";
 
-    // Scroll to top on route change
-    useEffect(() => {
-      scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    // Scroll to top on route change — useLayoutEffect fires before paint
+    // to prevent a flash of the page at wrong scroll position
+    useLayoutEffect(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = 0;
+        scrollRef.current.scrollTo({ top: 0, behavior: "instant" });
+      }
     }, [path]);
 
     return (
