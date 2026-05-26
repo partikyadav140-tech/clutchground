@@ -323,8 +323,8 @@ function AdminSiteSettingsPage() {
         {/* ─── UPI Config ─── */}
         <SectionCard title="UPI Payment Details" icon={CreditCard} color="text-emerald-500" bg="bg-emerald-500/10">
           <div className="space-y-3">
-            <div className="text-xs text-muted-foreground font-semibold bg-secondary/40 rounded-xl p-3 border border-border">
-              These values are stored locally and should match your UPI configuration set on the backend.
+            <div className="text-xs text-emerald-600 font-semibold bg-emerald-500/10 rounded-xl p-3 border border-emerald-500/20 flex items-center gap-2">
+              ✅ Changes save directly to <strong>Supabase database</strong> and apply instantly to all users.
             </div>
             <InputField label="UPI ID" value={upiId} onChange={e => setUpiId(e.target.value)} placeholder="payments@clutchground" />
             <InputField label="Account / Business Name" value={upiName} onChange={e => setUpiName(e.target.value)} placeholder="CLUTCHGROUND Esports" />
