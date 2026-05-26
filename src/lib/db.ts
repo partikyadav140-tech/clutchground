@@ -18,7 +18,21 @@ const pool = new Pool({
   connectionTimeoutMillis: 10000,
 });
 
-// We create a wrapper to make the transition easier
+// PostgreSQL lowercases unquoted column names.
+// Remap any columns that were originally camelCase back to camelCase.
+const COL_REMAP: Record<string, string> = {
+  startsat: "startsAt",
+};
+
+function remapRow(row: any): any {
+  if (!row || typeof row !== "object") return row;
+  const out: any = {};
+  for (const [k, v] of Object.entries(row)) {
+    out[COL_REMAP[k] ?? k] = v;
+  }
+  return out;
+}
+
 export const db = {
   pool,
   query: async (text: string, params: any[] = [], client: any = pool) => {
@@ -27,8 +41,11 @@ export const db = {
     while (pgText.includes("?")) {
       pgText = pgText.replace("?", "$" + i++);
     }
-    return client.query(pgText, params);
+    const result = await client.query(pgText, params);
+    result.rows = result.rows.map(remapRow);
+    return result;
   },
+
   transaction: async (callback: (txDb: any) => Promise<any>) => {
     const client = await pool.connect();
     try {
