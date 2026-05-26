@@ -28,6 +28,7 @@ import {
   deleteTeam,
   getTeamRequests,
   resolveTeamRequest,
+  uploadImage,
 } from "../../api";
 import { useAuth } from "../../lib/auth-client";
 import { useState, useEffect, useCallback } from "react";
@@ -166,10 +167,13 @@ function TeamsPage() {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const toastId = toast.loading("Uploading logo...");
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
+    reader.onload = async (event) => {
+      try {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        await new Promise((res) => { img.onload = res; });
         const canvas = document.createElement("canvas");
         const MAX_WIDTH = 256;
         const scaleSize = MAX_WIDTH / img.width;
@@ -177,12 +181,17 @@ function TeamsPage() {
         canvas.height = img.height * scaleSize;
         const ctx = canvas.getContext("2d");
         ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-        setTeamData({ ...teamData, logo: dataUrl });
-      };
-      img.src = event.target?.result as string;
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+        // Upload to Cloudinary
+        const result = await (uploadImage as any)({ data: { imageBase64: dataUrl, folder: "team-logos" } });
+        setTeamData((prev) => ({ ...prev, logo: result.url }));
+        toast.success("Logo uploaded!", { id: toastId });
+      } catch (err: any) {
+        toast.error(err.message || "Failed to upload logo", { id: toastId });
+      }
     };
     reader.readAsDataURL(file);
+    e.target.value = "";
   };
 
   const handleSaveTeam = async () => {
