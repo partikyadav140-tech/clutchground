@@ -3,12 +3,12 @@ import Cropper from "react-easy-crop";
 import {
   Trophy, Edit3, Share2, Users, Bell, User, ChevronRight,
   Wallet, LogOut, ShieldAlert, MessageCircle, Settings, Star, Gamepad2,
-  Phone, FileText,
+  Phone, FileText, Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../../lib/auth-client";
 import { useState, useEffect } from "react";
-import { getProfile, updateProfile } from "../../api";
+import { getProfile, updateProfile, uploadImage } from "../../api";
 import { GodCoin } from "@/components/GodCoin";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
@@ -35,6 +35,7 @@ function ProfilePage() {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   const [isCropping, setIsCropping] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   const balance = user
     ? ((user as any).deposit_balance || 0) + ((user as any).winning_balance || 0)
@@ -81,8 +82,21 @@ function ProfilePage() {
       const canvas = document.createElement("canvas");
       canvas.width = 256; canvas.height = 256;
       canvas.getContext("2d")?.drawImage(image, croppedAreaPixels.x, croppedAreaPixels.y, croppedAreaPixels.width, croppedAreaPixels.height, 0, 0, 256, 256);
-      setForm(f => ({ ...f, avatar_url: canvas.toDataURL("image/jpeg", 0.7) }));
+      const base64 = canvas.toDataURL("image/jpeg", 0.7);
       setIsCropping(false); setCropSrc(null);
+      // Upload to Cloudinary
+      setUploadingAvatar(true);
+      toast.loading("Uploading photo...", { id: "avatar-upload" });
+      try {
+        const result = await (uploadImage as any)({ data: { base64, folder: "clutchground/avatars" } });
+        setForm(f => ({ ...f, avatar_url: result.url }));
+        toast.success("Photo uploaded to Cloudinary!", { id: "avatar-upload" });
+      } catch {
+        // Cloudinary not configured yet — fall back to base64 preview
+        setForm(f => ({ ...f, avatar_url: base64 }));
+        toast.dismiss("avatar-upload");
+      }
+      setUploadingAvatar(false);
     } catch { toast.error("Failed to crop image"); }
   };
 
@@ -287,10 +301,10 @@ function ProfilePage() {
               className="flex-1 accent-primary" />
             <span className="text-xs text-muted-foreground font-bold">3x</span>
           </div>
-          <button onClick={applyCrop}
-            className="w-full h-12 rounded-2xl font-black text-sm text-white mt-3 press-effect active:scale-95"
+          <button onClick={applyCrop} disabled={uploadingAvatar}
+            className="w-full h-12 rounded-2xl font-black text-sm text-white mt-3 press-effect active:scale-95 disabled:opacity-60 flex items-center justify-center gap-2"
             style={{ background: "var(--gradient-cta)" }}>
-            Apply
+            {uploadingAvatar ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Uploading...</> : <>Apply &amp; Upload</>}
           </button>
         </DialogContent>
       </Dialog>

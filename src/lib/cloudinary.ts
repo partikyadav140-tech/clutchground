@@ -1,0 +1,55 @@
+"use server";
+import { getEnvVar } from "./env";
+
+const CLOUD_NAME = getEnvVar("CLOUDINARY_CLOUD_NAME");
+const API_KEY = getEnvVar("CLOUDINARY_API_KEY");
+const API_SECRET = getEnvVar("CLOUDINARY_API_SECRET");
+
+/**
+ * Upload a base64 image or URL to Cloudinary.
+ * Returns the secure URL of the uploaded image.
+ */
+export async function uploadToCloudinary(
+  fileBase64OrUrl: string,
+  folder: string = "clutchground"
+): Promise<string> {
+  if (!CLOUD_NAME || !API_KEY || !API_SECRET) {
+    // Cloudinary not configured yet — return the URL as-is (graceful fallback)
+    console.warn("[Cloudinary] Not configured. Returning original URL.");
+    return fileBase64OrUrl;
+  }
+
+  const timestamp = Math.round(Date.now() / 1000);
+
+  // Build signature
+  const signaturePayload = `folder=${folder}&timestamp=${timestamp}${API_SECRET}`;
+  const signature = await sha1(signaturePayload);
+
+  const formData = new FormData();
+  formData.append("file", fileBase64OrUrl);
+  formData.append("api_key", API_KEY);
+  formData.append("timestamp", timestamp.toString());
+  formData.append("folder", folder);
+  formData.append("signature", signature);
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+    { method: "POST", body: formData }
+  );
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Cloudinary upload failed: ${err}`);
+  }
+
+  const result = await response.json() as { secure_url: string };
+  return result.secure_url;
+}
+
+/** Simple SHA-1 using Web Crypto API */
+async function sha1(message: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest("SHA-1", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}

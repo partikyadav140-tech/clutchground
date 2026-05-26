@@ -1,99 +1,18 @@
-"use server";
-import { Pool } from "pg";
-import { getEnvVar } from "./env";
+// migrate-to-supabase.cjs
+// Run: node migrate-to-supabase.cjs
+// This creates all tables in your Supabase database
 
-// Supabase PostgreSQL connection (Transaction Pooler)
-const connString = getEnvVar("DATABASE_URL") ||
-  "postgresql://postgres.mvkvdxphxzvviaunqmlb:partikbahi09@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres";
+const { Pool } = require("pg");
 
-if (!connString) {
-  throw new Error("DATABASE_URL environment variable is required");
-}
+const SUPABASE_URL = "postgresql://postgres.mvkvdxphxzvviaunqmlb:partikbahi09@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres";
 
-const pool = new Pool({
-  connectionString: connString,
-  ssl: { rejectUnauthorized: false },
-  max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-});
+async function main() {
+  console.log("🚀 Connecting to Supabase...");
+  const pool = new Pool({ connectionString: SUPABASE_URL, ssl: { rejectUnauthorized: false } });
 
-// We create a wrapper to make the transition easier
-export const db = {
-  pool,
-  query: async (text: string, params: any[] = [], client: any = pool) => {
-    let pgText = text;
-    let i = 1;
-    while (pgText.includes("?")) {
-      pgText = pgText.replace("?", "$" + i++);
-    }
-    return client.query(pgText, params);
-  },
-  transaction: async (callback: (txDb: any) => Promise<any>) => {
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
-      const txDb = {
-        query: (text: string, params?: any[]) => db.query(text, params, client),
-        prepare: (text: string) => ({
-          get: async (...args: any[]) => {
-            const { rows } = await txDb.query(text, args);
-            return rows[0] || null;
-          },
-          all: async (...args: any[]) => {
-            const { rows } = await txDb.query(text, args);
-            return rows;
-          },
-          run: async (...args: any[]) => {
-            let modText = text;
-            if (
-              text.trim().toUpperCase().startsWith("INSERT") &&
-              !text.toUpperCase().includes("RETURNING")
-            ) {
-              modText = text + " RETURNING id";
-            }
-            const { rows } = await txDb.query(modText, args);
-            return { lastInsertRowid: rows[0]?.id };
-          },
-        }),
-      };
-      const result = await callback(txDb);
-      await client.query("COMMIT");
-      return result;
-    } catch (e) {
-      await client.query("ROLLBACK");
-      throw e;
-    } finally {
-      client.release();
-    }
-  },
-  prepare: (text: string) => {
-    return {
-      get: async (...args: any[]) => {
-        const { rows } = await db.query(text, args);
-        return rows[0] || null;
-      },
-      all: async (...args: any[]) => {
-        const { rows } = await db.query(text, args);
-        return rows;
-      },
-      run: async (...args: any[]) => {
-        let modText = text;
-        if (
-          text.trim().toUpperCase().startsWith("INSERT") &&
-          !text.toUpperCase().includes("RETURNING")
-        ) {
-          modText = text + " RETURNING id";
-        }
-        const { rows } = await db.query(modText, args);
-        return { lastInsertRowid: rows[0]?.id };
-      },
-    };
-  },
-};
-
-async function initDb() {
   try {
+    // Create all tables
+    console.log("📦 Creating tables...");
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -108,7 +27,10 @@ async function initDb() {
         email TEXT,
         phone TEXT,
         banned BOOLEAN DEFAULT false,
-        avatar_url TEXT
+        avatar_url TEXT,
+        upi_id TEXT,
+        security_question TEXT,
+        security_answer TEXT
       );
 
       CREATE TABLE IF NOT EXISTS tournaments (
@@ -121,7 +43,7 @@ async function initDb() {
         prize INTEGER NOT NULL DEFAULT 0,
         slots INTEGER NOT NULL DEFAULT 0,
         filled INTEGER NOT NULL DEFAULT 0,
-        startsAt TEXT NOT NULL,
+        "startsAt" TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'open',
         banner TEXT NOT NULL DEFAULT 'from-orange-600 to-red-700',
         room_id TEXT,
@@ -302,9 +224,10 @@ async function initDb() {
       CREATE TABLE IF NOT EXISTS chat_messages (
         id SERIAL PRIMARY KEY,
         sender_id INTEGER NOT NULL,
-        receiver_id INTEGER, -- NULL if team chat
-        team_id INTEGER, -- NULL if direct message
+        receiver_id INTEGER,
+        team_id INTEGER,
         message TEXT NOT NULL,
+        is_read BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -327,48 +250,31 @@ async function initDb() {
       );
     `);
 
-    // Ensure columns exist (for SQLite/Postgres compatibility we use separate ALTER statements if needed, but in Postgres ADD COLUMN IF NOT EXISTS works)
-    try {
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ign TEXT;`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS uid TEXT;`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS deposit_balance INTEGER DEFAULT 0;`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS winning_balance INTEGER DEFAULT 0;`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS banned BOOLEAN DEFAULT false;`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS upi_id TEXT;`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS security_question TEXT;`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS security_answer TEXT;`);
-      
-      // Ticket system migrations
-      await pool.query(`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'open';`);
-      await pool.query(`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
-      await pool.query(`ALTER TABLE ticket_replies ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;`);
-      await pool.query(`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT false;`);
+    console.log("✅ All tables created!");
 
-      // Tournaments results status migration
-      await pool.query(`ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS results_announced BOOLEAN DEFAULT false;`);
-    } catch (e) {
-      console.log("Column addition skipped or failed:", e);
-    }
+    // Seed admin user
+    console.log("👤 Seeding admin user...");
+    await pool.query(`DELETE FROM users WHERE username = 'admin'`);
+    await pool.query(`
+      INSERT INTO users (username, password, role, phone)
+      VALUES ('admin', 'admin123', 'admin', '8307224756')
+    `);
+    console.log("✅ Admin user created! (username: admin, password: admin123)");
 
-    // Seed Admin
-    try {
-      // First delete any existing admin account
-      await pool.query(`DELETE FROM users WHERE username = 'admin'`);
+    // Verify tables
+    const { rows } = await pool.query(`
+      SELECT table_name FROM information_schema.tables 
+      WHERE table_schema = 'public' ORDER BY table_name
+    `);
+    console.log("\n📋 Tables in Supabase:");
+    rows.forEach(r => console.log("  -", r.table_name));
 
-      // Then create new admin account
-      await pool.query(`
-        INSERT INTO users (username, password, role, phone)
-        VALUES ('admin', 'admin123', 'admin', '8307224756')
-      `);
-    } catch (e) {
-      console.error("Admin seeding error:", e);
-    }
+    console.log("\n🎉 Migration complete! Your site is now fully on Supabase.");
   } catch (e) {
-    console.error("DB Init error:", e);
+    console.error("❌ Migration error:", e.message);
+  } finally {
+    await pool.end();
   }
 }
 
-initDb();
+main();

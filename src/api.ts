@@ -5,6 +5,15 @@ import { getEnvVar } from "./lib/env";
 export { getWalletBalance, getTransactionHistory } from "./lib/razorpay";
 export { createUpiDeposit, submitUpiUtr, getPendingUpiDeposits, approveUpiDeposit, rejectUpiDeposit, getUserUpiDeposits, getActiveUpiConfig } from "./lib/upi";
 
+// ─── Cloudinary Image Upload ───────────────────────────────────────────────
+export const uploadImage = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { uploadToCloudinary } = await import("./lib/cloudinary");
+  const { base64, folder } = data as { base64: string; folder?: string };
+  if (!base64) throw new Error("No image data provided");
+  const url = await uploadToCloudinary(base64, folder || "clutchground");
+  return { url };
+});
+
 export const loginUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const { phone, password } = data as unknown as { phone: string; password: string };
