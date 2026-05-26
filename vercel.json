@@ -1,12 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/_server/:path*",
-      "destination": "https://clutchground-api.onrender.com/_server/:path*"
-    },
-    {
-      "source": "/api/:path*",
-      "destination": "https://clutchground-api.onrender.com/api/:path*"
+      "source": "/:path*",
+      "destination": "https://clutchground-api.onrender.com/:path*"
     }
   ]
 }
