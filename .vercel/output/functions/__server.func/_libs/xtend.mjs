@@ -1,1 +1,0 @@
-var e,u;function l(){if(u)return e;u=1,e=f;var o=Object.prototype.hasOwnProperty;function f(n){for(var r=1;r<arguments.length;r++){var t=arguments[r];for(var a in t)o.call(t,a)&&(n[a]=t[a])}return n}return e}export{l as r};
