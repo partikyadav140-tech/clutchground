@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: clutchground-api
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npx vinxi start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false   # Set this in Render dashboard (Neon PostgreSQL Connection String)
+      - key: JWT_SECRET
+        sync: false   # Set this in Render dashboard
+      - key: CLOUDINARY_URL
+        sync: false   # Set this in Render dashboard
+    healthCheckPath: /
+    autoDeploy: true

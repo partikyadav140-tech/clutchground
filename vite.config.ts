@@ -3,23 +3,36 @@ import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import tailwindcss from "@tailwindcss/vite";
+import { nitro } from "nitro/vite";
 
 export default defineConfig({
   plugins: [
     tanstackStart(),
+    nitro(),
     react(),
     tailwindcss(),
     tsconfigPaths(),
   ],
   build: {
-    chunkSizeWarningLimit: 1000,
-    minify: "terser",
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
+    chunkSizeWarningLimit: 800,
+    // esbuild is faster than terser and produces similar output
+    minify: "esbuild",
+    target: "esnext",
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // TanStack Start handles React & router as SSR externals — don't touch them
+          if (id.includes("node_modules/framer-motion")) return "vendor-motion";
+          if (id.includes("node_modules/recharts") || id.includes("node_modules/d3-")) return "vendor-charts";
+          if (id.includes("node_modules/lucide-react")) return "vendor-icons";
+          if (id.includes("node_modules/@radix-ui")) return "vendor-radix";
+        },
       },
     },
+  },
+  // esbuild drop console/debugger in production
+  esbuild: {
+    drop: ["console", "debugger"],
   },
   preview: {
     host: true,

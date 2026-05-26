@@ -70,14 +70,16 @@ export const Route = createRootRoute({
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      // Fonts — single optimised request (Orbitron display + Inter body)
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700&display=swap",
       },
+      // DNS prefetch for API & CDN
       { rel: "dns-prefetch", href: "//api.clutchground.com" },
-      { rel: "dns-prefetch", href: "//fonts.googleapis.com" },
+      { rel: "dns-prefetch", href: "//res.cloudinary.com" },
     ],
   }),
   shellComponent: RootShell,

@@ -1,0 +1,1 @@
+import{a as o,t as n}from"../_libs/h3.mjs";import"../_libs/rou3.mjs";import"../_libs/srvx.mjs";import"node:stream";function i(t,e,s){const r=(globalThis.__nitro_vite_envs__||{})[t];if(!r)throw o.status(404);return Promise.resolve(r.fetch(n(e,s)))}function m({req:t}){return i("ssr",t)}export{m as default};
