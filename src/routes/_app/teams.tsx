@@ -183,7 +183,7 @@ function TeamsPage() {
         ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
         // Upload to Cloudinary
-        const result = await (uploadImage as any)({ data: { imageBase64: dataUrl, folder: "team-logos" } });
+        const result = await (uploadImage as any)({ data: { base64: dataUrl, folder: "team-logos" } });
         setTeamData((prev) => ({ ...prev, logo: result.url }));
         toast.success("Logo uploaded!", { id: toastId });
       } catch (err: any) {
