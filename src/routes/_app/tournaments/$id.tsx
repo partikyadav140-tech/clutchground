@@ -88,7 +88,7 @@ function TournamentDetailPage() {
       {/* ── HERO BANNER ── */}
       <div className="relative overflow-hidden" style={{ height: 220 }}>
         <img
-          src={POSTERS[t.id % POSTERS.length]}
+          src={(t.banner && t.banner.startsWith("http")) ? t.banner : POSTERS[t.id % POSTERS.length]}
           alt={t.title}
           className="w-full h-full object-cover"
         />

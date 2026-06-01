@@ -22,6 +22,7 @@ import {
   saveTournamentResults,
   rescheduleTournament,
   deleteAllTournaments,
+  uploadImage,
 } from "../../../api";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -769,6 +770,68 @@ function AdminTournamentsPage() {
                   onChange={(e) => setFormData({ ...formData, hosted_by: e.target.value })}
                   placeholder="Host Name"
                 />
+                <div>
+                  <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">
+                    Event Card Banner
+                  </label>
+                  <div className="flex gap-3 items-center">
+                    <label className="flex items-center justify-center gap-2 h-12 px-4 rounded-xl border border-dashed border-border hover:border-primary/60 bg-secondary/40 cursor-pointer text-xs font-bold text-muted-foreground hover:text-foreground transition-all">
+                      <span>Choose Banner Image</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          const toastId = toast.loading("Processing image...");
+                          try {
+                            const reader = new FileReader();
+                            reader.onload = async (ev) => {
+                              const img = new window.Image();
+                              img.src = ev.target?.result as string;
+                              img.onload = () => {
+                                const canvas = document.createElement("canvas");
+                                const MAX_WIDTH = 1200;
+                                let width = img.width;
+                                let height = img.height;
+                                if (width > MAX_WIDTH) {
+                                  height = Math.round((height * MAX_WIDTH) / width);
+                                  width = MAX_WIDTH;
+                                }
+                                canvas.width = width;
+                                canvas.height = height;
+                                
+                                const context = canvas.getContext("2d");
+                                context?.drawImage(img, 0, 0, width, height);
+                                const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.75);
+                                
+                                (uploadImage as any)({ data: { base64: compressedDataUrl, folder: "clutchground/events" } })
+                                  .then((res: any) => {
+                                    setFormData((prev) => ({ ...prev, banner: res.url }));
+                                    toast.success("Event banner uploaded to Cloudinary!", { id: toastId });
+                                  })
+                                  .catch((err: any) => {
+                                    toast.error(err.message || "Failed to upload to Cloudinary", { id: toastId });
+                                  });
+                              };
+                            };
+                            reader.readAsDataURL(file);
+                          } catch {
+                            toast.error("Failed to process image.", { id: toastId });
+                          }
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                    {formData.banner && formData.banner.startsWith("http") ? (
+                      <img src={formData.banner} className="w-16 h-10 object-cover rounded-xl border border-border" />
+                    ) : (
+                      <span className="text-xs font-semibold text-muted-foreground">Default Poster Gradient</span>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="pt-4 mt-4 border-t border-border/50">

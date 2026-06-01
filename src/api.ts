@@ -1268,7 +1268,7 @@ export const getMyMatches = createServerFn({ method: "POST" }).handler(async ({ 
     .prepare(
       `
       SELECT t.id, t.title as name, t.startsAt as date, t.status as match_status, t.prize, t.mode, t.format, t.room_id, t.room_pass, t.per_kill_coin, t.first_place_coin,
-             t.slots, t.filled, t.entry, r.kills, r.position, r.points, 'approved' as reg_status
+             t.slots, t.filled, t.entry, t.banner, r.kills, r.position, r.points, 'approved' as reg_status
       FROM registrations r
       JOIN tournaments t ON r.tournament_id = t.id
       WHERE r.user_id = ? OR r.players_json LIKE ?
@@ -1276,7 +1276,7 @@ export const getMyMatches = createServerFn({ method: "POST" }).handler(async ({ 
       UNION ALL
 
       SELECT t.id, t.title as name, t.startsAt as date, t.status as match_status, t.prize, t.mode, t.format, null as room_id, null as room_pass, t.per_kill_coin, t.first_place_coin,
-             t.slots, t.filled, t.entry, 0 as kills, 0 as position, 0 as points, req.status as reg_status
+             t.slots, t.filled, t.entry, t.banner, 0 as kills, 0 as position, 0 as points, req.status as reg_status
       FROM tournament_requests req
       JOIN tournaments t ON req.tournament_id = t.id
       WHERE req.status = 'pending' AND (req.requested_by = ? OR req.players_json LIKE ?)

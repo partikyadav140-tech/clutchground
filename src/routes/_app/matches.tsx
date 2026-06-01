@@ -155,7 +155,7 @@ function MatchesPage() {
 }
 
 function MatchCard({ m, i }: { m: any; i: number }) {
-  const poster  = POSTERS[m.id % POSTERS.length];
+  const poster  = (m.banner && m.banner.startsWith("http")) ? m.banner : POSTERS[m.id % POSTERS.length];
   const slots   = Number(m.slots) || 1;
   const filled  = Number(m.filled) || 0;
   const fillPct = Math.min(100, Math.round((filled / slots) * 100));
@@ -319,7 +319,7 @@ function MatchCard({ m, i }: { m: any; i: number }) {
 }
 
 function HistoryMatchCard({ m, i, openStandings }: { m: any; i: number; openStandings: (m: any) => void }) {
-  const poster  = POSTERS[m.id % POSTERS.length];
+  const poster  = (m.banner && m.banner.startsWith("http")) ? m.banner : POSTERS[m.id % POSTERS.length];
   const mc      = MODE[m.mode] || MODE.Solo;
 
   return (

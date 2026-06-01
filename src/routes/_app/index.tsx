@@ -338,7 +338,7 @@ function HomePage() {
    SHARED TOURNAMENT CARD — identical to Arena page
 ════════════════════════════════════════════════ */
 function TournamentCard({ t, i, isJoined }: { t: any; i: number; isJoined?: boolean }) {
-  const poster  = POSTERS[t.id % POSTERS.length];
+  const poster  = (t.banner && t.banner.startsWith("http")) ? t.banner : POSTERS[t.id % POSTERS.length];
   const slots   = Number(t.slots) || 1;
   const filled  = Number(t.filled) || 0;
   const fillPct = Math.min(100, Math.round((filled / slots) * 100));

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { AdminNavBar } from "@/components/AdminNavBar";
 import { motion } from "framer-motion";
-import { getSiteSettings, saveSiteSetting, clearSiteSetting } from "../../../api";
+import { getSiteSettings, saveSiteSetting, clearSiteSetting, uploadImage } from "../../../api";
 
 export const Route = createFileRoute("/_app/admin/site-settings")({
   head: () => ({ meta: [{ title: "Site Settings — Admin" }] }),
@@ -443,9 +443,15 @@ function AdminSiteSettingsPage() {
                             const context = canvas.getContext("2d");
                             context?.drawImage(img, 0, 0, width, height);
                             const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.75);
-                            
-                            setHeroBanners([...heroBanners, compressedDataUrl]);
-                            toast.success("Photo added successfully! Click save below to persist.", { id: toastId });
+                             
+                            (uploadImage as any)({ data: { base64: compressedDataUrl, folder: "clutchground/banners" } })
+                              .then((res: any) => {
+                                setHeroBanners([...heroBanners, res.url]);
+                                toast.success("Photo uploaded to Cloudinary! Click save below to persist.", { id: toastId });
+                              })
+                              .catch((err: any) => {
+                                toast.error(err.message || "Failed to upload to Cloudinary", { id: toastId });
+                              });
                           };
                         };
                         reader.readAsDataURL(file);
