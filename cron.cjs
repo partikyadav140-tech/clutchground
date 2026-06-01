@@ -65,14 +65,14 @@ cron.schedule('0 0 * * 1', async () => {
   // await pool.query("UPDATE registrations SET points = 0, kills = 0, position = 0");
 });
 
-// Run every day at 3:00 AM to clean up old chat messages (older than 30 days) to save free DB space
+// Run every day at 3:00 AM to clean up old chat messages (older than 7 days) to save free DB space
 cron.schedule('0 3 * * *', async () => {
   console.log("Running chat history cleanup cron job...");
   const client = await pool.connect();
   try {
     const res = await client.query(`
       DELETE FROM chat_messages 
-      WHERE created_at < NOW() - INTERVAL '30 days'
+      WHERE created_at < NOW() - INTERVAL '7 days'
     `);
     console.log(`Cleaned up ${res.rowCount} old chat messages.`);
   } catch (err) {

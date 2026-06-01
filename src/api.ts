@@ -2214,32 +2214,29 @@ async function deleteTicketImagesFromCloudinary(ticketId: number) {
       if (!msg) continue;
       
       let imageUrl: string | null = null;
-      let newMsg: string | null = null;
       
       if (msg.startsWith("{") && msg.endsWith("}")) {
         try {
           const parsed = JSON.parse(msg);
           if (parsed.image && parsed.image.startsWith("http")) {
             imageUrl = parsed.image;
-            delete parsed.image;
-            newMsg = JSON.stringify(parsed);
           }
         } catch (e) {}
       } else if (msg.startsWith("http")) {
         imageUrl = msg;
-        newMsg = "[Image deleted]";
       }
       
       if (imageUrl && imageUrl.includes("cloudinary.com")) {
         console.log(`[Cloudinary] Deleting image for resolved ticket: ${imageUrl}`);
         await deleteFromCloudinary(imageUrl);
-        if (newMsg !== null) {
-          await db.prepare("UPDATE ticket_replies SET message = ? WHERE id = ?").run(newMsg, reply.id);
-        }
       }
     }
+    
+    // Delete all replies for this ticket from Supabase database
+    console.log(`[Database] Deleting replies for resolved ticket ${ticketId}`);
+    await db.prepare("DELETE FROM ticket_replies WHERE ticket_id = ?").run(ticketId);
   } catch (error) {
-    console.error("Failed to delete ticket images from Cloudinary:", error);
+    console.error("Failed to delete ticket images and replies:", error);
   }
 }
 
