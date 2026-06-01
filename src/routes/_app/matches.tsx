@@ -10,8 +10,12 @@ import { GodCoin } from "@/components/GodCoin";
 import { StandingsCard } from "@/components/StandingsCard";
 
 const POSTERS = [
-  "/posters/poster1.jpg", "/posters/poster2.jpg", "/posters/poster3.jpg",
-  "/posters/poster4.jpg", "/posters/poster5.jpg", "/posters/poster6.jpg",
+  "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319133/clutchground/posters/axuescfjvf4ldjhzjah2.jpg",
+  "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319134/clutchground/posters/jurlwo3f3ci0989sbron.jpg",
+  "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319135/clutchground/posters/effl14r1d2hdj2ccvytp.jpg",
+  "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319136/clutchground/posters/xt34djmrfhqqialfpyvw.jpg",
+  "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319137/clutchground/posters/utsi9880syth0wggn6jk.jpg",
+  "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319138/clutchground/posters/o19jvuwrbawybvm76fvg.jpg"
 ];
 
 const MODE: Record<string, { color: string; glow: string; gradient: string; bg: string }> = {
