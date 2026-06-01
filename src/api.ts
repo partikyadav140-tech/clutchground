@@ -2174,12 +2174,82 @@ export const addDepositUpi = createServerFn({ method: "POST" })
 
 // --- TICKET SYSTEM ---
 
+async function processTicketMessage(message: string): Promise<string> {
+  if (!message) return message;
+  
+  if (message.startsWith("{") && message.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(message);
+      if (parsed.image && parsed.image.startsWith("data:image/")) {
+        const { uploadToCloudinary } = await import("./lib/cloudinary");
+        const folder = "clutchground/tickets";
+        const cloudinaryUrl = await uploadToCloudinary(parsed.image, folder);
+        parsed.image = cloudinaryUrl;
+        return JSON.stringify(parsed);
+      }
+    } catch (e) {
+      // Not valid JSON
+    }
+  } else if (message.startsWith("data:image/")) {
+    try {
+      const { uploadToCloudinary } = await import("./lib/cloudinary");
+      const folder = "clutchground/tickets";
+      const cloudinaryUrl = await uploadToCloudinary(message, folder);
+      return cloudinaryUrl;
+    } catch (e) {
+      // Failed to upload
+    }
+  }
+  return message;
+}
+
+async function deleteTicketImagesFromCloudinary(ticketId: number) {
+  try {
+    const { db } = await import("./lib/db");
+    const { deleteFromCloudinary } = await import("./lib/cloudinary");
+    
+    const replies = await db.prepare("SELECT id, message FROM ticket_replies WHERE ticket_id = ?").all(ticketId) as any[];
+    for (const reply of replies) {
+      const msg = reply.message;
+      if (!msg) continue;
+      
+      let imageUrl: string | null = null;
+      let newMsg: string | null = null;
+      
+      if (msg.startsWith("{") && msg.endsWith("}")) {
+        try {
+          const parsed = JSON.parse(msg);
+          if (parsed.image && parsed.image.startsWith("http")) {
+            imageUrl = parsed.image;
+            delete parsed.image;
+            newMsg = JSON.stringify(parsed);
+          }
+        } catch (e) {}
+      } else if (msg.startsWith("http")) {
+        imageUrl = msg;
+        newMsg = "[Image deleted]";
+      }
+      
+      if (imageUrl && imageUrl.includes("cloudinary.com")) {
+        console.log(`[Cloudinary] Deleting image for resolved ticket: ${imageUrl}`);
+        await deleteFromCloudinary(imageUrl);
+        if (newMsg !== null) {
+          await db.prepare("UPDATE ticket_replies SET message = ? WHERE id = ?").run(newMsg, reply.id);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Failed to delete ticket images from Cloudinary:", error);
+  }
+}
+
 export const createTicket = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const { userId, subject, message } = data as any;
+  const processedMessage = await processTicketMessage(message);
   const res = await db.prepare("INSERT INTO tickets (user_id, subject) VALUES (?, ?)").run(userId, subject);
   const ticketId = res.lastInsertRowid;
-  await db.prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)").run(ticketId, userId, message, false);
+  await db.prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)").run(ticketId, userId, processedMessage, false);
   return { success: true, ticketId };
 });
 
@@ -2208,9 +2278,10 @@ export const replyTicket = createServerFn({ method: "POST" }).handler(async ({ d
   const { db } = await import("./lib/db");
   const { ticketId, userId, message, isAdmin } = data as any;
   const tId = Number(ticketId);
+  const processedMessage = await processTicketMessage(message);
   
   await db.transaction(async (tx: any) => {
-    await tx.prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)").run(tId, userId, message, !!isAdmin);
+    await tx.prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)").run(tId, userId, processedMessage, !!isAdmin);
     await tx.prepare("UPDATE tickets SET updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(tId);
     
     if (isAdmin) {
@@ -2239,6 +2310,13 @@ export const updateTicketStatus = createServerFn({ method: "POST" }).handler(asy
   const { ticketId, status } = data as any;
   const tId = Number(ticketId);
   await db.prepare("UPDATE tickets SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(status, tId);
+  
+  if (status === "resolved") {
+    deleteTicketImagesFromCloudinary(tId).catch((err) => {
+      console.error("Failed to delete ticket images asynchronously:", err);
+    });
+  }
+  
   return { success: true };
 });
 
