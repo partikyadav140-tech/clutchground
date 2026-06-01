@@ -2490,7 +2490,7 @@ export const getHeroBanners = createServerFn({ method: "POST" }).handler(async (
       return JSON.parse((row as any).value) as string[];
     } catch {}
   }
-  return ["/hero-banner.png"];
+  return ["https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319414/clutchground/placeholders/zvdpuk7j7e4dgxax5h2b.png"];
 });
 
 export const getSocialLinks = createServerFn({ method: "POST" }).handler(async () => {

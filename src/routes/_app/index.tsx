@@ -48,7 +48,7 @@ function HomePage() {
   const { ts: allT, lb } = Route.useLoaderData();
   const { user } = useAuth();
   const [joinedMatches, setJoinedMatches] = React.useState<number[]>([]);
-  const [banners, setBanners] = React.useState<string[]>(["/new-banner.png"]);
+  const [banners, setBanners] = React.useState<string[]>(["https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319417/clutchground/placeholders/mygshudhl9qltqroxrmi.png"]);
   const [currentBannerIdx, setCurrentBannerIdx] = React.useState(0);
   const [lightboxImg, setLightboxImg] = React.useState<string | null>(null);
 
@@ -161,7 +161,7 @@ function HomePage() {
               exit={{ opacity: 0, scale: 0.98 }}
               transition={{ duration: 0.6, ease: "easeInOut" }}
               className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-              onError={(e) => { (e.target as HTMLImageElement).src = '/new-banner.png'; }}
+              onError={(e) => { (e.target as HTMLImageElement).src = 'https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319417/clutchground/placeholders/mygshudhl9qltqroxrmi.png'; }}
             />
           </AnimatePresence>
           

@@ -57,7 +57,7 @@ export const Route = createRootRoute({
         content:
           "Join ClutchGround to compete in top-tier Free Fire and Free Fire MAX tournaments. Win massive real cash prizes, join elite esports teams, and climb the Leaderboard.",
       },
-      { property: "og:image", content: "/new-banner.png" },
+      { property: "og:image", content: "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319417/clutchground/placeholders/mygshudhl9qltqroxrmi.png" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Clutch Ground | Rule the Battleground" },
@@ -66,7 +66,7 @@ export const Route = createRootRoute({
         content:
           "Join ClutchGround to compete in top-tier Free Fire and Free Fire MAX tournaments. Win massive real cash prizes, join elite esports teams, and climb the Leaderboard.",
       },
-      { name: "twitter:image", content: "/new-banner.png" },
+      { name: "twitter:image", content: "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319417/clutchground/placeholders/mygshudhl9qltqroxrmi.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

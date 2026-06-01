@@ -95,7 +95,7 @@ function AdminSiteSettingsPage() {
         return JSON.parse(initialSettings.hero_banners);
       }
     } catch {}
-    return ["/hero-banner.png"];
+    return ["https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319414/clutchground/placeholders/zvdpuk7j7e4dgxax5h2b.png"];
   });
   const [newBannerUrl, setNewBannerUrl] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -385,7 +385,7 @@ function AdminSiteSettingsPage() {
                       ) : (
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-2 overflow-hidden">
-                            <img src={url} alt={`Banner ${idx}`} className="w-16 h-10 rounded-lg object-cover shrink-0 bg-black/40 border border-border" onError={(e) => { (e.target as HTMLImageElement).src = '/hero-banner.png'; }} />
+                            <img src={url} alt={`Banner ${idx}`} className="w-16 h-10 rounded-lg object-cover shrink-0 bg-black/40 border border-border" onError={(e) => { (e.target as HTMLImageElement).src = 'https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319414/clutchground/placeholders/zvdpuk7j7e4dgxax5h2b.png'; }} />
                             <span className="text-xs font-mono font-semibold text-foreground truncate">{url}</span>
                           </div>
                           <div className="flex gap-1.5">

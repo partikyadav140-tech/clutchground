@@ -18,7 +18,7 @@ export function Hero() {
   const reduce = useReducedMotion();
   const { user } = useAuth();
 
-  const [banners, setBanners] = useState<string[]>(["/hero-banner.png"]);
+  const [banners, setBanners] = useState<string[]>(["https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319414/clutchground/placeholders/zvdpuk7j7e4dgxax5h2b.png"]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
