@@ -777,6 +777,82 @@ export const getProfile = createServerFn({ method: "POST" }).handler(async ({ da
     .get(userId)) as any;
 });
 
+export const getPlayerStats = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const userId = data as unknown as number;
+
+  try {
+    const stats = await db.transaction(async (tx) => {
+      // 1. Matches played
+      const matchesPlayedRes = await tx
+        .prepare("SELECT COUNT(*) as count FROM registrations WHERE user_id = ?")
+        .get(userId) as any;
+      const matchesPlayed = Number(matchesPlayedRes?.count || 0);
+
+      // 2. Total Kills
+      const totalKillsRes = await tx
+        .prepare("SELECT SUM(kills) as sum FROM registrations WHERE user_id = ?")
+        .get(userId) as any;
+      const totalKills = Number(totalKillsRes?.sum || 0);
+
+      // 3. Total Earnings
+      const totalEarningsRes = await tx
+        .prepare("SELECT SUM(awarded_prize) as sum FROM registrations WHERE user_id = ?")
+        .get(userId) as any;
+      const totalEarnings = Number(totalEarningsRes?.sum || 0);
+
+      // 4. First place count
+      const firstPlacesRes = await tx
+        .prepare("SELECT COUNT(*) as count FROM registrations WHERE user_id = ? AND position = 1")
+        .get(userId) as any;
+      const firstPlaces = Number(firstPlacesRes?.count || 0);
+
+      // 5. Top 3 count
+      const top3Res = await tx
+        .prepare("SELECT COUNT(*) as count FROM registrations WHERE user_id = ? AND position > 0 AND position <= 3")
+        .get(userId) as any;
+      const top3 = Number(top3Res?.count || 0);
+
+      // 6. Win history (recent matches) for dynamic chart
+      const history = await tx
+        .prepare(`
+          SELECT r.created_at, r.kills, r.position, r.awarded_prize, t.title as tournament_title 
+          FROM registrations r
+          JOIN tournaments t ON r.tournament_id = t.id
+          WHERE r.user_id = ? 
+          ORDER BY r.created_at DESC 
+          LIMIT 10
+        `)
+        .all(userId) as any[];
+
+      return {
+        matchesPlayed,
+        totalKills,
+        totalEarnings,
+        firstPlaces,
+        top3,
+        kdRatio: matchesPlayed > 0 ? (totalKills / matchesPlayed).toFixed(2) : "0.00",
+        winRate: matchesPlayed > 0 ? Math.round((firstPlaces / matchesPlayed) * 100) : 0,
+        history: history ? history.reverse() : [], // reverse to make timeline chronological (left to right)
+      };
+    });
+
+    return stats;
+  } catch (err) {
+    console.error("Failed to fetch player stats:", err);
+    return {
+      matchesPlayed: 0,
+      totalKills: 0,
+      totalEarnings: 0,
+      firstPlaces: 0,
+      top3: 0,
+      kdRatio: "0.00",
+      winRate: 0,
+      history: [],
+    };
+  }
+});
+
 export const updateCoinBalance = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const { userId, type, amount } = data as unknown as {
