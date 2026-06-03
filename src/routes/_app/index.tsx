@@ -168,23 +168,7 @@ function HomePage() {
           {/* Overlay to darken slightly for a premium feel */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
 
-          {/* Dots Indicator */}
-          {banners.length > 1 && (
-            <div className="absolute bottom-3 right-3 z-20 flex gap-1.5 bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm"
-                 onClick={(e) => e.stopPropagation()}>
-              {banners.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentBannerIdx(idx)}
-                  className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                    currentBannerIdx === idx
-                      ? "bg-primary w-3"
-                      : "bg-white/50 hover:bg-white/80"
-                  }`}
-                />
-              ))}
-            </div>
-          )}
+
         </div>
       </div>
 
