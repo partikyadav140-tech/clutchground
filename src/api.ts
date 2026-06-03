@@ -8,7 +8,7 @@ export { createUpiDeposit, submitUpiUtr, getPendingUpiDeposits, approveUpiDeposi
 // ─── Cloudinary Image Upload ───────────────────────────────────────────────
 export const uploadImage = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { uploadToCloudinary } = await import("./lib/cloudinary");
-  const { base64, folder } = data as { base64: string; folder?: string };
+  const { base64, folder } = data as unknown as { base64: string; folder?: string };
   if (!base64) throw new Error("No image data provided");
   const url = await uploadToCloudinary(base64, folder || "clutchground");
   return { url };
@@ -2513,7 +2513,7 @@ export const getSocialLinks = createServerFn({ method: "POST" }).handler(async (
 
 export const savePushSubscription = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { userId, subscription } = data as {
+  const { userId, subscription } = data as unknown as {
     userId: number;
     subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
   };
@@ -2531,7 +2531,7 @@ export const savePushSubscription = createServerFn({ method: "POST" }).handler(a
 
 export const removePushSubscription = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { endpoint } = data as { endpoint: string };
+  const { endpoint } = data as unknown as { endpoint: string };
   await db.prepare("DELETE FROM push_subscriptions WHERE endpoint = ?").run(endpoint);
   return { success: true };
 });
