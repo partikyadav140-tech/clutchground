@@ -3,7 +3,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { getTournaments, getGlobalLeaderboard, getMyMatches, getHeroBanners, getProfile, getPlayerStats } from "../../api";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
-import { Trophy, Users, Crown, Wallet, ChevronRight, Clock, Flame, Zap, Shield, Star, X, Gamepad2, Target } from "lucide-react";
+import { Trophy, Users, Crown, Wallet, ChevronRight, Clock, Flame, Zap, Shield, Star, X, Gamepad2, Target, Swords, Activity } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { useAuth } from "../../lib/auth-client";
@@ -130,30 +130,40 @@ function HomePage() {
       {/* ── Gamer Profile HUD Card ── */}
       <div className="px-4 pt-4 pb-2">
         {user ? (
-          <Link to="/profile" className="block press-effect active:scale-[0.98] transition-all">
-            <div className="relative bg-card border border-border/80 rounded-[24px] p-4 overflow-hidden shadow-card">
-              {/* Ambient neon back glow */}
-              <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/10 rounded-full blur-[35px] pointer-events-none" />
-              <div className="absolute -bottom-12 -left-12 w-24 h-24 bg-purple-500/5 rounded-full blur-[25px] pointer-events-none" />
+          <Link to="/stats" className="block press-effect active:scale-[0.98] transition-all group">
+            <div className="relative bg-gradient-to-br from-[#0d1424] via-[#0e172a] to-[#14233f] border border-primary/20 rounded-[28px] p-5 overflow-hidden shadow-card hover:border-primary/50 hover:shadow-[0_0_24px_rgba(0,200,255,0.15)] transition-all duration-300">
+              
+              {/* Scanline Sweep Laser Effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
+              
+              {/* Ambient neon back glows */}
+              <div className="absolute -top-16 -right-16 w-36 h-36 bg-primary/10 rounded-full blur-[40px] pointer-events-none" />
+              <div className="absolute -bottom-16 -left-16 w-28 h-28 bg-purple-500/5 rounded-full blur-[30px] pointer-events-none" />
 
-              <div className="flex items-center gap-3">
-                {/* Avatar */}
-                <div className="relative w-12 h-12 rounded-2xl overflow-hidden border-2 shrink-0"
-                     style={{ borderColor: "var(--primary)", boxShadow: "var(--shadow-primary)" }}>
+              {/* Top Row: Avatar + Info + Balance */}
+              <div className="flex items-center gap-3.5">
+                {/* Avatar with pulsing ring */}
+                <div className="relative w-14 h-14 rounded-2xl overflow-hidden shrink-0 border-2 border-primary/50 shadow-primary group-hover:scale-105 transition-transform duration-300">
                   {profile?.avatar_url ? (
                     <img src={profile.avatar_url} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center font-display font-black text-lg text-white"
+                    <div className="w-full h-full flex items-center justify-center font-display font-black text-xl text-white"
                          style={{ background: "var(--gradient-primary)" }}>
                       {(profile?.ign || user.username || "?")[0].toUpperCase()}
                     </div>
                   )}
+                  {/* Active status pulse */}
+                  <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-[2.5px] border-[#0d1424] rounded-full shadow-lg" />
                 </div>
 
                 {/* Name & IGN */}
                 <div className="flex-1 min-w-0">
-                  <span className="text-[7px] font-black uppercase tracking-[0.2em] text-muted-foreground leading-none">Player HUD</span>
-                  <h1 className="font-display font-black text-base text-foreground leading-tight truncate mt-0.5">
+                  <div className="flex items-center gap-1">
+                    <span className="px-1.5 py-0.5 rounded-md text-[6px] font-black uppercase tracking-widest text-primary bg-primary/10 border border-primary/20">
+                      ⚡ DIVISION I
+                    </span>
+                  </div>
+                  <h1 className="font-display font-black text-base text-foreground leading-tight truncate mt-1">
                     {profile?.ign || user.username}
                   </h1>
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -161,7 +171,7 @@ function HomePage() {
                     {profile?.uid && (
                       <>
                         <span className="w-1 h-1 rounded-full bg-border" />
-                        <span className="text-[9px] font-black text-primary font-mono shrink-0">UID: {profile.uid}</span>
+                        <span className="text-[9px] font-black text-primary/80 font-mono shrink-0">UID: {profile.uid}</span>
                       </>
                     )}
                   </div>
@@ -170,9 +180,9 @@ function HomePage() {
                 {/* Balance Pill */}
                 <div 
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.navigate({ to: "/wallet" }); }} 
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border border-border bg-secondary/80 press-effect active:scale-95 transition-all"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-border/80 bg-secondary/80 hover:border-primary/40 press-effect active:scale-95 transition-all"
                 >
-                  <GodCoin className="w-3.5 h-3.5" />
+                  <GodCoin className="w-4 h-4" />
                   <div className="flex flex-col items-end">
                     <span className="text-[7px] font-black text-muted-foreground uppercase tracking-widest leading-none">Coins</span>
                     <span className="font-display font-black text-xs text-foreground leading-tight tabular-nums mt-0.5">{balance}</span>
@@ -180,18 +190,28 @@ function HomePage() {
                 </div>
               </div>
 
-              {/* Stats Grid inside the card */}
-              <div className="grid grid-cols-3 gap-2 mt-4 pt-3.5 border-t border-border/60">
+              {/* Middle Row: Tech HUD Stats Grid */}
+              <div className="grid grid-cols-3 gap-2.5 mt-5">
                 {[
-                  { label: "Matches", value: stats.matchesPlayed, color: "text-sky-400" },
-                  { label: "Total Kills", value: stats.totalKills, color: "text-amber-500" },
-                  { label: "Win Rate", value: `${stats.winRate}%`, color: "text-emerald-400" },
+                  { label: "Matches", value: stats.matchesPlayed, color: "text-sky-400", icon: Gamepad2, bg: "bg-sky-400/5" },
+                  { label: "Total Kills", value: stats.totalKills, color: "text-amber-500", icon: Swords, bg: "bg-amber-500/5" },
+                  { label: "Win Rate", value: `${stats.winRate}%`, color: "text-emerald-400", icon: Trophy, bg: "bg-emerald-400/5" },
                 ].map((item) => (
-                  <div key={item.label} className="flex flex-col items-center justify-center bg-secondary/30 rounded-xl py-1.5 border border-border/10">
+                  <div key={item.label} className={`flex flex-col items-center justify-center p-3 rounded-2xl border border-border/40 ${item.bg} relative overflow-hidden`}>
+                    <item.icon className="w-3.5 h-3.5 text-muted-foreground/45 mb-1.5" />
                     <span className="text-[7px] font-black uppercase tracking-wider text-muted-foreground">{item.label}</span>
-                    <span className={`font-display font-black text-xs mt-0.5 ${item.color}`}>{item.value}</span>
+                    <span className={`font-display font-black text-sm mt-0.5 ${item.color}`}>{item.value}</span>
                   </div>
                 ))}
+              </div>
+
+              {/* Bottom Row: Immersive Analytics CTA Banner */}
+              <div className="mt-4 pt-3.5 border-t border-border/50 flex items-center justify-between text-muted-foreground group-hover:text-primary transition-all duration-300">
+                <span className="text-[8px] font-black uppercase tracking-widest flex items-center gap-2">
+                  <Activity className="w-3.5 h-3.5 text-primary animate-pulse shrink-0" />
+                  Analyze detailed performance metrics
+                </span>
+                <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" />
               </div>
             </div>
           </Link>

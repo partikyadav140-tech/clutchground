@@ -3,26 +3,17 @@ import Cropper from "react-easy-crop";
 import {
   Trophy, Edit3, Share2, Users, Bell, User, ChevronRight,
   Wallet, LogOut, ShieldAlert, MessageCircle, Settings, Star, Gamepad2,
-  Phone, FileText, Upload, Target, TrendingUp, Swords, Activity,
+  Phone, FileText, Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../../lib/auth-client";
 import { useState, useEffect } from "react";
-import { getProfile, updateProfile, uploadImage, getPlayerStats } from "../../api";
+import { getProfile, updateProfile, uploadImage } from "../../api";
 import { GodCoin } from "@/components/GodCoin";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
 import { useTheme } from "../../lib/theme";
 import { Sun, Moon } from "lucide-react";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-} from "recharts";
 
 export const Route = createFileRoute("/_app/profile")({
   head: () => ({ meta: [{ title: "Profile — CLUTCHGROUND" }] }),
@@ -36,16 +27,6 @@ function ProfilePage() {
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
-  const [stats, setStats] = useState<any>({
-    matchesPlayed: 0,
-    totalKills: 0,
-    totalEarnings: 0,
-    firstPlaces: 0,
-    top3: 0,
-    kdRatio: "0.00",
-    winRate: 0,
-    history: [],
-  });
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState({ ign: "", uid: "", email: "", phone: "", avatar_url: "" });
 
@@ -67,21 +48,8 @@ function ProfilePage() {
     if (!user) return;
     (async () => {
       try {
-        const [p, s] = await Promise.all([
-          (getProfile as any)({ data: user.id }),
-          (getPlayerStats as any)({ data: user.id }),
-        ]);
+        const p = await (getProfile as any)({ data: user.id });
         setProfile(p);
-        setStats(s || {
-          matchesPlayed: 0,
-          totalKills: 0,
-          totalEarnings: 0,
-          firstPlaces: 0,
-          top3: 0,
-          kdRatio: "0.00",
-          winRate: 0,
-          history: [],
-        });
         setForm({ ign: p?.ign || "", uid: p?.uid || "", email: p?.email || "", phone: p?.phone || "", avatar_url: p?.avatar_url || "" });
       } catch (err) {
         console.error("Failed to load profile data:", err);
@@ -206,151 +174,6 @@ function ProfilePage() {
               <span className="font-display font-black text-sm" style={{ color: "var(--primary)" }}>{winBal}</span>
             </div>
           </div>
-        </motion.div>
-      </div>
-
-      {/* ── Gamer Statistics Dashboard ── */}
-      <div className="px-4 mb-6">
-        <p className="text-[10px] font-black uppercase tracking-widest mb-3 ml-1 text-muted-foreground">
-          Gamer Statistics
-        </p>
-        
-        {/* Stat Cards Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          {[
-            {
-              label: "Matches Played",
-              value: stats.matchesPlayed,
-              icon: Gamepad2,
-              color: "text-sky-400",
-              bg: "bg-sky-400/10",
-            },
-            {
-              label: "Total Kills",
-              value: stats.totalKills,
-              icon: Swords,
-              color: "text-amber-500",
-              bg: "bg-amber-500/10",
-            },
-            {
-              label: "Kill/Death Ratio",
-              value: stats.kdRatio,
-              icon: Target,
-              color: "text-primary",
-              bg: "bg-primary/10",
-            },
-            {
-              label: "Win Rate",
-              value: `${stats.winRate}%`,
-              icon: Trophy,
-              color: "text-emerald-400",
-              bg: "bg-emerald-400/10",
-            },
-          ].map((item, idx) => (
-            <motion.div
-              key={item.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              className="bg-card border border-border/50 rounded-2xl p-4 flex items-center gap-3 shadow-sm"
-            >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${item.bg} ${item.color}`}>
-                <item.icon className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-[9px] uppercase tracking-wider font-bold text-muted-foreground">{item.label}</p>
-                <p className="text-lg font-display font-black text-foreground mt-0.5 leading-none">{item.value}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Performance Chart Panel */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-card border border-border/50 rounded-3xl p-5 shadow-card overflow-hidden relative"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="font-display font-black text-xs uppercase tracking-wider text-foreground">
-                Kills & Earnings Trend
-              </h3>
-              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mt-0.5">
-                Last 10 Tournaments
-              </p>
-            </div>
-            <Activity className="w-4 h-4 text-primary animate-pulse" />
-          </div>
-
-          {stats.history.length === 0 ? (
-            <div className="h-[140px] flex flex-col items-center justify-center text-center">
-              <p className="text-xs font-bold text-muted-foreground">No matches played yet.</p>
-              <Link to="/tournaments" className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline mt-2">
-                Join a Battle Now &rarr;
-              </Link>
-            </div>
-          ) : (
-            <div className="h-[140px] w-full mt-2 font-mono text-[9px] font-bold">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={stats.history}
-                  margin={{ top: 5, right: 5, left: -25, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="colorKills" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.0}/>
-                    </linearGradient>
-                    <linearGradient id="colorPrize" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--gold)" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="var(--gold)" stopOpacity={0.0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                  <XAxis 
-                    dataKey="tournament_title" 
-                    stroke="rgba(255,255,255,0.25)" 
-                    tickLine={false}
-                    tickFormatter={(val) => val?.substring(0, 8) + '...'}
-                  />
-                  <YAxis stroke="rgba(255,255,255,0.25)" tickLine={false} />
-                  <Tooltip
-                    contentStyle={{
-                      background: "rgba(13, 20, 32, 0.95)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "12px",
-                      color: "#fff",
-                      fontSize: "10px"
-                    }}
-                    labelFormatter={(label, items) => {
-                      const item = items?.[0]?.payload;
-                      return item ? `${item.tournament_title}` : label;
-                    }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="kills"
-                    name="Kills"
-                    stroke="var(--primary)"
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#colorKills)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="awarded_prize"
-                    name="Won Coins"
-                    stroke="var(--gold)"
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#colorPrize)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          )}
         </motion.div>
       </div>
 

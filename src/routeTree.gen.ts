@@ -14,6 +14,7 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppWalletRouteImport } from './routes/_app/wallet'
 import { Route as AppTermsRouteImport } from './routes/_app/terms'
 import { Route as AppTeamsRouteImport } from './routes/_app/teams'
+import { Route as AppStatsRouteImport } from './routes/_app/stats'
 import { Route as AppSignupRouteImport } from './routes/_app/signup'
 import { Route as AppRulesRouteImport } from './routes/_app/rules'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
@@ -66,6 +67,11 @@ const AppTermsRoute = AppTermsRouteImport.update({
 const AppTeamsRoute = AppTeamsRouteImport.update({
   id: '/teams',
   path: '/teams',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStatsRoute = AppStatsRouteImport.update({
+  id: '/stats',
+  path: '/stats',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSignupRoute = AppSignupRouteImport.update({
@@ -228,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AppProfileRoute
   '/rules': typeof AppRulesRoute
   '/signup': typeof AppSignupRoute
+  '/stats': typeof AppStatsRoute
   '/teams': typeof AppTeamsRoute
   '/terms': typeof AppTermsRoute
   '/wallet': typeof AppWalletRoute
@@ -262,6 +269,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AppProfileRoute
   '/rules': typeof AppRulesRoute
   '/signup': typeof AppSignupRoute
+  '/stats': typeof AppStatsRoute
   '/teams': typeof AppTeamsRoute
   '/terms': typeof AppTermsRoute
   '/wallet': typeof AppWalletRoute
@@ -299,6 +307,7 @@ export interface FileRoutesById {
   '/_app/profile': typeof AppProfileRoute
   '/_app/rules': typeof AppRulesRoute
   '/_app/signup': typeof AppSignupRoute
+  '/_app/stats': typeof AppStatsRoute
   '/_app/teams': typeof AppTeamsRoute
   '/_app/terms': typeof AppTermsRoute
   '/_app/wallet': typeof AppWalletRoute
@@ -337,6 +346,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/rules'
     | '/signup'
+    | '/stats'
     | '/teams'
     | '/terms'
     | '/wallet'
@@ -371,6 +381,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/rules'
     | '/signup'
+    | '/stats'
     | '/teams'
     | '/terms'
     | '/wallet'
@@ -407,6 +418,7 @@ export interface FileRouteTypes {
     | '/_app/profile'
     | '/_app/rules'
     | '/_app/signup'
+    | '/_app/stats'
     | '/_app/teams'
     | '/_app/terms'
     | '/_app/wallet'
@@ -469,6 +481,13 @@ declare module '@tanstack/react-router' {
       path: '/teams'
       fullPath: '/teams'
       preLoaderRoute: typeof AppTeamsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/stats': {
+      id: '/_app/stats'
+      path: '/stats'
+      fullPath: '/stats'
+      preLoaderRoute: typeof AppStatsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/signup': {
@@ -690,6 +709,7 @@ interface AppRouteChildren {
   AppProfileRoute: typeof AppProfileRoute
   AppRulesRoute: typeof AppRulesRoute
   AppSignupRoute: typeof AppSignupRoute
+  AppStatsRoute: typeof AppStatsRoute
   AppTeamsRoute: typeof AppTeamsRoute
   AppTermsRoute: typeof AppTermsRoute
   AppWalletRoute: typeof AppWalletRoute
@@ -726,6 +746,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppProfileRoute: AppProfileRoute,
   AppRulesRoute: AppRulesRoute,
   AppSignupRoute: AppSignupRoute,
+  AppStatsRoute: AppStatsRoute,
   AppTeamsRoute: AppTeamsRoute,
   AppTermsRoute: AppTermsRoute,
   AppWalletRoute: AppWalletRoute,
