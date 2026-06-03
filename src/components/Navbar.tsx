@@ -55,11 +55,6 @@ export function Navbar() {
   const handleEnableNotifications = async () => {
     setShowPromo(false);
     if (typeof window === "undefined" || !("Notification" in window)) return;
-    
-    if (Notification.permission === "denied") {
-      toast.error("Notifications are blocked in your browser settings. Please enable them manually in your browser address bar.");
-      return;
-    }
 
     try {
       const permission = await Notification.requestPermission();
@@ -69,7 +64,7 @@ export function Navbar() {
           toast.success("Notifications enabled successfully! 🔔");
         }
       } else {
-        toast.error("Notification permission denied.");
+        toast.error("Notifications are blocked or denied. Please enable them manually in your browser/app settings.");
       }
     } catch (err) {
       toast.error("Failed to enable notifications.");

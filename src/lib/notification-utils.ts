@@ -3,15 +3,15 @@
 // Professional mobile / browser push-notification helpers for ClutchGround
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Ask the OS for notification permission (only prompts on "default") */
+/** Ask the OS for notification permission */
 export async function requestBrowserNotificationPermission(): Promise<
   NotificationPermission | undefined
 > {
   if (typeof window === "undefined" || !("Notification" in window)) return;
-  if (Notification.permission === "default") {
-    return Notification.requestPermission().catch(() => "denied" as NotificationPermission);
+  if (Notification.permission === "granted") {
+    return "granted";
   }
-  return Notification.permission;
+  return Notification.requestPermission().catch(() => "denied" as NotificationPermission);
 }
 
 /** Options for a rich notification */
