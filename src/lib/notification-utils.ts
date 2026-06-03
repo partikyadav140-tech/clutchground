@@ -15,7 +15,7 @@ export async function requestBrowserNotificationPermission(): Promise<
 }
 
 /** Options for a rich notification */
-export interface NotificationOptions {
+export interface CgNotificationOptions {
   body: string;
   url?: string; // where to navigate on tap
   tag?: string; // dedup key (same tag = replace old notification)
@@ -28,19 +28,19 @@ export interface NotificationOptions {
  */
 export async function showBrowserNotification(
   title: string,
-  options: NotificationOptions | string,
+  options: CgNotificationOptions | string,
 ) {
   if (typeof window === "undefined" || !("Notification" in window)) return;
   if (Notification.permission !== "granted") return;
 
   // Normalise: accept plain string (legacy) or options object
-  const opts: NotificationOptions = typeof options === "string" ? { body: options } : options;
+  const opts: CgNotificationOptions = typeof options === "string" ? { body: options } : options;
 
   const url = opts.url ?? "/notifications";
   const tag = opts.tag ?? `cg-${Date.now()}`;
   const important = opts.important ?? false;
 
-  const notifPayload: NotificationOptions = {
+  const notifPayload: globalThis.NotificationOptions = {
     body: opts.body,
     icon: "/pwa-192x192.png",
     badge: "/pwa-192x192.png",
