@@ -40,7 +40,7 @@ export async function showBrowserNotification(
   const tag = opts.tag ?? `cg-${Date.now()}`;
   const important = opts.important ?? false;
 
-  const notifPayload: globalThis.NotificationOptions = {
+  const notifPayload: any = {
     body: opts.body,
     icon: "/pwa-192x192.png",
     badge: "/pwa-192x192.png",
