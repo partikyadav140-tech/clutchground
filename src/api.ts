@@ -2565,13 +2565,13 @@ export const resetFinanceStat = createServerFn({ method: "POST" }).handler(async
 
   if (type === "revenue") {
     const rawRevenue = ((await db.prepare("SELECT COALESCE(SUM(amount), 0) as s FROM upi_deposits WHERE status = 'approved'").get()) as any)?.s || 0;
-    await db.prepare("INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value").run("finance_revenue_offset", rawRevenue.toString());
+    await db.prepare("INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value RETURNING key").run("finance_revenue_offset", rawRevenue.toString());
   } else if (type === "payouts") {
     const rawPayouts = ((await db.prepare("SELECT COALESCE(SUM(amount), 0) as s FROM withdrawals WHERE status = 'completed'").get()) as any)?.s || 0;
-    await db.prepare("INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value").run("finance_payouts_offset", rawPayouts.toString());
+    await db.prepare("INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value RETURNING key").run("finance_payouts_offset", rawPayouts.toString());
   } else if (type === "withdrawable") {
     const rawWithdrawable = ((await db.prepare("SELECT COALESCE(SUM(winning_balance), 0) as s FROM users").get()) as any)?.s || 0;
-    await db.prepare("INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value").run("finance_withdrawable_offset", rawWithdrawable.toString());
+    await db.prepare("INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value RETURNING key").run("finance_withdrawable_offset", rawWithdrawable.toString());
   }
 
   return { success: true };
