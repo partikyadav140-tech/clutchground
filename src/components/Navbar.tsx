@@ -24,6 +24,8 @@ import {
   vibrateNotification,
   subscribeUserToPush,
 } from "../lib/notification-utils";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 const NAV_ITEMS = [
   { to: "/", label: "Home", icon: Home },
@@ -42,6 +44,7 @@ export function Navbar() {
   const path = router.state.location.pathname;
   const [unread, setUnread] = useState(0);
   const [unreadChats, setUnreadChats] = useState(0);
+  const [showPromo, setShowPromo] = useState(false);
   const notifsRef = useRef<string[]>([]);
 
   const balance = user
@@ -49,13 +52,53 @@ export function Navbar() {
       ((user as { winning_balance?: number }).winning_balance || 0)
     : 0;
 
+  const handleEnableNotifications = async () => {
+    setShowPromo(false);
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    
+    if (Notification.permission === "denied") {
+      toast.error("Notifications are blocked in your browser settings. Please enable them manually in your browser address bar.");
+      return;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        if (user) {
+          await subscribeUserToPush(user.id);
+          toast.success("Notifications enabled successfully! 🔔");
+        }
+      } else {
+        toast.error("Notification permission denied.");
+      }
+    } catch (err) {
+      toast.error("Failed to enable notifications.");
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
-    requestBrowserNotificationPermission().then((permission) => {
-      if (permission === "granted") {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission !== "granted") {
+        const sessionPrompt = sessionStorage.getItem("notif_prompt_shown_session");
+        if (!sessionPrompt) {
+          const timer = setTimeout(() => {
+            setShowPromo(true);
+            sessionStorage.setItem("notif_prompt_shown_session", "true");
+          }, 1500);
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission === "granted") {
         subscribeUserToPush(user.id);
       }
-    });
+    }
 
     async function poll() {
       try {
@@ -280,6 +323,54 @@ export function Navbar() {
           })}
         </div>
       </nav>
+
+      {/* App-style Notification Promotion Modal */}
+      <AnimatePresence>
+        {showPromo && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="w-full max-w-[360px] bg-card border border-border/80 rounded-[28px] p-6 shadow-2xl relative overflow-hidden text-center"
+            >
+              {/* Accent top gradient line */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-primary-gradient" />
+
+              {/* Icon */}
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4 text-primary shadow-primary">
+                <Bell className="w-5 h-5 animate-pulse" />
+              </div>
+
+              {/* Title & Description */}
+              <h3 className="font-display font-black text-base text-foreground mb-1.5 uppercase tracking-wider">
+                Enable Notifications
+              </h3>
+              <p className="text-[11px] text-muted-foreground leading-relaxed font-semibold mb-6 px-1">
+                Stay updated with real-time tournament alerts, match starting times, prize payouts, and chat messages in the arena.
+              </p>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={handleEnableNotifications}
+                  className="w-full h-12 rounded-xl font-black text-xs uppercase tracking-widest text-white flex items-center justify-center gap-2 press-effect shadow-cta animate-pulse-glow"
+                  style={{ background: "var(--gradient-cta)" }}
+                >
+                  Allow Notifications
+                </button>
+                <button
+                  onClick={() => setShowPromo(false)}
+                  className="w-full h-12 rounded-xl font-black text-xs uppercase tracking-widest border border-border bg-secondary/50 text-muted-foreground hover:text-foreground press-effect transition-all"
+                >
+                  Maybe Later
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
