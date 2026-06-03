@@ -3,7 +3,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { getTournaments, getGlobalLeaderboard, getMyMatches, getHeroBanners, getProfile, getPlayerStats } from "../../api";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
-import { Trophy, Users, Crown, Wallet, ChevronRight, Clock, Flame, Zap, Shield, Star, X, Gamepad2, Target, Swords, Activity } from "lucide-react";
+import { Trophy, Users, Crown, Wallet, ChevronRight, Flame, Zap, Shield, Star, X, Gamepad2, Swords, Activity, Target, TrendingUp, BarChart3, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { useAuth } from "../../lib/auth-client";
@@ -42,6 +42,16 @@ const MODE: Record<string, { color: string; glow: string; gradient: string; bg: 
   Solo:  { color: "#00c8ff", glow: "rgba(0,200,255,0.35)",   gradient: "linear-gradient(135deg,#00c8ff,#0080ff)", bg: "rgba(0,200,255,0.08)" },
   Duo:   { color: "#a78bfa", glow: "rgba(167,139,250,0.35)", gradient: "linear-gradient(135deg,#a78bfa,#7c3aed)", bg: "rgba(167,139,250,0.08)" },
   Squad: { color: "#ff6b00", glow: "rgba(255,107,0,0.35)",   gradient: "linear-gradient(135deg,#ff6b00,#ff0055)", bg: "rgba(255,107,0,0.08)" },
+};
+
+/* ── Staggered entrance animation wrapper ── */
+const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08 } },
+};
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
 };
 
 function HomePage() {
@@ -119,167 +129,243 @@ function HomePage() {
 
   const active   = (allT as any[]).filter(t => t.status !== "completed" && t.status !== "locked");
   const featured = active.filter(t => t.is_hero && t.is_hero !== "0" && t.is_hero !== "false");
-  const battles  = active.filter(t => !t.is_hero || t.is_hero === "0" || t.is_hero === "false"); // non-featured only
+  const battles  = active.filter(t => !t.is_hero || t.is_hero === "0" || t.is_hero === "false");
 
   const balance = user ? ((user as any).deposit_balance || 0) + ((user as any).winning_balance || 0) : 0;
   const top3    = ((lb as any[]) || []).slice(0, 3);
 
+  const hasStats = stats.matchesPlayed > 0 || stats.totalKills > 0;
+
   return (
-    <div className="min-h-screen bg-background">
+    <motion.div
+      className="min-h-screen bg-background pb-[80px]"
+      variants={stagger}
+      initial="hidden"
+      animate="show"
+    >
 
-      {/* ── Gamer Profile HUD Card ── */}
-      <div className="px-4 pt-4 pb-2">
+      {/* ═══════════════════════════════════════════════
+          SECTION 1: Player Welcome Card / Logged-out Hero
+         ═══════════════════════════════════════════════ */}
+      <motion.div variants={fadeUp} className="px-4 pt-4 pb-1">
         {user ? (
-          <Link to="/stats" className="block press-effect active:scale-[0.98] transition-all group">
-            <div className="relative bg-gradient-to-br from-[#0d1424] via-[#0e172a] to-[#14233f] border border-primary/20 rounded-[28px] p-5 overflow-hidden shadow-card hover:border-primary/50 hover:shadow-[0_0_24px_rgba(0,200,255,0.15)] transition-all duration-300">
-              
-              {/* Scanline Sweep Laser Effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
-              
-              {/* Ambient neon back glows */}
-              <div className="absolute -top-16 -right-16 w-36 h-36 bg-primary/10 rounded-full blur-[40px] pointer-events-none" />
-              <div className="absolute -bottom-16 -left-16 w-28 h-28 bg-purple-500/5 rounded-full blur-[30px] pointer-events-none" />
+          /* ── Logged-in: Player Welcome Card ── */
+          <div className="hud-card p-5">
+            {/* Ambient glow blobs — use CSS variable opacity so they adapt */}
+            <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-[40px] pointer-events-none"
+                 style={{ background: "var(--primary)", opacity: 0.06 }} />
 
-              {/* Top Row: Avatar + Info + Balance */}
-              <div className="flex items-center gap-3.5">
-                {/* Avatar with pulsing ring */}
-                <div className="relative w-14 h-14 rounded-2xl overflow-hidden shrink-0 border-2 border-primary/50 shadow-primary group-hover:scale-105 transition-transform duration-300">
-                  {profile?.avatar_url ? (
-                    <img src={profile.avatar_url} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center font-display font-black text-xl text-white"
-                         style={{ background: "var(--gradient-primary)" }}>
-                      {(profile?.ign || user.username || "?")[0].toUpperCase()}
-                    </div>
+            {/* Top row: Avatar + Greeting + Balance */}
+            <div className="relative flex items-center gap-3.5">
+              {/* Avatar — round */}
+              <Link to="/stats" className="relative w-13 h-13 rounded-full overflow-hidden shrink-0 border-2 shadow-lg press-effect active:scale-95 transition-transform"
+                    style={{ borderColor: "var(--primary)", boxShadow: "var(--shadow-primary)" }}>
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} className="w-full h-full object-cover" alt="avatar" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center font-display font-black text-lg text-white"
+                       style={{ background: "var(--gradient-primary)" }}>
+                    {(profile?.ign || user.username || "?")[0].toUpperCase()}
+                  </div>
+                )}
+                {/* Online indicator */}
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 rounded-full"
+                      style={{ borderColor: "var(--card)" }} />
+              </Link>
+
+              {/* Greeting & meta */}
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">
+                  Welcome back
+                </p>
+                <h1 className="font-display font-black text-lg text-foreground leading-tight truncate mt-1">
+                  {profile?.ign || user.username}
+                </h1>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[10px] font-semibold text-muted-foreground font-mono truncate">@{user.username}</span>
+                  {profile?.uid && (
+                    <>
+                      <span className="w-1 h-1 rounded-full bg-border" />
+                      <span className="text-[10px] font-bold font-mono" style={{ color: "var(--primary)" }}>UID: {profile.uid}</span>
+                    </>
                   )}
-                  {/* Active status pulse */}
-                  <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-[2.5px] border-[#0d1424] rounded-full shadow-lg" />
-                </div>
-
-                {/* Name & IGN */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
-                    <span className="px-1.5 py-0.5 rounded-md text-[6px] font-black uppercase tracking-widest text-primary bg-primary/10 border border-primary/20">
-                      ⚡ DIVISION I
-                    </span>
-                  </div>
-                  <h1 className="font-display font-black text-base text-foreground leading-tight truncate mt-1">
-                    {profile?.ign || user.username}
-                  </h1>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-[9px] font-bold text-muted-foreground font-mono truncate">@{user.username}</span>
-                    {profile?.uid && (
-                      <>
-                        <span className="w-1 h-1 rounded-full bg-border" />
-                        <span className="text-[9px] font-black text-primary/80 font-mono shrink-0">UID: {profile.uid}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Balance Pill */}
-                <div 
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.navigate({ to: "/wallet" }); }} 
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-2xl border border-border/80 bg-secondary/80 hover:border-primary/40 press-effect active:scale-95 transition-all"
-                >
-                  <GodCoin className="w-4 h-4" />
-                  <div className="flex flex-col items-end">
-                    <span className="text-[7px] font-black text-muted-foreground uppercase tracking-widest leading-none">Coins</span>
-                    <span className="font-display font-black text-xs text-foreground leading-tight tabular-nums mt-0.5">{balance}</span>
-                  </div>
                 </div>
               </div>
 
-              {/* Middle Row: Tech HUD Stats Grid */}
-              <div className="grid grid-cols-3 gap-2.5 mt-5">
+              {/* Balance pill */}
+              <div
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.navigate({ to: "/wallet" }); }}
+                className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border border-border bg-secondary/60 hover:border-primary/40 press-effect active:scale-95 transition-all cursor-pointer"
+              >
+                <GodCoin className="w-4.5 h-4.5" />
+                <div className="flex flex-col items-end">
+                  <span className="text-[7px] font-black text-muted-foreground uppercase tracking-widest leading-none">Coins</span>
+                  <span className="font-display font-black text-sm text-foreground leading-tight tabular-nums mt-0.5">{balance}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* ── Logged-out: Hero Card ── */
+          <div className="hero-card p-6 text-center">
+            {/* Radial glow */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 rounded-full blur-[50px] pointer-events-none"
+                 style={{ background: "var(--primary)", opacity: 0.08 }} />
+
+            <div className="relative">
+              <h1 className="font-display font-black text-2xl text-foreground uppercase tracking-wide leading-tight">
+                CLUTCHGROUND
+              </h1>
+              <p className="text-xs text-muted-foreground font-semibold mt-1.5 mb-5">
+                India's #1 Free Fire Esports Arena
+              </p>
+
+              {/* Social proof stats */}
+              <div className="flex items-center justify-center gap-6 mb-5">
                 {[
-                  { label: "Matches", value: stats.matchesPlayed, color: "text-sky-400", icon: Gamepad2, bg: "bg-sky-400/5" },
-                  { label: "Total Kills", value: stats.totalKills, color: "text-amber-500", icon: Swords, bg: "bg-amber-500/5" },
-                  { label: "Win Rate", value: `${stats.winRate}%`, color: "text-emerald-400", icon: Trophy, bg: "bg-emerald-400/5" },
-                ].map((item) => (
-                  <div key={item.label} className={`flex flex-col items-center justify-center p-3 rounded-2xl border border-border/40 ${item.bg} relative overflow-hidden`}>
-                    <item.icon className="w-3.5 h-3.5 text-muted-foreground/45 mb-1.5" />
-                    <span className="text-[7px] font-black uppercase tracking-wider text-muted-foreground">{item.label}</span>
-                    <span className={`font-display font-black text-sm mt-0.5 ${item.color}`}>{item.value}</span>
+                  { label: "Players", value: "10K+" },
+                  { label: "Matches", value: "2K+" },
+                  { label: "Prize Pool", value: "₹50K+" },
+                ].map((s) => (
+                  <div key={s.label} className="text-center">
+                    <p className="font-display font-black text-base text-foreground">{s.value}</p>
+                    <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{s.label}</p>
                   </div>
                 ))}
               </div>
 
-              {/* Bottom Row: Immersive Analytics CTA Banner */}
-              <div className="mt-4 pt-3.5 border-t border-border/50 flex items-center justify-between text-muted-foreground group-hover:text-primary transition-all duration-300">
-                <span className="text-[8px] font-black uppercase tracking-widest flex items-center gap-2">
-                  <Activity className="w-3.5 h-3.5 text-primary animate-pulse shrink-0" />
-                  Analyze detailed performance metrics
-                </span>
-                <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" />
-              </div>
+              <Link to="/login">
+                <button className="h-12 w-full max-w-[240px] rounded-2xl font-black text-xs text-white uppercase tracking-widest press-effect active:scale-95 flex items-center justify-center gap-2 mx-auto"
+                        style={{ background: "var(--gradient-cta)", boxShadow: "var(--shadow-cta)" }}>
+                  <Zap className="w-4 h-4" />
+                  Join the Arena
+                </button>
+              </Link>
             </div>
-          </Link>
-        ) : (
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="font-display font-black text-xl text-foreground">CLUTCHGROUND</h1>
-              <p className="text-xs text-muted-foreground font-medium mt-0.5">India's #1 Free Fire Arena</p>
-            </div>
-            <Link to="/login">
-              <button className="h-9 px-5 rounded-xl font-black text-xs text-white uppercase tracking-widest press-effect active:scale-95" style={{ background: "var(--gradient-cta)" }}>
-                Login
-              </button>
-            </Link>
           </div>
         )}
-      </div>
+      </motion.div>
 
-      {/* ── Quick Actions ── */}
-      <div className="px-4 mb-5">
+      {/* ═══════════════════════════════════════════════
+          SECTION 2: Live Stats Strip (logged-in only)
+         ═══════════════════════════════════════════════ */}
+      {user && (
+        <motion.div variants={fadeUp} className="px-4 py-2">
+          {hasStats ? (
+            <Link to="/stats" className="block">
+              <div className="flex gap-2.5 overflow-x-auto hide-scrollbar pb-1">
+                {[
+                  { label: "Matches", value: stats.matchesPlayed, icon: Gamepad2, color: "var(--primary)" },
+                  { label: "Kills", value: stats.totalKills, icon: Swords, color: "#f59e0b" },
+                  { label: "K/D", value: stats.kdRatio, icon: Target, color: "#a78bfa" },
+                  { label: "Win Rate", value: `${stats.winRate}%`, icon: Trophy, color: "#10b981" },
+                ].map((item) => (
+                  <div key={item.label} className="stat-pill shrink-0">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                         style={{ background: `${item.color}15`, color: item.color }}>
+                      <item.icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-[8px] font-black text-muted-foreground uppercase tracking-wider leading-none">{item.label}</p>
+                      <p className="font-display font-black text-sm text-foreground mt-0.5 leading-none">{item.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* CTA to stats */}
+              <div className="flex items-center justify-center gap-1.5 mt-2 text-muted-foreground hover:text-primary transition-colors">
+                <Activity className="w-3 h-3" style={{ color: "var(--primary)" }} />
+                <span className="text-[9px] font-black uppercase tracking-widest">View detailed analytics</span>
+                <ChevronRight className="w-3 h-3" />
+              </div>
+            </Link>
+          ) : (
+            <Link to="/tournaments" className="block">
+              <div className="hud-card p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                     style={{ background: "var(--gradient-cta)" }}>
+                  <TrendingUp className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-foreground">Start your journey!</p>
+                  <p className="text-[10px] text-muted-foreground font-semibold mt-0.5">Join a tournament to track your stats</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
+              </div>
+            </Link>
+          )}
+        </motion.div>
+      )}
+
+      {/* ═══════════════════════════════════════════════
+          SECTION 3: Quick Actions (2×2 grid)
+         ═══════════════════════════════════════════════ */}
+      <motion.div variants={fadeUp} className="px-4 mb-5">
         <div className="grid grid-cols-4 gap-2.5">
           {[
-            { icon: Wallet,  label: "Wallet",  to: "/wallet",      clr: "#10b981", bg: "rgba(16,185,129,0.1)",  bd: "rgba(16,185,129,0.2)" },
-            { icon: Trophy,  label: "Matches", to: "/matches",     clr: "var(--primary)", bg: "rgba(0,200,255,0.1)", bd: "rgba(0,200,255,0.2)" },
-            { icon: Users,   label: "Teams",   to: "/teams",       clr: "#a78bfa", bg: "rgba(167,139,250,0.1)", bd: "rgba(167,139,250,0.2)" },
-            { icon: Crown,   label: "Ranks",   to: "/leaderboard", clr: "#f59e0b", bg: "rgba(245,158,11,0.1)",  bd: "rgba(245,158,11,0.2)" },
-          ].map(({ icon: Icon, label, to, clr, bg, bd }) => (
-            <Link key={to} to={to} className="press-effect active:scale-90 transition-transform">
-              <div className="flex flex-col items-center gap-2 py-3 px-1 rounded-2xl border"
-                style={{ background: bg, borderColor: bd }}>
-                <Icon className="w-5 h-5" style={{ color: clr }} />
+            { icon: Wallet,  label: "Wallet",  to: "/wallet",      color: "#10b981" },
+            { icon: Trophy,  label: "Matches", to: "/matches",     color: "var(--primary)" },
+            { icon: Users,   label: "Teams",   to: "/teams",       color: "#a78bfa" },
+            { icon: Crown,   label: "Ranks",   to: "/leaderboard", color: "#f59e0b" },
+          ].map(({ icon: Icon, label, to, color }) => (
+            <Link key={to} to={to}>
+              <div className="quick-action">
+                <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                     style={{ background: `${color}15`, color: color }}>
+                  <Icon className="w-5 h-5" />
+                </div>
                 <span className="text-[9px] font-black uppercase tracking-wide text-muted-foreground leading-none">{label}</span>
               </div>
             </Link>
           ))}
         </div>
-      </div>
+      </motion.div>
 
-      {/* ── Banner Carousel ── */}
-      <div className="px-4 mb-5">
-        <div className="relative w-full aspect-video rounded-3xl overflow-hidden border border-border shadow-card bg-black/10 cursor-pointer group"
+      {/* ═══════════════════════════════════════════════
+          SECTION 4: Banner Carousel with Dot Indicators
+         ═══════════════════════════════════════════════ */}
+      <motion.div variants={fadeUp} className="px-4 mb-5">
+        <div className="relative w-full aspect-video rounded-3xl overflow-hidden border border-border shadow-card cursor-pointer group"
+             style={{ background: "var(--secondary)" }}
              onClick={() => setLightboxImg(banners[currentBannerIdx])}>
           <AnimatePresence mode="popLayout">
             <motion.img
               key={banners[currentBannerIdx]}
               src={banners[currentBannerIdx]}
               alt="CLUTCHGROUND Banner"
-              initial={{ opacity: 0, scale: 1.02 }}
+              initial={{ opacity: 0, scale: 1.03 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
+              exit={{ opacity: 0, scale: 0.97 }}
               transition={{ duration: 0.6, ease: "easeInOut" }}
               className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
               onError={(e) => { (e.target as HTMLImageElement).src = 'https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319417/clutchground/placeholders/mygshudhl9qltqroxrmi.png'; }}
             />
           </AnimatePresence>
-          
-          {/* Overlay to darken slightly for a premium feel */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-
-
+          {/* Bottom gradient for premium depth */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
         </div>
-      </div>
+        {/* Dot indicators */}
+        {banners.length > 1 && (
+          <div className="carousel-dots mt-2">
+            {banners.map((_, idx) => (
+              <button
+                key={idx}
+                className={`carousel-dot ${idx === currentBannerIdx ? "active" : ""}`}
+                onClick={() => setCurrentBannerIdx(idx)}
+                aria-label={`Go to banner ${idx + 1}`}
+              />
+            ))}
+          </div>
+        )}
+      </motion.div>
 
-      {/* ── Featured Carousel ── */}
+      {/* ═══════════════════════════════════════════════
+          SECTION 5: Featured Carousel
+         ═══════════════════════════════════════════════ */}
       {featured.length > 0 && (
-        <div className="mb-6">
+        <motion.div variants={fadeUp} className="mb-6">
           <div className="px-4 flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
+            <div className="section-header">
               <Flame className="w-4 h-4" style={{ color: "var(--fire)" }} />
               <h2 className="font-display font-black text-sm text-foreground uppercase tracking-wide">Featured</h2>
             </div>
@@ -296,14 +382,16 @@ function HomePage() {
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* ── Active Battles Carousel ── */}
+      {/* ═══════════════════════════════════════════════
+          SECTION 6: Active Battles Carousel
+         ═══════════════════════════════════════════════ */}
       {battles.length > 0 && (
-        <div className="mb-6">
+        <motion.div variants={fadeUp} className="mb-6">
           <div className="px-4 flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
+            <div className="section-header">
               <Zap className="w-4 h-4" style={{ color: "var(--primary)" }} />
               <h2 className="font-display font-black text-sm text-foreground uppercase tracking-wide">Active Battles</h2>
             </div>
@@ -320,14 +408,16 @@ function HomePage() {
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* ── Mini Leaderboard ── */}
+      {/* ═══════════════════════════════════════════════
+          SECTION 7: Mini Leaderboard with Rank Badges
+         ═══════════════════════════════════════════════ */}
       {top3.length > 0 && (
-        <div className="px-4 mb-6">
+        <motion.div variants={fadeUp} className="px-4 mb-6">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
+            <div className="section-header">
               <Crown className="w-4 h-4 text-amber-400" />
               <h2 className="font-display font-black text-sm text-foreground uppercase tracking-wide">Top Players</h2>
             </div>
@@ -335,15 +425,24 @@ function HomePage() {
               See all <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-          <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-card divide-y divide-border">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-card">
             {top3.map((p: any, i: number) => {
-              const medals = ["🥇", "🥈", "🥉"];
+              const rankStyles = [
+                { bg: "linear-gradient(135deg, #f59e0b22, #f59e0b08)", color: "#f59e0b", label: "1st" },
+                { bg: "linear-gradient(135deg, #94a3b822, #94a3b808)", color: "#94a3b8", label: "2nd" },
+                { bg: "linear-gradient(135deg, #cd7f3222, #cd7f3208)", color: "#cd7f32", label: "3rd" },
+              ][i];
               return (
-                <div key={p.user_id || i} className="flex items-center gap-3 px-4 py-3">
-                  <span className="text-lg w-6 text-center">{medals[i]}</span>
-                  <div className="w-8 h-8 rounded-xl bg-secondary flex items-center justify-center font-display font-black text-xs text-foreground shrink-0 overflow-hidden">
+                <div key={p.user_id || i} className={`flex items-center gap-3 px-4 py-3.5 ${i < 2 ? "border-b border-border" : ""}`}>
+                  {/* Rank badge */}
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center font-display font-black text-[10px] shrink-0"
+                       style={{ background: rankStyles.bg, color: rankStyles.color }}>
+                    {rankStyles.label}
+                  </div>
+                  {/* Avatar */}
+                  <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center font-display font-black text-xs text-foreground shrink-0 overflow-hidden border border-border">
                     {p.logo ? (
-                      <img src={p.logo} className="w-full h-full object-cover" />
+                      <img src={p.logo} className="w-full h-full object-cover" alt="" />
                     ) : (
                       (p.team || "T")[0].toUpperCase()
                     )}
@@ -356,11 +455,13 @@ function HomePage() {
               );
             })}
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* ── Footer ── */}
-      <footer className="mx-4 mb-6 mt-2">
+      {/* ═══════════════════════════════════════════════
+          FOOTER
+         ═══════════════════════════════════════════════ */}
+      <motion.footer variants={fadeUp} className="mx-4 mb-6 mt-2">
         <div className="bg-card rounded-2xl border border-border p-5 text-center shadow-card">
           <div className="flex items-center justify-center gap-2 mb-2">
             <div className="h-px flex-1 bg-border" />
@@ -381,7 +482,7 @@ function HomePage() {
             </a>
           </div>
         </div>
-      </footer>
+      </motion.footer>
 
       <div className="h-2" />
 
@@ -395,15 +496,12 @@ function HomePage() {
             onClick={() => setLightboxImg(null)}
             className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
           >
-            {/* Close button */}
             <button
               onClick={() => setLightboxImg(null)}
               className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 border border-white/10 text-white flex items-center justify-center transition-all cursor-pointer active:scale-90"
             >
               <X className="w-5 h-5" />
             </button>
-
-            {/* Premium Image Container */}
             <motion.div
               initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
@@ -421,7 +519,7 @@ function HomePage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
 
