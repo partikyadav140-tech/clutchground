@@ -2097,9 +2097,24 @@ export const getAdminStats = createServerFn({ method: "GET" }).handler(async () 
   const pendingDeposits = ((await db.prepare("SELECT COUNT(*) as c FROM upi_deposits WHERE status = 'submitted'").get()) as any)?.c || 0;
   const pendingPayouts = ((await db.prepare("SELECT COUNT(*) as c FROM withdrawals WHERE status = 'pending'").get()) as any)?.c || 0;
   const openTickets = ((await db.prepare("SELECT COUNT(*) as c FROM tickets WHERE status = 'open'").get()) as any)?.c || 0;
-  const totalRevenue = ((await db.prepare("SELECT COALESCE(SUM(amount), 0) as s FROM upi_deposits WHERE status = 'approved'").get()) as any)?.s || 0;
-  const totalPayouts = ((await db.prepare("SELECT COALESCE(SUM(amount), 0) as s FROM withdrawals WHERE status = 'completed'").get()) as any)?.s || 0;
-  const totalWithdrawable = ((await db.prepare("SELECT COALESCE(SUM(winning_balance), 0) as s FROM users").get()) as any)?.s || 0;
+
+  const getOffset = async (key: string) => {
+    const row = await db.prepare("SELECT value FROM site_settings WHERE key = ?").get(key) as any;
+    return row ? Number(row.value) || 0 : 0;
+  };
+
+  const revenueOffset = await getOffset("finance_revenue_offset");
+  const payoutsOffset = await getOffset("finance_payouts_offset");
+  const withdrawableOffset = await getOffset("finance_withdrawable_offset");
+
+  const rawRevenue = ((await db.prepare("SELECT COALESCE(SUM(amount), 0) as s FROM upi_deposits WHERE status = 'approved'").get()) as any)?.s || 0;
+  const rawPayouts = ((await db.prepare("SELECT COALESCE(SUM(amount), 0) as s FROM withdrawals WHERE status = 'completed'").get()) as any)?.s || 0;
+  const rawWithdrawable = ((await db.prepare("SELECT COALESCE(SUM(winning_balance), 0) as s FROM users").get()) as any)?.s || 0;
+
+  const totalRevenue = Math.max(0, rawRevenue - revenueOffset);
+  const totalPayouts = Math.max(0, rawPayouts - payoutsOffset);
+  const totalWithdrawable = Math.max(0, rawWithdrawable - withdrawableOffset);
+
   return { totalUsers, bannedUsers, totalTournaments, liveTournaments, openTournaments, pendingDeposits, pendingPayouts, openTickets, totalRevenue, totalPayouts, totalWithdrawable };
 });
 
@@ -2542,4 +2557,22 @@ export const getVapidPublicKey = createServerFn({ method: "GET" }).handler(async
     key = key.replace(/['"]/g, "").trim();
   }
   return { publicKey: key || null };
+});
+
+export const resetFinanceStat = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { type } = data as unknown as { type: "revenue" | "payouts" | "withdrawable" };
+
+  if (type === "revenue") {
+    const rawRevenue = ((await db.prepare("SELECT COALESCE(SUM(amount), 0) as s FROM upi_deposits WHERE status = 'approved'").get()) as any)?.s || 0;
+    await db.prepare("INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value").run("finance_revenue_offset", rawRevenue.toString());
+  } else if (type === "payouts") {
+    const rawPayouts = ((await db.prepare("SELECT COALESCE(SUM(amount), 0) as s FROM withdrawals WHERE status = 'completed'").get()) as any)?.s || 0;
+    await db.prepare("INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value").run("finance_payouts_offset", rawPayouts.toString());
+  } else if (type === "withdrawable") {
+    const rawWithdrawable = ((await db.prepare("SELECT COALESCE(SUM(winning_balance), 0) as s FROM users").get()) as any)?.s || 0;
+    await db.prepare("INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value").run("finance_withdrawable_offset", rawWithdrawable.toString());
+  }
+
+  return { success: true };
 });

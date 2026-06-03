@@ -1,14 +1,15 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
   Users, Trophy, ClipboardList, Banknote, Mail, ShieldAlert,
   RefreshCw, Bell, LifeBuoy, IndianRupee, Settings, TrendingUp,
-  AlertCircle, Activity, Zap, Crown, Coins,
+  AlertCircle, Activity, Zap, Crown, Coins, RotateCcw,
 } from "lucide-react";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { getAdminStats } from "../../../api";
+import { getAdminStats, resetFinanceStat } from "../../../api";
 import { AdminNavBar } from "@/components/AdminNavBar";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/")({
   head: () => ({ meta: [{ title: "Command Center — CLUTCHGROUND" }] }),
@@ -17,10 +18,10 @@ export const Route = createFileRoute("/_app/admin/")({
 } as any);
 
 function StatCard({
-  icon: Icon, label, value, color, bg, urgent = false, to,
+  icon: Icon, label, value, color, bg, urgent = false, to, action,
 }: {
   icon: any; label: string; value: number | string; color: string; bg: string;
-  urgent?: boolean; to?: string;
+  urgent?: boolean; to?: string; action?: React.ReactNode;
 }) {
   const inner = (
     <motion.div
@@ -30,6 +31,11 @@ function StatCard({
     >
       {urgent && Number(value) > 0 && (
         <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+      )}
+      {action && (
+        <div className="absolute top-2 right-2 z-30" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
+          {action}
+        </div>
       )}
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${bg} ${color}`}>
         <Icon className="w-4.5 h-4.5 w-[18px] h-[18px]" />
@@ -60,6 +66,20 @@ function SectionHeader({ label, icon: Icon, color }: { label: string; icon: any;
 function AdminDashboard() {
   const { user, loading } = useAuth();
   const stats = Route.useLoaderData() as any;
+  const router = useRouter();
+
+  const handleResetFinance = async (type: "revenue" | "payouts" | "withdrawable") => {
+    const ok = window.confirm(`Are you sure you want to reset this calculation to zero? This won't affect any user's real balance.`);
+    if (!ok) return;
+
+    try {
+      await (resetFinanceStat as any)({ data: { type } });
+      toast.success("Calculation refreshed to zero!");
+      router.invalidate();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to reset calculation");
+    }
+  };
 
   if (loading)
     return (
@@ -146,9 +166,57 @@ function AdminDashboard() {
         {/* ─── Finance ─── */}
         <SectionHeader label="Finance" icon={TrendingUp} color="text-emerald-500" />
         <div className="grid grid-cols-3 gap-2.5">
-          <StatCard icon={IndianRupee} label="Total Deposited" value={`₹${stats?.totalRevenue ?? 0}`} color="text-emerald-500" bg="bg-emerald-500/10" to="/admin/deposits" />
-          <StatCard icon={Banknote} label="Total Paid Out" value={`₹${stats?.totalPayouts ?? 0}`} color="text-rose-500" bg="bg-rose-500/10" to="/admin/payouts" />
-          <StatCard icon={Coins} label="Total Withdrawable" value={`₹${stats?.totalWithdrawable ?? 0}`} color="text-amber-500" bg="bg-amber-500/10" to="/admin/users" />
+          <StatCard
+            icon={IndianRupee}
+            label="Total Deposited"
+            value={`₹${stats?.totalRevenue ?? 0}`}
+            color="text-emerald-500"
+            bg="bg-emerald-500/10"
+            to="/admin/deposits"
+            action={
+              <button
+                onClick={() => handleResetFinance("revenue")}
+                className="p-1 rounded-lg bg-secondary hover:bg-muted-foreground/15 text-muted-foreground transition-colors cursor-pointer"
+                title="Reset calculation to zero"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            }
+          />
+          <StatCard
+            icon={Banknote}
+            label="Total Paid Out"
+            value={`₹${stats?.totalPayouts ?? 0}`}
+            color="text-rose-500"
+            bg="bg-rose-500/10"
+            to="/admin/payouts"
+            action={
+              <button
+                onClick={() => handleResetFinance("payouts")}
+                className="p-1 rounded-lg bg-secondary hover:bg-muted-foreground/15 text-muted-foreground transition-colors cursor-pointer"
+                title="Reset calculation to zero"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            }
+          />
+          <StatCard
+            icon={Coins}
+            label="Total Withdrawable"
+            value={`₹${stats?.totalWithdrawable ?? 0}`}
+            color="text-amber-500"
+            bg="bg-amber-500/10"
+            to="/admin/users"
+            action={
+              <button
+                onClick={() => handleResetFinance("withdrawable")}
+                className="p-1 rounded-lg bg-secondary hover:bg-muted-foreground/15 text-muted-foreground transition-colors cursor-pointer"
+                title="Reset calculation to zero"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            }
+          />
         </div>
 
         {/* ─── Quick Actions Grid ─── */}

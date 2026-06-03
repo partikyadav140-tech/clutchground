@@ -34,50 +34,49 @@ function SignupPage() {
   };
 
   return (
-    <div className="h-[100dvh] flex flex-col bg-background overflow-hidden relative">
+    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-background relative overflow-y-auto pb-[20px] pt-[20px]">
       {/* Ambient */}
-      <div className="absolute top-0 right-0 w-72 h-72 rounded-full blur-[120px] pointer-events-none opacity-20"
+      <div className="absolute top-0 right-0 w-72 h-72 rounded-full blur-[120px] pointer-events-none opacity-15"
         style={{ background: "var(--neon)" }} />
       <div className="absolute bottom-1/3 left-0 w-60 h-60 rounded-full blur-[100px] pointer-events-none opacity-15"
         style={{ background: "var(--primary)" }} />
+      <div className="absolute inset-0 grid-bg opacity-[0.04] pointer-events-none" />
 
-      {/* Top section */}
+      {/* Card container */}
       <motion.div
-        key={step}
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center justify-center flex-1 px-6 pb-4 pt-8"
+        initial={{ opacity: 0, scale: 0.96, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-[420px] bg-card/45 backdrop-blur-xl border border-border/80 rounded-[32px] p-6 sm:p-8 shadow-[0_24px_50px_-12px_rgba(0,0,0,0.4)] relative z-10"
       >
-        <div className="relative mb-5">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center border border-primary/20"
-            style={{ background: "linear-gradient(135deg, rgba(0,200,255,0.08), rgba(124,58,237,0.08))" }}>
-            <Logo size={40} withText={false} />
+        {/* Top section */}
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="relative mb-4">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center border border-primary/20 bg-secondary/30">
+              <Logo size={36} withText={false} />
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-5.5 h-5.5 rounded-full flex items-center justify-center shadow-md"
+              style={{ background: "var(--gradient-cta)" }}>
+              <Gamepad2 className="w-2.5 h-2.5 text-white" />
+            </div>
+          </div>
+
+          <h1 className="font-display font-black text-2xl text-foreground mb-1 tracking-wide text-glow">
+            {step === 1 ? "Create Account" : "Game Details"}
+          </h1>
+          <p className="text-xs text-muted-foreground font-semibold px-2">
+            {step === 1 ? "Join 120K+ warriors in the arena" : "Set up your Free Fire profile"}
+          </p>
+
+          {/* Step indicator */}
+          <div className="flex items-center gap-2 mt-4">
+            <div className="w-6 h-1.5 rounded-full transition-all duration-300" style={{ background: "var(--primary)" }} />
+            <div className="w-6 h-1.5 rounded-full transition-all duration-300" style={{ background: step === 2 ? "var(--primary)" : "var(--border)" }} />
           </div>
         </div>
 
-        <h1 className="font-display font-black text-2xl text-foreground mb-1">
-          {step === 1 ? "Create Account" : "Game Details"}
-        </h1>
-        <p className="text-sm text-muted-foreground font-medium text-center">
-          {step === 1 ? "Join 120K+ warriors in the arena" : "Set up your Free Fire profile"}
-        </p>
-
-        {/* Step indicator */}
-        <div className="flex items-center gap-2 mt-4">
-          <div className="w-6 h-1.5 rounded-full" style={{ background: "var(--primary)" }} />
-          <div className="w-6 h-1.5 rounded-full transition-all" style={{ background: step === 2 ? "var(--primary)" : "var(--border)" }} />
-        </div>
-      </motion.div>
-
-      {/* Form sheet */}
-      <motion.div
-        key={`form-${step}`}
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35 }}
-        className="bg-card border-t border-border rounded-t-[32px] px-6 pt-7 pb-8 shadow-[0_-20px_60px_rgba(0,0,0,0.25)]"
-      >
-        <form onSubmit={handleSignup} className="space-y-3">
+        {/* Form */}
+        <form onSubmit={handleSignup} className="space-y-3.5">
           {step === 1 ? (
             <>
               <AppInput icon={User} placeholder="Username" value={form.username} onChange={set("username")} required autoComplete="username" />
@@ -85,7 +84,7 @@ function SignupPage() {
                 onChange={e => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g,"").slice(0,10) }))} required inputMode="numeric" />
               <AppInput icon={Mail} type="email" placeholder="Email address" value={form.email} onChange={set("email")} autoComplete="email" />
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/75" />
                 <input
                   type={showPass ? "text" : "password"}
                   placeholder="Password"
@@ -93,10 +92,10 @@ function SignupPage() {
                   onChange={set("password")}
                   required
                   autoComplete="new-password"
-                  className="w-full h-14 bg-secondary border border-border focus:border-primary/60 rounded-2xl pl-12 pr-12 text-sm font-semibold text-foreground outline-none transition-all"
+                  className="w-full h-13 bg-secondary/50 border border-border focus:border-primary/60 focus:bg-secondary/80 focus:ring-1 focus:ring-primary/20 rounded-2xl pl-12 pr-12 text-sm font-semibold text-foreground outline-none transition-all"
                 />
                 <button type="button" onClick={() => setShowPass(!showPass)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
@@ -104,7 +103,7 @@ function SignupPage() {
                 <select
                   value={form.security_question}
                   onChange={set("security_question")}
-                  className="w-full h-14 bg-secondary border border-border focus:border-primary/60 rounded-2xl pl-4 pr-10 text-sm font-semibold text-foreground outline-none transition-all appearance-none"
+                  className="w-full h-13 bg-secondary/50 border border-border focus:border-primary/60 focus:bg-secondary/80 focus:ring-1 focus:ring-primary/20 rounded-2xl pl-4 pr-10 text-sm font-semibold text-foreground outline-none transition-all appearance-none"
                 >
                   <option value="What is your childhood nickname?">What is your childhood nickname?</option>
                   <option value="What is the name of your favorite childhood friend?">What is the name of your favorite childhood friend?</option>
@@ -121,12 +120,12 @@ function SignupPage() {
                 onChange={e => setForm(f => ({ ...f, uid: e.target.value.replace(/\D/g,"") }))} inputMode="numeric" maxLength={12} />
 
               <label className="flex items-start gap-3 px-1 pt-1">
-                <input type="checkbox" required className="accent-primary mt-0.5 w-4 h-4 shrink-0 rounded" />
-                <span className="text-xs text-muted-foreground font-medium leading-relaxed">
+                <input type="checkbox" required className="accent-primary mt-0.5 w-4 h-4 shrink-0 rounded border-border" />
+                <span className="text-[11px] text-muted-foreground font-semibold leading-relaxed">
                   I accept the{" "}
-                  <a href="/rules" className="font-bold" style={{ color: "var(--primary)" }}>Rules</a>,{" "}
-                  <a href="/terms" className="font-bold" style={{ color: "var(--primary)" }}>Terms</a> &{" "}
-                  <a href="/privacy" className="font-bold" style={{ color: "var(--primary)" }}>Privacy Policy</a>.
+                  <a href="/rules" className="font-bold hover:underline" style={{ color: "var(--primary)" }}>Rules</a>,{" "}
+                  <a href="/terms" className="font-bold hover:underline" style={{ color: "var(--primary)" }}>Terms</a> &{" "}
+                  <a href="/privacy" className="font-bold hover:underline" style={{ color: "var(--primary)" }}>Privacy</a>.
                   I am 13+ years old.
                 </span>
               </label>
@@ -136,28 +135,29 @@ function SignupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest text-white flex items-center justify-center gap-2 transition-all active:scale-95 press-effect shadow-cta mt-1"
+            className="w-full h-13 rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center justify-center gap-2 transition-all active:scale-95 press-effect shadow-cta mt-2"
             style={{ background: loading ? "var(--secondary)" : "var(--gradient-cta)" }}
           >
-            {loading
-              ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Creating...</>
-              : step === 1
-              ? <>Next <ArrowRight className="w-4 h-4" /></>
-              : <>Create Account <ArrowRight className="w-4 h-4" /></>
-            }
+            {loading ? (
+              <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Creating...</>
+            ) : step === 1 ? (
+              <>Next <ArrowRight className="w-3.5 h-3.5" /></>
+            ) : (
+              <>Create Account <ArrowRight className="w-3.5 h-3.5" /></>
+            )}
           </button>
         </form>
 
         {step === 2 && (
           <button onClick={() => setStep(1)}
-            className="w-full h-12 mt-3 rounded-2xl font-black text-sm border border-border text-muted-foreground flex items-center justify-center gap-2 press-effect active:scale-95">
-            <ChevronLeft className="w-4 h-4" /> Back
+            className="w-full h-12 mt-3 rounded-2xl font-black text-xs uppercase tracking-widest border border-border bg-secondary/30 text-muted-foreground flex items-center justify-center gap-2 press-effect active:scale-95 hover:bg-secondary/50">
+            <ChevronLeft className="w-3.5 h-3.5" /> Back
           </button>
         )}
 
-        <p className="text-center text-xs text-muted-foreground font-medium mt-5">
+        <p className="text-center text-xs text-muted-foreground font-semibold mt-6">
           Already have an account?{" "}
-          <Link to="/login" className="font-black" style={{ color: "var(--primary)" }}>Sign In</Link>
+          <Link to="/login" className="font-black text-primary hover:text-primary/80 transition-colors uppercase tracking-wider text-[11px]">Sign In</Link>
         </p>
       </motion.div>
     </div>
@@ -167,10 +167,10 @@ function SignupPage() {
 function AppInput({ icon: Icon, ...props }: { icon: any } & React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <div className="relative">
-      <Icon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+      <Icon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/75 pointer-events-none" />
       <input
         {...props}
-        className="w-full h-14 bg-secondary border border-border focus:border-primary/60 rounded-2xl pl-12 pr-4 text-sm font-semibold text-foreground outline-none transition-all"
+        className="w-full h-13 bg-secondary/50 border border-border focus:border-primary/60 focus:bg-secondary/80 focus:ring-1 focus:ring-primary/20 rounded-2xl pl-12 pr-4 text-sm font-semibold text-foreground outline-none transition-all"
       />
     </div>
   );
