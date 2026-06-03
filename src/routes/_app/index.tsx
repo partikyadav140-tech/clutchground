@@ -1,9 +1,9 @@
 import * as React from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { getTournaments, getGlobalLeaderboard, getMyMatches, getHeroBanners } from "../../api";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { getTournaments, getGlobalLeaderboard, getMyMatches, getHeroBanners, getProfile, getPlayerStats } from "../../api";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
-import { Trophy, Users, Crown, Wallet, ChevronRight, Clock, Flame, Zap, Shield, Star, X } from "lucide-react";
+import { Trophy, Users, Crown, Wallet, ChevronRight, Clock, Flame, Zap, Shield, Star, X, Gamepad2, Target } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { useAuth } from "../../lib/auth-client";
@@ -35,7 +35,7 @@ const POSTERS = [
   "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319135/clutchground/posters/effl14r1d2hdj2ccvytp.jpg",
   "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319136/clutchground/posters/xt34djmrfhqqialfpyvw.jpg",
   "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319137/clutchground/posters/utsi9880syth0wggn6jk.jpg",
-  "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319138/clutchground/posters/o19jvuwrbawybvm76fvg.jpg"
+  "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319138/clutchground/posters/o19jvuwrbawybvm76fvg.jpg",
 ];
 
 const MODE: Record<string, { color: string; glow: string; gradient: string; bg: string }> = {
@@ -47,6 +47,18 @@ const MODE: Record<string, { color: string; glow: string; gradient: string; bg: 
 function HomePage() {
   const { ts: allT, lb } = Route.useLoaderData();
   const { user } = useAuth();
+  const router = useRouter();
+  const [profile, setProfile] = React.useState<any>(null);
+  const [stats, setStats] = React.useState<any>({
+    matchesPlayed: 0,
+    totalKills: 0,
+    totalEarnings: 0,
+    firstPlaces: 0,
+    top3: 0,
+    kdRatio: "0.00",
+    winRate: 0,
+    history: [],
+  });
   const [joinedMatches, setJoinedMatches] = React.useState<number[]>([]);
   const [banners, setBanners] = React.useState<string[]>(["https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319417/clutchground/placeholders/mygshudhl9qltqroxrmi.png"]);
   const [currentBannerIdx, setCurrentBannerIdx] = React.useState(0);
@@ -73,6 +85,25 @@ function HomePage() {
       (getMyMatches as any)({ data: user.id })
         .then((matches: any[]) => setJoinedMatches(matches.map(m => m.id)))
         .catch(console.error);
+
+      Promise.all([
+        (getProfile as any)({ data: user.id }),
+        (getPlayerStats as any)({ data: user.id }),
+      ])
+        .then(([p, s]) => {
+          setProfile(p);
+          setStats(s || {
+            matchesPlayed: 0,
+            totalKills: 0,
+            totalEarnings: 0,
+            firstPlaces: 0,
+            top3: 0,
+            kdRatio: "0.00",
+            winRate: 0,
+            history: [],
+          });
+        })
+        .catch(console.error);
     }
   }, [user]);
 
@@ -96,22 +127,74 @@ function HomePage() {
   return (
     <div className="min-h-screen bg-background">
 
-      {/* ── Greeting Header ── */}
-      <div className="px-4 pt-4 pb-4">
+      {/* ── Gamer Profile HUD Card ── */}
+      <div className="px-4 pt-4 pb-2">
         {user ? (
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground mb-0.5">Welcome back 👋</p>
-              <h1 className="font-display font-black text-xl text-foreground leading-tight">{(user as any).username}</h1>
-            </div>
-            <Link to="/wallet" className="flex items-center gap-2 px-3 py-2 rounded-2xl border border-border bg-card press-effect active:scale-95 transition-all">
-              <GodCoin className="w-4 h-4" />
-              <div className="flex flex-col items-end">
-                <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest leading-none">Balance</span>
-                <span className="font-display font-black text-sm text-foreground leading-tight tabular-nums">{balance}</span>
+          <Link to="/profile" className="block press-effect active:scale-[0.98] transition-all">
+            <div className="relative bg-card border border-border/80 rounded-[24px] p-4 overflow-hidden shadow-card">
+              {/* Ambient neon back glow */}
+              <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary/10 rounded-full blur-[35px] pointer-events-none" />
+              <div className="absolute -bottom-12 -left-12 w-24 h-24 bg-purple-500/5 rounded-full blur-[25px] pointer-events-none" />
+
+              <div className="flex items-center gap-3">
+                {/* Avatar */}
+                <div className="relative w-12 h-12 rounded-2xl overflow-hidden border-2 shrink-0"
+                     style={{ borderColor: "var(--primary)", boxShadow: "var(--shadow-primary)" }}>
+                  {profile?.avatar_url ? (
+                    <img src={profile.avatar_url} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center font-display font-black text-lg text-white"
+                         style={{ background: "var(--gradient-primary)" }}>
+                      {(profile?.ign || user.username || "?")[0].toUpperCase()}
+                    </div>
+                  )}
+                </div>
+
+                {/* Name & IGN */}
+                <div className="flex-1 min-w-0">
+                  <span className="text-[7px] font-black uppercase tracking-[0.2em] text-muted-foreground leading-none">Player HUD</span>
+                  <h1 className="font-display font-black text-base text-foreground leading-tight truncate mt-0.5">
+                    {profile?.ign || user.username}
+                  </h1>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-[9px] font-bold text-muted-foreground font-mono truncate">@{user.username}</span>
+                    {profile?.uid && (
+                      <>
+                        <span className="w-1 h-1 rounded-full bg-border" />
+                        <span className="text-[9px] font-black text-primary font-mono shrink-0">UID: {profile.uid}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Balance Pill */}
+                <div 
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.navigate({ to: "/wallet" }); }} 
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border border-border bg-secondary/80 press-effect active:scale-95 transition-all"
+                >
+                  <GodCoin className="w-3.5 h-3.5" />
+                  <div className="flex flex-col items-end">
+                    <span className="text-[7px] font-black text-muted-foreground uppercase tracking-widest leading-none">Coins</span>
+                    <span className="font-display font-black text-xs text-foreground leading-tight tabular-nums mt-0.5">{balance}</span>
+                  </div>
+                </div>
               </div>
-            </Link>
-          </div>
+
+              {/* Stats Grid inside the card */}
+              <div className="grid grid-cols-3 gap-2 mt-4 pt-3.5 border-t border-border/60">
+                {[
+                  { label: "Matches", value: stats.matchesPlayed, color: "text-sky-400" },
+                  { label: "Total Kills", value: stats.totalKills, color: "text-amber-500" },
+                  { label: "Win Rate", value: `${stats.winRate}%`, color: "text-emerald-400" },
+                ].map((item) => (
+                  <div key={item.label} className="flex flex-col items-center justify-center bg-secondary/30 rounded-xl py-1.5 border border-border/10">
+                    <span className="text-[7px] font-black uppercase tracking-wider text-muted-foreground">{item.label}</span>
+                    <span className={`font-display font-black text-xs mt-0.5 ${item.color}`}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Link>
         ) : (
           <div className="flex items-center justify-between">
             <div>
