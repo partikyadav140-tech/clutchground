@@ -2099,7 +2099,8 @@ export const getAdminStats = createServerFn({ method: "GET" }).handler(async () 
   const openTickets = ((await db.prepare("SELECT COUNT(*) as c FROM tickets WHERE status = 'open'").get()) as any)?.c || 0;
   const totalRevenue = ((await db.prepare("SELECT COALESCE(SUM(amount), 0) as s FROM upi_deposits WHERE status = 'approved'").get()) as any)?.s || 0;
   const totalPayouts = ((await db.prepare("SELECT COALESCE(SUM(amount), 0) as s FROM withdrawals WHERE status = 'completed'").get()) as any)?.s || 0;
-  return { totalUsers, bannedUsers, totalTournaments, liveTournaments, openTournaments, pendingDeposits, pendingPayouts, openTickets, totalRevenue, totalPayouts };
+  const totalWithdrawable = ((await db.prepare("SELECT COALESCE(SUM(winning_balance), 0) as s FROM users").get()) as any)?.s || 0;
+  return { totalUsers, bannedUsers, totalTournaments, liveTournaments, openTournaments, pendingDeposits, pendingPayouts, openTickets, totalRevenue, totalPayouts, totalWithdrawable };
 });
 
 export const deleteAllTournaments = createServerFn({ method: "POST" }).handler(async ({ data }) => {

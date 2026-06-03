@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Users, Trophy, ClipboardList, Banknote, Mail, ShieldAlert,
   RefreshCw, Bell, LifeBuoy, IndianRupee, Settings, TrendingUp,
-  AlertCircle, Activity, Zap, Crown,
+  AlertCircle, Activity, Zap, Crown, Coins,
 } from "lucide-react";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -145,9 +145,10 @@ function AdminDashboard() {
 
         {/* ─── Finance ─── */}
         <SectionHeader label="Finance" icon={TrendingUp} color="text-emerald-500" />
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-3 gap-2.5">
           <StatCard icon={IndianRupee} label="Total Deposited" value={`₹${stats?.totalRevenue ?? 0}`} color="text-emerald-500" bg="bg-emerald-500/10" to="/admin/deposits" />
           <StatCard icon={Banknote} label="Total Paid Out" value={`₹${stats?.totalPayouts ?? 0}`} color="text-rose-500" bg="bg-rose-500/10" to="/admin/payouts" />
+          <StatCard icon={Coins} label="Total Withdrawable" value={`₹${stats?.totalWithdrawable ?? 0}`} color="text-amber-500" bg="bg-amber-500/10" to="/admin/users" />
         </div>
 
         {/* ─── Quick Actions Grid ─── */}
