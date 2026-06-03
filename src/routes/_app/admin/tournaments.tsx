@@ -11,6 +11,7 @@ import {
   ShieldAlert,
   Star,
   Settings,
+  ImageOff,
 } from "lucide-react";
 import {
   getTournaments,
@@ -23,6 +24,7 @@ import {
   rescheduleTournament,
   deleteAllTournaments,
   uploadImage,
+  deleteImage,
 } from "../../../api";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -774,7 +776,7 @@ function AdminTournamentsPage() {
                   <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">
                     Event Card Banner
                   </label>
-                  <div className="flex gap-3 items-center">
+                  <div className="flex gap-3 items-center flex-wrap">
                     <label className="flex items-center justify-center gap-2 h-12 px-4 rounded-xl border border-dashed border-border hover:border-primary/60 bg-secondary/40 cursor-pointer text-xs font-bold text-muted-foreground hover:text-foreground transition-all">
                       <span>Choose Banner Image</span>
                       <input
@@ -826,9 +828,31 @@ function AdminTournamentsPage() {
                       />
                     </label>
                     {formData.banner && formData.banner.startsWith("http") ? (
-                      <img src={formData.banner} className="w-16 h-10 object-cover rounded-xl border border-border" />
+                      <div className="flex items-center gap-2">
+                        <img src={formData.banner} className="w-16 h-10 object-cover rounded-xl border border-border" />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const toastId = toast.loading("Removing banner from Cloudinary...");
+                            try {
+                              await (deleteImage as any)({ data: { url: formData.banner } });
+                              toast.success("Banner removed from Cloudinary!", { id: toastId });
+                            } catch {
+                              toast.dismiss(toastId);
+                            }
+                            setFormData((prev) => ({ ...prev, banner: "" }));
+                          }}
+                          className="flex items-center gap-1.5 h-10 px-3 rounded-xl border border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 text-[10px] font-bold uppercase tracking-wider transition-all press-effect active:scale-95"
+                        >
+                          <Trash className="w-3.5 h-3.5" />
+                          Remove
+                        </button>
+                      </div>
                     ) : (
-                      <span className="text-xs font-semibold text-muted-foreground">Default Poster Gradient</span>
+                      <div className="flex items-center gap-2">
+                        <ImageOff className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-xs font-semibold text-muted-foreground">No banner — will use default poster</span>
+                      </div>
                     )}
                   </div>
                 </div>

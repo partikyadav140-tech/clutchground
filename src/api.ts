@@ -14,6 +14,14 @@ export const uploadImage = createServerFn({ method: "POST" }).handler(async ({ d
   return { url };
 });
 
+export const deleteImage = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { deleteFromCloudinary } = await import("./lib/cloudinary");
+  const { url } = data as unknown as { url: string };
+  if (!url) throw new Error("No image URL provided");
+  const success = await deleteFromCloudinary(url);
+  return { success };
+});
+
 export const loginUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const { phone, password } = data as unknown as { phone: string; password: string };
