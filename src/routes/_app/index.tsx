@@ -150,7 +150,7 @@ function HomePage() {
       <motion.div variants={fadeUp} className="px-4 pt-4 pb-1">
         {user ? (
           /* ── Logged-in: Player Welcome Card ── */
-          <div className="hud-card p-5">
+          <div id="tutorial-player-card" className="hud-card p-5">
             {/* Ambient glow blobs — use CSS variable opacity so they adapt */}
             <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-[40px] pointer-events-none"
                  style={{ background: "var(--primary)", opacity: 0.06 }} />
@@ -194,6 +194,7 @@ function HomePage() {
 
               {/* Balance pill */}
               <div
+                id="tutorial-balance-pill"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.navigate({ to: "/wallet" }); }}
                 className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border border-border bg-secondary/60 hover:border-primary/40 press-effect active:scale-95 transition-all cursor-pointer"
               >
@@ -301,7 +302,7 @@ function HomePage() {
           SECTION 3: Quick Actions (2×2 grid)
          ═══════════════════════════════════════════════ */}
       <motion.div variants={fadeUp} className="px-4 mb-5">
-        <div className="grid grid-cols-4 gap-2.5">
+        <div id="tutorial-quick-actions" className="grid grid-cols-4 gap-2.5">
           {[
             { icon: Wallet,  label: "Wallet",  to: "/wallet",      color: "#10b981" },
             { icon: Trophy,  label: "Matches", to: "/matches",     color: "var(--primary)" },
@@ -364,7 +365,7 @@ function HomePage() {
          ═══════════════════════════════════════════════ */}
       {featured.length > 0 && (
         <motion.div variants={fadeUp} className="mb-6">
-          <div className="px-4 flex items-center justify-between mb-3">
+          <div id="tutorial-featured" className="px-4 flex items-center justify-between mb-3">
             <div className="section-header">
               <Flame className="w-4 h-4" style={{ color: "var(--fire)" }} />
               <h2 className="font-display font-black text-sm text-foreground uppercase tracking-wide">Featured</h2>
@@ -390,7 +391,7 @@ function HomePage() {
          ═══════════════════════════════════════════════ */}
       {battles.length > 0 && (
         <motion.div variants={fadeUp} className="mb-6">
-          <div className="px-4 flex items-center justify-between mb-3">
+          <div id="tutorial-battles" className="px-4 flex items-center justify-between mb-3">
             <div className="section-header">
               <Zap className="w-4 h-4" style={{ color: "var(--primary)" }} />
               <h2 className="font-display font-black text-sm text-foreground uppercase tracking-wide">Active Battles</h2>
@@ -415,7 +416,7 @@ function HomePage() {
           SECTION 7: Mini Leaderboard with Rank Badges
          ═══════════════════════════════════════════════ */}
       {top3.length > 0 && (
-        <motion.div variants={fadeUp} className="px-4 mb-6">
+        <motion.div id="tutorial-leaderboard" variants={fadeUp} className="px-4 mb-6">
           <div className="flex items-center justify-between mb-3">
             <div className="section-header">
               <Crown className="w-4 h-4 text-amber-400" />

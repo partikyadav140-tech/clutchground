@@ -11,14 +11,16 @@ import { WalletDepositDialog } from "@/components/WalletDepositDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { processWithdrawal, getTransactionHistory, saveUpiId } from "../../api";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTutorialStore } from "../../lib/tutorial-store";
 
 export const Route = createFileRoute("/_app/wallet")({
   head: () => ({ meta: [{ title: "Wallet — CLUTCHGROUND" }] }),
   component: WalletPage,
-});
+ });
 
-function WalletPage() {
+ function WalletPage() {
   const { user, loading: authLoading, setUser } = useAuth();
+  const { isActive: isTutorialActive } = useTutorialStore();
   const router = useRouter();
 
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -124,6 +126,7 @@ function WalletPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           className="relative rounded-3xl p-6 overflow-hidden"
+          id="tutorial-wallet-balance"
           style={{ background: "linear-gradient(135deg, #0a1628 0%, #0d1f3c 50%, #0a1628 100%)" }}
         >
           {/* Decorative rings */}
@@ -163,7 +166,7 @@ function WalletPage() {
 
       {/* ── Payment Settings ── */}
       <div className="px-4 mb-5">
-        <div className="bg-card border border-border rounded-2xl p-4 shadow-card">
+        <div id="tutorial-wallet-upi" className="bg-card border border-border rounded-2xl p-4 shadow-card">
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-display font-black text-sm text-foreground uppercase tracking-wide">Primary UPI ID</h2>
             <button onClick={() => setUpiSettingsOpen(true)} className="text-[10px] font-black uppercase tracking-widest text-primary press-effect">
@@ -186,12 +189,12 @@ function WalletPage() {
 
       {/* ── Action Buttons ── */}
       <div className="px-4 mb-5">
-        <div className="grid grid-cols-2 gap-3">
-          <div onClick={(e) => { if (!primaryUpi) { e.preventDefault(); e.stopPropagation(); toast.error("Please set your Primary UPI ID first"); setUpiSettingsOpen(true); } }}>
+        <div id="tutorial-wallet-actions" className="grid grid-cols-2 gap-3">
+          <div id="tutorial-wallet-addcash" onClick={(e) => { if (!primaryUpi && !isTutorialActive) { e.preventDefault(); e.stopPropagation(); toast.error("Please set your Primary UPI ID first"); setUpiSettingsOpen(true); } }}>
             <WalletDepositDialog
               primaryUpi={primaryUpi}
               trigger={
-                <button disabled={!primaryUpi} className={`flex items-center gap-3 bg-card border border-border rounded-2xl p-4 w-full press-effect active:scale-95 transition-all shadow-card ${!primaryUpi ? "opacity-50 cursor-not-allowed" : "hover:border-primary/40"}`}>
+                <button disabled={!primaryUpi && !isTutorialActive} className={`flex items-center gap-3 bg-card border border-border rounded-2xl p-4 w-full press-effect active:scale-95 transition-all shadow-card ${(!primaryUpi && !isTutorialActive) ? "opacity-50 cursor-not-allowed" : "hover:border-primary/40"}`}>
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                     style={{ background: "rgba(0,200,255,0.1)", color: "var(--primary)" }}>
                     <ArrowDownToLine className="w-5 h-5" />
@@ -206,10 +209,11 @@ function WalletPage() {
             />
           </div>
           <button
+            id="tutorial-wallet-withdraw"
             onClick={() => {
-              if (!primaryUpi) { toast.error("Please set your Primary UPI ID first"); setUpiSettingsOpen(true); return; }
-              if (winBal <= 0) return toast.error("No winnings to withdraw. Win tournaments first!");
-              setUpiId(primaryUpi);
+              if (!primaryUpi && !isTutorialActive) { toast.error("Please set your Primary UPI ID first"); setUpiSettingsOpen(true); return; }
+              if (winBal <= 0 && !isTutorialActive) { toast.error("No winnings to withdraw. Win tournaments first!"); return; }
+              setUpiId(primaryUpi || "dummy@upi");
               setWithdrawOpen(true);
             }}
             className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 w-full press-effect active:scale-95 transition-all hover:border-emerald-500/40 shadow-card"
@@ -295,7 +299,7 @@ function WalletPage() {
 
       {/* ── Withdraw Dialog ── */}
       <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
-        <DialogContent className="rounded-3xl border border-border bg-card max-h-[90vh] overflow-y-auto">
+      <DialogContent id="tutorial-withdraw-dialog" className="rounded-3xl border border-border bg-card max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display font-black text-xl text-foreground">Withdraw Winnings</DialogTitle>
           </DialogHeader>

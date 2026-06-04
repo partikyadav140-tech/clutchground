@@ -208,6 +208,7 @@ export function Navbar() {
             {/* Balance pill */}
             {user && (
               <Link
+                id="tutorial-header-balance"
                 to="/wallet"
                 className="flex items-center gap-1.5 px-3 h-8 rounded-full border border-border bg-card hover:border-primary/50 transition-all active:scale-95 press-effect"
               >
@@ -220,6 +221,7 @@ export function Navbar() {
 
             {/* Chat */}
             <Link
+              id="tutorial-header-chat"
               to="/chat"
               className="relative w-8 h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
             >
@@ -236,6 +238,7 @@ export function Navbar() {
 
             {/* Notifications */}
             <Link
+              id="tutorial-header-bell"
               to="/notifications"
               className="relative w-8 h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
             >
@@ -252,7 +255,7 @@ export function Navbar() {
 
             {/* Theme toggle */}
             <button
-              id="theme-toggle-btn"
+              id="tutorial-header-theme"
               onClick={toggleTheme}
               aria-label="Toggle theme"
               className="w-8 h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
@@ -286,6 +289,7 @@ export function Navbar() {
             return (
               <Link
                 key={to}
+                id={`tutorial-nav-${label.toLowerCase()}`}
                 to={to}
                 className="relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full press-effect active:scale-90 transition-all duration-150"
               >

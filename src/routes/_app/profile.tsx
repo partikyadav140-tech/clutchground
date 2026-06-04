@@ -3,7 +3,7 @@ import Cropper from "react-easy-crop";
 import {
   Trophy, Edit3, Share2, Users, Bell, User, ChevronRight,
   Wallet, LogOut, ShieldAlert, MessageCircle, Settings, Star, Gamepad2,
-  Phone, FileText, Upload,
+  Phone, FileText, Upload, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "../../lib/auth-client";
@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { motion } from "framer-motion";
 import { useTheme } from "../../lib/theme";
 import { Sun, Moon } from "lucide-react";
+import { useTutorialStore } from "../../lib/tutorial-store";
 
 export const Route = createFileRoute("/_app/profile")({
   head: () => ({ meta: [{ title: "Profile — CLUTCHGROUND" }] }),
@@ -120,12 +121,14 @@ function ProfilePage() {
           style={{ background: "var(--primary)" }} />
 
         <motion.div
+          id="tutorial-profile-card"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           className="relative bg-card rounded-3xl border border-border p-5 shadow-card"
         >
           {/* Edit button */}
           <button
+            id="tutorial-profile-edit"
             onClick={() => setIsEditing(true)}
             className="absolute top-4 right-4 w-9 h-9 rounded-2xl bg-secondary border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-all press-effect active:scale-90"
           >
@@ -181,7 +184,7 @@ function ProfilePage() {
       <div className="px-4 space-y-5 mt-2">
         {/* Account */}
         <MenuSection label="Account">
-          <MenuItem icon={Wallet}  iconBg="rgba(16,185,129,0.12)"  iconColor="#10b981" label="Wallet & Balance" to="/wallet"
+          <MenuItem id="tutorial-profile-wallet" icon={Wallet}  iconBg="rgba(16,185,129,0.12)"  iconColor="#10b981" label="Wallet & Balance" to="/wallet"
             right={<span className="text-xs font-black flex items-center gap-1" style={{ color: "var(--primary)" }}><GodCoin className="w-3 h-3" />{balance}</span>} />
           <MenuItem icon={Users}   iconBg="rgba(167,139,250,0.12)" iconColor="#a78bfa" label="Squad Management" to="/teams" />
           <MenuItem icon={Trophy}  iconBg="rgba(255,107,0,0.12)"   iconColor="var(--fire)" label="Match History" to="/matches" />
@@ -221,6 +224,22 @@ function ProfilePage() {
               <Share2 className="w-4 h-4" />
             </div>
             <span className="flex-1 text-sm font-bold text-foreground text-left">Share Profile</span>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </button>
+
+          {/* Replay Tutorial */}
+          <button
+            onClick={() => {
+              useTutorialStore.getState().replayTutorial();
+              router.navigate({ to: "/" });
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-secondary/50 transition-colors"
+          >
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b" }}>
+              <RefreshCw className="w-4 h-4" />
+            </div>
+            <span className="flex-1 text-sm font-bold text-foreground text-left">Replay Tutorial</span>
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </button>
         </MenuSection>
@@ -325,11 +344,11 @@ function MenuSection({ label, children, labelColor }: { label: string; children:
   );
 }
 
-function MenuItem({ icon: Icon, iconBg, iconColor, label, to, right }: {
-  icon: any; iconBg: string; iconColor: string; label: string; to: string; right?: React.ReactNode;
+function MenuItem({ icon: Icon, iconBg, iconColor, label, to, right, id }: {
+  icon: any; iconBg: string; iconColor: string; label: string; to: string; right?: React.ReactNode; id?: string;
 }) {
   return (
-    <Link to={to} className="flex items-center gap-3 px-4 py-3.5 active:bg-secondary/50 transition-colors">
+    <Link to={to} id={id} className="flex items-center gap-3 px-4 py-3.5 active:bg-secondary/50 transition-colors">
       <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: iconBg, color: iconColor }}>
         <Icon className="w-4 h-4" />
       </div>

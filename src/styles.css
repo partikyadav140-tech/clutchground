@@ -693,3 +693,170 @@
   border-radius: 8px !important;
   padding: 6px 16px !important;
 }
+
+/* ══════════════════════════════════════════════════
+   LIVE TUTORIAL SYSTEM
+══════════════════════════════════════════════════ */
+
+/* ── Spotlight animated glow ring ── */
+.tutorial-spotlight-ring {
+  border: 2px solid var(--primary);
+  box-shadow:
+    0 0 0 1px rgba(0, 200, 255, 0.1),
+    0 0 20px rgba(0, 200, 255, 0.25),
+    0 0 40px rgba(0, 200, 255, 0.1),
+    inset 0 0 20px rgba(0, 200, 255, 0.05);
+  animation: tutorialRingPulse 2s ease-in-out infinite;
+}
+.light .tutorial-spotlight-ring {
+  border-color: var(--primary);
+  box-shadow:
+    0 0 0 1px rgba(0, 153, 204, 0.15),
+    0 0 16px rgba(0, 153, 204, 0.2),
+    0 0 32px rgba(0, 153, 204, 0.08);
+}
+
+@keyframes tutorialRingPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(0, 200, 255, 0.1),
+      0 0 20px rgba(0, 200, 255, 0.25),
+      0 0 40px rgba(0, 200, 255, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px rgba(0, 200, 255, 0.2),
+      0 0 30px rgba(0, 200, 255, 0.4),
+      0 0 60px rgba(0, 200, 255, 0.15);
+  }
+}
+
+/* ── Tutorial Tooltip — Glassmorphism card ── */
+.tutorial-tooltip {
+  background: var(--card);
+  border: 1.5px solid var(--primary);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow:
+    var(--shadow-primary),
+    0 24px 48px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  font-family: var(--font-sans);
+  position: relative;
+  overflow: hidden;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* Dark mode tooltip glow */
+.dark .tutorial-tooltip {
+  background: rgba(13, 20, 32, 0.95);
+  border-color: var(--primary);
+}
+
+/* Light mode tooltip */
+.light .tutorial-tooltip {
+  background: rgba(255, 255, 255, 0.97);
+  border-color: var(--primary);
+  box-shadow:
+    var(--shadow-primary),
+    0 16px 40px rgba(0, 0, 0, 0.12);
+}
+
+/* Subtle shimmer effect on tooltip background */
+.tutorial-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 200, 255, 0.03),
+    transparent
+  );
+  animation: tutorialShimmer 4s ease-in-out infinite;
+  pointer-events: none;
+}
+.light .tutorial-tooltip::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 153, 204, 0.04),
+    transparent
+  );
+}
+
+@keyframes tutorialShimmer {
+  0% { left: -100%; }
+  50% { left: 200%; }
+  100% { left: 200%; }
+}
+
+/* ──────────────────────────────────────────────────
+   COMPACT DIALOG STYLES (Mobile Keyboard Open)
+   ────────────────────────────────────────────────── */
+@media (max-height: 640px) {
+  #tutorial-withdraw-dialog,
+  #tutorial-deposit-dialog {
+    padding: 12px 16px 16px 16px !important;
+    gap: 8px !important;
+  }
+  
+  #tutorial-withdraw-dialog .space-y-3,
+  #tutorial-deposit-dialog .space-y-4 {
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+  }
+
+  #tutorial-withdraw-dialog input,
+  #tutorial-deposit-dialog input {
+    height: 38px !important;
+    border-radius: 12px !important;
+    font-size: 13px !important;
+    padding-left: 38px !important;
+  }
+  
+  #tutorial-withdraw-dialog .relative svg,
+  #tutorial-deposit-dialog .relative svg {
+    left: 12px !important;
+    width: 14px !important;
+    height: 14px !important;
+  }
+  
+  #tutorial-withdraw-dialog label,
+  #tutorial-deposit-dialog label {
+    margin-bottom: 4px !important;
+    font-size: 8px !important;
+  }
+
+  #tutorial-withdraw-dialog button,
+  #tutorial-deposit-dialog button {
+    height: 40px !important;
+    border-radius: 12px !important;
+    font-size: 11px !important;
+    margin-top: 4px !important;
+  }
+  
+  #tutorial-withdraw-dialog .flex.gap-2.mt-2 button,
+  #tutorial-deposit-dialog .grid.grid-cols-3.gap-2 button {
+    height: 28px !important;
+    font-size: 11px !important;
+    margin-top: 0 !important;
+    border-radius: 8px !important;
+  }
+  
+  #tutorial-withdraw-dialog .mb-3.p-3 {
+    margin-bottom: 6px !important;
+    padding: 6px 12px !important;
+  }
+  
+  #tutorial-withdraw-dialog .mb-3.p-3 span.text-2xl {
+    font-size: 1.25rem !important;
+  }
+}
+

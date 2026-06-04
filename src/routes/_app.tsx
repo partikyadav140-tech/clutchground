@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { Suspense, useEffect, useLayoutEffect, useRef } from "react";
 import { Navbar } from "@/components/Navbar";
+import { LiveTutorial } from "@/components/LiveTutorial";
 
 import { getSiteSettings } from "../api";
 
@@ -108,6 +109,9 @@ export const Route = createFileRoute("/_app")({
             </Suspense>
           </div>
         </main>
+
+        {/* Live Interactive Tutorial */}
+        <LiveTutorial />
       </div>
     );
   },
