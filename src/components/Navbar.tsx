@@ -181,10 +181,10 @@ export function Navbar() {
   }, [user]);
 
   const cleanPath = path === "/" ? "/" : path.replace(/\/$/, "");
-  const isMain = MAIN_TABS.includes(cleanPath);
   const isAuth = ["/login", "/signup"].includes(cleanPath);
   // Hide bottom nav on ticket/chat detail pages (like WhatsApp)
   const isTicketChat = /^\/support\/[^/]+/.test(cleanPath);
+  const isChatPage = cleanPath.startsWith("/support/") || cleanPath.startsWith("/admin/tickets/") || cleanPath === "/chat";
 
   if (isAuth) return null;
 
@@ -192,12 +192,12 @@ export function Navbar() {
     <>
       {/* ══════════════════════════════════════════════════════
           TOP HEADER
-          • Mobile  → only visible on main tabs (isMain)
+          • Mobile  → visible on all standard pages
           • Desktop → always visible on non-auth pages
          ══════════════════════════════════════════════════════ */}
       <header
         className={`absolute top-0 inset-x-0 z-50 app-header ${
-          isMain ? "block" : "hidden lg:block"
+          isChatPage ? "hidden lg:block" : "block"
         }`}
       >
         {/* Inner content — constrained to max-w-5xl on desktop */}

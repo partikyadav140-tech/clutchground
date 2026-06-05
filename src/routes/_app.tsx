@@ -28,7 +28,7 @@ export const Route = createFileRoute("/_app")({
     const scrollRef = useRef<HTMLElement>(null);
 
     const isAuthRoute = ["/login", "/signup"].includes(cleanPath);
-    const isMainTab   = ["/", "/tournaments", "/matches", "/leaderboard", "/profile", "/wallet"].includes(cleanPath);
+
     const isChatPage  = cleanPath.startsWith("/support/") || cleanPath.startsWith("/admin/tickets/") || cleanPath === "/chat";
 
     const announcement = settings?.announcement;
@@ -67,11 +67,11 @@ export const Route = createFileRoute("/_app")({
           className={[
             "flex-1 overflow-x-hidden hide-scrollbar relative",
             isChatPage ? "h-full flex flex-col overflow-hidden" : "overflow-y-auto",
-            /* Mobile: pt-20 only on main tabs | Desktop (lg+): pt-16 on ALL non-auth pages */
-            !isAuthRoute && !isChatPage
-              ? isMainTab
-                ? "pt-20 lg:pt-16"      /* mobile main-tab pages already have header */
-                : "lg:pt-16"            /* sub-pages: header hidden on mobile, shown on desktop */
+            /* Mobile: pt-20 on ALL non-auth & non-chat pages | Desktop: pt-16 on ALL non-auth pages */
+            !isAuthRoute
+              ? isChatPage
+                ? "lg:pt-16"            /* chat pages: header hidden on mobile, shown on desktop */
+                : "pt-20 lg:pt-16"      /* standard pages: header shown on mobile and desktop */
               : "",
             /* Mobile: bottom-nav padding | Desktop: no bottom nav */
             !isAuthRoute && !isChatPage ? "pb-[60px] lg:pb-0" : "",
