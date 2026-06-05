@@ -93,10 +93,18 @@ function drawStandings(
   results: ResultRow[]
 ) {
   const showPoints = !["solo", "duo"].includes(mode?.toLowerCase() || "");
+  const isSoloOrDuo = ["solo", "duo"].includes(mode?.toLowerCase() || "");
 
   const sortedData = [...results].sort((a, b) => {
-    if (b.points !== a.points) return (b.points || 0) - (a.points || 0);
-    return (b.kills || 0) - (a.kills || 0);
+    if (isSoloOrDuo) {
+      const posA = a.position || 999999;
+      const posB = b.position || 999999;
+      if (posA !== posB) return posA - posB;
+      return (b.kills || 0) - (a.kills || 0);
+    } else {
+      if (b.points !== a.points) return (b.points || 0) - (a.points || 0);
+      return (b.kills || 0) - (a.kills || 0);
+    }
   });
 
   const SCALE = 2;

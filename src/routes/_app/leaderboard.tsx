@@ -14,7 +14,13 @@ export const Route = createFileRoute("/_app/leaderboard")({
 function LeaderboardPage() {
   const leaderboard = Route.useLoaderData() as any[];
   const { user } = useAuth();
-  const myEntry = user ? leaderboard.find((p: any) => p.user_id === user.id) : null;
+  const myEntry = user
+    ? leaderboard.find(
+        (p: any) =>
+          p.user_id === user.id ||
+          (p.member_ids && p.member_ids.includes(user.id))
+      )
+    : null;
 
   const top3 = leaderboard.slice(0, 3);
   const rest = leaderboard.slice(3);
@@ -37,6 +43,25 @@ function LeaderboardPage() {
           </div>
           <h1 className="font-display font-black text-3xl text-foreground">Leaderboard</h1>
           <p className="text-sm text-muted-foreground mt-1 font-semibold">Top warriors of the arena</p>
+        </div>
+      </div>
+
+      {/* ── Weekly Leaderboard Reward Banner ── */}
+      <div className="px-4 mb-5" id="tutorial-leaderboard-prize">
+        <div className="relative overflow-hidden rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 flex items-start gap-3 shadow-sm shadow-amber-500/5">
+          {/* Ambient light glow */}
+          <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl pointer-events-none bg-amber-500/10" />
+          
+          <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0 border border-amber-500/20 text-amber-500">
+            <Trophy className="w-4 h-4" />
+          </div>
+          
+          <div className="flex-1">
+            <h4 className="font-display font-black text-[11px] text-amber-500 uppercase tracking-widest mb-1">Weekly Championship Reward</h4>
+            <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
+              The team or player securing the <span className="text-amber-500 font-bold">1st position</span> on the leaderboard at the weekly reset (Sunday 11:59 PM) will be rewarded with <span className="text-amber-500 font-bold">500 CG Coins</span>!
+            </p>
+          </div>
         </div>
       </div>
 
@@ -108,7 +133,10 @@ function LeaderboardPage() {
 
             <div>
               {leaderboard.map((p: any, i: number) => {
-                const isMe = user && p.user_id === user.id;
+                const isMe =
+                  user &&
+                  (p.user_id === user.id ||
+                    (p.member_ids && p.member_ids.includes(user.id)));
                 return (
                   <motion.div
                     key={p.user_id || i}

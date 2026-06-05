@@ -45,7 +45,7 @@ export const Route = createFileRoute("/_app")({
 
     return (
       <div className="h-[100dvh] flex flex-col bg-background text-foreground overflow-hidden">
-        {!isAuthRoute && <Navbar />}
+
 
         {announcement && !isAuthRoute && (
           <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-500 px-4 py-2 text-xs font-semibold flex items-center justify-center gap-2 relative z-50">
@@ -67,16 +67,18 @@ export const Route = createFileRoute("/_app")({
           className={[
             "flex-1 overflow-x-hidden hide-scrollbar relative",
             isChatPage ? "h-full flex flex-col overflow-hidden" : "overflow-y-auto",
-            /* Mobile: pt-16 only on main tabs | Desktop (lg+): pt-16 on ALL non-auth pages */
+            /* Mobile: pt-20 only on main tabs | Desktop (lg+): pt-16 on ALL non-auth pages */
             !isAuthRoute && !isChatPage
               ? isMainTab
-                ? "pt-16"               /* mobile main-tab pages already have header */
+                ? "pt-20 lg:pt-16"      /* mobile main-tab pages already have header */
                 : "lg:pt-16"            /* sub-pages: header hidden on mobile, shown on desktop */
               : "",
             /* Mobile: bottom-nav padding | Desktop: no bottom nav */
             !isAuthRoute && !isChatPage ? "pb-[60px] lg:pb-0" : "",
           ].filter(Boolean).join(" ")}
         >
+          {!isAuthRoute && <Navbar />}
+
           {/*
             Container width:
             • Mobile  → max-w-[480px] (unchanged — keeps the native app feel)

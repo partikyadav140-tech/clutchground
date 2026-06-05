@@ -134,7 +134,7 @@ export function WalletDepositDialog({
     <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetDialog(); }}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
 
-      <DialogContent id="tutorial-deposit-dialog" className="max-h-[90vh] overflow-y-auto">
+      <DialogContent id="tutorial-deposit-dialog" className="max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
         {/* accent bar */}
         <div className="absolute inset-x-0 top-0 h-0.5 bg-fire-gradient rounded-t-lg" />
 

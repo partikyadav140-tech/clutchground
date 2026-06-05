@@ -186,7 +186,7 @@ function ProfilePage() {
         <MenuSection label="Account">
           <MenuItem id="tutorial-profile-wallet" icon={Wallet}  iconBg="rgba(16,185,129,0.12)"  iconColor="#10b981" label="Wallet & Balance" to="/wallet"
             right={<span className="text-xs font-black flex items-center gap-1" style={{ color: "var(--primary)" }}><GodCoin className="w-3 h-3" />{balance}</span>} />
-          <MenuItem icon={Users}   iconBg="rgba(167,139,250,0.12)" iconColor="#a78bfa" label="Squad Management" to="/teams" />
+          <MenuItem id="tutorial-profile-squad-management" icon={Users}   iconBg="rgba(167,139,250,0.12)" iconColor="#a78bfa" label="Squad Management" to="/teams" />
           <MenuItem icon={Trophy}  iconBg="rgba(255,107,0,0.12)"   iconColor="var(--fire)" label="Match History" to="/matches" />
         </MenuSection>
 
@@ -262,7 +262,7 @@ function ProfilePage() {
 
       {/* ── Edit Profile Dialog ── */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-3xl border border-border bg-card">
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-3xl border border-border bg-card" onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="font-display font-black text-xl text-foreground">Edit Profile</DialogTitle>
           </DialogHeader>

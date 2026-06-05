@@ -14,8 +14,10 @@ import {
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { GodCoin } from "./GodCoin";
+import { TicketIcon } from "./TicketIcon";
 import { useAuth } from "../lib/auth-client";
 import { useTheme } from "../lib/theme";
+import { useTutorialStore } from "../lib/tutorial-store";
 import { getNotifications, getUnreadChatCount } from "../api";
 import {
   requestBrowserNotificationPermission,
@@ -46,6 +48,8 @@ export function Navbar() {
   const [unreadChats, setUnreadChats] = useState(0);
   const [showPromo, setShowPromo] = useState(false);
   const notifsRef = useRef<string[]>([]);
+  const { isActive: isTutorialActive, isCompleted: isTutorialCompleted } = useTutorialStore();
+  const prevActiveRef = useRef(isTutorialActive);
 
   const balance = user
     ? ((user as { deposit_balance?: number }).deposit_balance || 0) +
@@ -71,21 +75,47 @@ export function Navbar() {
     }
   };
 
+  // Effect 1: Detect transition from active -> inactive tutorial (completed or skipped)
   useEffect(() => {
     if (!user) return;
-    if (typeof window !== "undefined" && "Notification" in window) {
-      if (Notification.permission !== "granted") {
+
+    if (prevActiveRef.current && !isTutorialActive && isTutorialCompleted) {
+      const timer = setTimeout(() => {
+        if (typeof window !== "undefined" && "Notification" in window && Notification.permission !== "granted") {
+          const sessionPrompt = sessionStorage.getItem("notif_prompt_shown_session");
+          if (!sessionPrompt) {
+            setShowPromo(true);
+            sessionStorage.setItem("notif_prompt_shown_session", "true");
+          }
+        }
+      }, 10000); // 10 seconds delay after tutorial ends
+      return () => clearTimeout(timer);
+    }
+
+    prevActiveRef.current = isTutorialActive;
+  }, [isTutorialActive, isTutorialCompleted, user]);
+
+  // Effect 2: Show notification prompt for returning users who have already completed the tutorial
+  useEffect(() => {
+    if (!user) return;
+    if (isTutorialActive) return;
+
+    const isCompletedNow = localStorage.getItem("clutchground_live_tutorial_completed") === "true" ||
+                           localStorage.getItem("god_esports_tutorial_driver_seen") === "true";
+
+    if (isCompletedNow) {
+      if (typeof window !== "undefined" && "Notification" in window && Notification.permission !== "granted") {
         const sessionPrompt = sessionStorage.getItem("notif_prompt_shown_session");
         if (!sessionPrompt) {
           const timer = setTimeout(() => {
             setShowPromo(true);
             sessionStorage.setItem("notif_prompt_shown_session", "true");
-          }, 1500);
+          }, 5000); // 5 seconds delay for returning users
           return () => clearTimeout(timer);
         }
       }
     }
-  }, [user]);
+  }, [user, isTutorialActive]);
 
   useEffect(() => {
     if (!user) return;
@@ -166,20 +196,15 @@ export function Navbar() {
           • Desktop → always visible on non-auth pages
          ══════════════════════════════════════════════════════ */}
       <header
-        className={`absolute top-0 inset-x-0 z-50 border-b border-border/60 ${
+        className={`absolute top-0 inset-x-0 z-50 app-header ${
           isMain ? "block" : "hidden lg:block"
         }`}
-        style={{
-          background: theme === "dark" ? "rgba(8,12,20,0.92)" : "rgba(255,255,255,0.92)",
-          backdropFilter: isMain ? "blur(20px)" : undefined,
-          WebkitBackdropFilter: isMain ? "blur(20px)" : undefined,
-        }}
       >
         {/* Inner content — constrained to max-w-5xl on desktop */}
-        <div className="flex items-center justify-between px-4 h-16 max-w-[480px] lg:max-w-5xl mx-auto w-full">
+        <div className="flex items-center justify-between px-4 h-20 lg:h-16 max-w-[480px] lg:max-w-5xl mx-auto w-full">
           {/* Logo */}
           <Link to="/" className="flex items-center active:opacity-80 transition-opacity">
-            <Logo size={44} withText={false} />
+            <Logo withText={false} className="w-[76px] h-[76px] lg:w-[44px] lg:h-[44px]" />
           </Link>
 
           {/* ── Desktop horizontal nav (lg+ only) ── */}
@@ -205,17 +230,15 @@ export function Navbar() {
 
           {/* Right actions */}
           <div className="flex items-center gap-2">
-            {/* Balance pill */}
+            {/* Support Tickets button with premium ticket icon */}
             {user && (
               <Link
-                id="tutorial-header-balance"
-                to="/wallet"
-                className="flex items-center gap-1.5 px-3 h-8 rounded-full border border-border bg-card hover:border-primary/50 transition-all active:scale-95 press-effect"
+                id="header-support-tickets"
+                to="/support"
+                className="relative w-10 h-10 lg:w-8 lg:h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
+                title="Support Tickets"
               >
-                <GodCoin className="w-3.5 h-3.5" />
-                <span className="text-xs font-black font-display text-foreground tabular-nums">
-                  {balance}
-                </span>
+                <TicketIcon className="w-[22px] h-[22px] lg:w-4 lg:h-4" />
               </Link>
             )}
 
@@ -223,12 +246,12 @@ export function Navbar() {
             <Link
               id="tutorial-header-chat"
               to="/chat"
-              className="relative w-8 h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
+              className="relative w-10 h-10 lg:w-8 lg:h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
             >
-              <MessageCircle className="w-4 h-4" />
+              <MessageCircle className="w-[22px] h-[22px] lg:w-4 lg:h-4" />
               {unreadChats > 0 && (
                 <span
-                  className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[8px] font-black grid place-items-center"
+                  className="absolute -top-0.5 -right-0.5 w-5 h-5 lg:w-4 lg:h-4 rounded-full text-[9px] lg:text-[8px] font-black grid place-items-center"
                   style={{ background: "var(--primary)", color: "#fff" }}
                 >
                   {unreadChats > 9 ? "9+" : unreadChats}
@@ -240,12 +263,12 @@ export function Navbar() {
             <Link
               id="tutorial-header-bell"
               to="/notifications"
-              className="relative w-8 h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
+              className="relative w-10 h-10 lg:w-8 lg:h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
             >
-              <Bell className="w-4 h-4" />
+              <Bell className="w-[22px] h-[22px] lg:w-4 lg:h-4" />
               {unread > 0 && (
                 <span
-                  className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[8px] font-black grid place-items-center"
+                  className="absolute -top-0.5 -right-0.5 w-5 h-5 lg:w-4 lg:h-4 rounded-full text-[9px] lg:text-[8px] font-black grid place-items-center"
                   style={{ background: "var(--fire)", color: "#fff" }}
                 >
                   {unread > 9 ? "9+" : unread}
@@ -258,12 +281,12 @@ export function Navbar() {
               id="tutorial-header-theme"
               onClick={toggleTheme}
               aria-label="Toggle theme"
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
+              className="w-10 h-10 lg:w-8 lg:h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
             >
               {theme === "dark" ? (
-                <Sun className="w-3.5 h-3.5" />
+                <Sun className="w-[20px] h-[20px] lg:w-3.5 lg:h-3.5" />
               ) : (
-                <Moon className="w-3.5 h-3.5" />
+                <Moon className="w-[20px] h-[20px] lg:w-3.5 lg:h-3.5" />
               )}
             </button>
           </div>
@@ -360,7 +383,10 @@ export function Navbar() {
                   Allow Notifications
                 </button>
                 <button
-                  onClick={() => setShowPromo(false)}
+                  onClick={() => {
+                    setShowPromo(false);
+                    sessionStorage.setItem("notif_prompt_shown_session", "true");
+                  }}
                   className="w-full h-12 rounded-xl font-black text-xs uppercase tracking-widest border border-border bg-secondary/50 text-muted-foreground hover:text-foreground press-effect transition-all"
                 >
                   Maybe Later

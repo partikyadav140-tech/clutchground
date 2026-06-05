@@ -3,13 +3,21 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Download, X } from "lucide-react";
 import { toast } from "sonner";
 import { Logo } from "@/components/Logo";
+import { useAuth } from "../lib/auth-client";
 
 export function InstallPwaDialog() {
+  const { user } = useAuth();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
   useEffect(() => {
+    // Only show the dialog if user is NOT logged in
+    if (user) {
+      setShowDialog(false);
+      return;
+    }
+
     const hasPrompted = localStorage.getItem("pwaPrompted");
 
     if (hasPrompted !== "true") {
@@ -18,7 +26,7 @@ export function InstallPwaDialog() {
       }, 2500);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: any) => {

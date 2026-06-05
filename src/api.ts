@@ -1731,44 +1731,52 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
   const rows = (await db
     .prepare(
       `
+      WITH team_stats AS (
+        SELECT 
+          COALESCE(teams.name, r.team_name) as team_name_key,
+          COALESCE(MAX(teams.leader_id), MIN(r.user_id)) as leader_user_id,
+          MAX(teams.logo) as team_logo,
+          COALESCE(SUM(r.kills), 0) as total_kills,
+          COALESCE(SUM(r.points), 0) as total_points,
+          SUM(CASE WHEN r.position = 1 THEN 1 ELSE 0 END) as total_wins
+        FROM registrations r
+        INNER JOIN tournaments t ON t.id = r.tournament_id AND t.mode = 'Squad'
+        LEFT JOIN teams ON teams.name = r.team_name
+        WHERE r.created_at >= date_trunc('week', CURRENT_TIMESTAMP)
+        GROUP BY COALESCE(teams.name, r.team_name)
+      )
       SELECT
-        u.id as user_id,
-        u.username as ign,
-        COALESCE(SUM(r.kills), 0) as kills,
-        COALESCE(MAX(lo.points), COALESCE(SUM(r.points), 0)) as points,
-        SUM(CASE WHEN r.position = 1 THEN 1 ELSE 0 END) as wins
-      FROM users u
-      INNER JOIN registrations r ON r.user_id = u.id AND r.created_at >= date_trunc('week', CURRENT_TIMESTAMP)
-      INNER JOIN tournaments t ON t.id = r.tournament_id AND t.mode = 'Squad'
-      LEFT JOIN leaderboard_overrides lo ON lo.user_id = u.id AND lo.week_start = date_trunc('week', CURRENT_TIMESTAMP)
-      GROUP BY u.id, u.username
-      HAVING COALESCE(MAX(lo.points), COALESCE(SUM(r.points), 0)) > 0
+        ts.leader_user_id as user_id,
+        ts.team_name_key as ign,
+        ts.team_name_key as team,
+        ts.team_logo as logo,
+        ts.total_kills as kills,
+        COALESCE(lo.points, ts.total_points) as points,
+        ts.total_wins as wins
+      FROM team_stats ts
+      LEFT JOIN leaderboard_overrides lo ON lo.user_id = ts.leader_user_id AND lo.week_start = date_trunc('week', CURRENT_TIMESTAMP)
+      WHERE COALESCE(lo.points, ts.total_points) > 0
       ORDER BY points DESC, kills DESC
     `,
     )
     .all()) as any[];
 
   for (let i = 0; i < rows.length; i++) {
-    const t = (await db
-      .prepare(
-        `
-        SELECT t.name, t.logo
-        FROM team_members tm
-        JOIN teams t ON t.id = tm.team_id
-        WHERE tm.user_id = ?
-      `,
-      )
-      .get(rows[i].user_id)) as any;
-    if (!t) {
-      const t2 = (await db
-        .prepare("SELECT name, logo FROM teams WHERE leader_id = ?")
-        .get(rows[i].user_id)) as any;
-      rows[i].team = t2 ? t2.name : "Free Agent";
-      rows[i].logo = t2 ? t2.logo : null;
-    } else {
-      rows[i].team = t.name;
-      rows[i].logo = t.logo;
-    }
+    // Get all user_ids belonging to this team so any team member can see their rank highlighted
+    const members = (await db.prepare(`
+      SELECT tm.user_id
+      FROM team_members tm
+      JOIN teams t ON t.id = tm.team_id
+      WHERE t.name = ?
+    `).all(rows[i].team)) as any[];
+
+    const memberIds = new Set<number>();
+    if (rows[i].user_id) memberIds.add(rows[i].user_id);
+    members.forEach(m => {
+      if (m.user_id) memberIds.add(m.user_id);
+    });
+
+    rows[i].member_ids = Array.from(memberIds);
     rows[i].rank = i + 1;
 
     if (rows[i].rank === 1) rows[i].badge = "god";

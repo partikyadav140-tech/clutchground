@@ -12,16 +12,17 @@ export function GodCoin({ className = "w-5 h-5" }: { className?: string }) {
       <circle cx="12" cy="12" r="11" fill="url(#goldOuter)" stroke="#FEF08A" strokeWidth="0.5" />
       <circle cx="12" cy="12" r="8.5" fill="url(#goldInner)" />
       <text
-        x="12.5"
-        y="16.5"
+        x="12"
+        y="12"
         fontFamily="Orbitron, Impact, sans-serif"
-        fontSize="12"
+        fontSize="8"
         fontWeight="900"
         fill="#451a03"
         textAnchor="middle"
-        style={{ textShadow: "0px 1px 0px rgba(254, 240, 138, 0.8)" }}
+        dominantBaseline="central"
+        style={{ textShadow: "0px 0.5px 0px rgba(254, 240, 138, 0.8)" }}
       >
-        G
+        CG
       </text>
       <defs>
         <linearGradient id="goldOuter" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">

@@ -299,7 +299,7 @@ export const Route = createFileRoute("/_app/wallet")({
 
       {/* ── Withdraw Dialog ── */}
       <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
-      <DialogContent id="tutorial-withdraw-dialog" className="rounded-3xl border border-border bg-card max-h-[90vh] overflow-y-auto">
+      <DialogContent id="tutorial-withdraw-dialog" className="rounded-3xl border border-border bg-card max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="font-display font-black text-xl text-foreground">Withdraw Winnings</DialogTitle>
           </DialogHeader>
@@ -382,7 +382,7 @@ export const Route = createFileRoute("/_app/wallet")({
 
       {/* ── UPI Settings Dialog ── */}
       <Dialog open={upiSettingsOpen} onOpenChange={setUpiSettingsOpen}>
-        <DialogContent className="rounded-3xl border border-border bg-card">
+        <DialogContent className="rounded-3xl border border-border bg-card" onOpenAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="font-display font-black text-xl text-foreground">Payment Settings</DialogTitle>
           </DialogHeader>

@@ -1,7 +1,7 @@
 import logo from "@/assets/new-logo.png";
 import { Link } from "@tanstack/react-router";
 
-export function Logo({ size = 40, withText = true }: { size?: number; withText?: boolean }) {
+export function Logo({ size = 40, withText = true, className }: { size?: number; withText?: boolean; className?: string }) {
   return (
     <a href="/" className="flex items-center gap-3 group">
       <img
@@ -9,8 +9,8 @@ export function Logo({ size = 40, withText = true }: { size?: number; withText?:
         alt="CLUTCHGROUND"
         width={size}
         height={size}
-        style={{ width: size, height: size }}
-        className="object-contain drop-shadow-[0_0_12px_oklch(0.72_0.22_40/0.6)] group-hover:drop-shadow-[0_0_20px_oklch(0.72_0.22_40/0.9)] transition-all duration-300"
+        style={className ? undefined : { width: size, height: size }}
+        className={`object-contain logo-glow ${className || ""}`}
       />
       {withText && (
         <div className="hidden sm:flex items-center gap-2">

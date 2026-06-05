@@ -860,3 +860,40 @@
   }
 }
 
+/* ── Logo Glow & Contrast ── */
+.logo-glow {
+  filter: drop-shadow(0 0 12px rgba(255, 107, 0, 0.45));
+  transition: all 0.3s ease;
+}
+.light .logo-glow {
+  filter: drop-shadow(0 2px 8px rgba(8, 12, 20, 0.35)) drop-shadow(0 0 6px rgba(255, 107, 0, 0.25));
+}
+.logo-glow:hover {
+  filter: drop-shadow(0 0 20px rgba(255, 107, 0, 0.75));
+}
+.light .logo-glow:hover {
+  filter: drop-shadow(0 3px 14px rgba(8, 12, 20, 0.45)) drop-shadow(0 0 10px rgba(255, 107, 0, 0.35));
+}
+
+/* ── Top Header Navigation blending ── */
+.app-header {
+  border-bottom: none !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+@media (min-width: 1024px) {
+  .app-header {
+    border-bottom: 1px solid var(--border) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+  }
+  .dark .app-header {
+    background-color: rgba(8, 12, 20, 0.92) !important;
+  }
+  .light .app-header {
+    background-color: rgba(255, 255, 255, 0.92) !important;
+  }
+}
+

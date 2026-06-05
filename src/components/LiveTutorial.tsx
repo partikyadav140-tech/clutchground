@@ -369,8 +369,8 @@ export function LiveTutorial() {
                 </button>
               )}
 
-              {/* Main action button (only shown if not an action step or if it is the complete step) */}
-              {(!isActionStep || isComplete) && (
+              {/* Main action button */}
+              {(!isActionStep || isComplete) ? (
                 <button
                   onClick={isComplete ? completeTutorial : handleNext}
                   className="flex-1 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white flex items-center justify-center gap-1.5 press-effect active:scale-95 transition-all"
@@ -396,6 +396,17 @@ export function LiveTutorial() {
                       <ChevronRight className="w-3.5 h-3.5" />
                     </>
                   )}
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="flex-1 h-10 rounded-xl text-[8px] font-black uppercase tracking-wider text-white flex items-center justify-center text-center cursor-not-allowed opacity-85 px-2 transition-all"
+                  style={{
+                    background: "var(--gradient-primary)",
+                    color: "#fff",
+                  }}
+                >
+                  Click on highlighted area to continue
                 </button>
               )}
             </div>

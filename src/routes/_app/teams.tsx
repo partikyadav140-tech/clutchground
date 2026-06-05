@@ -51,6 +51,8 @@ function TeamsPage() {
   const [myTeamRequest, setMyTeamRequest] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isEditingTeam, setIsEditingTeam] = useState(false);
+  const [activeTab, setActiveTab] = useState<"join" | "create">("join");
+  const [showAcceptedBanner, setShowAcceptedBanner] = useState(false);
   const [teamData, setTeamData] = useState({
     name: "",
     logo: "",
@@ -100,6 +102,11 @@ function TeamsPage() {
         } else {
           setTeamRequests([]);
           setRequestsLoading(false);
+          // Check if accepted banner should show
+          const ackKey = `acknowledged_approved_team_${t.id}`;
+          if (localStorage.getItem(ackKey) !== "true") {
+            setShowAcceptedBanner(true);
+          }
         }
       } else {
         setMyTeam(null);
@@ -276,6 +283,13 @@ function TeamsPage() {
     }
   };
 
+  const handleDismissAcceptedBanner = () => {
+    if (myTeam) {
+      localStorage.setItem(`acknowledged_approved_team_${myTeam.id}`, "true");
+      setShowAcceptedBanner(false);
+    }
+  };
+
   if (loading || authLoading) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
@@ -289,16 +303,74 @@ function TeamsPage() {
   return (
     <div className="min-h-screen bg-background pb-[80px]">
       {/* ── App Header ── */}
-      <div className="px-4 pt-4 pb-4">
-        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">Squads</p>
-        <h1 className="font-display font-black text-2xl text-foreground">
-          {myTeam ? myTeam.name : "My Squad"}
-        </h1>
+      <div className="px-4 pt-4 pb-4 flex flex-col gap-3">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">Squads</p>
+          <h1 className="font-display font-black text-2xl text-foreground">
+            {myTeam ? myTeam.name : "My Squad"}
+          </h1>
+        </div>
+
+        {/* Tab Switcher (Only shown when user has no team) */}
+        {!myTeam && (
+          <div className="flex bg-secondary/50 p-1 rounded-2xl border border-border">
+            <button
+              id="tutorial-teams-tab-join"
+              onClick={() => setActiveTab("join")}
+              className={`flex-1 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all duration-200 ${
+                activeTab === "join"
+                  ? "bg-primary text-white shadow-md"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Join Squad
+            </button>
+            <button
+              id="tutorial-teams-tab-create"
+              onClick={() => setActiveTab("create")}
+              className={`flex-1 py-2.5 text-xs font-black uppercase tracking-widest rounded-xl transition-all duration-200 ${
+                activeTab === "create"
+                  ? "bg-primary text-white shadow-md"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Create Squad
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="px-4 space-y-5">
+        {/* Accepted request banner */}
+        {showAcceptedBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 flex items-start gap-3 relative overflow-hidden"
+          >
+            {/* Ambient light glow */}
+            <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl pointer-events-none bg-emerald-500/10" />
+            
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-500/20 text-emerald-500">
+              <Check className="w-4 h-4" />
+            </div>
+            
+            <div className="flex-1">
+              <h4 className="font-display font-black text-xs text-emerald-500 uppercase tracking-widest mb-0.5">Request Approved!</h4>
+              <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
+                Your request to join the squad <span className="text-emerald-400 font-bold">{myTeam?.name}</span> has been accepted by the Captain. Welcome to the roster!
+              </p>
+              <button
+                onClick={handleDismissAcceptedBanner}
+                className="mt-3 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                Let's Go
+              </button>
+            </div>
+          </motion.div>
+        )}
         {/* ─── My Team Section / Create Team Form ─── */}
-        {isEditingTeam || !myTeam ? (
+        {isEditingTeam || (!myTeam && activeTab === "create") ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -427,7 +499,7 @@ function TeamsPage() {
               </div>
             </div>
           </motion.div>
-        ) : (
+        ) : myTeam ? (
           <>
             {/* My Team View */}
             <motion.div
@@ -629,9 +701,9 @@ function TeamsPage() {
               </div>
             </motion.div>
           </>
-        )}
+        ) : null}
 
-        {!myTeam && myTeamRequest && (
+        {!myTeam && activeTab === "join" && myTeamRequest && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -687,7 +759,7 @@ function TeamsPage() {
         )}
 
         {/* ─── Available Teams Section ─── */}
-        {!myTeam && (
+        {!myTeam && activeTab === "join" && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
