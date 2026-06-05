@@ -34,13 +34,28 @@ export const Route = createFileRoute("/_app")({
     const announcement = settings?.announcement;
     const isMaintenance = settings?.maintenance_mode === "true";
 
-    // Scroll to top on route change — useLayoutEffect fires before paint
-    // to prevent a flash of the page at wrong scroll position
+    // Scroll to top on route change
+    // useLayoutEffect: immediate reset before paint
     useLayoutEffect(() => {
-      if (scrollRef.current) {
-        scrollRef.current.scrollTop = 0;
-        scrollRef.current.scrollTo({ top: 0, behavior: "instant" });
-      }
+      const el = scrollRef.current;
+      if (el) el.scrollTop = 0;
+    }, [path]);
+
+    // useEffect + double rAF: runs after framer-motion exit animation,
+    // ensuring the new page always starts at the very top
+    useEffect(() => {
+      const el = scrollRef.current;
+      if (!el) return;
+      // First frame: reset immediately after paint
+      const raf1 = requestAnimationFrame(() => {
+        el.scrollTop = 0;
+        // Second frame: reset again after any animation layout shifts
+        const raf2 = requestAnimationFrame(() => {
+          el.scrollTop = 0;
+        });
+        return () => cancelAnimationFrame(raf2);
+      });
+      return () => cancelAnimationFrame(raf1);
     }, [path]);
 
     return (
@@ -97,10 +112,10 @@ export const Route = createFileRoute("/_app")({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.18, ease: "easeOut" }}
-                  onAnimationStart={() => {
-                    if (scrollRef.current) {
+                  onAnimationComplete={(definition) => {
+                    // When the enter animation completes, ensure scroll is at top
+                    if (definition === "animate" && scrollRef.current) {
                       scrollRef.current.scrollTop = 0;
-                      scrollRef.current.scrollTo({ top: 0, behavior: "instant" });
                     }
                   }}
                   className={isChatPage ? "h-full flex flex-col" : "min-h-full"}
