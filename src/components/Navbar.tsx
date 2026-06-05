@@ -299,7 +299,7 @@ export function Navbar() {
           • Desktop → hidden (navigation is in the top header)
          ══════════════════════════════════════════════════════ */}
       <nav
-        className={`absolute bottom-0 inset-x-0 z-50 border-t border-border lg:hidden ${isTicketChat ? "hidden" : ""}`}
+        className={`fixed bottom-0 inset-x-0 z-50 border-t border-border lg:hidden ${isTicketChat ? "hidden" : ""}`}
         style={{
           background: theme === "dark" ? "rgba(8,12,20,0.97)" : "rgba(255,255,255,0.97)",
           backdropFilter: "blur(24px)",
