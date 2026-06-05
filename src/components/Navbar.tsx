@@ -1,4 +1,4 @@
-import { Link, useRouter } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   Home,
@@ -42,8 +42,8 @@ const MAIN_TABS = ["/", "/tournaments", "/matches", "/leaderboard", "/profile", 
 export function Navbar() {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const router = useRouter();
-  const path = router.state.location.pathname;
+  const routerState = useRouterState();
+  const path = routerState.location.pathname;
   const [unread, setUnread] = useState(0);
   const [unreadChats, setUnreadChats] = useState(0);
   const [showPromo, setShowPromo] = useState(false);

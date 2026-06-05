@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { Suspense, useEffect, useLayoutEffect, useRef } from "react";
 import { Navbar } from "@/components/Navbar";
@@ -22,8 +22,8 @@ export const Route = createFileRoute("/_app")({
   },
   component: () => {
     const settings = Route.useLoaderData() as Record<string, string>;
-    const router = useRouter();
-    const path = router.state.location.pathname;
+    const routerState = useRouterState();
+    const path = routerState.location.pathname;
     const cleanPath = path === "/" ? "/" : path.replace(/\/$/, "");
     const scrollRef = useRef<HTMLElement>(null);
 
