@@ -3,7 +3,7 @@
   "short_name": "ClutchGround",
   "description": "India's #1 Free Fire Tournament & Esports Arena",
   "theme_color": "#ff6b35",
-  "background_color": "#0a0a0a",
+  "background_color": "#000000",
   "display": "standalone",
   "start_url": "/",
   "scope": "/",
