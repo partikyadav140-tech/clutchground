@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_app/profile")({
 function ProfilePage() {
   const { user, loading: authLoading, logout } = useAuth();
   const router = useRouter();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, isHydrated } = useTheme();
 
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
@@ -198,22 +198,24 @@ function ProfilePage() {
           <MenuItem icon={FileText} iconBg="rgba(251,191,36,0.12)"  iconColor="#fbbf24" label="Terms & Conditions" to="/terms" />
 
           {/* Theme toggle as menu item */}
-          <button
-            onClick={toggleTheme}
-            className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-border last:border-0 active:bg-secondary/50 transition-colors"
-          >
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: "rgba(0,200,255,0.12)", color: "var(--primary)" }}>
-              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </div>
-            <span className="flex-1 text-sm font-bold text-foreground text-left">
-              {theme === "dark" ? "Light Mode" : "Dark Mode"}
-            </span>
-            <span className="text-[10px] font-black px-2 py-1 rounded-full border"
-              style={{ color: "var(--primary)", borderColor: "var(--primary)", background: "rgba(0,200,255,0.08)" }}>
-              {theme === "dark" ? "OFF" : "ON"}
-            </span>
-          </button>
+          {isHydrated && (
+            <button
+              onClick={toggleTheme}
+              className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-border last:border-0 active:bg-secondary/50 transition-colors"
+            >
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: "rgba(0,200,255,0.12)", color: "var(--primary)" }}>
+                {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </div>
+              <span className="flex-1 text-sm font-bold text-foreground text-left">
+                {theme === "dark" ? "Light Mode" : "Dark Mode"}
+              </span>
+              <span className="text-[10px] font-black px-2 py-1 rounded-full border"
+                style={{ color: "var(--primary)", borderColor: "var(--primary)", background: "rgba(0,200,255,0.08)" }}>
+                {theme === "dark" ? "OFF" : "ON"}
+              </span>
+            </button>
+          )}
 
           <button
             onClick={() => { navigator.clipboard?.writeText(window.location.href); toast.success("Link copied!"); }}

@@ -33,12 +33,18 @@ function ContactPage() {
     });
   }, []);
 
+  const safeEmail = socialLinks.email || "clutchgroundofficial@gmail.com";
+  const safeWhatsapp = socialLinks.whatsapp || "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s";
+  const safeTelegram = socialLinks.telegram || "https://t.me/clutchground";
+  const safeDiscord = socialLinks.discord || "https://discord.gg/uYXFJswHdg";
+  const safeInstagram = socialLinks.instagram || "https://instagram.com/clutchground";
+
   const channels = [
     { 
       icon: Mail, 
       label: "Email Support", 
-      value: socialLinks.email, 
-      href: socialLinks.email.startsWith("mailto:") ? socialLinks.email : `mailto:${socialLinks.email}`, 
+      value: safeEmail, 
+      href: safeEmail.startsWith("mailto:") ? safeEmail : `mailto:${safeEmail}`, 
       color: "#60a5fa", 
       bg: "rgba(96,165,250,0.1)", 
       bd: "rgba(96,165,250,0.2)" 
@@ -47,7 +53,7 @@ function ContactPage() {
       icon: MessageCircle, 
       label: "WhatsApp Channel", 
       value: "ClutchGround Updates", 
-      href: socialLinks.whatsapp, 
+      href: safeWhatsapp, 
       color: "#34d399", 
       bg: "rgba(52,211,153,0.1)", 
       bd: "rgba(52,211,153,0.2)" 
@@ -55,8 +61,8 @@ function ContactPage() {
     { 
       icon: Send, 
       label: "Telegram Group", 
-      value: socialLinks.telegram.startsWith("http") ? socialLinks.telegram.split("/").pop() || "@clutchground" : (socialLinks.telegram.startsWith("@") ? socialLinks.telegram : `@${socialLinks.telegram}`), 
-      href: socialLinks.telegram.startsWith("http") ? socialLinks.telegram : `https://t.me/${socialLinks.telegram.replace("@", "")}`, 
+      value: safeTelegram.startsWith("http") ? safeTelegram.split("/").pop() || "@clutchground" : (safeTelegram.startsWith("@") ? safeTelegram : `@${safeTelegram}`), 
+      href: safeTelegram.startsWith("http") ? safeTelegram : `https://t.me/${safeTelegram.replace("@", "")}`, 
       color: "#38bdf8", 
       bg: "rgba(56,189,248,0.1)", 
       bd: "rgba(56,189,248,0.2)" 
@@ -65,7 +71,7 @@ function ContactPage() {
       icon: Hash, 
       label: "Discord Server", 
       value: "ClutchGround Community", 
-      href: socialLinks.discord, 
+      href: safeDiscord, 
       color: "#818cf8", 
       bg: "rgba(129,140,248,0.1)", 
       bd: "rgba(129,140,248,0.2)" 
@@ -73,8 +79,8 @@ function ContactPage() {
     { 
       icon: Instagram, 
       label: "Instagram Page", 
-      value: socialLinks.instagram.startsWith("http") ? socialLinks.instagram.split("/").filter(Boolean).pop() || "@clutchground" : (socialLinks.instagram.startsWith("@") ? socialLinks.instagram : `@${socialLinks.instagram}`), 
-      href: socialLinks.instagram.startsWith("http") ? socialLinks.instagram : `https://instagram.com/${socialLinks.instagram.replace("@", "")}`, 
+      value: safeInstagram.startsWith("http") ? safeInstagram.split("/").filter(Boolean).pop() || "@clutchground" : (safeInstagram.startsWith("@") ? safeInstagram : `@${safeInstagram}`), 
+      href: safeInstagram.startsWith("http") ? safeInstagram : `https://instagram.com/${safeInstagram.replace("@", "")}`, 
       color: "#ec4899", 
       bg: "rgba(236,72,153,0.1)", 
       bd: "rgba(236,72,153,0.2)" 

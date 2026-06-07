@@ -14,12 +14,16 @@ import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppWalletRouteImport } from './routes/_app/wallet'
 import { Route as AppTermsRouteImport } from './routes/_app/terms'
 import { Route as AppTeamsRouteImport } from './routes/_app/teams'
+import { Route as AppTeamRequestsRouteImport } from './routes/_app/team-requests'
+import { Route as AppTeamInviteRouteImport } from './routes/_app/team-invite'
+import { Route as AppTeamChatRouteImport } from './routes/_app/team-chat'
 import { Route as AppStatsRouteImport } from './routes/_app/stats'
 import { Route as AppSignupRouteImport } from './routes/_app/signup'
 import { Route as AppRulesRouteImport } from './routes/_app/rules'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
+import { Route as AppMyTeamRouteImport } from './routes/_app/my-team'
 import { Route as AppMatchesRouteImport } from './routes/_app/matches'
 import { Route as AppLoginRouteImport } from './routes/_app/login'
 import { Route as AppLeaderboardRouteImport } from './routes/_app/leaderboard'
@@ -69,6 +73,21 @@ const AppTeamsRoute = AppTeamsRouteImport.update({
   path: '/teams',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTeamRequestsRoute = AppTeamRequestsRouteImport.update({
+  id: '/team-requests',
+  path: '/team-requests',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTeamInviteRoute = AppTeamInviteRouteImport.update({
+  id: '/team-invite',
+  path: '/team-invite',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTeamChatRoute = AppTeamChatRouteImport.update({
+  id: '/team-chat',
+  path: '/team-chat',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppStatsRoute = AppStatsRouteImport.update({
   id: '/stats',
   path: '/stats',
@@ -97,6 +116,11 @@ const AppPrivacyRoute = AppPrivacyRouteImport.update({
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyTeamRoute = AppMyTeamRouteImport.update({
+  id: '/my-team',
+  path: '/my-team',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMatchesRoute = AppMatchesRouteImport.update({
@@ -229,12 +253,16 @@ export interface FileRoutesByFullPath {
   '/leaderboard': typeof AppLeaderboardRoute
   '/login': typeof AppLoginRoute
   '/matches': typeof AppMatchesRoute
+  '/my-team': typeof AppMyTeamRoute
   '/notifications': typeof AppNotificationsRoute
   '/privacy': typeof AppPrivacyRoute
   '/profile': typeof AppProfileRoute
   '/rules': typeof AppRulesRoute
   '/signup': typeof AppSignupRoute
   '/stats': typeof AppStatsRoute
+  '/team-chat': typeof AppTeamChatRoute
+  '/team-invite': typeof AppTeamInviteRoute
+  '/team-requests': typeof AppTeamRequestsRoute
   '/teams': typeof AppTeamsRoute
   '/terms': typeof AppTermsRoute
   '/wallet': typeof AppWalletRoute
@@ -264,12 +292,16 @@ export interface FileRoutesByTo {
   '/leaderboard': typeof AppLeaderboardRoute
   '/login': typeof AppLoginRoute
   '/matches': typeof AppMatchesRoute
+  '/my-team': typeof AppMyTeamRoute
   '/notifications': typeof AppNotificationsRoute
   '/privacy': typeof AppPrivacyRoute
   '/profile': typeof AppProfileRoute
   '/rules': typeof AppRulesRoute
   '/signup': typeof AppSignupRoute
   '/stats': typeof AppStatsRoute
+  '/team-chat': typeof AppTeamChatRoute
+  '/team-invite': typeof AppTeamInviteRoute
+  '/team-requests': typeof AppTeamRequestsRoute
   '/teams': typeof AppTeamsRoute
   '/terms': typeof AppTermsRoute
   '/wallet': typeof AppWalletRoute
@@ -302,12 +334,16 @@ export interface FileRoutesById {
   '/_app/leaderboard': typeof AppLeaderboardRoute
   '/_app/login': typeof AppLoginRoute
   '/_app/matches': typeof AppMatchesRoute
+  '/_app/my-team': typeof AppMyTeamRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/privacy': typeof AppPrivacyRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/rules': typeof AppRulesRoute
   '/_app/signup': typeof AppSignupRoute
   '/_app/stats': typeof AppStatsRoute
+  '/_app/team-chat': typeof AppTeamChatRoute
+  '/_app/team-invite': typeof AppTeamInviteRoute
+  '/_app/team-requests': typeof AppTeamRequestsRoute
   '/_app/teams': typeof AppTeamsRoute
   '/_app/terms': typeof AppTermsRoute
   '/_app/wallet': typeof AppWalletRoute
@@ -341,12 +377,16 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/login'
     | '/matches'
+    | '/my-team'
     | '/notifications'
     | '/privacy'
     | '/profile'
     | '/rules'
     | '/signup'
     | '/stats'
+    | '/team-chat'
+    | '/team-invite'
+    | '/team-requests'
     | '/teams'
     | '/terms'
     | '/wallet'
@@ -376,12 +416,16 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/login'
     | '/matches'
+    | '/my-team'
     | '/notifications'
     | '/privacy'
     | '/profile'
     | '/rules'
     | '/signup'
     | '/stats'
+    | '/team-chat'
+    | '/team-invite'
+    | '/team-requests'
     | '/teams'
     | '/terms'
     | '/wallet'
@@ -413,12 +457,16 @@ export interface FileRouteTypes {
     | '/_app/leaderboard'
     | '/_app/login'
     | '/_app/matches'
+    | '/_app/my-team'
     | '/_app/notifications'
     | '/_app/privacy'
     | '/_app/profile'
     | '/_app/rules'
     | '/_app/signup'
     | '/_app/stats'
+    | '/_app/team-chat'
+    | '/_app/team-invite'
+    | '/_app/team-requests'
     | '/_app/teams'
     | '/_app/terms'
     | '/_app/wallet'
@@ -483,6 +531,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTeamsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/team-requests': {
+      id: '/_app/team-requests'
+      path: '/team-requests'
+      fullPath: '/team-requests'
+      preLoaderRoute: typeof AppTeamRequestsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/team-invite': {
+      id: '/_app/team-invite'
+      path: '/team-invite'
+      fullPath: '/team-invite'
+      preLoaderRoute: typeof AppTeamInviteRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/team-chat': {
+      id: '/_app/team-chat'
+      path: '/team-chat'
+      fullPath: '/team-chat'
+      preLoaderRoute: typeof AppTeamChatRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/stats': {
       id: '/_app/stats'
       path: '/stats'
@@ -523,6 +592,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-team': {
+      id: '/_app/my-team'
+      path: '/my-team'
+      fullPath: '/my-team'
+      preLoaderRoute: typeof AppMyTeamRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/matches': {
@@ -704,12 +780,16 @@ interface AppRouteChildren {
   AppLeaderboardRoute: typeof AppLeaderboardRoute
   AppLoginRoute: typeof AppLoginRoute
   AppMatchesRoute: typeof AppMatchesRoute
+  AppMyTeamRoute: typeof AppMyTeamRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppPrivacyRoute: typeof AppPrivacyRoute
   AppProfileRoute: typeof AppProfileRoute
   AppRulesRoute: typeof AppRulesRoute
   AppSignupRoute: typeof AppSignupRoute
   AppStatsRoute: typeof AppStatsRoute
+  AppTeamChatRoute: typeof AppTeamChatRoute
+  AppTeamInviteRoute: typeof AppTeamInviteRoute
+  AppTeamRequestsRoute: typeof AppTeamRequestsRoute
   AppTeamsRoute: typeof AppTeamsRoute
   AppTermsRoute: typeof AppTermsRoute
   AppWalletRoute: typeof AppWalletRoute
@@ -741,12 +821,16 @@ const AppRouteChildren: AppRouteChildren = {
   AppLeaderboardRoute: AppLeaderboardRoute,
   AppLoginRoute: AppLoginRoute,
   AppMatchesRoute: AppMatchesRoute,
+  AppMyTeamRoute: AppMyTeamRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppPrivacyRoute: AppPrivacyRoute,
   AppProfileRoute: AppProfileRoute,
   AppRulesRoute: AppRulesRoute,
   AppSignupRoute: AppSignupRoute,
   AppStatsRoute: AppStatsRoute,
+  AppTeamChatRoute: AppTeamChatRoute,
+  AppTeamInviteRoute: AppTeamInviteRoute,
+  AppTeamRequestsRoute: AppTeamRequestsRoute,
   AppTeamsRoute: AppTeamsRoute,
   AppTermsRoute: AppTermsRoute,
   AppWalletRoute: AppWalletRoute,

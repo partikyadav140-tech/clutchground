@@ -1,6 +1,6 @@
 import * as React from "react";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { getTournaments, getGlobalLeaderboard, getMyMatches, getHeroBanners, getProfile, getPlayerStats } from "../../api";
+import { getTournaments, getGlobalLeaderboard, getMyMatches, getHeroBanners, getProfile, getPlayerStats, getMyTeam, getTeamRequests } from "../../api";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import { Trophy, Users, Crown, Wallet, ChevronRight, Flame, Zap, Shield, Star, X, Gamepad2, Swords, Activity, Target, TrendingUp, BarChart3, ArrowRight } from "lucide-react";
@@ -70,6 +70,8 @@ function HomePage() {
     history: [],
   });
   const [joinedMatches, setJoinedMatches] = React.useState<number[]>([]);
+  const [myTeam, setMyTeam] = React.useState<any>(null);
+  const [teamRequests, setTeamRequests] = React.useState<any[]>([]);
   const [banners, setBanners] = React.useState<string[]>(["https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319417/clutchground/placeholders/mygshudhl9qltqroxrmi.png"]);
   const [currentBannerIdx, setCurrentBannerIdx] = React.useState(0);
   const [lightboxImg, setLightboxImg] = React.useState<string | null>(null);
@@ -99,8 +101,9 @@ function HomePage() {
       Promise.all([
         (getProfile as any)({ data: user.id }),
         (getPlayerStats as any)({ data: user.id }),
+        (getMyTeam as any)({ data: user.id }),
       ])
-        .then(([p, s]) => {
+        .then(([p, s, t]) => {
           setProfile(p);
           setStats(s || {
             matchesPlayed: 0,
@@ -112,6 +115,12 @@ function HomePage() {
             winRate: 0,
             history: [],
           });
+          setMyTeam(t);
+          if (t && t.leader_id === user.id) {
+            (getTeamRequests as any)({ data: user.id })
+              .then((reqs: any[]) => setTeamRequests(reqs))
+              .catch(console.error);
+          }
         })
         .catch(console.error);
     }
@@ -298,29 +307,7 @@ function HomePage() {
         </motion.div>
       )}
 
-      {/* ═══════════════════════════════════════════════
-          SECTION 3: Quick Actions (2×2 grid)
-         ═══════════════════════════════════════════════ */}
-      <motion.div variants={fadeUp} className="px-4 mb-5">
-        <div id="tutorial-quick-actions" className="grid grid-cols-4 gap-2.5">
-          {[
-            { icon: Wallet,  label: "Wallet",  to: "/wallet",      color: "#10b981" },
-            { icon: Trophy,  label: "Matches", to: "/matches",     color: "var(--primary)" },
-            { icon: Users,   label: "Teams",   to: "/teams",       color: "#a78bfa" },
-            { icon: Crown,   label: "Ranks",   to: "/leaderboard", color: "#f59e0b" },
-          ].map(({ icon: Icon, label, to, color }) => (
-            <Link key={to} to={to}>
-              <div className="quick-action">
-                <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
-                     style={{ background: `${color}15`, color: color }}>
-                  <Icon className="w-5 h-5" />
-                </div>
-                <span className="text-[9px] font-black uppercase tracking-wide text-muted-foreground leading-none">{label}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </motion.div>
+
 
       {/* ═══════════════════════════════════════════════
           SECTION 4: Banner Carousel with Dot Indicators
@@ -457,6 +444,50 @@ function HomePage() {
             })}
           </div>
         </motion.div>
+      )}
+
+      {/* ═══════════════════════════════════════════════
+          FIXED: My Team Floating Button (right side, above navbar)
+         ═══════════════════════════════════════════════ */}
+      {user && (
+        <Link to="/teams" className="fixed right-3 z-40 no-underline" style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)" }}>          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", damping: 18, stiffness: 260, delay: 0.5 }}
+            className="relative flex items-center gap-2 pl-3 pr-3.5 py-2.5 rounded-2xl border shadow-2xl press-effect active:scale-95 transition-transform cursor-pointer"
+            style={{
+              background: "linear-gradient(135deg, rgba(var(--card-rgb, 24,28,36), 0.92), rgba(var(--card-rgb, 24,28,36), 0.98))",
+              backdropFilter: "blur(20px) saturate(1.5)",
+              WebkitBackdropFilter: "blur(20px) saturate(1.5)",
+              borderColor: "var(--border)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 0 20px rgba(var(--primary-rgb, 255,0,85), 0.12)",
+            }}
+          >
+            {/* Icon container */}
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                 style={{ background: "var(--gradient-primary)" }}>
+              <Users className="w-4 h-4 text-white" />
+            </div>
+            {/* Label */}
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-foreground uppercase tracking-widest leading-none">
+                {myTeam ? "My Team" : "Squad"}
+              </span>
+              <span className="text-[8px] font-semibold text-muted-foreground leading-tight mt-0.5 max-w-[80px] truncate">
+                {myTeam ? myTeam.name : "Join / Create"}
+              </span>
+            </div>
+            {/* Notification dot for pending requests */}
+            {myTeam && teamRequests?.length > 0 && (
+              <span className="absolute -top-1 -right-1 flex items-center justify-center">
+                <span className="absolute w-4 h-4 rounded-full animate-ping opacity-40" style={{ background: "var(--primary)" }} />
+                <span className="relative w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-black text-white" style={{ background: "var(--primary)" }}>
+                  {teamRequests.length}
+                </span>
+              </span>
+            )}
+          </motion.div>
+        </Link>
       )}
 
       {/* ═══════════════════════════════════════════════

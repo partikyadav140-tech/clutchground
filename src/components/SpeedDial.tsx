@@ -20,29 +20,34 @@ export function SpeedDial() {
     });
   }, []);
 
+  const safeWhatsapp = socialLinks.whatsapp || "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s";
+  const safeDiscord = socialLinks.discord || "https://discord.gg/uYXFJswHdg";
+  const safeTelegram = socialLinks.telegram || "https://t.me/clutchground";
+  const safeEmail = socialLinks.email || "clutchgroundofficial@gmail.com";
+
   const links = [
     {
       name: "WhatsApp",
       icon: MessageCircle,
-      url: socialLinks.whatsapp,
+      url: safeWhatsapp,
       color: "bg-[#25D366]",
     },
     {
       name: "Discord",
       icon: Hash,
-      url: socialLinks.discord,
+      url: safeDiscord,
       color: "bg-[#5865F2]",
     },
     {
       name: "Telegram",
       icon: Send,
-      url: socialLinks.telegram.startsWith("http") ? socialLinks.telegram : `https://t.me/${socialLinks.telegram.replace("@", "")}`,
+      url: safeTelegram.startsWith("http") ? safeTelegram : `https://t.me/${safeTelegram.replace("@", "")}`,
       color: "bg-[#0088cc]",
     },
     {
       name: "Email",
       icon: Mail,
-      url: socialLinks.email.startsWith("mailto:") ? socialLinks.email : `mailto:${socialLinks.email}`,
+      url: safeEmail.startsWith("mailto:") ? safeEmail : `mailto:${safeEmail}`,
       color: "bg-[#D44638]",
     },
   ];

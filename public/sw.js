@@ -65,7 +65,18 @@ self.addEventListener('fetch', (event) => {
           if (cached) return cached;
           // For navigation requests, serve root
           if (event.request.mode === 'navigate') {
-            return caches.match('/');
+            return caches.match('/').then((rootCached) => {
+              if (rootCached) return rootCached;
+              // Return a fallback Response instead of undefined to prevent TypeError: Failed to convert value to 'Response'
+              return new Response(
+                '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Offline — CLUTCHGROUND</title><style>body{background:#0a0a0c;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center;padding:20px}h1{font-size:24px;margin-bottom:8px;color:#f97316}p{color:#a1a1aa;font-size:14px;margin-top:0}</style></head><body><h1>Connection Error</h1><p>It looks like you are offline or the server took too long to respond. Please check your network connection and try again.</p></body></html>',
+                {
+                  status: 503,
+                  statusText: 'Service Unavailable',
+                  headers: { 'Content-Type': 'text/html' }
+                }
+              );
+            });
           }
         });
       })

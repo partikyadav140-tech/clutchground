@@ -8,7 +8,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Crown, Users, Trophy, Check, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crown, Users, Trophy, Check, Download, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { confirmDialog } from "./ConfirmDialog";
 import { useAuth } from "../lib/auth-client";
@@ -44,22 +44,20 @@ export function JoinBattleDialog({
   entryFee = 0,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<"team-input" | "team-preview" | "confirm">("team-input");
+  const [step, setStep] = useState<"mode-select" | "team-setup" | "confirm">("mode-select");
+  const [teamSetupMode, setTeamSetupMode] = useState<"registered" | "manual" | null>(null);
   const [loadingTeam, setLoadingTeam] = useState(false);
-  const [teamFetched, setTeamFetched] = useState(false);
-  const [showPlayerSelection, setShowPlayerSelection] = useState(false);
   const [availableMembers, setAvailableMembers] = useState<any[]>([]);
   const [selectedPlayers, setSelectedPlayers] = useState<Set<number>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
   const teamCount = teamSizeFor(mode);
   const { user } = useAuth();
   const router = useRouter();
 
-  // For Solo tournaments, start at confirm step
+  // For Solo tournaments, skip to confirm step
   useEffect(() => {
     if (mode === "Solo") {
       setStep("confirm");
-    } else {
-      setStep("team-input");
     }
   }, [mode]);
 
@@ -73,7 +71,7 @@ export function JoinBattleDialog({
     teamName: "",
   });
   const [teammates, setTeammates] = useState<Teammate[]>(
-    Array.from({ length: Math.max(3, teamCount) }, () => ({ name: "", ign: "", uid: "" })),
+    Array.from({ length: 3 }, () => ({ name: "", ign: "", uid: "" })),
   );
   const [agree, setAgree] = useState(false);
 
@@ -102,9 +100,9 @@ export function JoinBattleDialog({
     }
   }, [open, user, teamCount, mode]);
 
-  const fetchTeamDetails = async () => {
+  const loadRegisteredTeam = async () => {
     if (mode === "Solo") {
-      toast.error("Solo tournaments don't require team details.");
+      toast.error("Solo tournaments don't require team selection.");
       return;
     }
 
@@ -114,136 +112,108 @@ export function JoinBattleDialog({
 
       if (!myTeam) {
         setLoadingTeam(false);
-        toast.error("You don't have a team. Please create or join one first.");
-        router.navigate({ to: "/teams" });
+        toast.error("You don't have a registered team. Please create or join one first.");
+        router.navigate({ to: "/my-team" });
         return;
       }
 
-      setLeader((l) => ({
-        ...l,
-        teamName: myTeam.name,
-        ...(mode === "Squad" ? {
-          name: myTeam.leader.username || myTeam.leader.ign || "",
-          ign: myTeam.leader.ign || "",
-          uid: myTeam.leader.uid || "",
-        } : {})
-      }));
+      // Set team name
+      setLeader((l) => ({ ...l, teamName: myTeam.name }));
 
+      // Collect all available team members including captain
       let activeMembers: any[] = [];
-
-      if (mode === "Duo") {
-        const allTeamPlayers: any[] = [];
-        if (myTeam.leader?.ign && myTeam.leader?.uid && myTeam.leader_id !== user?.id) {
-          allTeamPlayers.push({ ...myTeam.leader, role: "captain" });
-        }
-        if (myTeam.members && Array.isArray(myTeam.members)) {
-          myTeam.members.forEach((m: any) => {
-            if (m.ign && m.uid && m.user_id !== user?.id) {
-              allTeamPlayers.push(m);
-            }
-          });
-        }
-        activeMembers = allTeamPlayers;
-      } else {
-        if (myTeam.members && Array.isArray(myTeam.members)) {
-          activeMembers = myTeam.members
-            .filter((m: any) => m.ign && m.uid)
-            .sort((a: any, b: any) => {
-              const priority = (role: string) => (role === "caption" || role === "captain" ? 0 : 1);
-              return priority(a.role) - priority(b.role);
-            });
-        }
+      
+      // Add team captain first
+      if (myTeam.leader && myTeam.leader.ign && myTeam.leader.uid) {
+        activeMembers.push({ ...myTeam.leader, isCaptain: true });
+      }
+      
+      // Add team members
+      if (myTeam.members && Array.isArray(myTeam.members)) {
+        const members = myTeam.members.filter((m: any) => m.ign && m.uid);
+        activeMembers = activeMembers.concat(members);
       }
 
-      console.log("Team name:", myTeam.name);
-      console.log("Team leader:", myTeam.leader);
-      console.log("Team members count:", activeMembers.length);
-      console.log("Members needed:", teamCount);
-      console.log("Full members list:", activeMembers);
-
-      if (activeMembers.length < teamCount) {
+      // Need captain + teamCount players total
+      const totalNeeded = teamCount + 1;
+      if (activeMembers.length < totalNeeded) {
         setLoadingTeam(false);
         toast.error(
-          `Your team has ${activeMembers.length} available member${activeMembers.length !== 1 ? "s" : ""}, but you need ${teamCount} teammate${teamCount !== 1 ? "s" : ""} for ${mode} mode.`,
+          `Your team has ${activeMembers.length} available member${activeMembers.length !== 1 ? "s" : ""}, but you need ${totalNeeded} total (captain + ${teamCount} players) for ${mode} mode.`
         );
         return;
       }
 
-      // If the team has more available members than needed, ask which players should play
-      if (activeMembers.length > teamCount) {
+      // If exactly enough members, auto-select them
+      if (activeMembers.length === totalNeeded) {
+        const newSelected = new Set(Array.from({ length: totalNeeded }, (_, i) => i));
+        setSelectedPlayers(newSelected);
+        fillTeammatesFromSelection(activeMembers, newSelected);
+        toast.success("Team loaded! All players selected.");
+        setStep("confirm");
+      } else {
+        // Show selection UI if more members than needed
         setAvailableMembers(activeMembers);
-        setSelectedPlayers(new Set(Array.from({ length: teamCount }, (_, i) => i)));
-        setShowPlayerSelection(true);
-        setLoadingTeam(false);
-        return;
+        setSelectedPlayers(new Set(Array.from({ length: totalNeeded }, (_, i) => i)));
+        setStep("team-setup");
+        toast.success(`Select ${totalNeeded} players (including captain)!`);
       }
-
-      // Auto-fill when there are exactly enough members available
-      setTeammates((current) => {
-        const newT = [...current];
-        activeMembers.slice(0, teamCount).forEach((m: any, i: number) => {
-          newT[i] = { name: m.username || m.ign, ign: m.ign, uid: m.uid };
-        });
-        return newT;
-      });
-
-      setTeamFetched(true);
-      toast.success("Team details loaded successfully!");
     } catch (e: any) {
       console.error("Failed to fetch team", e);
-      toast.error(e.message || "Failed to fetch team details");
+      toast.error(e.message || "Failed to load team");
     } finally {
       setLoadingTeam(false);
     }
   };
 
-  const handleSelectPlayers = () => {
-    if (selectedPlayers.size !== teamCount) {
-      toast.error(
-        `Please select exactly ${teamCount} player${teamCount !== 1 ? "s" : ""} for ${mode} mode.`,
-      );
-      return;
+  const fillTeammatesFromSelection = (members: any[], selected: Set<number>) => {
+    const selectedArray = Array.from(selected).sort((a, b) => a - b);
+    const selectedMembers = selectedArray.map(idx => members[idx]);
+    
+    // Find captain (if any is marked as captain)
+    const captainMember = selectedMembers.find((m: any) => m.isCaptain);
+    if (captainMember) {
+      setLeader((l) => ({
+        ...l,
+        name: captainMember.username || captainMember.ign,
+        ign: captainMember.ign,
+        uid: captainMember.uid
+      }));
     }
-
-    const selected = Array.from(selectedPlayers).sort((a, b) => a - b);
+    
+    // Set teammates (all selected except captain)
     setTeammates((current) => {
       const newT = [...current];
-      selected.forEach((idx: number, i: number) => {
-        const m = availableMembers[idx];
-        newT[i] = { name: m.username || m.ign, ign: m.ign, uid: m.uid };
+      let tmIdx = 0;
+      selectedMembers.forEach((m: any) => {
+        if (!m.isCaptain && tmIdx < teamCount) {
+          newT[tmIdx] = { name: m.username || m.ign, ign: m.ign, uid: m.uid };
+          tmIdx++;
+        }
       });
       return newT;
     });
-
-    setShowPlayerSelection(false);
-    setTeamFetched(true);
-    toast.success("Players selected successfully!");
   };
 
-  const togglePlayerSelection = (idx: number) => {
-    const newSelected = new Set(selectedPlayers);
-    if (newSelected.has(idx)) {
-      newSelected.delete(idx);
-    } else if (newSelected.size < teamCount) {
-      newSelected.add(idx);
-    } else {
-      toast.error(
-        `You can only select ${teamCount} player${teamCount !== 1 ? "s" : ""} for ${mode} mode.`,
-      );
+  const confirmPlayerSelection = () => {
+    if (selectedPlayers.size !== teamCount) {
+      toast.error(`Please select exactly ${teamCount} player${teamCount !== 1 ? "s" : ""}`);
       return;
     }
-    setSelectedPlayers(newSelected);
+    fillTeammatesFromSelection(availableMembers, selectedPlayers);
+    setStep("confirm");
+    toast.success("Players selected!");
   };
 
   const reset = () => {
     setLeader({ name: "", email: "", phone: "", ign: "", uid: "", teamName: "" });
-    setTeammates(Array.from({ length: teamCount }, () => ({ name: "", ign: "", uid: "" })));
+    setTeammates(Array.from({ length: 3 }, () => ({ name: "", ign: "", uid: "" })));
     setAgree(false);
-    setStep("team-input");
-    setTeamFetched(false);
-    setShowPlayerSelection(false);
+    setStep(mode === "Solo" ? "confirm" : "mode-select");
+    setTeamSetupMode(null);
     setAvailableMembers([]);
     setSelectedPlayers(new Set());
+    setSearchQuery("");
   };
 
   const submit = async () => {
@@ -340,43 +310,50 @@ export function JoinBattleDialog({
   };
 
   const handleNextStep = () => {
-    if (step === "team-input") {
-      // Validate all player details are filled
-      if (mode === "Solo") {
-        setStep("confirm");
-        return;
+    if (step === "mode-select") {
+      if (teamSetupMode === "registered") {
+        loadRegisteredTeam();
+      } else if (teamSetupMode === "manual") {
+        setStep("team-setup");
       }
-
-      const requiredFields = [leader.ign, leader.uid];
-      const missingLeader = requiredFields.some((f) => !f || f.trim() === "");
-
-      if (missingLeader) {
-        toast.error("Please fill in Captain's IGN and UID");
-        return;
-      }
-
-      for (let i = 0; i < teamCount; i++) {
-        const t = teammates[i];
-        if (!t.ign?.trim() || !t.uid?.trim()) {
-          toast.error(`Please fill in Player ${i + 2}'s IGN and UID`);
+    } else if (step === "team-setup") {
+      // Only validate manual entry if using manual mode
+      if (teamSetupMode === "manual") {
+        const requiredFields = [leader.ign, leader.uid];
+        if (requiredFields.some((f) => !f || f.trim() === "")) {
+          toast.error("Please fill in your IGN and UID");
           return;
         }
+        for (let i = 0; i < teamCount; i++) {
+          const t = teammates[i];
+          if (!t.ign?.trim() || !t.uid?.trim()) {
+            toast.error(`Please fill in Player ${i + 2}'s IGN and UID`);
+            return;
+          }
+        }
       }
-
-      setStep("team-preview");
-    } else if (step === "team-preview") {
+      // For registered team, check player selection count and fill teammates
+      if (teamSetupMode === "registered") {
+        if (selectedPlayers.size !== teamCount + 1) {
+          toast.error(`Please select exactly ${teamCount + 1} players (captain + ${teamCount} teammates)`);
+          return;
+        }
+        // Fill teammates from selected players
+        fillTeammatesFromSelection(availableMembers, selectedPlayers);
+      }
       setStep("confirm");
     }
   };
 
   const handlePreviousStep = () => {
-    if (step === "team-input") {
-      return;
-    } else if (step === "team-preview") {
-      setStep("team-input");
-      setTeamFetched(false);
-    } else if (step === "confirm") {
-      setStep("team-preview");
+    if (step === "team-setup") {
+      setStep("mode-select");
+      setTeamSetupMode(null);
+    } else if (step === "confirm" && availableMembers.length > 0) {
+      setStep("mode-select");
+      setTeamSetupMode(null);
+      setAvailableMembers([]);
+      setSelectedPlayers(new Set());
     }
   };
 
@@ -397,110 +374,175 @@ export function JoinBattleDialog({
         <div className="h-1 w-full rounded-t-3xl -mt-1 mb-2" style={{ background: "var(--gradient-primary)" }} />
         <DialogHeader>
           <DialogTitle className="font-display text-xl font-black text-foreground">JOIN BATTLE</DialogTitle>
-          <DialogDescription className="text-xs uppercase tracking-[0.2em] font-display text-muted-foreground font-bold mt-1">{tournamentTitle} · {mode}</DialogDescription>
+          <DialogDescription className="text-xs uppercase tracking-[0.2em] font-display text-muted-foreground font-bold mt-1">
+            {tournamentTitle} · {mode}
+            {step !== "confirm" && <span className="ml-2 text-primary">({step === "mode-select" ? "Step 1" : "Step 2"} of 2)</span>}
+          </DialogDescription>
         </DialogHeader>
 
-        {/* Player Selection from registered team */}
-        {showPlayerSelection && mode !== "Solo" && (
+        {/* STEP 1: Mode Selection */}
+        {step === "mode-select" && mode !== "Solo" && (
           <div className="space-y-4 py-4">
-            <div className="flex items-center gap-2 text-cta">
-              <Users className="w-4 h-4" />
-              <span className="text-xs font-black uppercase tracking-widest text-glow">
-                {mode === "Duo"
-                  ? "Select your Duo partner"
-                  : `Select ${teamCount} players for ${mode}`}
-              </span>
+            <div className="text-xs uppercase tracking-widest font-black text-muted-foreground mb-3">
+              How do you want to join?
             </div>
-            <p className="text-sm text-muted-foreground font-semibold">
-              Your team has {availableMembers.length} member
-              {availableMembers.length !== 1 ? "s" : ""}. Please select {teamCount} player
-              {teamCount !== 1 ? "s" : ""} for this {mode} match.
+            <p className="text-sm text-muted-foreground mb-4">
+              Choose the fastest way to register your {mode} team
             </p>
-            <div className="bg-secondary border border-border rounded-2xl p-4 space-y-2 max-h-64 overflow-y-auto">
-              {availableMembers.map((m, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => togglePlayerSelection(idx)}
-                  className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
-                    selectedPlayers.has(idx)
-                      ? "bg-primary/20 border-primary text-cta shadow-[0_0_10px_rgba(255,0,85,0.3)]"
-                      : "bg-secondary border-border hover:border-primary/50 hover:bg-secondary/80"
+
+            {/* Option 1: Use Registered Team */}
+            <button
+              onClick={() => setTeamSetupMode("registered")}
+              className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                teamSetupMode === "registered"
+                  ? "bg-primary/10 border-primary"
+                  : "bg-slate-50 dark:bg-slate-900 border-border hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-primary/50"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center ${
+                    teamSetupMode === "registered" ? "bg-primary border-primary" : "border-border"
                   }`}
                 >
-                  <div className="flex items-center gap-3 text-left">
+                  {teamSetupMode === "registered" && <Check className="w-3 h-3 text-white" />}
+                </div>
+                <div className="flex-1">
+                  <div className="font-bold text-foreground mb-1">Use Registered Team ⚡</div>
+                  <div className="text-xs text-muted-foreground">
+                    Auto-fill from your active squad. Fast and easy!
+                  </div>
+                </div>
+              </div>
+            </button>
+
+            {/* Option 2: Manual Entry */}
+            <button
+              onClick={() => setTeamSetupMode("manual")}
+              className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
+                teamSetupMode === "manual"
+                  ? "bg-primary/10 border-primary"
+                  : "bg-slate-50 dark:bg-slate-900 border-border hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-primary/50"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className={`w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5 flex items-center justify-center ${
+                    teamSetupMode === "manual" ? "bg-primary border-primary" : "border-border"
+                  }`}
+                >
+                  {teamSetupMode === "manual" && <Check className="w-3 h-3 text-white" />}
+                </div>
+                <div className="flex-1">
+                  <div className="font-bold text-foreground mb-1">Manual Entry ✏️</div>
+                  <div className="text-xs text-muted-foreground">
+                    Manually enter each player's details
+                  </div>
+                </div>
+              </div>
+            </button>
+          </div>
+        )}
+
+        {/* STEP 2A: Select Players from Registered Team */}
+        {step === "team-setup" && teamSetupMode === "registered" && availableMembers.length > 0 && (
+          <div className="space-y-4 py-4">
+            <div className="text-xs uppercase tracking-widest font-black text-muted-foreground mb-2">
+              Step 2: Select Players
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Your team "<span className="font-bold text-foreground">{leader.teamName}</span>" has {availableMembers.length} members
+            </p>
+
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3">
+              <p className="text-xs font-semibold text-blue-400">
+                Select {teamCount + 1} players total (1 captain + {teamCount} teammate{teamCount !== 1 ? "s" : ""})
+              </p>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search player..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-secondary border border-border rounded-xl text-sm focus:border-primary outline-none"
+              />
+            </div>
+
+            {/* Player List */}
+            <div className="bg-secondary/50 border border-border rounded-xl max-h-72 overflow-y-auto p-2 space-y-2">
+              {(() => {
+                const filtered = availableMembers.filter((m) => {
+                  const q = searchQuery.toLowerCase();
+                  return !q || m.ign?.toLowerCase().includes(q) || m.username?.toLowerCase().includes(q) || m.uid?.toLowerCase().includes(q);
+                });
+
+                return filtered.map((m) => {
+                  const actualIdx = availableMembers.indexOf(m);
+                  return (
+                  <button
+                    key={actualIdx}
+                    onClick={() => {
+                      const newSet = new Set(selectedPlayers);
+                      const totalNeeded = teamCount + 1;
+                      if (newSet.has(actualIdx)) {
+                        newSet.delete(actualIdx);
+                      } else if (newSet.size < totalNeeded) {
+                        newSet.add(actualIdx);
+                      } else {
+                        toast.error(`Select only ${totalNeeded} players`);
+                        return;
+                      }
+                      setSelectedPlayers(newSet);
+                    }}
+                    className={`w-full flex items-center gap-3 p-2.5 rounded-lg border transition-all ${
+                      selectedPlayers.has(actualIdx)
+                        ? "bg-primary/20 border-primary"
+                        : "bg-background border-border hover:bg-secondary"
+                    }`}
+                  >
                     <div
-                      className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                        selectedPlayers.has(idx) ? "bg-primary border-primary" : "border-border"
+                      className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+                        selectedPlayers.has(actualIdx) ? "bg-primary border-primary" : "border-border"
                       }`}
                     >
-                      {selectedPlayers.has(idx) && <Check className="w-3 h-3 text-primary-foreground" />}
+                      {selectedPlayers.has(actualIdx) && <Check className="w-2.5 h-2.5 text-white" />}
                     </div>
-                    <div>
-                      <div className="font-bold text-sm text-foreground">{m.ign}</div>
-                      <div className="text-[10px] text-muted-foreground font-mono font-semibold">
-                        UID: {m.uid}
+                    <div className="flex-1 text-left">
+                      <div className="font-bold text-sm text-foreground">
+                        {m.ign} {m.isCaptain && <span className="text-xs text-amber-400 font-black">(Captain)</span>}
                       </div>
+                      <div className="text-xs text-muted-foreground">{m.uid}</div>
                     </div>
-                  </div>
-                  {selectedPlayers.has(idx) && (
-                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-primary text-primary-foreground rounded">
-                      Selected
-                    </span>
-                  )}
-                </button>
-              ))}
+                  </button>
+                  );
+                });
+              })()}
             </div>
-            <div className="flex gap-2 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowPlayerSelection(false);
-                  setAvailableMembers([]);
-                  setSelectedPlayers(new Set());
-                }}
-                className="flex-1 rounded-xl border-border text-foreground font-bold bg-transparent hover:bg-secondary uppercase tracking-widest text-xs"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSelectPlayers}
-                className="flex-1 bg-cta-gradient text-cta-foreground rounded-xl font-black shadow-cta border border-cta/50 uppercase tracking-widest text-xs"
-              >
-                <Check className="w-4 h-4 mr-2" /> Confirm
-              </Button>
+
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-2">
+              <p className="text-xs font-semibold text-amber-400">
+                {selectedPlayers.size}/{teamCount + 1} selected
+              </p>
             </div>
           </div>
         )}
 
-        {/* Team Input Step */}
-        {step === "team-input" && mode !== "Solo" && (
+        {/* STEP 2B: Manual Team Entry */}
+        {step === "team-setup" && teamSetupMode === "manual" && (
           <div className="space-y-4 py-4">
-            <div className="flex items-center gap-2 text-cta">
-              <Users className="w-4 h-4" />
-              <span className="text-xs font-black uppercase tracking-widest text-glow">Team Details</span>
-            </div>
-
-            {/* Team Name */}
-            <div className="bg-secondary border border-border rounded-2xl p-4 space-y-3 shadow-inner">
-              <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-3">
-                Team Information
-              </div>
-              <Field
-                label="Team Name"
-                value={leader.teamName}
-                onChange={(v) => setLeader((l) => ({ ...l, teamName: v }))}
-                placeholder="Enter your team name"
-                compact
-              />
+            <div className="text-xs uppercase tracking-widest font-black text-muted-foreground mb-2">
+              Step 2: Enter Player Details
             </div>
 
             {/* Captain Details */}
-            <div className="bg-secondary border border-border rounded-2xl p-4 space-y-3 shadow-inner">
-              <div className="flex items-center gap-2 mb-3">
+            <div className="bg-secondary/50 border border-border rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2">
                 <Crown className="w-4 h-4 text-amber-500" />
-                <span className="text-[10px] font-black text-foreground uppercase tracking-widest">
-                  Captain (You)
-                </span>
+                <span className="text-xs font-black text-foreground uppercase tracking-widest">You (Captain)</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <Field
@@ -520,175 +562,113 @@ export function JoinBattleDialog({
               </div>
             </div>
 
-            {/* Teammates Details */}
-            <div className="bg-secondary border border-border rounded-[1.25rem] p-4 space-y-3 shadow-inner">
-              <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-3">
-                Team Members
-              </div>
-              {teammates.slice(0, teamCount).map((t, i) => (
-                <div key={i} className="pb-3 border-b border-border last:border-b-0 last:pb-0">
-                  <div className="text-[10px] font-black text-foreground uppercase tracking-widest mb-2">
-                    Player {i + 2}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Field
-                      label="IGN"
-                      value={t.ign}
-                      onChange={(v) => {
-                        setTeammates((curr) => {
-                          const newT = [...curr];
-                          newT[i] = { ...t, ign: v };
-                          return newT;
-                        });
-                      }}
-                      placeholder="In-game name"
-                      compact
-                    />
-                    <Field
-                      label="UID"
-                      value={t.uid}
-                      onChange={(v) => {
-                        setTeammates((curr) => {
-                          const newT = [...curr];
-                          newT[i] = { ...t, uid: v };
-                          return newT;
-                        });
-                      }}
-                      placeholder="UID"
-                      compact
-                    />
-                  </div>
+            {/* Teammates */}
+            {teammates.slice(0, teamCount).map((t, i) => (
+              <div key={i} className="bg-secondary/50 border border-border rounded-xl p-4 space-y-3">
+                <div className="text-xs font-black text-foreground uppercase tracking-widest">
+                  Player {i + 2}
                 </div>
-              ))}
-            </div>
-
-            {/* Fetch Team Details Button */}
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-[1.25rem] p-3 shadow-[0_0_15px_rgba(59,130,246,0.15)]">
-              <Button
-                onClick={fetchTeamDetails}
-                disabled={loadingTeam}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-black uppercase tracking-widest text-xs h-11 rounded-xl shadow-[0_0_15px_rgba(59,130,246,0.5)] border border-blue-400/50"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {loadingTeam ? "Fetching..." : "Auto-fill From Team"}
-              </Button>
-              <p className="text-[10px] font-semibold text-muted-foreground mt-2 text-center">
-                Automatically fill player details from your registered squad
-              </p>
-            </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field
+                    label="IGN"
+                    value={t.ign}
+                    onChange={(v) => {
+                      const newT = [...teammates];
+                      newT[i] = { ...t, ign: v };
+                      setTeammates(newT);
+                    }}
+                    placeholder="In-game name"
+                    compact
+                  />
+                  <Field
+                    label="UID"
+                    value={t.uid}
+                    onChange={(v) => {
+                      const newT = [...teammates];
+                      newT[i] = { ...t, uid: v };
+                      setTeammates(newT);
+                    }}
+                    placeholder="UID"
+                    compact
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Team Preview Step */}
-        {step === "team-preview" && mode !== "Solo" && (
-          <div className="space-y-4 py-4">
-            <div className="flex items-center gap-2 text-cta">
-              <Users className="w-4 h-4" />
-              <span className="text-xs font-black uppercase tracking-widest text-glow">Team Roster</span>
-            </div>
-            <div className="bg-secondary border border-border rounded-[1.25rem] overflow-hidden shadow-inner">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-border hover:bg-muted/50">
-                    <TableHead className="text-[9px] uppercase font-black text-muted-foreground tracking-widest">
-                      Position
-                    </TableHead>
-                    <TableHead className="text-[9px] uppercase font-black text-muted-foreground tracking-widest">
-                      IGN
-                    </TableHead>
-                    <TableHead className="text-[9px] uppercase font-black text-muted-foreground tracking-widest">
-                      UID
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow className="border-border hover:bg-muted/50">
-                    <TableCell className="text-xs font-black text-foreground">
-                      <Crown className="w-4 h-4 inline mr-2 text-amber-500" />
-                      Captain
-                    </TableCell>
-                    <TableCell className="text-xs font-bold text-foreground">{leader.ign}</TableCell>
-                    <TableCell className="text-xs font-mono font-bold text-foreground">{leader.uid}</TableCell>
-                  </TableRow>
-                  {teammates.slice(0, teamCount).map((t, i) => (
-                    <TableRow key={i} className="border-border hover:bg-muted/50">
-                      <TableCell className="text-xs font-black text-foreground">
-                        Player {i + 2}
-                      </TableCell>
-                      <TableCell className="text-xs font-bold text-foreground">{t.ign}</TableCell>
-                      <TableCell className="text-xs font-mono font-bold text-foreground">{t.uid}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            <div className="bg-primary/10 border border-primary/30 rounded-xl p-3 shadow-[0_0_10px_rgba(255,0,85,0.1)]">
-              <p className="text-xs font-semibold text-foreground/80">
-                <Check className="w-3 h-3 inline mr-2 text-cta" />
-                Review your team roster. Click "Next" to confirm registration details.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Confirm Step */}
+        {/* STEP 3: Confirm Entry */}
         {step === "confirm" && (
           <div className="space-y-4 py-4">
-            <div className="flex items-center gap-2 text-cta">
-              <Trophy className="w-4 h-4" />
-              <span className="text-xs font-black uppercase tracking-widest text-glow">Confirm Entry</span>
+            <div className="text-xs uppercase tracking-widest font-black text-muted-foreground mb-2">
+              Review & Confirm
             </div>
-            <div className="bg-secondary border border-border rounded-2xl p-4 space-y-2 text-sm">
+
+            {/* Summary */}
+            <div className="bg-secondary/50 border border-border rounded-xl p-4 space-y-2">
               <Row k="Tournament" v={tournamentTitle} />
               <Row k="Mode" v={mode} />
               {mode !== "Solo" && <Row k="Team" v={leader.teamName} />}
-              <Row k="Captain" v={`${leader.ign} (UID ${leader.uid})`} />
-              <Row k="Contact" v={`${leader.email} · ${leader.phone}`} />
-              {mode !== "Solo" && (
+              <Row k="Your IGN" v={leader.ign} />
+              <Row k="Your UID" v={leader.uid} />
+
+              {mode !== "Solo" && teammates.slice(0, teamCount).length > 0 && (
                 <div className="pt-2 mt-2 border-t border-border">
-                  <div className="text-[9px] font-black uppercase tracking-widest text-cta mb-1 text-glow">
-                    Roster
-                  </div>
+                  <div className="text-xs font-black uppercase tracking-widest text-cta mb-2">Roster</div>
                   {teammates.slice(0, teamCount).map((t, i) => (
-                    <Row key={i} k={`P${i + 2}`} v={`${t.ign} · ${t.uid}`} />
+                    <div key={i} className="text-xs py-1">
+                      <span className="text-muted-foreground">P{i + 2}:</span>
+                      <span className="font-bold text-foreground ml-2">{t.ign}</span>
+                      <span className="text-muted-foreground ml-1">({t.uid})</span>
+                    </div>
                   ))}
                 </div>
               )}
             </div>
-            <label className="flex items-start gap-2.5 text-xs text-muted-foreground cursor-pointer px-1">
+
+            {/* Checkbox */}
+            <label className="flex items-start gap-2.5 text-xs text-muted-foreground cursor-pointer">
               <input
                 type="checkbox"
                 checked={agree}
                 onChange={(e) => setAgree(e.target.checked)}
-                className="accent-primary mt-0.5 shrink-0 w-3.5 h-3.5 rounded bg-secondary border-border"
+                className="accent-primary mt-0.5 shrink-0 w-3.5 h-3.5 rounded bg-secondary border border-border"
               />
               <span className="font-semibold leading-relaxed">
-                I confirm all UIDs are accurate. I accept the <span className="text-cta font-bold">rules</span>, <span className="text-cta font-bold">anti-cheat policy</span>, and consent
-                to screenshot verification.
+                I confirm all details are accurate. I accept the rules and anti-cheat policy.
               </span>
             </label>
           </div>
         )}
 
-        {/* Footer */}
+        {/* Footer Buttons */}
         <div className="flex items-center justify-between pt-4 mt-2 border-t border-border">
-          {(step === "team-preview" || step === "confirm") && (
-            <Button variant="outline" onClick={handlePreviousStep} className="rounded-xl border-border bg-transparent text-foreground font-bold hover:bg-secondary text-xs uppercase tracking-widest">
-              <ChevronLeft className="w-4 h-4 mr-2" /> Back
+          {(step === "team-setup" || step === "confirm") && (
+            <Button
+              variant="outline"
+              onClick={handlePreviousStep}
+              className="rounded-xl border-border bg-transparent text-foreground font-bold hover:bg-secondary text-xs uppercase tracking-widest"
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" /> Back
             </Button>
           )}
           <div className="flex-1" />
+
           {step === "confirm" ? (
-            <Button onClick={submit} className="rounded-xl font-black bg-cta-gradient text-cta-foreground h-11 shadow-cta border border-cta/50 text-xs uppercase tracking-widest hover:scale-105 transition-transform">
-              <Trophy className="w-4 h-4 mr-2" /> LOCK MY SLOT
+            <Button
+              onClick={submit}
+              disabled={!agree}
+              className="rounded-xl font-black bg-cta-gradient text-cta-foreground h-11 shadow-cta border border-cta/50 text-xs uppercase tracking-widest disabled:opacity-50"
+            >
+              <Trophy className="w-4 h-4 mr-2" /> LOCK SLOT
             </Button>
           ) : (
             <Button
               onClick={handleNextStep}
-              className="rounded-xl font-black bg-cta-gradient text-cta-foreground h-11 shadow-cta border border-cta/50 text-xs uppercase tracking-widest hover:scale-105 transition-transform"
-              disabled={step === "team-input" && mode === "Solo"}
+              disabled={!teamSetupMode || loadingTeam || (step === "team-setup" && teamSetupMode === "registered" && selectedPlayers.size !== teamCount + 1)}
+              className="rounded-xl font-black bg-cta-gradient text-cta-foreground h-11 shadow-cta border border-cta/50 text-xs uppercase tracking-widest disabled:opacity-50"
             >
-              Next <ChevronRight className="w-4 h-4 ml-2" />
+              {loadingTeam ? "Loading..." : "Next"} <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           )}
         </div>

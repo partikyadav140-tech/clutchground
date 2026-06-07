@@ -41,7 +41,7 @@ const MAIN_TABS = ["/", "/tournaments", "/matches", "/leaderboard", "/profile", 
 
 export function Navbar() {
   const { user } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, isHydrated } = useTheme();
   const routerState = useRouterState();
   const path = routerState.location.pathname;
   const [unread, setUnread] = useState(0);
@@ -283,10 +283,14 @@ export function Navbar() {
               aria-label="Toggle theme"
               className="w-10 h-10 lg:w-8 lg:h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
             >
-              {theme === "dark" ? (
-                <Sun className="w-[20px] h-[20px] lg:w-3.5 lg:h-3.5" />
-              ) : (
-                <Moon className="w-[20px] h-[20px] lg:w-3.5 lg:h-3.5" />
+              {isHydrated && (
+                <>
+                  {theme === "dark" ? (
+                    <Sun className="w-[20px] h-[20px] lg:w-3.5 lg:h-3.5" />
+                  ) : (
+                    <Moon className="w-[20px] h-[20px] lg:w-3.5 lg:h-3.5" />
+                  )}
+                </>
               )}
             </button>
           </div>

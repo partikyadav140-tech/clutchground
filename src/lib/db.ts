@@ -366,6 +366,9 @@ async function initDb() {
 
       // Tournaments results status migration
       await pool.query(`ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS results_announced BOOLEAN DEFAULT false;`);
+
+      // Team requests initiated_by migration
+      await pool.query(`ALTER TABLE team_requests ADD COLUMN IF NOT EXISTS initiated_by TEXT DEFAULT 'player';`);
     } catch (e) {
       console.log("Column addition skipped or failed:", e);
     }

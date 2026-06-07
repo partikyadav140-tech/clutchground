@@ -1,9 +1,8 @@
 import logo from "@/assets/new-logo.png";
-import { Link } from "@tanstack/react-router";
 
 export function Logo({ size = 40, withText = true, className }: { size?: number; withText?: boolean; className?: string }) {
   return (
-    <a href="/" className="flex items-center gap-3 group">
+    <div className="flex items-center gap-3 group">
       <img
         src={logo}
         alt="CLUTCHGROUND"
@@ -22,6 +21,6 @@ export function Logo({ size = 40, withText = true, className }: { size?: number;
           </span>
         </div>
       )}
-    </a>
+    </div>
   );
 }
