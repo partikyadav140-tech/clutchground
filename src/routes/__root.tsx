@@ -97,7 +97,16 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <link rel="manifest" href="/manifest.webmanifest" />
         <script dangerouslySetInnerHTML={{ __html: `
           if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
+            window.addEventListener('load', async () => {
+              if (${import.meta.env.DEV}) {
+                const reg = await navigator.serviceWorker.getRegistration('/');
+                if (reg) {
+                  await reg.unregister();
+                  console.log('Unregistered service worker in development mode');
+                }
+                return;
+              }
+
               navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(console.error);
             });
           }

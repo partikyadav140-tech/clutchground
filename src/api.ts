@@ -793,31 +793,56 @@ export const getPlayerStats = createServerFn({ method: "POST" }).handler(async (
     const stats = await db.transaction(async (tx) => {
       // 1. Matches played
       const matchesPlayedRes = await tx
-        .prepare("SELECT COUNT(*) as count FROM registrations WHERE user_id = ?")
+        .prepare(`
+          SELECT COUNT(*) as count 
+          FROM registrations r
+          JOIN tournaments t ON r.tournament_id = t.id
+          WHERE r.user_id = ? AND t.results_announced = true
+        `)
         .get(userId) as any;
       const matchesPlayed = Number(matchesPlayedRes?.count || 0);
 
       // 2. Total Kills
       const totalKillsRes = await tx
-        .prepare("SELECT SUM(kills) as sum FROM registrations WHERE user_id = ?")
+        .prepare(`
+          SELECT SUM(r.kills) as sum 
+          FROM registrations r
+          JOIN tournaments t ON r.tournament_id = t.id
+          WHERE r.user_id = ? AND t.results_announced = true
+        `)
         .get(userId) as any;
       const totalKills = Number(totalKillsRes?.sum || 0);
 
       // 3. Total Earnings
       const totalEarningsRes = await tx
-        .prepare("SELECT SUM(awarded_prize) as sum FROM registrations WHERE user_id = ?")
+        .prepare(`
+          SELECT SUM(r.awarded_prize) as sum 
+          FROM registrations r
+          JOIN tournaments t ON r.tournament_id = t.id
+          WHERE r.user_id = ? AND t.results_announced = true
+        `)
         .get(userId) as any;
       const totalEarnings = Number(totalEarningsRes?.sum || 0);
 
       // 4. First place count
       const firstPlacesRes = await tx
-        .prepare("SELECT COUNT(*) as count FROM registrations WHERE user_id = ? AND position = 1")
+        .prepare(`
+          SELECT COUNT(*) as count 
+          FROM registrations r
+          JOIN tournaments t ON r.tournament_id = t.id
+          WHERE r.user_id = ? AND r.position = 1 AND t.results_announced = true
+        `)
         .get(userId) as any;
       const firstPlaces = Number(firstPlacesRes?.count || 0);
 
       // 5. Top 3 count
       const top3Res = await tx
-        .prepare("SELECT COUNT(*) as count FROM registrations WHERE user_id = ? AND position > 0 AND position <= 3")
+        .prepare(`
+          SELECT COUNT(*) as count 
+          FROM registrations r
+          JOIN tournaments t ON r.tournament_id = t.id
+          WHERE r.user_id = ? AND r.position > 0 AND r.position <= 3 AND t.results_announced = true
+        `)
         .get(userId) as any;
       const top3 = Number(top3Res?.count || 0);
 
@@ -827,7 +852,7 @@ export const getPlayerStats = createServerFn({ method: "POST" }).handler(async (
           SELECT r.created_at, r.kills, r.position, r.awarded_prize, t.title as tournament_title 
           FROM registrations r
           JOIN tournaments t ON r.tournament_id = t.id
-          WHERE r.user_id = ? 
+          WHERE r.user_id = ? AND t.results_announced = true
           ORDER BY r.created_at DESC 
           LIMIT 10
         `)
@@ -1173,7 +1198,7 @@ export const getTeamRequests = createServerFn({ method: "POST" }).handler(async 
       SELECT r.*, u.username 
       FROM team_requests r
       JOIN users u ON r.user_id = u.id
-      WHERE r.team_id = ? AND r.status = 'pending'
+      WHERE r.team_id = ? AND r.status = 'pending' AND (r.initiated_by = 'player' OR r.initiated_by IS NULL)
       ORDER BY r.created_at DESC
     `,
     )
@@ -1190,7 +1215,7 @@ export const getMyTeamRequest = createServerFn({ method: "POST" }).handler(async
       SELECT r.*, t.name AS team_name
       FROM team_requests r
       LEFT JOIN teams t ON r.team_id = t.id
-      WHERE r.user_id = ?
+      WHERE r.user_id = ? AND r.status = 'pending'
       ORDER BY r.created_at DESC
       LIMIT 1
     `,
@@ -1219,16 +1244,23 @@ export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(asy
       const teamCount = (await tx
         .prepare("SELECT COUNT(*) as count FROM team_members WHERE team_id = ?")
         .get(req.team_id)) as any;
-      if (teamCount.count >= 3)
+      if (teamCount.count >= 4)
         throw new Error(
-          "Team is full! (Max 4 Players). Please click 'Edit Team' in your profile and clear a player's details to remove them first.",
+          "Team is full! (Max 5 Players total). Please remove a player first.",
         );
+
+      const playerProfile = (await tx.prepare("SELECT username, ign, uid FROM users WHERE id = ?").get(req.user_id)) as any;
+      if (!playerProfile?.ign || !playerProfile?.uid) {
+        throw new Error("Please set your IGN and UID in your profile first.");
+      }
+
+      const nextRole = teamCount.count === 3 ? "substitute" : "player";
 
       await tx
         .prepare(
           "INSERT INTO team_members (team_id, user_id, ign, uid, role) VALUES (?, ?, ?, ?, ?)",
         )
-        .run(req.team_id, req.user_id, req.ign, req.uid, "player");
+        .run(req.team_id, req.user_id, playerProfile.ign, playerProfile.uid, nextRole);
 
       await tx
         .prepare("UPDATE team_requests SET status = 'rejected' WHERE user_id = ? AND status = 'pending' AND id != ?")
@@ -1236,11 +1268,27 @@ export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(asy
 
       await tx
         .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
-        .run(req.user_id, "🎉 Your request to join the team has been approved! All other pending requests were cancelled.", "/teams");
+        .run(req.user_id, "🎉 Your request/invitation to join the team has been approved! All other pending requests were cancelled.", "/teams");
+
+      const team = (await tx.prepare("SELECT leader_id, name FROM teams WHERE id = ?").get(req.team_id)) as any;
+      if (team) {
+        await tx
+          .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+          .run(team.leader_id, `✅ ${playerProfile.ign} has joined ${team.name}!`, "/teams");
+      }
     } else {
       await tx
         .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
-        .run(req.user_id, "❌ Your request to join the team was declined.", "/teams");
+        .run(req.user_id, "❌ The request to join the team was declined.", "/teams");
+
+      const team = (await tx.prepare("SELECT leader_id, name FROM teams WHERE id = ?").get(req.team_id)) as any;
+      if (team) {
+        const playerProfile = (await tx.prepare("SELECT ign, username FROM users WHERE id = ?").get(req.user_id)) as any;
+        const nameToShow = playerProfile?.ign || playerProfile?.username || "A player";
+        await tx
+          .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+          .run(team.leader_id, `❌ ${nameToShow} has declined the team invitation/request.`, "/teams");
+      }
     }
   });
 
@@ -2608,7 +2656,8 @@ export const getSocialLinks = createServerFn({ method: "POST" }).handler(async (
     whatsapp: "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s",
     discord: "https://discord.gg/uYXFJswHdg",
     telegram: "https://t.me/clutchground",
-    email: "clutchgroundofficial@gmail.com"
+    email: "clutchgroundofficial@gmail.com",
+    instagram: "https://instagram.com/clutchground"
   };
   if (row) {
     try {
@@ -2667,4 +2716,160 @@ export const resetFinanceStat = createServerFn({ method: "POST" }).handler(async
   }
 
   return { success: true };
+});
+
+export const inviteTeamMember = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { captainId, inviteKey } = data as any;
+
+  if (!inviteKey || !inviteKey.trim()) {
+    throw new Error("Invitation key (username, IGN, or UID) is required.");
+  }
+
+  const cleanKey = inviteKey.trim();
+
+  // 1. Find target user
+  const targetUser = (await db
+    .prepare(
+      `
+      SELECT id, username, ign, uid 
+      FROM users 
+      WHERE LOWER(username) = LOWER(?) OR LOWER(ign) = LOWER(?) OR uid = ?
+      LIMIT 1
+    `
+    )
+    .get(cleanKey, cleanKey, cleanKey)) as any;
+
+  if (!targetUser) {
+    throw new Error("Player not found. Please double check the username, IGN, or UID.");
+  }
+
+  if (targetUser.id === captainId) {
+    throw new Error("You cannot invite yourself.");
+  }
+
+  // 2. Find captain's team
+  const team = (await db.prepare("SELECT id, name FROM teams WHERE leader_id = ?").get(captainId)) as any;
+  if (!team) {
+    throw new Error("You do not have a team. Please create one first.");
+  }
+
+  await db.transaction(async (tx) => {
+    // 3. Check if target user is captain of another team
+    const isCaptain = await tx.prepare("SELECT id FROM teams WHERE leader_id = ?").get(targetUser.id);
+    if (isCaptain) throw new Error("This player is already the captain of another team.");
+
+    // 4. Check if target user is member of another team
+    const isMember = await tx.prepare("SELECT team_id FROM team_members WHERE user_id = ?").get(targetUser.id);
+    if (isMember) throw new Error("This player is already in a team.");
+
+    // 5. Check if team is full
+    const teamCount = (await tx
+      .prepare("SELECT COUNT(*) as count FROM team_members WHERE team_id = ?")
+      .get(team.id)) as any;
+    if (teamCount.count >= 4) {
+      throw new Error("Your team is full (Max 5 players total, including Captain).");
+    }
+
+    // 6. Check if a pending request/invite already exists
+    const existing = await tx
+      .prepare("SELECT id FROM team_requests WHERE team_id = ? AND user_id = ? AND status = 'pending'")
+      .get(team.id, targetUser.id);
+    if (existing) {
+      throw new Error("A pending request or invitation already exists for this player.");
+    }
+
+    // 7. Insert the invitation
+    await tx
+      .prepare(
+        "INSERT INTO team_requests (team_id, user_id, ign, uid, initiated_by) VALUES (?, ?, ?, ?, 'team')"
+      )
+      .run(team.id, targetUser.id, targetUser.ign || "", targetUser.uid || "");
+
+    // 8. Add notification to player
+    await tx
+      .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+      .run(
+        targetUser.id,
+        `📣 Team ${team.name} has invited you to join their roster. Accept or decline on your Squad page.`,
+        "/teams"
+      );
+  });
+
+  // Fire push notification after transaction commits
+  try {
+    const { triggerPushNotification } = await import("./lib/push-server");
+    await triggerPushNotification(
+      targetUser.id,
+      "📣 Team Invitation",
+      `📣 Team ${team.name} has invited you to join their roster!`,
+      "/teams"
+    ).catch(() => {});
+  } catch (e) {}
+
+  return { success: true };
+});
+
+export const searchPlayers = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { query, captainId } = data as any;
+
+  try {
+    // Get all users except the captain themselves
+    if (!query || query.trim().length === 0) {
+      const results = (await db
+        .prepare(
+          `
+          SELECT u.id, u.username, u.ign, u.uid, u.avatar_url
+          FROM users u
+          WHERE u.id != ?
+          ORDER BY u.username ASC
+          LIMIT 100
+        `
+        )
+        .all(captainId)) as any[];
+
+      console.log("Search players (all):", results?.length || 0, "found");
+      return results || [];
+    }
+
+    const searchTerm = `%${query.trim().toLowerCase()}%`;
+
+    // Search for players by username, IGN, or UID
+    const results = (await db
+      .prepare(
+        `
+        SELECT u.id, u.username, u.ign, u.uid, u.avatar_url
+        FROM users u
+        WHERE (LOWER(u.username) LIKE ? OR LOWER(u.ign) LIKE ? OR u.uid LIKE ?)
+        AND u.id != ?
+        ORDER BY u.username ASC
+        LIMIT 100
+      `
+      )
+      .all(searchTerm, searchTerm, searchTerm, captainId)) as any[];
+
+    console.log("Search players (filtered):", results?.length || 0, "found");
+    return results || [];
+  } catch (err) {
+    console.error("searchPlayers error:", err);
+    return [];
+  }
+});
+
+export const getMyTeamInvitations = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const userId = data as unknown as number;
+
+  return db
+    .prepare(
+      `
+      SELECT r.*, t.name AS team_name
+      FROM team_requests r
+      JOIN teams t ON r.team_id = t.id
+      WHERE r.user_id = ? AND r.status = 'pending' AND r.initiated_by = 'team'
+      ORDER BY r.created_at DESC
+    `
+    )
+    .all(userId);
 });
