@@ -3,20 +3,18 @@ import { useEffect, useRef, useState } from "react";
 import {
   Home,
   Trophy,
-  Crosshair,
   User,
   Crown,
   Bell,
   MessageCircle,
-  Sun,
-  Moon,
   Wallet,
+  Crosshair,
+  Settings,
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { GodCoin } from "./GodCoin";
 import { TicketIcon } from "./TicketIcon";
 import { useAuth } from "../lib/auth-client";
-import { useTheme } from "../lib/theme";
 import { useTutorialStore } from "../lib/tutorial-store";
 import { getNotifications, getUnreadChatCount } from "../api";
 import {
@@ -29,7 +27,15 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
-const NAV_ITEMS = [
+const DESKTOP_NAV_ITEMS = [
+  { to: "/", label: "Home", icon: Home },
+  { to: "/tournaments", label: "Arena", icon: Trophy },
+  { to: "/wallet", label: "Wallet", icon: Wallet },
+  { to: "/leaderboard", label: "Ranks", icon: Crown },
+  { to: "/profile", label: "Profile", icon: User },
+] as const;
+
+const MOBILE_NAV_ITEMS = [
   { to: "/", label: "Home", icon: Home },
   { to: "/tournaments", label: "Arena", icon: Trophy },
   { to: "/matches", label: "Matches", icon: Crosshair },
@@ -37,11 +43,8 @@ const NAV_ITEMS = [
   { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
-const MAIN_TABS = ["/", "/tournaments", "/matches", "/leaderboard", "/profile", "/wallet"];
-
 export function Navbar() {
   const { user } = useAuth();
-  const { theme, toggleTheme, isHydrated } = useTheme();
   const routerState = useRouterState();
   const path = routerState.location.pathname;
   const [unread, setUnread] = useState(0);
@@ -201,15 +204,15 @@ export function Navbar() {
         }`}
       >
         {/* Inner content — constrained to max-w-5xl on desktop */}
-        <div className="flex items-center justify-between px-4 h-20 lg:h-16 max-w-[480px] lg:max-w-5xl mx-auto w-full">
-          {/* Logo */}
-          <Link to="/" className="flex items-center active:opacity-80 transition-opacity">
-            <Logo withText={false} className="w-[76px] h-[76px] lg:w-[44px] lg:h-[44px]" />
+        <div className="flex items-center justify-between px-3 h-[60px] max-w-[480px] lg:max-w-5xl mx-auto w-full">
+          {/* Logo — larger mark in compact header */}
+          <Link to="/" className="flex items-center active:opacity-80 transition-opacity -ml-1 shrink-0">
+            <Logo withText={false} className="w-[72px] h-[72px] lg:w-[52px] lg:h-[52px] -my-2" />
           </Link>
 
           {/* ── Desktop horizontal nav (lg+ only) ── */}
           <nav className="hidden lg:flex items-center gap-1">
-            {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
+            {DESKTOP_NAV_ITEMS.map(({ to, label, icon: Icon }) => {
               const isActive = to === "/" ? path === "/" : path.startsWith(to);
               return (
                 <Link
@@ -242,16 +245,25 @@ export function Navbar() {
               </Link>
             )}
 
-            {/* Chat */}
+            <Link
+              id="tutorial-header-settings"
+              to="/settings"
+              className="relative w-9 h-9 lg:w-8 lg:h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
+              title="Settings"
+            >
+              <Settings className="w-[20px] h-[20px] lg:w-4 lg:h-4" />
+            </Link>
+
+            {/* Chat — desktop header only */}
             <Link
               id="tutorial-header-chat"
               to="/chat"
-              className="relative w-10 h-10 lg:w-8 lg:h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
+              className="relative hidden lg:flex w-8 h-8 items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
             >
-              <MessageCircle className="w-[22px] h-[22px] lg:w-4 lg:h-4" />
+              <MessageCircle className="w-4 h-4" />
               {unreadChats > 0 && (
                 <span
-                  className="absolute -top-0.5 -right-0.5 w-5 h-5 lg:w-4 lg:h-4 rounded-full text-[9px] lg:text-[8px] font-black grid place-items-center"
+                  className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[8px] font-black grid place-items-center"
                   style={{ background: "var(--primary)", color: "#fff" }}
                 >
                   {unreadChats > 9 ? "9+" : unreadChats}
@@ -276,23 +288,6 @@ export function Navbar() {
               )}
             </Link>
 
-            {/* Theme toggle */}
-            <button
-              id="tutorial-header-theme"
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-              className="w-10 h-10 lg:w-8 lg:h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
-            >
-              {isHydrated && (
-                <>
-                  {theme === "dark" ? (
-                    <Sun className="w-[20px] h-[20px] lg:w-3.5 lg:h-3.5" />
-                  ) : (
-                    <Moon className="w-[20px] h-[20px] lg:w-3.5 lg:h-3.5" />
-                  )}
-                </>
-              )}
-            </button>
           </div>
         </div>
       </header>
@@ -303,50 +298,36 @@ export function Navbar() {
           • Desktop → hidden (navigation is in the top header)
          ══════════════════════════════════════════════════════ */}
       <nav
-        className={`fixed bottom-0 inset-x-0 z-50 border-t border-border lg:hidden ${isTicketChat ? "hidden" : ""}`}
-        style={{
-          background: theme === "dark" ? "rgba(8,12,20,0.97)" : "rgba(255,255,255,0.97)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-        }}
+        className={`app-bottom-nav fixed bottom-0 inset-x-0 z-50 lg:hidden pointer-events-none ${isTicketChat ? "hidden" : ""}`}
+        aria-label="Main navigation"
       >
-        <div className="flex items-center justify-around h-[60px] px-2 max-w-[480px] mx-auto pb-[env(safe-area-inset-bottom,0px)]">
-          {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
-            const isActive = to === "/" ? path === "/" : path.startsWith(to);
-            return (
-              <Link
-                key={to}
-                id={`tutorial-nav-${label.toLowerCase()}`}
-                to={to}
-                className="relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full press-effect active:scale-90 transition-all duration-150"
-              >
-                <div
-                  className={`relative flex items-center justify-center w-10 h-7 rounded-xl transition-all duration-200 ${
-                    isActive ? "bg-primary/15" : ""
-                  }`}
+        <div className="px-4 mb-[max(10px,env(safe-area-inset-bottom))] max-w-[480px] mx-auto w-full pointer-events-auto">
+          <div className="app-bottom-nav-inner relative flex items-center justify-around h-[66px] px-2 rounded-[18px] border border-border/80 bg-card/98 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.18)] overflow-hidden">
+            {MOBILE_NAV_ITEMS.map(({ to, label, icon: Icon }) => {
+              const isActive = to === "/" ? path === "/" : path.startsWith(to);
+              return (
+                <Link
+                  key={to}
+                  id={`tutorial-nav-${label.toLowerCase()}`}
+                  to={to}
+                  className="relative flex flex-col items-center justify-center flex-1 min-w-0 h-full gap-1.5 py-1 press-effect active:scale-95 transition-transform"
                 >
                   <Icon
-                    className={`w-5 h-5 transition-all duration-200 ${
-                      isActive ? "text-primary scale-110" : "text-muted-foreground"
+                    className={`w-6 h-6 transition-colors duration-200 ${
+                      isActive ? "text-primary" : "text-muted-foreground"
                     }`}
                   />
-                </div>
-                <span
-                  className={`text-[9px] font-bold tracking-wide transition-colors ${
-                    isActive ? "text-primary" : "text-muted-foreground"
-                  }`}
-                >
-                  {label}
-                </span>
-                {isActive && (
                   <span
-                    className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full"
-                    style={{ background: "var(--primary)" }}
-                  />
-                )}
-              </Link>
-            );
-          })}
+                    className={`text-[10px] font-bold uppercase tracking-wide leading-none transition-colors truncate max-w-[72px] ${
+                      isActive ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  >
+                    {label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </nav>
 
@@ -381,7 +362,7 @@ export function Navbar() {
               <div className="flex flex-col gap-2">
                 <button
                   onClick={handleEnableNotifications}
-                  className="w-full h-12 rounded-xl font-black text-xs uppercase tracking-widest text-white flex items-center justify-center gap-2 press-effect shadow-cta animate-pulse-glow"
+                  className="w-full h-12 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 press-effect shadow-cta"
                   style={{ background: "var(--gradient-cta)" }}
                 >
                   Allow Notifications

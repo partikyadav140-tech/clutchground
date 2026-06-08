@@ -3,14 +3,15 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { getTournaments, getGlobalLeaderboard, getMyMatches, getHeroBanners, getProfile, getPlayerStats, getMyTeam, getTeamRequests } from "../../api";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
-import { Trophy, Users, Crown, Wallet, ChevronRight, Flame, Zap, Shield, Star, X, Gamepad2, Swords, Activity, Target, TrendingUp, BarChart3, ArrowRight } from "lucide-react";
+import { Trophy, Users, Crown, Wallet, ChevronRight, Flame, Zap, X, Gamepad2, Swords, Activity, Target, TrendingUp, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { useAuth } from "../../lib/auth-client";
 import { GodCoin } from "@/components/GodCoin";
+import { TournamentCard } from "@/components/TournamentCard";
+import { SpinWheelFab } from "@/components/spin-wheel/SpinWheelFab";
 
 export const Route = createFileRoute("/_app/")({
-  head: () => ({ meta: [{ title: "Clutch Ground | Rule the Battleground" }] }),
+  head: () => ({ meta: [{ title: "ClutchGround | Rule the Battleground" }] }),
   loader: async () => {
     const [ts, lb] = await Promise.allSettled([
       getTournaments(),
@@ -28,21 +29,6 @@ export const Route = createFileRoute("/_app/")({
     </div>
   ),
 });
-
-const POSTERS = [
-  "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319133/clutchground/posters/axuescfjvf4ldjhzjah2.jpg",
-  "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319134/clutchground/posters/jurlwo3f3ci0989sbron.jpg",
-  "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319135/clutchground/posters/effl14r1d2hdj2ccvytp.jpg",
-  "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319136/clutchground/posters/xt34djmrfhqqialfpyvw.jpg",
-  "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319137/clutchground/posters/utsi9880syth0wggn6jk.jpg",
-  "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319138/clutchground/posters/o19jvuwrbawybvm76fvg.jpg",
-];
-
-const MODE: Record<string, { color: string; glow: string; gradient: string; bg: string }> = {
-  Solo:  { color: "#00c8ff", glow: "rgba(0,200,255,0.35)",   gradient: "linear-gradient(135deg,#00c8ff,#0080ff)", bg: "rgba(0,200,255,0.08)" },
-  Duo:   { color: "#a78bfa", glow: "rgba(167,139,250,0.35)", gradient: "linear-gradient(135deg,#a78bfa,#7c3aed)", bg: "rgba(167,139,250,0.08)" },
-  Squad: { color: "#ff6b00", glow: "rgba(255,107,0,0.35)",   gradient: "linear-gradient(135deg,#ff6b00,#ff0055)", bg: "rgba(255,107,0,0.08)" },
-};
 
 /* ── Staggered entrance animation wrapper ── */
 const stagger = {
@@ -147,7 +133,7 @@ function HomePage() {
 
   return (
     <motion.div
-      className="min-h-screen bg-background pb-[80px]"
+      className="min-h-screen bg-background pb-4"
       variants={stagger}
       initial="hidden"
       animate="show"
@@ -184,7 +170,7 @@ function HomePage() {
 
               {/* Greeting & meta */}
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">
+                <p className="text-label">
                   Welcome back
                 </p>
                 <h1 className="font-display font-black text-lg text-foreground leading-tight truncate mt-1">
@@ -201,18 +187,23 @@ function HomePage() {
                 </div>
               </div>
 
-              {/* Balance pill */}
-              <div
-                id="tutorial-balance-pill"
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); router.navigate({ to: "/wallet" }); }}
-                className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border border-border bg-secondary/60 hover:border-primary/40 press-effect active:scale-95 transition-all cursor-pointer"
+              {/* Wallet shortcut */}
+              <Link
+                id="tutorial-wallet-pill"
+                to="/wallet"
+                className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border border-primary/25 bg-primary/10 hover:bg-primary/15 hover:border-primary/40 press-effect active:scale-95 transition-all"
               >
-                <GodCoin className="w-4.5 h-4.5" />
-                <div className="flex flex-col items-end">
-                  <span className="text-[7px] font-black text-muted-foreground uppercase tracking-widest leading-none">Coins</span>
-                  <span className="font-display font-black text-sm text-foreground leading-tight tabular-nums mt-0.5">{balance}</span>
+                <div className="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center">
+                  <Wallet className="w-4 h-4 text-primary" />
                 </div>
-              </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary leading-none">Wallet</span>
+                  <span className="font-display font-black text-sm text-foreground leading-tight tabular-nums mt-0.5 flex items-center gap-1">
+                    <GodCoin className="w-3.5 h-3.5" />
+                    {balance}
+                  </span>
+                </div>
+              </Link>
             </div>
           </div>
         ) : (
@@ -223,11 +214,11 @@ function HomePage() {
                  style={{ background: "var(--primary)", opacity: 0.08 }} />
 
             <div className="relative">
-              <h1 className="font-display font-black text-2xl text-foreground uppercase tracking-wide leading-tight">
+              <h1 className="font-display font-black text-2xl text-foreground leading-tight">
                 CLUTCHGROUND
               </h1>
-              <p className="text-xs text-muted-foreground font-semibold mt-1.5 mb-5">
-                India's #1 Free Fire Esports Arena
+              <p className="text-sm text-muted-foreground font-medium mt-1.5 mb-5">
+                India&apos;s Free Fire esports arena
               </p>
 
               {/* Social proof stats */}
@@ -239,13 +230,13 @@ function HomePage() {
                 ].map((s) => (
                   <div key={s.label} className="text-center">
                     <p className="font-display font-black text-base text-foreground">{s.value}</p>
-                    <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{s.label}</p>
+                    <p className="text-label mt-0.5">{s.label}</p>
                   </div>
                 ))}
               </div>
 
               <Link to="/login">
-                <button className="h-12 w-full max-w-[240px] rounded-2xl font-black text-xs text-white uppercase tracking-widest press-effect active:scale-95 flex items-center justify-center gap-2 mx-auto"
+                <button className="h-12 w-full max-w-[240px] rounded-2xl font-bold text-sm text-white press-effect active:scale-95 flex items-center justify-center gap-2 mx-auto"
                         style={{ background: "var(--gradient-cta)", boxShadow: "var(--shadow-cta)" }}>
                   <Zap className="w-4 h-4" />
                   Join the Arena
@@ -276,7 +267,7 @@ function HomePage() {
                       <item.icon className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-[8px] font-black text-muted-foreground uppercase tracking-wider leading-none">{item.label}</p>
+                      <p className="text-label leading-none">{item.label}</p>
                       <p className="font-display font-black text-sm text-foreground mt-0.5 leading-none">{item.value}</p>
                     </div>
                   </div>
@@ -285,7 +276,7 @@ function HomePage() {
               {/* CTA to stats */}
               <div className="flex items-center justify-center gap-1.5 mt-2 text-muted-foreground hover:text-primary transition-colors">
                 <Activity className="w-3 h-3" style={{ color: "var(--primary)" }} />
-                <span className="text-[9px] font-black uppercase tracking-widest">View detailed analytics</span>
+                <span className="text-xs font-semibold">View detailed analytics</span>
                 <ChevronRight className="w-3 h-3" />
               </div>
             </Link>
@@ -365,7 +356,7 @@ function HomePage() {
             <div className="flex gap-3">
               {featured.map((t: any, i: number) => (
                 <div key={t.id} className="flex-[0_0_78%] min-w-0">
-                  <TournamentCard t={t} i={i} isJoined={joinedMatches.includes(t.id)} />
+                  <TournamentCard t={t} index={i} isJoined={joinedMatches.includes(t.id)} compact />
                 </div>
               ))}
             </div>
@@ -391,7 +382,7 @@ function HomePage() {
             <div className="flex gap-3">
               {battles.map((t: any, i: number) => (
                 <div key={t.id} className="flex-[0_0_78%] min-w-0">
-                  <TournamentCard t={t} i={i} isJoined={joinedMatches.includes(t.id)} />
+                  <TournamentCard t={t} index={i} isJoined={joinedMatches.includes(t.id)} compact />
                 </div>
               ))}
             </div>
@@ -446,34 +437,29 @@ function HomePage() {
         </motion.div>
       )}
 
+      {/* Daily spin wheel — above My Team */}
+      <SpinWheelFab bottomOffset={152} />
+
       {/* ═══════════════════════════════════════════════
           FIXED: My Team Floating Button (right side, above navbar)
          ═══════════════════════════════════════════════ */}
       {user && (
-        <Link to="/teams" className="fixed right-3 z-40 no-underline" style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)" }}>          <motion.div
+        <Link to="/my-team" className="fixed right-3 z-40 no-underline" style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 86px)" }}>
+          <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", damping: 18, stiffness: 260, delay: 0.5 }}
-            className="relative flex items-center gap-2 pl-3 pr-3.5 py-2.5 rounded-2xl border shadow-2xl press-effect active:scale-95 transition-transform cursor-pointer"
-            style={{
-              background: "linear-gradient(135deg, rgba(var(--card-rgb, 24,28,36), 0.92), rgba(var(--card-rgb, 24,28,36), 0.98))",
-              backdropFilter: "blur(20px) saturate(1.5)",
-              WebkitBackdropFilter: "blur(20px) saturate(1.5)",
-              borderColor: "var(--border)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04) inset, 0 0 20px rgba(var(--primary-rgb, 255,0,85), 0.12)",
-            }}
+            className="relative flex items-center gap-2.5 pl-3 pr-4 py-2.5 rounded-2xl border border-border bg-card/95 backdrop-blur-xl shadow-card press-effect active:scale-95 transition-transform cursor-pointer"
           >
-            {/* Icon container */}
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                 style={{ background: "var(--gradient-primary)" }}>
-              <Users className="w-4 h-4 text-white" />
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-primary/15 text-primary border border-primary/20">
+              <Users className="w-5 h-5" />
             </div>
             {/* Label */}
             <div className="flex flex-col">
-              <span className="text-[10px] font-black text-foreground uppercase tracking-widest leading-none">
+              <span className="text-xs font-bold text-foreground leading-none">
                 {myTeam ? "My Team" : "Squad"}
               </span>
-              <span className="text-[8px] font-semibold text-muted-foreground leading-tight mt-0.5 max-w-[80px] truncate">
+              <span className="text-label leading-tight mt-0.5 max-w-[80px] truncate">
                 {myTeam ? myTeam.name : "Join / Create"}
               </span>
             </div>
@@ -481,7 +467,7 @@ function HomePage() {
             {myTeam && teamRequests?.length > 0 && (
               <span className="absolute -top-1 -right-1 flex items-center justify-center">
                 <span className="absolute w-4 h-4 rounded-full animate-ping opacity-40" style={{ background: "var(--primary)" }} />
-                <span className="relative w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-black text-white" style={{ background: "var(--primary)" }}>
+                <span className="relative w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: "var(--primary)" }}>
                   {teamRequests.length}
                 </span>
               </span>
@@ -489,34 +475,6 @@ function HomePage() {
           </motion.div>
         </Link>
       )}
-
-      {/* ═══════════════════════════════════════════════
-          FOOTER
-         ═══════════════════════════════════════════════ */}
-      <motion.footer variants={fadeUp} className="mx-4 mb-6 mt-2">
-        <div className="bg-card rounded-2xl border border-border p-5 text-center shadow-card">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-[9px] font-black uppercase tracking-[0.18em] text-muted-foreground">CLUTCHGROUND</span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-          <p className="text-[10px] text-muted-foreground font-semibold leading-relaxed mb-3">
-            © {new Date().getFullYear()} CLUTCHGROUND. All rights reserved.<br />
-            India's premier Free Fire esports arena platform.
-          </p>
-          <div className="pt-3 border-t border-border">
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Designed & Developed by</p>
-            <p className="font-display font-black text-sm text-foreground">Pratikk Yadav</p>
-            <a href="mailto:clutchgroundofficial@gmail.com"
-              className="inline-flex items-center gap-1.5 mt-1.5 text-[10px] font-bold press-effect active:scale-95 transition-all"
-              style={{ color: "var(--primary)" }}>
-              📧 clutchgroundofficial@gmail.com
-            </a>
-          </div>
-        </div>
-      </motion.footer>
-
-      <div className="h-2" />
 
       {/* ── Hero Image Lightbox ── */}
       <AnimatePresence>
@@ -552,129 +510,5 @@ function HomePage() {
         )}
       </AnimatePresence>
     </motion.div>
-  );
-}
-
-/* ════════════════════════════════════════════════
-   SHARED TOURNAMENT CARD — identical to Arena page
-════════════════════════════════════════════════ */
-function TournamentCard({ t, i, isJoined }: { t: any; i: number; isJoined?: boolean }) {
-  const poster  = (t.banner && t.banner.startsWith("http")) ? t.banner : POSTERS[t.id % POSTERS.length];
-  const slots   = Number(t.slots) || 1;
-  const filled  = Number(t.filled) || 0;
-  const fillPct = Math.min(100, Math.round((filled / slots) * 100));
-  const isFull  = filled >= slots;
-  const isLive  = t.status === "live";
-  const isFree  = t.entry === 0;
-  const mc      = MODE[t.mode] || MODE.Solo;
-
-  return (
-    <div
-      className="rounded-3xl p-[1.5px] group cursor-pointer"
-      style={{ background: `linear-gradient(135deg, ${mc.color}44, transparent 60%, ${mc.color}22)` }}
-      onMouseEnter={e => (e.currentTarget.style.boxShadow = `0 0 28px ${mc.glow}, 0 8px 32px rgba(0,0,0,0.3)`)}
-      onMouseLeave={e => (e.currentTarget.style.boxShadow = "none")}
-    >
-      <div className="rounded-[calc(1.5rem-1.5px)] overflow-hidden bg-card">
-
-        {/* Banner */}
-        <div className="relative overflow-hidden" style={{ height: 150 }}>
-          <img src={poster} alt={t.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 60%, rgba(8,12,20,0.97) 100%)" }} />
-
-          {/* Badges */}
-          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-            {isLive && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase"
-                style={{ background: "rgba(239,68,68,0.85)", backdropFilter: "blur(6px)", color: "#fff" }}>
-                <span className="w-1 h-1 rounded-full animate-pulse" style={{ background: "#fff" }} />LIVE
-              </span>
-            )}
-            <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase"
-              style={{ color: mc.color, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", border: `1px solid ${mc.color}44` }}>
-              {t.mode}
-            </span>
-          </div>
-          {isFree && (
-            <div className="absolute top-2.5 right-2.5">
-              <span className="px-2 py-0.5 rounded-full text-[8px] font-black uppercase"
-                style={{ background: "rgba(16,185,129,0.85)", color: "#fff" }}>FREE</span>
-            </div>
-          )}
-
-          {/* Title */}
-          <div className="absolute bottom-2.5 left-3 right-3">
-            <div className="flex items-center gap-1 mb-1 text-[8px] font-black uppercase tracking-widest" style={{ color: mc.color }}>
-              <Star className="w-2.5 h-2.5" />Free Fire
-            </div>
-            <h3 className="font-display font-black text-base leading-tight line-clamp-1 drop-shadow-lg" style={{ color: "#fff" }}>{t.title}</h3>
-          </div>
-        </div>
-
-        {/* Stats bar */}
-        <div className="flex items-stretch divide-x divide-border">
-          {[
-            { label: "Entry", value: isFree ? "FREE" : t.entry, coin: !isFree, clr: isFree ? "#10b981" : mc.color },
-            { label: "Prize", value: t.mode === "Solo" ? `${t.per_kill_coin}/kill` : t.prize, coin: true, clr: "#f59e0b" },
-            { label: "Starts", value: t.startsAt || t.startsat || "TBD", coin: false, clr: mc.color },
-          ].map(({ label, value, coin, clr }) => (
-            <div key={label} className="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5">
-              <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
-              <span className="font-display font-black text-xs text-foreground flex items-center gap-0.5">
-                {coin && <GodCoin className="w-2.5 h-2.5 text-amber-400" />}
-                <span style={{ color: clr }}>{value}</span>
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Fill bar */}
-        <div className="h-1.5 bg-secondary relative overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-700 relative overflow-hidden" style={{ width: `${fillPct}%`, background: isFull ? "#ef4444" : mc.gradient }}>
-            {!isFull && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent animate-shimmer" />}
-          </div>
-        </div>
-
-        {/* Slots + Buttons */}
-        <div className="p-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[9px] font-semibold text-muted-foreground flex items-center gap-1">
-              <Users className="w-2.5 h-2.5" />{filled}/{slots}
-            </span>
-            <span className="text-[9px] font-black" style={{ color: isFull ? "#ef4444" : mc.color }}>{isFull ? "FULL" : `${fillPct}%`}</span>
-          </div>
-
-          <div className="flex gap-2">
-            <Link to={`/tournaments/${t.id}` as any} className="flex-[0_0_auto]">
-              <button className="h-10 px-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-border text-foreground bg-secondary press-effect active:scale-95 flex items-center gap-1">
-                <Shield className="w-3 h-3" />Info
-              </button>
-            </Link>
-            <div className="flex-1">
-              {isJoined ? (
-                <Link to={`/matches`} className="w-full h-10 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center bg-green-500/10 text-green-500 border border-green-500/20 press-effect">
-                  Already Joined
-                </Link>
-              ) : isFull ? (
-                <button disabled className="w-full h-10 rounded-2xl text-[10px] font-black uppercase bg-secondary text-muted-foreground border border-border cursor-not-allowed">Full</button>
-              ) : (
-                <JoinBattleDialog
-                  tournamentId={t.id}
-                  tournamentTitle={t.title}
-                  mode={t.mode as any}
-                  entryFee={t.entry}
-                  trigger={
-                    <button className="w-full h-10 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 press-effect active:scale-95"
-                      style={{ background: mc.gradient, boxShadow: `0 3px 14px ${mc.glow}`, color: "#fff" }}>
-                      <Zap className="w-3 h-3" />Join
-                    </button>
-                  }
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   );
 }

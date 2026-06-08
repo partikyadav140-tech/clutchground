@@ -9,7 +9,7 @@ export function Logo({ size = 40, withText = true, className }: { size?: number;
         width={size}
         height={size}
         style={className ? undefined : { width: size, height: size }}
-        className={`object-contain logo-glow ${className || ""}`}
+        className={`object-contain logo-glow shrink-0 ${className || ""}`}
       />
       {withText && (
         <div className="hidden sm:flex items-center gap-2">

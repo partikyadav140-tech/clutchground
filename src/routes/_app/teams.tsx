@@ -1,87 +1,94 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Users, Plus, Search, X } from "lucide-react";
-import { toast } from "sonner";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronRight, Plus, Search, Users, X } from "lucide-react";
 import { motion } from "framer-motion";
-import { getAllTeams, getMyTeam, getMyTeamRequest, requestJoinTeam } from "../../api";
+import { PageHeader } from "@/components/PageHeader";
+import { TeamDetailSheet } from "@/components/team/TeamDetailSheet";
+import { TeamInvitesPanel } from "@/components/team/TeamInvitesPanel";
+import {
+  getAllTeams,
+  getMyTeam,
+  getMyTeamInvitations,
+  getMyTeamRequest,
+  getProfile,
+} from "../../api";
 import { useAuth } from "../../lib/auth-client";
+import { countRosterSlots, getInitials, TEAM_ROSTER, type Team } from "@/lib/team-utils";
 
 export const Route = createFileRoute("/_app/teams")({
-  head: () => ({ meta: [{ title: "Join a Squad — CLUTCHGROUND" }] }),
+  head: () => ({ meta: [{ title: "Find a Squad — ClutchGround" }] }),
   component: TeamsPage,
 });
 
 function TeamsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [teams, setTeams] = useState<any[]>([]);
-  const [filteredTeams, setFilteredTeams] = useState<any[]>([]);
-  const [pendingRequest, setPendingRequest] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState<number | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    const load = async () => {
-      if (!authLoading && !user) {
-        router.navigate({ to: "/login" });
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [pendingRequest, setPendingRequest] = useState<any>(null);
+  const [invites, setInvites] = useState<any[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!user) return;
+    try {
+      const existingTeam = await (getMyTeam as any)({ data: user.id });
+      if (existingTeam) {
+        router.navigate({ to: "/my-team" });
         return;
       }
-      if (!user) return;
 
-      try {
-        const team = await (getMyTeam as any)({ data: user.id });
-        if (team) {
-          router.navigate({ to: "/my-team" });
-          return;
-        }
+      const [allTeams, request, playerInvites, playerProfile] = await Promise.all([
+        (getAllTeams as any)(),
+        (getMyTeamRequest as any)({ data: user.id }),
+        (getMyTeamInvitations as any)({ data: user.id }),
+        (getProfile as any)({ data: user.id }),
+      ]);
 
-        const request = await (getMyTeamRequest as any)({ data: user.id });
-        setPendingRequest(request?.status === "pending" ? request : null);
-
-        const allTeams = await (getAllTeams as any)();
-        setTeams(allTeams || []);
-        setFilteredTeams(allTeams || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-  }, [user, authLoading, router]);
+      setTeams(allTeams || []);
+      setPendingRequest(request?.status === "pending" ? request : null);
+      setInvites(playerInvites || []);
+      setProfile(playerProfile);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, router]);
 
   useEffect(() => {
-    const filtered = teams.filter((team) =>
-      team.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    setFilteredTeams(filtered);
-  }, [searchQuery, teams]);
-
-  const handleJoinRequest = async (teamId: number) => {
-    if (!user) return;
-    setSubmitting(teamId);
-    const toastId = toast.loading("Sending join request...");
-
-    try {
-      await (requestJoinTeam as any)({
-        data: {
-          teamId,
-          userId: user.id,
-          ign: user.ign || user.username,
-          uid: user.uid || String(user.id),
-        },
-      });
-
-      toast.success("Join request sent!", { id: toastId });
-      setPendingRequest({ team_id: teamId, status: "pending" });
-    } catch (err: any) {
-      toast.error(err.message || "Failed to send join request", { id: toastId });
-    } finally {
-      setSubmitting(null);
+    if (!authLoading && !user) {
+      router.navigate({ to: "/login" });
+      return;
     }
+    if (user) load();
+  }, [user, authLoading, router, load]);
+
+  const filteredTeams = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return teams;
+    return teams.filter((team) => {
+      const haystack = [
+        team.name,
+        team.leader?.username,
+        team.leader?.ign,
+        team.leader?.uid,
+        ...(team.members || []).map((m) => `${m.ign} ${m.username} ${m.uid}`),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [teams, searchQuery]);
+
+  const openTeam = (teamId: number) => {
+    setSelectedTeamId(teamId);
+    setSheetOpen(true);
   };
 
   if (loading || authLoading) {
@@ -93,164 +100,152 @@ function TeamsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-[100px]">
-      <div className="px-4 pt-4 pb-6 sticky top-0 z-40 bg-background border-b border-border/50">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">
-                Join a Squad
-              </p>
-              <h1 className="font-display font-black text-3xl text-foreground">
-                Browse Teams
-              </h1>
-            </div>
-            <Link to="/my-team?create=1" className="inline-flex items-center justify-center gap-2 rounded-2xl bg-cta-gradient px-4 py-3 text-sm font-black text-cta-foreground shadow-cta border border-cta/50">
-              <Plus className="w-4 h-4" /> Create Squad
-            </Link>
-          </div>
+    <div className="min-h-screen bg-background pb-4 page-content">
+      <PageHeader
+        eyebrow="Squads"
+        eyebrowIcon={Users}
+        title="Find a team"
+        action={
+          <Link
+            to="/my-team"
+            search={{ create: "1" }}
+            className="inline-flex items-center gap-1.5 h-10 px-3.5 rounded-xl bg-cta-gradient text-white text-xs font-bold shadow-cta press-effect"
+          >
+            <Plus className="w-4 h-4" /> Create
+          </Link>
+        }
+      />
 
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search teams by name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-secondary border border-border focus:border-primary/60 outline-none pl-10 pr-4 py-3 text-sm font-bold rounded-xl transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            )}
-          </div>
+      <p className="text-sm text-muted-foreground -mt-1 mb-4">
+        Browse squads recruiting players. Tap a team to view the full roster and send a join request.
+      </p>
+
+      {invites.length > 0 && (
+        <div className="mb-5">
+          <TeamInvitesPanel userId={user!.id} invites={invites} onUpdated={load} />
         </div>
+      )}
+
+      {pendingRequest && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4"
+        >
+          <p className="text-label text-amber-600 mb-1">Pending request</p>
+          <p className="text-sm text-foreground">
+            Waiting for <span className="font-bold">{pendingRequest.team_name || "a team"}</span> to accept your request.
+          </p>
+          <Link to="/my-team" className="inline-flex items-center gap-1 text-xs font-semibold text-primary mt-2">
+            View status <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </motion.div>
+      )}
+
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search team name, captain, IGN, UID..."
+          className="w-full h-11 bg-card border border-border focus:border-primary/60 outline-none pl-10 pr-10 text-sm font-medium rounded-xl"
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
-      <div className="px-4 space-y-5">
-        {pendingRequest && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-2xl border border-amber-200 bg-amber-50 p-5"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-[10px] uppercase tracking-widest font-black text-amber-600 mb-1">
-                  Pending Request
-                </p>
-                <p className="text-sm text-foreground">
-                  Your request to join <span className="font-bold text-foreground">{pendingRequest.team_name || "this team"}</span> is still pending.
-                </p>
-              </div>
-              <Link to="/my-team" className="text-xs font-black uppercase tracking-widest text-primary hover:text-primary/80">
-                View status
-              </Link>
-            </div>
-          </motion.div>
-        )}
-
+      <div className="space-y-3">
         {filteredTeams.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-2xl border border-border p-8 text-center space-y-4"
-          >
-            <Users className="w-12 h-12 text-muted-foreground mx-auto opacity-50" />
-            <div>
-              <h3 className="font-display font-black text-lg text-foreground mb-1">
-                {teams.length === 0 ? "No teams available yet" : "No teams found"}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {teams.length === 0
-                  ? "Create your own squad and be the first to recruit players."
-                  : "Try adjusting your search query."}
-              </p>
-            </div>
-            <Link to="/my-team?create=1">
-              <Button className="h-11 rounded-xl bg-cta-gradient text-cta-foreground font-black uppercase tracking-widest text-xs shadow-cta border border-cta/50">
-                <Plus className="w-4 h-4 mr-2" /> Create Squad
-              </Button>
+          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+            <Users className="w-10 h-10 text-muted-foreground mx-auto mb-3 opacity-50" />
+            <h3 className="font-display font-bold text-lg mb-1">
+              {teams.length === 0 ? "No squads yet" : "No matches"}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              {teams.length === 0
+                ? "Be the first captain and build your roster."
+                : "Try a different search term."}
+            </p>
+            <Link
+              to="/my-team"
+              search={{ create: "1" }}
+              className="inline-flex h-11 items-center px-5 rounded-xl bg-primary text-primary-foreground text-sm font-bold"
+            >
+              Create squad
             </Link>
-          </motion.div>
+          </div>
         ) : (
-          <motion.div className="space-y-4">
-            {filteredTeams.map((team, idx) => (
-              <motion.div
+          filteredTeams.map((team, idx) => {
+            const slots = countRosterSlots(team.members);
+            return (
+              <motion.button
                 key={team.id}
-                initial={{ opacity: 0, y: 10 }}
+                type="button"
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="bg-card rounded-2xl border border-border overflow-hidden hover:border-primary/50 transition-colors"
+                transition={{ delay: idx * 0.03 }}
+                onClick={() => openTeam(team.id)}
+                className="w-full text-left rounded-2xl border border-border bg-card p-4 hover:border-primary/40 transition-colors press-effect"
               >
-                <div className="p-5 space-y-4">
-                  {/* Team Header with Logo */}
-                  <div className="flex items-start gap-4">
-                    <div className="w-20 h-20 shrink-0 rounded-xl bg-gradient-to-br from-primary to-[#d95a00] flex items-center justify-center font-display font-black text-2xl text-white shadow-lg overflow-hidden">
-                      {team.logo ? (
-                        <img src={team.logo} className="w-full h-full object-cover" alt={team.name} />
-                      ) : (
-                        team.name.slice(0, 2).toUpperCase()
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h2 className="font-display font-black text-xl text-foreground mb-1 truncate">
-                        {team.name}
-                      </h2>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {team.members?.length || 0} member{team.members?.length === 1 ? "" : "s"}
-                      </p>
-                      {team.leader && (
-                        <div className="text-xs text-muted-foreground">
-                          <span className="font-semibold text-foreground">Captain:</span> {team.leader.ign || team.leader.username}
-                        </div>
-                      )}
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl overflow-hidden bg-primary/10 border border-primary/15 flex items-center justify-center font-display font-black text-lg text-primary shrink-0">
+                    {team.logo ? (
+                      <img src={team.logo} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      getInitials(team.name)
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="font-display font-bold text-lg text-foreground truncate">{team.name}</h2>
+                    <p className="text-xs text-muted-foreground truncate">
+                      Captain: {team.leader?.ign || team.leader?.username || "—"}
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+                        {slots.squadFilled}/{TEAM_ROSTER.TOTAL_SQUAD} squad
+                      </span>
+                      <span
+                        className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                          slots.isFull ? "bg-destructive/10 text-destructive" : "bg-emerald-500/10 text-emerald-500"
+                        }`}
+                      >
+                        {slots.isFull ? "Full" : "Recruiting"}
+                      </span>
                     </div>
                   </div>
-
-                  {/* Team Members Preview */}
-                  {team.members && team.members.length > 0 && (
-                    <div className="border-t border-border/50 pt-4">
-                      <p className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-2">
-                        Members
-                      </p>
-                      <div className="space-y-2">
-                        {team.members.slice(0, 3).map((member: any, i: number) => (
-                          <div key={i} className="text-xs text-muted-foreground">
-                            <span className="font-semibold text-foreground">{member.ign || member.username || "Unknown"}</span>
-                            {member.uid && <span className="text-muted-foreground ml-2 font-mono">({member.uid})</span>}
-                          </div>
-                        ))}
-                        {team.members.length > 3 && (
-                          <p className="text-xs text-muted-foreground italic">
-                            +{team.members.length - 3} more member{team.members.length - 3 === 1 ? "" : "s"}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="pt-2 border-t border-border/50">
-                    <Button
-                      disabled={Boolean(pendingRequest) || submitting === team.id}
-                      onClick={() => handleJoinRequest(team.id)}
-                      className="w-full h-10 rounded-xl bg-primary text-white font-bold text-xs"
-                    >
-                      {submitting === team.id ? "Sending…" : "Request Join"}
-                    </Button>
-                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
                 </div>
-              </motion.div>
-            ))}
-          </motion.div>
+              </motion.button>
+            );
+          })
         )}
       </div>
+
+      <TeamDetailSheet
+        teamId={selectedTeamId}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        user={
+          user
+            ? {
+                id: user.id,
+                username: (user as any).username,
+                ign: profile?.ign || (user as any).ign,
+                uid: profile?.uid || (user as any).uid,
+              }
+            : null
+        }
+        pendingTeamId={pendingRequest?.team_id}
+        onRequestSent={load}
+      />
     </div>
   );
 }

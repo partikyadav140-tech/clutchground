@@ -35,8 +35,8 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" },
-      { title: "Clutch Ground | Rule the Battleground" },
+      { name: "viewport", content: "width=device-width, initial-scale=1.0, viewport-fit=cover" },
+      { title: "ClutchGround | Rule the Battleground" },
       {
         name: "description",
         content:
@@ -51,7 +51,7 @@ export const Route = createRootRoute({
         name: "robots",
         content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
       },
-      { property: "og:title", content: "Clutch Ground | Rule the Battleground" },
+      { property: "og:title", content: "ClutchGround | Rule the Battleground" },
       {
         property: "og:description",
         content:

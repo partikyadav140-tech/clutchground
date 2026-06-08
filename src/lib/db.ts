@@ -342,6 +342,16 @@ async function initDb() {
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS spin_history (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        segment_id TEXT NOT NULL,
+        prize_amount INTEGER NOT NULL DEFAULT 0,
+        prize_label TEXT NOT NULL DEFAULT '',
+        spun_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
     `);
 
     // Ensure columns exist (for SQLite/Postgres compatibility we use separate ALTER statements if needed, but in Postgres ADD COLUMN IF NOT EXISTS works)
@@ -369,6 +379,15 @@ async function initDb() {
 
       // Team requests initiated_by migration
       await pool.query(`ALTER TABLE team_requests ADD COLUMN IF NOT EXISTS initiated_by TEXT DEFAULT 'player';`);
+
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS spin_credits INTEGER DEFAULT 0;`);
+      await pool.query(`ALTER TABLE spin_history ADD COLUMN IF NOT EXISTS is_free BOOLEAN DEFAULT false;`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS banner_url TEXT;`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS banner_preset TEXT DEFAULT 'default';`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_animation TEXT DEFAULT 'none';`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_frame TEXT DEFAULT 'none';`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS owned_cosmetics TEXT DEFAULT '[]';`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS showcase_achievements TEXT DEFAULT '[]';`);
     } catch (e) {
       console.log("Column addition skipped or failed:", e);
     }

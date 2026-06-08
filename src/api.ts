@@ -758,31 +758,156 @@ export const checkUserRegistration = createServerFn({ method: "POST" }).handler(
   },
 );
 
+const PROFILE_SELECT = `
+  id, username, role, ign, uid, email, phone, avatar_url, banner_url, banner_preset,
+  profile_animation, profile_frame, owned_cosmetics, showcase_achievements,
+  created_at, deposit_balance, winning_balance, upi_id
+`;
+
+async function enrichProfile(db: any, profile: any, includePrivate = true) {
+  if (!profile) return null;
+  const { computeAchievements, parseJsonArray } = await import("./lib/profile-customization");
+
+  let team = (await db.prepare("SELECT * FROM teams WHERE leader_id = ?").get(profile.id)) as any;
+  if (!team) {
+    const member = (await db
+      .prepare("SELECT t.* FROM team_members tm JOIN teams t ON t.id = tm.team_id WHERE tm.user_id = ? LIMIT 1")
+      .get(profile.id)) as any;
+    team = member || null;
+  }
+
+  const stats = await getPlayerStatsHandler(profile.id, db);
+  const isCaptain = team?.leader_id === profile.id;
+  const achievements = computeAchievements({ ...stats, isCaptain });
+  const showcase = parseJsonArray(profile.showcase_achievements);
+  const owned = parseJsonArray(profile.owned_cosmetics);
+
+  const out: any = {
+    ...profile,
+    owned_cosmetics: owned,
+    showcase_achievements: showcase,
+    team: team ? { id: team.id, name: team.name, logo: team.logo, leader_id: team.leader_id } : null,
+    stats,
+    achievements,
+    showcase: achievements.filter((a) => showcase.includes(a.id)),
+  };
+
+  if (!includePrivate) {
+    delete out.email;
+    delete out.phone;
+    delete out.upi_id;
+    delete out.deposit_balance;
+    delete out.winning_balance;
+  }
+  return out;
+}
+
+async function getPlayerStatsHandler(userId: number, db: any) {
+  try {
+    const matchesPlayedRes = (await db
+      .prepare(
+        `SELECT COUNT(*) as count FROM registrations r
+         JOIN tournaments t ON r.tournament_id = t.id
+         WHERE r.user_id = ? AND t.results_announced = true`,
+      )
+      .get(userId)) as any;
+    const matchesPlayed = Number(matchesPlayedRes?.count || 0);
+
+    const agg = (await db
+      .prepare(
+        `SELECT COALESCE(SUM(r.kills),0) as kills, COALESCE(SUM(r.awarded_prize),0) as earnings,
+                SUM(CASE WHEN r.position = 1 THEN 1 ELSE 0 END) as firsts
+         FROM registrations r JOIN tournaments t ON r.tournament_id = t.id
+         WHERE r.user_id = ? AND t.results_announced = true`,
+      )
+      .get(userId)) as any;
+
+    return {
+      matchesPlayed,
+      totalKills: Number(agg?.kills || 0),
+      totalEarnings: Number(agg?.earnings || 0),
+      firstPlaces: Number(agg?.firsts || 0),
+      top3: 0,
+      kdRatio: matchesPlayed > 0 ? (Number(agg?.kills || 0) / matchesPlayed).toFixed(2) : "0.00",
+      winRate: matchesPlayed > 0 ? Math.round((Number(agg?.firsts || 0) / matchesPlayed) * 100) : 0,
+      history: [],
+    };
+  } catch {
+    return {
+      matchesPlayed: 0,
+      totalKills: 0,
+      totalEarnings: 0,
+      firstPlaces: 0,
+      top3: 0,
+      kdRatio: "0.00",
+      winRate: 0,
+      history: [],
+    };
+  }
+}
+
 export const updateProfile = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { userId, ign, uid, email, phone, avatar_url } = data as any;
-  
-  // Conditionally update avatar_url if provided, otherwise leave it alone
+  const {
+    userId,
+    ign,
+    uid,
+    email,
+    phone,
+    avatar_url,
+    banner_url,
+    banner_preset,
+    profile_animation,
+    profile_frame,
+    showcase_achievements,
+  } = data as any;
+
+  const fields: string[] = ["ign = ?", "uid = ?", "email = ?", "phone = ?"];
+  const values: any[] = [ign, uid, email, phone];
+
   if (avatar_url !== undefined) {
-    await db
-      .prepare("UPDATE users SET ign = ?, uid = ?, email = ?, phone = ?, avatar_url = ? WHERE id = ?")
-      .run(ign, uid, email, phone, avatar_url, userId);
-  } else {
-    await db
-      .prepare("UPDATE users SET ign = ?, uid = ?, email = ?, phone = ? WHERE id = ?")
-      .run(ign, uid, email, phone, userId);
+    fields.push("avatar_url = ?");
+    values.push(avatar_url);
   }
+  if (banner_url !== undefined) {
+    fields.push("banner_url = ?");
+    values.push(banner_url);
+  }
+  if (banner_preset !== undefined) {
+    fields.push("banner_preset = ?");
+    values.push(banner_preset);
+  }
+  if (profile_animation !== undefined) {
+    fields.push("profile_animation = ?");
+    values.push(profile_animation);
+  }
+  if (profile_frame !== undefined) {
+    fields.push("profile_frame = ?");
+    values.push(profile_frame);
+  }
+  if (showcase_achievements !== undefined) {
+    fields.push("showcase_achievements = ?");
+    values.push(JSON.stringify(showcase_achievements));
+  }
+
+  values.push(userId);
+  await db.prepare(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`).run(...values);
   return { success: true };
 });
 
 export const getProfile = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const userId = data as unknown as number;
-  return (await db
-    .prepare(
-      "SELECT id, username, role, ign, uid, email, phone, avatar_url, created_at, deposit_balance, winning_balance, upi_id FROM users WHERE id = ?",
-    )
-    .get(userId)) as any;
+  const profile = (await db.prepare(`SELECT ${PROFILE_SELECT} FROM users WHERE id = ?`).get(userId)) as any;
+  return enrichProfile(db, profile, true);
+});
+
+export const getPublicProfile = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const userId = data as unknown as number;
+  const profile = (await db.prepare(`SELECT ${PROFILE_SELECT} FROM users WHERE id = ? AND banned = false`).get(userId)) as any;
+  if (!profile || profile.role === "admin") return null;
+  return enrichProfile(db, profile, false);
 });
 
 export const getPlayerStats = createServerFn({ method: "POST" }).handler(async ({ data }) => {
@@ -957,6 +1082,7 @@ export const saveMyTeam = createServerFn({ method: "POST" }).handler(async ({ da
   const { db } = await import("./lib/db");
   const { userId, teamName, logo, members } = data as any;
   const removedMembers: number[] = [];
+  const rosterMembers = Array.isArray(members) ? members : null;
 
   await db.transaction(async (tx) => {
     let team = (await tx.prepare("SELECT id FROM teams WHERE leader_id = ?").get(userId)) as any;
@@ -965,13 +1091,16 @@ export const saveMyTeam = createServerFn({ method: "POST" }).handler(async ({ da
 
     if (team) {
       teamId = team.id;
-      existingMembers = (await tx
-        .prepare("SELECT uid, user_id FROM team_members WHERE team_id = ? AND user_id IS NOT NULL")
-        .all(teamId)) as any[];
       await tx
         .prepare("UPDATE teams SET name = ?, logo = ? WHERE id = ?")
         .run(teamName, logo || "", teamId);
-      await tx.prepare("DELETE FROM team_members WHERE team_id = ?").run(teamId);
+
+      if (rosterMembers) {
+        existingMembers = (await tx
+          .prepare("SELECT uid, user_id FROM team_members WHERE team_id = ? AND user_id IS NOT NULL")
+          .all(teamId)) as any[];
+        await tx.prepare("DELETE FROM team_members WHERE team_id = ?").run(teamId);
+      }
     } else {
       const res = await tx
         .prepare("INSERT INTO teams (name, leader_id, logo) VALUES (?, ?, ?)")
@@ -979,17 +1108,17 @@ export const saveMyTeam = createServerFn({ method: "POST" }).handler(async ({ da
       teamId = res.lastInsertRowid;
     }
 
+    if (!rosterMembers) return;
+
     const insertMember = tx.prepare(
       "INSERT INTO team_members (team_id, user_id, ign, uid, role) VALUES (?, ?, ?, ?, ?)",
     );
-    const newUids = new Set(members.filter((m: any) => m.ign && m.uid).map((m: any) => m.uid));
+    const newUids = new Set(rosterMembers.filter((m: any) => m.ign && m.uid).map((m: any) => m.uid));
 
-    for (const m of members) {
+    for (const m of rosterMembers) {
       if (m.ign && m.uid) {
-        // Try to preserve existing user_id
         let memberUserId = existingMembers.find((ex) => ex.uid === m.uid)?.user_id;
 
-        // If not found, try to recover it from approved requests just in case it was lost
         if (!memberUserId) {
           const req = (await tx
             .prepare(
@@ -1003,12 +1132,11 @@ export const saveMyTeam = createServerFn({ method: "POST" }).handler(async ({ da
       }
     }
 
-    // Notify removed members
     if (existingMembers.length > 0) {
       const insertNotif = tx.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)");
       for (const ex of existingMembers) {
         if (!newUids.has(ex.uid)) {
-          await insertNotif.run(ex.user_id, `❌ You have been removed from the team ${teamName}.`, "/teams");
+          await insertNotif.run(ex.user_id, `❌ You have been removed from the team ${teamName}.`, "/my-team");
           if (ex.user_id) {
             removedMembers.push(ex.user_id);
           }
@@ -1122,19 +1250,57 @@ export const deleteTeam = createServerFn({ method: "POST" }).handler(async ({ da
   return { success: true };
 });
 
+async function loadTeamBundle(db: any, teamId: number) {
+  const team = (await db.prepare("SELECT * FROM teams WHERE id = ?").get(teamId)) as any;
+  if (!team) return null;
+
+  const members = (await db
+    .prepare(
+      `
+      SELECT tm.*, u.username, u.avatar_url
+      FROM team_members tm
+      LEFT JOIN users u ON u.id = tm.user_id
+      WHERE tm.team_id = ?
+      ORDER BY CASE WHEN tm.role = 'substitute' THEN 1 ELSE 0 END, tm.id ASC
+    `,
+    )
+    .all(teamId)) as any[];
+
+  const leader = (await db
+    .prepare("SELECT id, username, ign, uid, avatar_url FROM users WHERE id = ?")
+    .get(team.leader_id)) as any;
+
+  return { ...team, members, leader };
+}
+
 export const getAllTeams = createServerFn({ method: "GET" }).handler(async () => {
   const { db } = await import("./lib/db");
   const teams = (await db.prepare("SELECT * FROM teams ORDER BY created_at DESC").all()) as any[];
   const allMembers = (await db
     .prepare(
       `
-      SELECT tm.*, u.username
+      SELECT tm.*, u.username, u.avatar_url
       FROM team_members tm
       LEFT JOIN users u ON u.id = tm.user_id
     `,
     )
     .all()) as any[];
-  return teams.map((t) => ({ ...t, members: allMembers.filter((m) => m.team_id === t.id) }));
+  const leaders = (await db
+    .prepare("SELECT id, username, ign, uid, avatar_url FROM users")
+    .all()) as any[];
+  const leaderMap = new Map(leaders.map((l: any) => [l.id, l]));
+
+  return teams.map((t) => ({
+    ...t,
+    members: allMembers.filter((m) => m.team_id === t.id),
+    leader: leaderMap.get(t.leader_id) || null,
+  }));
+});
+
+export const getTeamById = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const teamId = data as unknown as number;
+  return loadTeamBundle(db, teamId);
 });
 
 export const requestJoinTeam = createServerFn({ method: "POST" }).handler(async ({ data }) => {
@@ -1168,8 +1334,8 @@ export const requestJoinTeam = createServerFn({ method: "POST" }).handler(async 
       .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
       .run(
         team.leader_id,
-        `📩 ${ign} has requested to join your team ${team.name}. Go to your Profile to review.`,
-        "/teams",
+        `📩 ${ign} has requested to join your team ${team.name}. Review on My Squad.`,
+        "/my-team",
       );
 
     try {
@@ -1225,11 +1391,21 @@ export const getMyTeamRequest = createServerFn({ method: "POST" }).handler(async
 
 export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { requestId, status } = data as any;
+  const { requestId, status, userId } = data as any;
 
-  // Pre-fetch outside transaction so we can fire push after it commits
   const req = (await db.prepare("SELECT * FROM team_requests WHERE id = ?").get(requestId)) as any;
-  if (!req) throw new Error("Request not found");
+  if (!req || req.status !== "pending") throw new Error("Request not found or already handled.");
+
+  if (userId) {
+    const team = (await db.prepare("SELECT leader_id FROM teams WHERE id = ?").get(req.team_id)) as any;
+    if (!team) throw new Error("Team not found.");
+    const initiatedBy = req.initiated_by || "player";
+    if (initiatedBy === "team") {
+      if (req.user_id !== userId) throw new Error("Only the invited player can respond.");
+    } else if (team.leader_id !== userId) {
+      throw new Error("Only the team captain can review join requests.");
+    }
+  }
 
   await db.transaction(async (tx) => {
     await tx.prepare("UPDATE team_requests SET status = ? WHERE id = ?").run(status, requestId);
@@ -1241,20 +1417,25 @@ export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(asy
       const isMember = await tx.prepare("SELECT team_id FROM team_members WHERE user_id = ?").get(req.user_id);
       if (isMember) throw new Error("User has already joined another team.");
 
-      const teamCount = (await tx
-        .prepare("SELECT COUNT(*) as count FROM team_members WHERE team_id = ?")
-        .get(req.team_id)) as any;
-      if (teamCount.count >= 4)
-        throw new Error(
-          "Team is full! (Max 5 Players total). Please remove a player first.",
-        );
+      const roster = (await tx
+        .prepare("SELECT role FROM team_members WHERE team_id = ?")
+        .all(req.team_id)) as any[];
+      if (roster.length >= 4) {
+        throw new Error("Team is full. Captain must remove a member before approving.");
+      }
 
       const playerProfile = (await tx.prepare("SELECT username, ign, uid FROM users WHERE id = ?").get(req.user_id)) as any;
       if (!playerProfile?.ign || !playerProfile?.uid) {
         throw new Error("Please set your IGN and UID in your profile first.");
       }
 
-      const nextRole = teamCount.count === 3 ? "substitute" : "player";
+      const playerCount = roster.filter((m: any) => m.role !== "substitute").length;
+      const subCount = roster.filter((m: any) => m.role === "substitute").length;
+      let nextRole = "player";
+      if (playerCount >= 3) nextRole = "substitute";
+      if (subCount >= 1 && playerCount >= 3) {
+        throw new Error("Team roster is full (captain + 3 players + 1 substitute).");
+      }
 
       await tx
         .prepare(
@@ -1313,6 +1494,58 @@ export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(asy
   } catch (e) {
     console.error("[Push] Team request notification failed:", e);
   }
+
+  return { success: true };
+});
+
+export const cancelTeamRequest = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { userId, requestId } = data as any;
+
+  const req = (await db.prepare("SELECT * FROM team_requests WHERE id = ?").get(requestId)) as any;
+  if (!req || req.status !== "pending") throw new Error("Request not found.");
+  if (req.user_id !== userId) throw new Error("Not authorized.");
+
+  await db.prepare("DELETE FROM team_requests WHERE id = ?").run(requestId);
+  return { success: true };
+});
+
+export const removeTeamMember = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { captainId, memberUserId } = data as any;
+
+  const team = (await db.prepare("SELECT id, name, leader_id FROM teams WHERE leader_id = ?").get(captainId)) as any;
+  if (!team) throw new Error("You do not captain a team.");
+
+  const member = (await db
+    .prepare("SELECT ign, username FROM users WHERE id = ?")
+    .get(memberUserId)) as any;
+
+  await db.transaction(async (tx) => {
+    const deleted = await tx
+      .prepare("DELETE FROM team_members WHERE team_id = ? AND user_id = ?")
+      .run(team.id, memberUserId);
+    const removed = (deleted as any)?.changes ?? (deleted as any)?.rowCount ?? 0;
+    if (!removed) throw new Error("Member not found on your roster.");
+
+    await tx
+      .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+      .run(
+        memberUserId,
+        `❌ You were removed from ${team.name} by the captain.`,
+        "/teams",
+      );
+  });
+
+  try {
+    const { triggerPushNotification } = await import("./lib/push-server");
+    await triggerPushNotification(
+      memberUserId,
+      "Team update",
+      `You were removed from ${team.name}.`,
+      "/teams",
+    );
+  } catch {}
 
   return { success: true };
 });
@@ -2768,7 +3001,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" }).handler(async
       .prepare("SELECT COUNT(*) as count FROM team_members WHERE team_id = ?")
       .get(team.id)) as any;
     if (teamCount.count >= 4) {
-      throw new Error("Your team is full (Max 5 players total, including Captain).");
+      throw new Error("Your team roster is full (3 players + 1 substitute).");
     }
 
     // 6. Check if a pending request/invite already exists
@@ -2872,4 +3105,472 @@ export const getMyTeamInvitations = createServerFn({ method: "POST" }).handler(a
     `
     )
     .all(userId);
+});
+
+// ─── Spin Wheel ─────────────────────────────────────────────────────────────
+
+async function loadSpinWheelConfig(db: any) {
+  const {
+    parseSpinWheelConfig,
+    SPIN_WHEEL_SETTINGS_KEY,
+    DEFAULT_SPIN_WHEEL_CONFIG,
+  } = await import("./lib/spin-wheel");
+
+  const row = (await db.prepare("SELECT value FROM site_settings WHERE key = ?").get(SPIN_WHEEL_SETTINGS_KEY)) as any;
+  if (!row?.value) {
+    const defaultJson = JSON.stringify(DEFAULT_SPIN_WHEEL_CONFIG);
+    await db
+      .prepare(
+        `INSERT INTO site_settings (key, value) VALUES (?, ?)
+         ON CONFLICT (key) DO NOTHING RETURNING key`,
+      )
+      .run(SPIN_WHEEL_SETTINGS_KEY, defaultJson);
+    return parseSpinWheelConfig(defaultJson);
+  }
+  return parseSpinWheelConfig(row.value);
+}
+
+export const getSpinWheelConfig = createServerFn({ method: "POST" }).handler(async () => {
+  const { db } = await import("./lib/db");
+  const { buildWheelSlices } = await import("./lib/spin-wheel");
+  const config = await loadSpinWheelConfig(db);
+  const slices = buildWheelSlices(config.segments);
+  return {
+    segments: config.segments,
+    activePrizeIds: config.activePrizeIds,
+    minDeposit: config.minDeposit,
+    spinPacks: config.spinPacks,
+    totalSlices: slices.length,
+  };
+});
+
+async function deductCgCoins(
+  tx: any,
+  userId: number,
+  cost: number,
+  description: string,
+): Promise<{ fromDeposit: number; fromWinning: number }> {
+  const user = (await tx
+    .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
+    .get(userId)) as any;
+  if (!user) throw new Error("User not found");
+
+  const deposit = user.deposit_balance || 0;
+  const winning = user.winning_balance || 0;
+  if (deposit + winning < cost) {
+    throw new Error(`Insufficient CG coins. You need ${cost} CG.`);
+  }
+
+  let remaining = cost;
+  let newDeposit = deposit;
+  let newWinning = winning;
+  const fromDeposit = Math.min(deposit, remaining);
+  newDeposit -= fromDeposit;
+  remaining -= fromDeposit;
+  const fromWinning = remaining;
+  newWinning -= fromWinning;
+
+  await tx
+    .prepare("UPDATE users SET deposit_balance = ?, winning_balance = ? WHERE id = ?")
+    .run(newDeposit, newWinning, userId);
+
+  if (fromDeposit > 0) {
+    await tx
+      .prepare("INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)")
+      .run(userId, fromDeposit, "deposit_deducted", description);
+  }
+  if (fromWinning > 0) {
+    await tx
+      .prepare("INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)")
+      .run(userId, fromWinning, "winnings_deducted", `${description} (withdrawable)`);
+  }
+
+  return { fromDeposit, fromWinning };
+}
+
+export const getSpinWheelStatus = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { getTodayStartIST } = await import("./lib/spin-wheel");
+  const userId = data as unknown as number;
+  if (!userId) throw new Error("Login required");
+
+  const config = await loadSpinWheelConfig(db);
+  const user = (await db
+    .prepare("SELECT deposit_balance, winning_balance, spin_credits FROM users WHERE id = ?")
+    .get(userId)) as any;
+  if (!user) throw new Error("User not found");
+
+  const todayStart = getTodayStartIST();
+  const freeSpinToday = await db
+    .prepare(
+      "SELECT id FROM spin_history WHERE user_id = ? AND spun_at >= ? AND is_free = true LIMIT 1",
+    )
+    .get(userId, todayStart);
+
+  const depositBalance = user.deposit_balance || 0;
+  const winningBalance = user.winning_balance || 0;
+  const spinCredits = user.spin_credits || 0;
+  const freeSpinAvailable = !freeSpinToday && depositBalance >= config.minDeposit;
+  const canSpin = freeSpinAvailable || spinCredits > 0;
+
+  const lastSpin = (await db
+    .prepare("SELECT * FROM spin_history WHERE user_id = ? ORDER BY spun_at DESC LIMIT 1")
+    .get(userId)) as any;
+
+  return {
+    canSpin,
+    freeSpinAvailable,
+    usedFreeToday: !!freeSpinToday,
+    spinCredits,
+    depositBalance,
+    winningBalance,
+    totalBalance: depositBalance + winningBalance,
+    minDeposit: config.minDeposit,
+    lastSpin: lastSpin
+      ? {
+          segmentId: lastSpin.segment_id,
+          prizeAmount: lastSpin.prize_amount,
+          prizeLabel: lastSpin.prize_label,
+          spunAt: lastSpin.spun_at,
+          isFree: !!lastSpin.is_free,
+        }
+      : null,
+  };
+});
+
+export const purchaseSpinPack = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const userId = (data as any).userId as number;
+  const packId = (data as any).packId as string;
+  if (!userId || !packId) throw new Error("Invalid request");
+
+  const config = await loadSpinWheelConfig(db);
+  const pack = config.spinPacks.find((p) => p.id === packId);
+  if (!pack) throw new Error("Spin pack not found");
+
+  const result = await db.transaction(async (tx) => {
+    const { fromWinning } = await deductCgCoins(
+      tx,
+      userId,
+      pack.cost,
+      `Spin pack: ${pack.label || pack.spins + " spins"}`,
+    );
+    await tx
+      .prepare("UPDATE users SET spin_credits = COALESCE(spin_credits, 0) + ? WHERE id = ?")
+      .run(pack.spins, userId);
+    const updated = (await tx
+      .prepare("SELECT deposit_balance, winning_balance, spin_credits FROM users WHERE id = ?")
+      .get(userId)) as any;
+    return {
+      spinsAdded: pack.spins,
+      cost: pack.cost,
+      usedWinning: fromWinning > 0,
+      fromWinning,
+      spinCredits: updated?.spin_credits ?? 0,
+      depositBalance: updated?.deposit_balance ?? 0,
+      winningBalance: updated?.winning_balance ?? 0,
+    };
+  });
+
+  return result;
+});
+
+export const performSpin = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const {
+    buildWheelSlices,
+    getTodayStartIST,
+    pickRandomSliceIndexForSegment,
+  } = await import("./lib/spin-wheel");
+
+  const userId = data as unknown as number;
+  if (!userId) throw new Error("Login required");
+
+  const config = await loadSpinWheelConfig(db);
+  const activeIds = config.activePrizeIds.filter((id) => config.segments.some((s) => s.id === id));
+  if (activeIds.length === 0) throw new Error("Spin wheel is not configured");
+
+  const result = await db.transaction(async (tx) => {
+    const user = (await tx
+      .prepare("SELECT deposit_balance, winning_balance, spin_credits FROM users WHERE id = ?")
+      .get(userId)) as any;
+    if (!user) throw new Error("User not found");
+
+    const todayStart = getTodayStartIST();
+    const freeSpinToday = await tx
+      .prepare(
+        "SELECT id FROM spin_history WHERE user_id = ? AND spun_at >= ? AND is_free = true LIMIT 1",
+      )
+      .get(userId, todayStart);
+
+    const depositBalance = user.deposit_balance || 0;
+    const spinCredits = user.spin_credits || 0;
+    const freeAvailable = !freeSpinToday && depositBalance >= config.minDeposit;
+
+    let isFree = false;
+    if (freeAvailable) {
+      isFree = true;
+    } else if (spinCredits > 0) {
+      await tx
+        .prepare("UPDATE users SET spin_credits = spin_credits - 1 WHERE id = ?")
+        .run(userId);
+      isFree = false;
+    } else {
+      throw new Error("No spins left. Buy a spin pack below!");
+    }
+
+    const winningId = activeIds[Math.floor(Math.random() * activeIds.length)];
+    const winningSegment = config.segments.find((s) => s.id === winningId)!;
+    const slices = buildWheelSlices(config.segments);
+    const sliceIndex = pickRandomSliceIndexForSegment(slices, winningId);
+
+    if (winningSegment.amount > 0) {
+      await tx
+        .prepare("UPDATE users SET deposit_balance = deposit_balance + ? WHERE id = ?")
+        .run(winningSegment.amount, userId);
+      await tx
+        .prepare("INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)")
+        .run(
+          userId,
+          winningSegment.amount,
+          "deposit_added",
+          `Spin wheel reward: ${winningSegment.label}`,
+        );
+    }
+
+    await tx
+      .prepare(
+        "INSERT INTO spin_history (user_id, segment_id, prize_amount, prize_label, is_free) VALUES (?, ?, ?, ?, ?)",
+      )
+      .run(userId, winningSegment.id, winningSegment.amount, winningSegment.label, isFree);
+
+    const updated = (await tx
+      .prepare("SELECT deposit_balance, winning_balance, spin_credits FROM users WHERE id = ?")
+      .get(userId)) as any;
+
+    return {
+      segmentId: winningSegment.id,
+      label: winningSegment.label,
+      amount: winningSegment.amount,
+      sliceIndex,
+      totalSlices: slices.length,
+      isFree,
+      spinCredits: updated?.spin_credits ?? 0,
+      newDepositBalance: updated?.deposit_balance ?? depositBalance,
+      newWinningBalance: updated?.winning_balance ?? 0,
+    };
+  });
+
+  return result;
+});
+
+export const getSpinWheelAdminConfig = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const adminId = data as unknown as number;
+  const admin = (await db.prepare("SELECT role FROM users WHERE id = ?").get(adminId)) as any;
+  if (!admin || admin.role !== "admin") throw new Error("Unauthorized");
+
+  return loadSpinWheelConfig(db);
+});
+
+export const saveSpinWheelAdminConfig = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { SPIN_WHEEL_SETTINGS_KEY, SPIN_MAX_ACTIVE_PRIZES } = await import("./lib/spin-wheel");
+
+  const { adminId, config } = data as unknown as {
+    adminId: number;
+    config: {
+      segments: Array<{ id: string; label: string; amount: number; quantity: number; color: string }>;
+      activePrizeIds: string[];
+      minDeposit: number;
+      spinPacks: Array<{ id: string; spins: number; cost: number; label?: string }>;
+    };
+  };
+
+  const admin = (await db.prepare("SELECT role FROM users WHERE id = ?").get(adminId)) as any;
+  if (!admin || admin.role !== "admin") throw new Error("Unauthorized");
+
+  if (!config?.segments?.length) throw new Error("At least one wheel segment is required");
+
+  const segments = config.segments.map((s, i) => ({
+    id: s.id || `seg-${i}`,
+    label: (s.label || `${s.amount} CG`).trim(),
+    amount: Math.max(0, Number(s.amount) || 0),
+    quantity: Math.max(1, Math.min(20, Number(s.quantity) || 1)),
+    color: s.color || "#FF6B00",
+  }));
+
+  const activePrizeIds = (config.activePrizeIds || [])
+    .filter((id) => segments.some((s) => s.id === id))
+    .slice(0, SPIN_MAX_ACTIVE_PRIZES);
+
+  if (activePrizeIds.length === 0) {
+    throw new Error("Select at least one active prize");
+  }
+
+  const spinPacks = (config.spinPacks || []).map((p, i) => ({
+    id: p.id || `pack-${i}`,
+    spins: Math.max(1, Number(p.spins) || 1),
+    cost: Math.max(1, Number(p.cost) || 9),
+    label: p.label || `${p.spins || 1} Spin${(p.spins || 1) > 1 ? "s" : ""}`,
+  }));
+
+  if (spinPacks.length === 0) throw new Error("At least one spin pack is required");
+
+  const payload = {
+    segments,
+    activePrizeIds,
+    minDeposit: Math.max(0, Number(config.minDeposit) || 100),
+    spinPacks,
+  };
+
+  await db
+    .prepare(
+      `INSERT INTO site_settings (key, value) VALUES (?, ?)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value RETURNING key`,
+    )
+    .run(SPIN_WHEEL_SETTINGS_KEY, JSON.stringify(payload));
+
+  return { success: true, config: payload };
+});
+
+// ─── Profile customization shop ─────────────────────────────────────────────
+
+async function loadProfileShopConfig(db: any) {
+  const { parseProfileShopConfig, PROFILE_SHOP_SETTINGS_KEY, DEFAULT_PROFILE_SHOP } = await import(
+    "./lib/profile-customization"
+  );
+  const row = (await db.prepare("SELECT value FROM site_settings WHERE key = ?").get(PROFILE_SHOP_SETTINGS_KEY)) as any;
+  if (!row?.value) return DEFAULT_PROFILE_SHOP;
+  return parseProfileShopConfig(row.value);
+}
+
+export const getProfileShop = createServerFn({ method: "POST" }).handler(async () => {
+  const { db } = await import("./lib/db");
+  return loadProfileShopConfig(db);
+});
+
+export const purchaseProfileCosmetic = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { parseJsonArray } = await import("./lib/profile-customization");
+  const { userId, itemId } = data as { userId: number; itemId: string };
+  if (!userId || !itemId) throw new Error("Invalid request");
+
+  const shop = await loadProfileShopConfig(db);
+  const allItems = [...shop.animations, ...shop.frames, ...shop.banners];
+  const item = allItems.find((i) => i.id === itemId);
+  if (!item) throw new Error("Item not found");
+
+  const result = await db.transaction(async (tx) => {
+    const user = (await tx
+      .prepare(
+        `SELECT deposit_balance, winning_balance, owned_cosmetics, profile_animation, profile_frame, banner_preset FROM users WHERE id = ?`,
+      )
+      .get(userId)) as any;
+    if (!user) throw new Error("User not found");
+
+    const owned = parseJsonArray(user.owned_cosmetics);
+    if (!owned.includes(itemId)) {
+      if (item.cost > 0) {
+        await deductCgCoins(tx, userId, item.cost, `Profile cosmetic: ${item.label}`);
+      }
+      owned.push(itemId);
+      await tx.prepare("UPDATE users SET owned_cosmetics = ? WHERE id = ?").run(JSON.stringify(owned), userId);
+    }
+
+    const patch: Record<string, string> = {};
+    if (item.type === "animation") patch.profile_animation = item.value;
+    if (item.type === "frame") patch.profile_frame = item.value;
+    if (item.type === "banner") patch.banner_preset = item.value;
+
+    const sets = Object.entries(patch).map(([k]) => `${k} = ?`);
+    if (sets.length) {
+      await tx
+        .prepare(`UPDATE users SET ${sets.join(", ")} WHERE id = ?`)
+        .run(...Object.values(patch), userId);
+    }
+
+    const updated = (await tx
+      .prepare(`SELECT ${PROFILE_SELECT} FROM users WHERE id = ?`)
+      .get(userId)) as any;
+    return { profile: await enrichProfile(db, updated, true), item };
+  });
+
+  return result;
+});
+
+export const getProfileShopAdminConfig = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const adminId = data as unknown as number;
+  const admin = (await db.prepare("SELECT role FROM users WHERE id = ?").get(adminId)) as any;
+  if (!admin || admin.role !== "admin") throw new Error("Unauthorized");
+  return loadProfileShopConfig(db);
+});
+
+export const saveProfileShopAdminConfig = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { PROFILE_SHOP_SETTINGS_KEY } = await import("./lib/profile-customization");
+  const { adminId, config } = data as { adminId: number; config: any };
+  const admin = (await db.prepare("SELECT role FROM users WHERE id = ?").get(adminId)) as any;
+  if (!admin || admin.role !== "admin") throw new Error("Unauthorized");
+  await db
+    .prepare(
+      `INSERT INTO site_settings (key, value) VALUES (?, ?)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value RETURNING key`,
+    )
+    .run(PROFILE_SHOP_SETTINGS_KEY, JSON.stringify(config));
+  return { success: true };
+});
+
+export const getRegistrationSquad = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const registrationId = data as unknown as number;
+  const reg = (await db
+    .prepare(
+      `SELECT r.*, u.username, u.avatar_url, u.ign as leader_ign, tm.logo as team_logo
+       FROM registrations r
+       JOIN users u ON u.id = r.user_id
+       LEFT JOIN teams tm ON tm.name = r.team_name
+       WHERE r.id = ?`,
+    )
+    .get(registrationId)) as any;
+  if (!reg) return null;
+
+  let players: any[] = [];
+  try {
+    players = JSON.parse(reg.players_json || "[]");
+  } catch {
+    players = [];
+  }
+
+  const resolved = await Promise.all(
+    players.map(async (p: any) => {
+      const byUid = p.uid
+        ? ((await db
+            .prepare("SELECT id, username, avatar_url, ign FROM users WHERE uid = ? LIMIT 1")
+            .get(p.uid)) as any)
+        : null;
+      return {
+        ign: p.ign || byUid?.ign || p.name || "Player",
+        uid: p.uid || "",
+        userId: byUid?.id || null,
+        avatar_url: byUid?.avatar_url || null,
+        username: byUid?.username || null,
+      };
+    }),
+  );
+
+  return {
+    registrationId: reg.id,
+    teamName: reg.team_name || reg.username,
+    teamLogo: reg.team_logo,
+    leader: {
+      userId: reg.user_id,
+      username: reg.username,
+      ign: reg.leader_ign,
+      avatar_url: reg.avatar_url,
+    },
+    players: resolved,
+    mode: reg.team_name ? "team" : "solo",
+  };
 });

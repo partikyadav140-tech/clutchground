@@ -145,20 +145,20 @@ export const Route = createFileRoute("/_app/wallet")({
           {/* Breakdown */}
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl p-3 border" style={{ background: "rgba(16,185,129,0.08)", borderColor: "rgba(16,185,129,0.2)" }}>
-              <p className="text-[9px] font-black uppercase tracking-widest text-emerald-500 mb-1">Winnings</p>
+              <p className="text-label text-emerald-500 mb-1">Winnings</p>
               <div className="flex items-center gap-1.5">
                 <GodCoin className="w-3.5 h-3.5 text-emerald-400" />
                 <span className="font-display font-black text-xl text-white tabular-nums">{winBal}</span>
               </div>
-              <p className="text-[8px] text-emerald-500/60 font-bold mt-1">Withdrawable</p>
+              <p className="text-xs text-emerald-500/60 font-medium mt-1">Withdrawable</p>
             </div>
             <div className="rounded-2xl p-3 border" style={{ background: "rgba(0,200,255,0.08)", borderColor: "rgba(0,200,255,0.2)" }}>
-              <p className="text-[9px] font-black uppercase tracking-widest mb-1" style={{ color: "var(--primary)" }}>Deposited</p>
+              <p className="text-label mb-1" style={{ color: "var(--primary)" }}>Deposited</p>
               <div className="flex items-center gap-1.5">
                 <GodCoin className="w-3.5 h-3.5 text-primary" />
                 <span className="font-display font-black text-xl text-white tabular-nums">{depositBal}</span>
               </div>
-              <p className="text-[8px] font-bold mt-1" style={{ color: "rgba(0,200,255,0.5)" }}>Entry fees only</p>
+              <p className="text-xs font-medium mt-1" style={{ color: "rgba(0,200,255,0.5)" }}>Entry fees only</p>
             </div>
           </div>
         </motion.div>

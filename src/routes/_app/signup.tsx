@@ -65,7 +65,7 @@ function SignupPage() {
             {step === 1 ? "Create Account" : "Game Details"}
           </h1>
           <p className="text-xs text-muted-foreground font-semibold px-2">
-            {step === 1 ? "Join 120K+ warriors in the arena" : "Set up your Free Fire profile"}
+            {step === 1 ? "Join India's Free Fire esports arena" : "Set up your Free Fire profile"}
           </p>
 
           {/* Step indicator */}

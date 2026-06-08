@@ -380,6 +380,37 @@
   .bottom-nav-safe { padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
   .mb-safe { margin-bottom: max(80px, calc(68px + env(safe-area-inset-bottom))); }
 
+  /* ── Page layout (mobile-first) ── */
+  .page-content {
+    @apply px-4 pt-4 min-h-full;
+  }
+  .page-header {
+    @apply pb-3;
+  }
+
+  /* ── Typography scale (12px minimum on mobile) ── */
+  .text-label {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 600;
+    color: var(--muted-foreground);
+  }
+  .text-eyebrow {
+    font-size: 0.75rem;
+    line-height: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+  .text-badge {
+    font-size: 0.6875rem;
+    line-height: 1;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
   /* ── Shimmer sweep (for card fill bars) ── */
   .animate-shimmer {
     background-size: 200% 100%;
@@ -866,34 +897,89 @@
   transition: all 0.3s ease;
 }
 .light .logo-glow {
-  filter: drop-shadow(0 2px 8px rgba(8, 12, 20, 0.35)) drop-shadow(0 0 6px rgba(255, 107, 0, 0.25));
+  filter: drop-shadow(0 3px 10px rgba(15, 23, 42, 0.28)) drop-shadow(0 0 8px rgba(255, 107, 0, 0.35));
 }
 .logo-glow:hover {
   filter: drop-shadow(0 0 20px rgba(255, 107, 0, 0.75));
 }
 .light .logo-glow:hover {
-  filter: drop-shadow(0 3px 14px rgba(8, 12, 20, 0.45)) drop-shadow(0 0 10px rgba(255, 107, 0, 0.35));
+  filter: drop-shadow(0 4px 16px rgba(15, 23, 42, 0.35)) drop-shadow(0 0 12px rgba(255, 107, 0, 0.45));
 }
 
-/* ── Top Header Navigation blending ── */
+/* ── Top Header — seamless app shell (no divider line) ── */
 .app-header {
   border-bottom: none !important;
-  background-color: transparent !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+.dark .app-header {
+  background-color: rgba(8, 12, 20, 0.92) !important;
+}
+.light .app-header {
+  background-color: rgba(255, 255, 255, 0.92) !important;
 }
 
-@media (min-width: 1024px) {
-  .app-header {
-    border-bottom: 1px solid var(--border) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-  }
-  .dark .app-header {
-    background-color: rgba(8, 12, 20, 0.92) !important;
-  }
-  .light .app-header {
-    background-color: rgba(255, 255, 255, 0.92) !important;
-  }
+/* ── Bottom tab bar — floating inset dock (Thryl-style) ── */
+.app-bottom-nav {
+  border-top: none !important;
+  background: transparent !important;
+}
+.dark .app-bottom-nav-inner {
+  background-color: rgba(14, 18, 28, 0.97) !important;
+}
+.light .app-bottom-nav-inner {
+  background-color: rgba(255, 255, 255, 0.97) !important;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.12) !important;
+}
+
+/* ── Profile cosmetics ── */
+.profile-anim-pulse {
+  animation: profile-pulse 2.4s ease-in-out infinite;
+}
+.profile-anim-glow {
+  box-shadow: 0 0 24px rgba(255, 107, 0, 0.55), 0 0 48px rgba(255, 107, 0, 0.25);
+  animation: profile-glow 2s ease-in-out infinite alternate;
+}
+.profile-anim-fire {
+  box-shadow: 0 0 20px rgba(255, 80, 0, 0.6);
+  animation: profile-fire 1.5s ease-in-out infinite;
+}
+.profile-anim-neon {
+  box-shadow: 0 0 16px rgba(0, 255, 200, 0.5), 0 0 32px rgba(139, 92, 246, 0.4);
+  animation: profile-neon 2.2s linear infinite;
+}
+.profile-frame-bronze {
+  outline: 3px solid #cd7f32;
+  outline-offset: 2px;
+}
+.profile-frame-gold {
+  outline: 3px solid #fbbf24;
+  outline-offset: 2px;
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.45);
+}
+.profile-frame-diamond {
+  outline: 3px solid transparent;
+  outline-offset: 2px;
+  background: linear-gradient(#0c1018, #0c1018) padding-box,
+    linear-gradient(135deg, #67e8f9, #a78bfa, #f472b6) border-box;
+  border: 3px solid transparent;
+  box-shadow: 0 0 20px rgba(167, 139, 250, 0.5);
+}
+@keyframes profile-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+@keyframes profile-glow {
+  from { box-shadow: 0 0 16px rgba(255, 107, 0, 0.4); }
+  to { box-shadow: 0 0 32px rgba(255, 107, 0, 0.75); }
+}
+@keyframes profile-fire {
+  0%, 100% { filter: hue-rotate(0deg) brightness(1); }
+  50% { filter: hue-rotate(-15deg) brightness(1.15); }
+}
+@keyframes profile-neon {
+  0%, 100% { box-shadow: 0 0 12px rgba(0, 255, 200, 0.4); }
+  33% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.55); }
+  66% { box-shadow: 0 0 20px rgba(244, 114, 182, 0.55); }
 }
 

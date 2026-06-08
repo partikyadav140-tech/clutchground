@@ -1,168 +1,138 @@
-import { useState, useEffect } from "react";
+import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { getSocialLinks } from "../api";
+
+const LEGAL_LINKS = [
+  { to: "/rules", label: "Rules" },
+  { to: "/privacy", label: "Privacy" },
+  { to: "/terms", label: "Terms" },
+  { to: "/contact", label: "Contact" },
+] as const;
+
+const QUICK_LINKS = [
+  { to: "/tournaments", label: "Tournaments" },
+  { to: "/leaderboard", label: "Leaderboard" },
+  { to: "/matches", label: "Matches" },
+  { to: "/teams", label: "Teams" },
+  { to: "/wallet", label: "Wallet" },
+] as const;
 
 export function Footer() {
   const [email, setEmail] = useState("clutchgroundofficial@gmail.com");
 
   useEffect(() => {
-    getSocialLinks().then(links => {
-      if (links?.email) {
-        setEmail(links.email);
-      }
+    getSocialLinks().then((links) => {
+      if (links?.email) setEmail(links.email);
     });
   }, []);
 
   return (
-    <footer className="relative border-t border-border/60 bg-card/40 mt-24">
-      <div className="absolute inset-x-0 top-0 h-px bg-fire-gradient opacity-50" />
+    <footer className="relative border-t border-border/60 bg-card/30 mt-8">
+      <div className="absolute inset-x-0 top-0 h-px bg-fire-gradient opacity-40" />
 
-      {/* Desktop Footer Content - Hidden on Mobile */}
+      {/* Mobile legal strip */}
+      <div className="lg:hidden px-4 pt-5 pb-2">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+          {LEGAL_LINKS.map(({ to, label }) => (
+            <Link
+              key={to}
+              to={to}
+              className="text-xs font-semibold text-muted-foreground hover:text-primary transition-colors"
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+        <p className="text-center text-xs text-muted-foreground mt-3">
+          Secure payments · Fair play · 24/7 support
+        </p>
+      </div>
+
+      {/* Desktop footer */}
       <div className="hidden lg:block container mx-auto px-4 lg:px-8 pt-12 lg:pt-16 pb-8 lg:pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:gap-12 mb-8 lg:mb-12">
-          {/* Brand Section */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                <span className="text-white font-display font-black text-lg">⚔</span>
+                <span className="text-white font-display font-black text-lg">CG</span>
               </div>
               <div>
                 <h3 className="font-display font-black text-lg text-foreground">CLUTCHGROUND</h3>
-                <p className="text-xs text-muted-foreground uppercase tracking-widest">
-                  Esports Arena
-                </p>
+                <p className="text-xs text-muted-foreground">Esports arena</p>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground/80 leading-relaxed mb-4">
-              India's premier Free Fire esports platform. Compete in tournaments, win prizes, and
-              become a legend.
+            <p className="text-sm text-muted-foreground/80 leading-relaxed">
+              India&apos;s Free Fire esports platform. Compete in tournaments, win prizes, and climb the ranks.
             </p>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                12,408 warriors online
-              </span>
-            </div>
           </div>
 
-          {/* Quick Links */}
           <div className="lg:col-span-1">
-            <h4 className="font-display font-bold text-foreground mb-4 uppercase tracking-wider text-sm">
-              Quick Links
-            </h4>
+            <h4 className="font-display font-bold text-foreground mb-4 text-sm">Quick links</h4>
             <div className="space-y-3">
-              <a
-                href="/tournaments"
-                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
-              >
-                Tournaments
-              </a>
-              <a
-                href="/leaderboard"
-                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
-              >
-                Leaderboard
-              </a>
-              <a
-                href="/teams"
-                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
-              >
-                Teams
-              </a>
-              <a
-                href="/matches"
-                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
-              >
-                My Matches
-              </a>
-              <a
-                href="/wallet"
-                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
-              >
-                Wallet
-              </a>
+              {QUICK_LINKS.map(({ to, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="block text-sm text-muted-foreground hover:text-cta transition-colors"
+                >
+                  {label}
+                </Link>
+              ))}
             </div>
           </div>
 
-          {/* Support */}
           <div className="lg:col-span-1">
-            <h4 className="font-display font-bold text-foreground mb-4 uppercase tracking-wider text-sm">
-              Support
-            </h4>
+            <h4 className="font-display font-bold text-foreground mb-4 text-sm">Support</h4>
             <div className="space-y-3">
-              <a
-                href="/rules"
-                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
-              >
-                Rules & Regulations
-              </a>
-              <a
-                href="/anti-cheat"
-                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
-              >
-                Anti-Cheat Policy
-              </a>
-              <a
-                href="/support"
-                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
-              >
-                Support Tickets
-              </a>
-              <a
-                href="/privacy"
-                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
-              >
-                Privacy Policy
-              </a>
-              <a href="/terms" className="block text-sm text-muted-foreground hover:text-cta transition-colors">
-                Terms of Service
-              </a>
-              <a href="/contact" className="block text-sm text-muted-foreground hover:text-cta transition-colors">
-                Contact Us
-              </a>
+              <Link to="/rules" className="block text-sm text-muted-foreground hover:text-cta transition-colors">
+                Rules &amp; regulations
+              </Link>
+              <Link to="/anti-cheat" className="block text-sm text-muted-foreground hover:text-cta transition-colors">
+                Anti-cheat policy
+              </Link>
+              <Link to="/support" className="block text-sm text-muted-foreground hover:text-cta transition-colors">
+                Support tickets
+              </Link>
+              <Link to="/privacy" className="block text-sm text-muted-foreground hover:text-cta transition-colors">
+                Privacy policy
+              </Link>
+              <Link to="/terms" className="block text-sm text-muted-foreground hover:text-cta transition-colors">
+                Terms of service
+              </Link>
             </div>
           </div>
 
-          {/* Contact Info */}
           <div className="lg:col-span-1">
-            <h4 className="font-display font-bold text-foreground mb-4 uppercase tracking-wider text-sm">
-              Contact
-            </h4>
+            <h4 className="font-display font-bold text-foreground mb-4 text-sm">Contact</h4>
             <div className="space-y-3 text-sm text-muted-foreground">
               <p>
                 <span className="block font-semibold text-foreground">Email</span>
-                {email}
+                <a href={`mailto:${email}`} className="hover:text-primary transition-colors">
+                  {email}
+                </a>
               </p>
               <p>
                 <span className="block font-semibold text-foreground">Phone</span>
                 +91 83072 24756
-              </p>
-              <p>
-                <span className="block font-semibold text-foreground">Developer</span>
-                Pratikk Yadav
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Copyright Section - Always Visible */}
-      <div className="lg:relative lg:z-auto z-[45] pt-4 lg:pt-0 border-t lg:border-t-0 border-border/40 pb-20 lg:pb-0">
-        <div className="container mx-auto px-4 lg:px-8 pb-4 lg:pb-12">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-2 lg:gap-4">
-            <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-              <span className="flex items-center gap-2">
-                <span className="text-cta">⚔ FORGED IN FIRE ⚔</span>
-              </span>
-            </div>
-            <div className="flex flex-col lg:flex-row items-center gap-2 lg:gap-4 text-xs text-muted-foreground/80 text-center lg:text-left">
-              <p className="font-semibold">© 2026 CLUTCHGROUND. All rights reserved.</p>
-              <p className="hidden lg:block">|</p>
-              <p>
-                Designed & Developed by{" "}
-                <span className="font-bold text-cta">Pratikk Yadav | +91 8307224756</span>
-              </p>
-            </div>
-          </div>
+      <div className="border-t border-border/40 px-4 py-4 lg:py-8">
+        <div className="max-w-5xl mx-auto flex flex-col items-center gap-1.5 text-center">
+          <p className="text-xs font-semibold text-muted-foreground">
+            © {new Date().getFullYear()} ClutchGround. All rights reserved.
+          </p>
+          <p className="text-xs text-muted-foreground/80">
+            Designed and developed by{" "}
+            <span className="font-semibold text-foreground">Pratikk Yadav</span>
+            {" · "}
+            <a href="tel:+918307224756" className="hover:text-primary transition-colors">
+              +91 8307224756
+            </a>
+          </p>
         </div>
       </div>
     </footer>

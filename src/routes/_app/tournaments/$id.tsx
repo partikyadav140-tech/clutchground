@@ -1,4 +1,4 @@
-import { createFileRoute, notFound, Link } from "@tanstack/react-router";
+import { createFileRoute, notFound, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { getTournaments, getTournamentResults, getMyMatches } from "../../../api";
 import {
@@ -12,6 +12,7 @@ import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { GodCoin } from "@/components/GodCoin";
 import { useAuth } from "../../../lib/auth-client";
 import { StandingsCard } from "@/components/StandingsCard";
+import { TournamentSquadSheet } from "@/components/tournament/TournamentSquadSheet";
 
 export const Route = createFileRoute("/_app/tournaments/$id")({
   component: TournamentDetailPage,
@@ -60,6 +61,9 @@ function TournamentDetailPage() {
   const { user } = useAuth();
   const [isJoined, setIsJoined]   = useState(false);
   const [tab, setTab]             = useState<Tab>("info");
+  const [squadRegId, setSquadRegId] = useState<number | null>(null);
+  const [squadOpen, setSquadOpen] = useState(false);
+  const navigate = useNavigate();
   const mc = MODE_CONFIG[t.mode] || MODE_CONFIG.Solo;
 
   useEffect(() => {
@@ -331,22 +335,34 @@ function TournamentDetailPage() {
                 ) : (
                   <div className="divide-y divide-border">
                     {allRegistrations.map((r: any, idx: number) => (
-                      <div key={r.id} className="flex items-center gap-3 px-4 py-3">
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => {
+                          if (t.mode === "Solo") {
+                            navigate({ to: "/users/$userId", params: { userId: String(r.user_id) } });
+                            return;
+                          }
+                          setSquadRegId(r.id);
+                          setSquadOpen(true);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left press-effect active:bg-secondary/40 transition-colors"
+                      >
                         <span className="w-7 text-center font-display font-black text-sm text-muted-foreground shrink-0">
                           {idx + 1}
                         </span>
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center font-display font-black text-xs text-white shrink-0 overflow-hidden"
-                          style={{ background: mc.gradient }}>
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center font-display font-black text-xs text-white shrink-0 overflow-hidden border border-border/50"
+                          style={{ background: r.team_logo || r.avatar_url ? undefined : mc.gradient }}>
                           {r.team_logo || r.avatar_url
                             ? <img src={r.team_logo || r.avatar_url} className="w-full h-full object-cover" />
                             : (t.mode === "Squad" ? r.team_name || r.username : r.username)?.[0]?.toUpperCase()
                           }
                         </div>
                         <p className="flex-1 font-bold text-sm text-foreground truncate">
-                          {t.mode === "Squad" ? r.team_name || r.username : r.username}
+                          {t.mode === "Squad" || t.mode === "Duo" ? r.team_name || r.username : r.username}
                         </p>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground opacity-30" />
-                      </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      </button>
                     ))}
                   </div>
                 )}
@@ -425,6 +441,13 @@ function TournamentDetailPage() {
 
         </AnimatePresence>
       </div>
+
+      <TournamentSquadSheet
+        registrationId={squadRegId}
+        open={squadOpen}
+        onOpenChange={setSquadOpen}
+        mode={t.mode}
+      />
     </div>
   );
 }

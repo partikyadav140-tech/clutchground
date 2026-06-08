@@ -62,14 +62,14 @@ function LoginPage() {
           </div>
 
           <h1 className="font-display font-black text-2xl text-foreground mb-1 tracking-wide text-glow">Welcome Back</h1>
-          <p className="text-xs text-muted-foreground font-semibold">Sign in to your CLUTCHGROUND account</p>
+          <p className="text-sm text-muted-foreground font-medium">Sign in to your ClutchGround account</p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleLogin} className="space-y-4">
           {/* Phone */}
           <div>
-            <label className="block text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground mb-1.5 ml-1">
+            <label className="block text-label mb-1.5 ml-1">
               Phone Number
             </label>
             <div className="relative">
@@ -89,7 +89,7 @@ function LoginPage() {
 
           {/* Password */}
           <div>
-            <label className="block text-[9px] font-black uppercase tracking-[0.15em] text-muted-foreground mb-1.5 ml-1">
+            <label className="block text-label mb-1.5 ml-1">
               Password
             </label>
             <div className="relative">
@@ -122,7 +122,7 @@ function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-13 rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center justify-center gap-2 transition-all active:scale-95 press-effect shadow-cta mt-2"
+            className="w-full h-13 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all active:scale-95 press-effect shadow-cta mt-2"
             style={{ background: loading ? "var(--secondary)" : "var(--gradient-cta)" }}
           >
             {loading ? (
@@ -139,19 +139,19 @@ function LoginPage() {
         {/* Divider */}
         <div className="flex items-center gap-3 my-5">
           <div className="flex-1 h-px bg-border/60" />
-          <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">New here?</span>
+          <span className="text-label">New here?</span>
           <div className="flex-1 h-px bg-border/60" />
         </div>
 
         {/* Sign up */}
         <Link to="/signup">
-          <button className="w-full h-13 rounded-2xl font-black text-xs uppercase tracking-widest border border-border bg-secondary/40 text-foreground flex items-center justify-center gap-2 transition-all active:scale-95 press-effect hover:bg-secondary/70">
+          <button className="w-full h-13 rounded-2xl font-bold text-sm border border-border bg-secondary/40 text-foreground flex items-center justify-center gap-2 transition-all active:scale-95 press-effect hover:bg-secondary/70">
             Create Account
           </button>
         </Link>
 
         {/* Footer links */}
-        <div className="flex items-center justify-center gap-4 mt-6 text-[9px] font-black text-muted-foreground uppercase tracking-[0.12em]">
+        <div className="flex items-center justify-center gap-4 mt-6 text-xs font-semibold text-muted-foreground">
           <Link to={"/rules" as any} className="hover:text-foreground transition-colors">Rules</Link>
           <span className="w-1.5 h-1.5 rounded-full bg-border/60" />
           <Link to={"/privacy" as any} className="hover:text-foreground transition-colors">Privacy</Link>

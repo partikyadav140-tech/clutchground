@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, Trophy, Users, IndianRupee, Banknote,
-  Bell, LifeBuoy, ClipboardList, Mail, Settings, RefreshCw,
+  Bell, LifeBuoy, ClipboardList, Mail, Settings, RefreshCw, Sparkles, Palette,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -18,6 +18,8 @@ const MORE_ITEMS = [
   { to: "/admin/notifications", icon: Bell, label: "Notify" },
   { to: "/admin/tickets", icon: LifeBuoy, label: "Tickets" },
   { to: "/admin/messages", icon: Mail, label: "Messages" },
+  { to: "/admin/spin-wheel", icon: Sparkles, label: "Spin" },
+  { to: "/admin/profile-shop", icon: Palette, label: "Profile" },
   { to: "/admin/site-settings", icon: Settings, label: "Settings" },
 ];
 

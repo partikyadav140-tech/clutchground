@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router"
 import { AnimatePresence, motion } from "framer-motion";
 import { Suspense, useEffect, useLayoutEffect, useRef } from "react";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { LiveTutorial } from "@/components/LiveTutorial";
 
 import { getSiteSettings } from "../api";
@@ -86,10 +87,10 @@ export const Route = createFileRoute("/_app")({
             !isAuthRoute
               ? isChatPage
                 ? "lg:pt-16"            /* chat pages: header hidden on mobile, shown on desktop */
-                : "pt-20 lg:pt-16"      /* standard pages: header shown on mobile and desktop */
+                : "pt-[60px]"           /* standard pages: compact mobile header */
               : "",
             /* Mobile: bottom-nav padding | Desktop: no bottom nav */
-            !isAuthRoute && !isChatPage ? "pb-[60px] lg:pb-0" : "",
+            !isAuthRoute && !isChatPage ? "pb-[calc(80px+env(safe-area-inset-bottom,0px))] lg:pb-0" : "",
           ].filter(Boolean).join(" ")}
         >
           {!isAuthRoute && <Navbar />}
@@ -118,9 +119,10 @@ export const Route = createFileRoute("/_app")({
                       scrollRef.current.scrollTop = 0;
                     }
                   }}
-                  className={isChatPage ? "h-full flex flex-col" : "min-h-full"}
+                  className={isChatPage ? "h-full flex flex-col" : "min-h-full flex flex-col"}
                 >
                   <Outlet />
+                  {!isAuthRoute && !isChatPage && <Footer />}
                 </motion.div>
               </AnimatePresence>
             </Suspense>

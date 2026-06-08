@@ -1,91 +1,116 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
 import {
-  Users,
-  Edit3,
-  Save,
-  Trash,
-  LogOut,
-  MessageSquare,
-  UserPlus,
   AlertCircle,
-  Check,
-  ArrowRight,
+  Edit3,
+  LogOut,
+  Trash,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { PageHeader } from "@/components/PageHeader";
+import { TeamInvitesPanel } from "@/components/team/TeamInvitesPanel";
+import { TeamRoster } from "@/components/team/TeamRoster";
+import { confirmDialog } from "@/components/ConfirmDialog";
+import { Button } from "@/components/ui/button";
 import {
-  getMyTeam,
-  saveMyTeam,
-  leaveTeam,
+  cancelTeamRequest,
   deleteTeam,
-  uploadImage,
+  getMyTeam,
+  getMyTeamInvitations,
   getMyTeamRequest,
+  getTeamRequests,
+  leaveTeam,
+  removeTeamMember,
+  saveMyTeam,
+  uploadImage,
 } from "../../api";
 import { useAuth } from "../../lib/auth-client";
-import { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
-import { confirmDialog } from "@/components/ConfirmDialog";
-import { Link } from "@tanstack/react-router";
+import { countRosterSlots, getInitials, TEAM_ROSTER, type Team } from "@/lib/team-utils";
+
+type MyTeamSearch = { create?: string };
 
 export const Route = createFileRoute("/_app/my-team")({
-  head: () => ({ meta: [{ title: "My Squad � CLUTCHGROUND" }] }),
+  head: () => ({ meta: [{ title: "My Squad — ClutchGround" }] }),
+  validateSearch: (search: Record<string, unknown>): MyTeamSearch => ({
+    create: typeof search.create === "string" ? search.create : undefined,
+  }),
   component: MyTeamPage,
 });
+
+function SquadEmojiButton({
+  to,
+  emoji,
+  label,
+  badge,
+}: {
+  to: string;
+  emoji: string;
+  label: string;
+  badge?: number;
+}) {
+  return (
+    <Link
+      to={to}
+      title={label}
+      className="relative flex flex-col items-center gap-1 press-effect active:scale-95"
+    >
+      <span className="w-12 h-12 rounded-2xl bg-secondary/80 border border-border flex items-center justify-center text-2xl hover:bg-secondary transition-colors">
+        {emoji}
+      </span>
+      <span className="text-[10px] font-semibold text-muted-foreground">{label}</span>
+      {badge != null && badge > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+          {badge > 9 ? "9+" : badge}
+        </span>
+      )}
+    </Link>
+  );
+}
 
 function MyTeamPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { create } = Route.useSearch();
 
-  const [myTeam, setMyTeam] = useState<any>(null);
-  const [myTeamRequest, setMyTeamRequest] = useState<any>(null);
+  const [myTeam, setMyTeam] = useState<Team | null>(null);
+  const [pendingRequest, setPendingRequest] = useState<any>(null);
+  const [invites, setInvites] = useState<any[]>([]);
+  const [joinRequestCount, setJoinRequestCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [isEditingTeam, setIsEditingTeam] = useState(false);
-  const [showAcceptedBanner, setShowAcceptedBanner] = useState(false);
-  const [teamData, setTeamData] = useState({
-    name: "",
-    logo: "",
-    members: [...Array(3).fill({ ign: "", uid: "", role: "player" }), { ign: "", uid: "", role: "substitute" }],
-  });
+  const [isEditing, setIsEditing] = useState(create === "1");
+  const [saving, setSaving] = useState(false);
+  const [teamForm, setTeamForm] = useState({ name: "", logo: "" });
 
-  const refreshMyTeam = useCallback(async () => {
+  const isCaptain = myTeam?.leader_id === user?.id;
+  const rosterSlots = countRosterSlots(myTeam?.members);
+
+  const refresh = useCallback(async () => {
     if (!user) return;
     try {
-      const t = await (getMyTeam as any)({ data: user.id });
-      if (t) {
-        setMyTeam(t);
-        setMyTeamRequest(null);
-        const filledMembers = [...t.members];
-        while (filledMembers.length < 4) {
-          filledMembers.push({
-            ign: "",
-            uid: "",
-            role: filledMembers.length === 3 ? "substitute" : "player",
-          });
-        }
-        setTeamData({
-          name: t.name,
-          logo: t.logo || "",
-          members: filledMembers.slice(0, 4),
-        });
-        const ackKey = `acknowledged_approved_team_${t.id}`;
-        if (localStorage.getItem(ackKey) !== "true" && t.leader_id !== user.id) {
-          setShowAcceptedBanner(true);
+      const team = await (getMyTeam as any)({ data: user.id });
+      if (team) {
+        setMyTeam(team);
+        setPendingRequest(null);
+        setInvites([]);
+        setTeamForm({ name: team.name, logo: team.logo || "" });
+        if (team.leader_id === user.id) {
+          const requests = await (getTeamRequests as any)({ data: user.id });
+          setJoinRequestCount((requests || []).length);
+        } else {
+          setJoinRequestCount(0);
         }
       } else {
         setMyTeam(null);
-        setMyTeamRequest(null);
-        setTeamData({
-          name: "",
-          logo: "",
-          members: [...Array(3).fill({ ign: "", uid: "", role: "player" }), { ign: "", uid: "", role: "substitute" }],
-        });
-        try {
-          const request = await (getMyTeamRequest as any)({ data: user.id });
-          setMyTeamRequest(request);
-        } catch (err) {
-          console.error(err);
-          setMyTeamRequest(null);
-        }
+        setJoinRequestCount(0);
+        const [request, playerInvites] = await Promise.all([
+          (getMyTeamRequest as any)({ data: user.id }),
+          (getMyTeamInvitations as any)({ data: user.id }),
+        ]);
+        setPendingRequest(request?.status === "pending" ? request : null);
+        setInvites(playerInvites || []);
+        setTeamForm({ name: "", logo: "" });
       }
     } catch (err) {
       console.error(err);
@@ -99,9 +124,8 @@ function MyTeamPage() {
       router.navigate({ to: "/login" });
       return;
     }
-    if (!user) return;
-    refreshMyTeam();
-  }, [user, authLoading, router, refreshMyTeam]);
+    if (user) refresh();
+  }, [user, authLoading, router, refresh]);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -117,17 +141,16 @@ function MyTeamPage() {
         });
         const canvas = document.createElement("canvas");
         const MAX_WIDTH = 256;
-        const scaleSize = MAX_WIDTH / img.width;
+        const scale = MAX_WIDTH / img.width;
         canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scaleSize;
-        const ctx = canvas.getContext("2d");
-        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+        canvas.height = img.height * scale;
+        canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
         const result = await (uploadImage as any)({ data: { base64: dataUrl, folder: "team-logos" } });
-        setTeamData((prev) => ({ ...prev, logo: result.url }));
-        toast.success("Logo uploaded!", { id: toastId });
+        setTeamForm((prev) => ({ ...prev, logo: result.url }));
+        toast.success("Logo uploaded", { id: toastId });
       } catch (err: any) {
-        toast.error(err.message || "Failed to upload logo", { id: toastId });
+        toast.error(err.message || "Upload failed", { id: toastId });
       }
     };
     reader.readAsDataURL(file);
@@ -135,84 +158,90 @@ function MyTeamPage() {
   };
 
   const handleSaveTeam = async () => {
+    if (!teamForm.name.trim()) return toast.error("Squad name is required");
+    setSaving(true);
+    const toastId = toast.loading(myTeam ? "Saving..." : "Creating squad...");
     try {
-      if (!teamData.name) return toast.error("Squad Name is required");
-      const validMembers = teamData.members
-        .filter((m) => m.ign && m.uid)
-        .map((m, idx) => ({ ...m, role: idx === 3 ? "substitute" : "player" }));
-
       await (saveMyTeam as any)({
         data: {
-          userId: user.id,
-          teamName: teamData.name,
-          logo: teamData.logo,
-          members: validMembers,
+          userId: user!.id,
+          teamName: teamForm.name.trim(),
+          logo: teamForm.logo,
         },
       });
-      const t = await (getMyTeam as any)({ data: user.id });
-      setMyTeam(t);
-      const filledMembers = [...t.members];
-      while (filledMembers.length < 4) {
-        filledMembers.push({
-          ign: "",
-          uid: "",
-          role: filledMembers.length === 3 ? "substitute" : "player",
-        });
-      }
-      setTeamData({
-        name: t.name,
-        logo: t.logo || "",
-        members: filledMembers.slice(0, 4),
-      });
-      setIsEditingTeam(false);
-      toast.success("Squad saved!");
+      toast.success(myTeam ? "Squad updated" : "Squad created!", { id: toastId });
+      setIsEditing(false);
+      await refresh();
       router.invalidate();
     } catch (err: any) {
-      toast.error(err.message || "Failed to save squad");
+      toast.error(err.message || "Failed to save squad", { id: toastId });
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleLeaveTeam = async () => {
+    if (!myTeam) return;
     const yes = await confirmDialog({
-      title: "Leave Squad?",
-      description: "Are you sure you want to leave this squad?",
+      title: "Leave squad?",
+      description: `Leave ${myTeam.name}? You can join another team or create your own.`,
       confirmText: "Leave",
       isDestructive: true,
     });
     if (!yes) return;
     try {
-      await (leaveTeam as any)({ data: { userId: user.id, teamId: myTeam.id } });
-      setMyTeam(null);
-      toast.success("You have left the squad");
-      router.invalidate();
+      await (leaveTeam as any)({ data: { userId: user!.id, teamId: myTeam.id } });
+      toast.success("You left the squad");
+      await refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to leave squad");
     }
   };
 
   const handleDeleteTeam = async () => {
+    if (!myTeam) return;
     const yes = await confirmDialog({
-      title: "Delete Squad?",
-      description: "This cannot be undone. All members will be removed.",
+      title: "Delete squad?",
+      description: "This removes all members and cannot be undone.",
       confirmText: "Delete",
       isDestructive: true,
     });
     if (!yes) return;
     try {
-      await (deleteTeam as any)({ data: { userId: user.id, teamId: myTeam.id } });
-      setMyTeam(null);
-      setIsEditingTeam(false);
+      await (deleteTeam as any)({ data: { userId: user!.id, teamId: myTeam.id } });
       toast.success("Squad deleted");
-      router.invalidate();
+      setIsEditing(false);
+      await refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to delete squad");
     }
   };
 
-  const handleDismissAcceptedBanner = () => {
-    if (myTeam) {
-      localStorage.setItem(`acknowledged_approved_team_${myTeam.id}`, "true");
-      setShowAcceptedBanner(false);
+  const handleRemoveMember = async (memberUserId: number) => {
+    const yes = await confirmDialog({
+      title: "Remove player?",
+      description: "They will be removed from your roster immediately.",
+      confirmText: "Remove",
+      isDestructive: true,
+    });
+    if (!yes) return;
+    try {
+      await (removeTeamMember as any)({ data: { captainId: user!.id, memberUserId } });
+      toast.success("Player removed");
+      await refresh();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to remove player");
+    }
+  };
+
+  const handleCancelRequest = async () => {
+    if (!pendingRequest) return;
+    try {
+      await (cancelTeamRequest as any)({ data: { userId: user!.id, requestId: pendingRequest.id } });
+      toast.success("Join request cancelled");
+      await refresh();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to cancel request");
     }
   };
 
@@ -227,308 +256,193 @@ function MyTeamPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-background pb-[100px]">
-      <div className="px-4 pt-4 pb-6 sticky top-0 z-40 bg-background border-b border-border/50">
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">
-            Team Management
-          </p>
-          <h1 className="font-display font-black text-3xl text-foreground">
-            {myTeam ? myTeam.name : "My Squad"}
-          </h1>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background pb-4 page-content">
+      <PageHeader eyebrow="Squad HQ" eyebrowIcon={Users} title={myTeam ? myTeam.name : "My squad"} />
 
-      <div className="px-4 space-y-5">
-        {showAcceptedBanner && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 flex items-start gap-3 relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl pointer-events-none bg-emerald-500/10" />
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-500/20 text-emerald-500">
-              <Check className="w-4 h-4" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-display font-black text-xs text-emerald-500 uppercase tracking-widest mb-0.5">
-                Request Approved!
-              </h4>
-              <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
-                Your request to join <span className="text-emerald-400 font-bold">{myTeam?.name}</span> has been accepted!
-              </p>
-              <button
-                onClick={handleDismissAcceptedBanner}
-                className="mt-3 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors cursor-pointer"
-              >
-                Let's Go
-              </button>
-            </div>
-          </motion.div>
-        )}
+      {!myTeam && !isEditing && (
+        <div className="space-y-4">
+          <TeamInvitesPanel userId={user.id} invites={invites} onUpdated={refresh} />
 
-        {isEditingTeam || (!myTeam && !myTeamRequest) ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden"
-          >
-            <div className="p-5 border-b border-border/50 flex items-center gap-3 bg-secondary/10">
-              <Users className="w-5 h-5 text-cta" />
-              <h3 className="font-display font-black text-lg text-foreground">
-                {myTeam ? "Edit Squad" : "Create Your Squad"}
-              </h3>
-            </div>
-
-            <div className="p-5 space-y-5">
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-                <div className="relative shrink-0 group">
-                  <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary to-[#d95a00] flex items-center justify-center font-display font-black text-4xl text-white shadow-lg overflow-hidden">
-                    {teamData.logo ? (
-                      <img src={teamData.logo} className="w-full h-full object-cover" />
-                    ) : (
-                      teamData.name ? teamData.name.slice(0, 2).toUpperCase() : "?"
-                    )}
-                  </div>
-                  <label className="absolute -bottom-1.5 -right-1.5 w-8 h-8 rounded-full bg-primary border-2 border-card flex items-center justify-center cursor-pointer shadow-md text-white hover:bg-primary/90 transition-all z-10">
-                    <Edit3 className="w-3.5 h-3.5" />
-                    <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-                  </label>
-                </div>
-                <div className="flex-1 w-full">
-                  <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">
-                    Squad Name
-                  </label>
-                  <input
-                    className="w-full bg-secondary border border-border focus:border-primary/60 outline-none px-4 py-3 text-sm font-bold rounded-xl transition-all"
-                    value={teamData.name}
-                    onChange={(e) => setTeamData({ ...teamData, name: e.target.value })}
-                    placeholder="Enter squad name"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-3">
-                  Roster (4 Players: 3 Main + 1 Substitute)
-                </label>
-                <div className="space-y-3">
-                  {teamData.members.map((m, i) => (
-                    <div
-                      key={i}
-                      className="flex gap-2 items-center p-3 rounded-xl border border-border/50 bg-secondary/20"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-[10px] font-black text-cta shrink-0">
-                        {i === 3 ? "SUB" : `P${i + 1}`}
-                      </div>
-                      <input
-                        className="flex-1 bg-background border border-border focus:border-primary/60 outline-none px-3 py-2 text-xs font-bold rounded-lg transition-all"
-                        placeholder="IGN"
-                        value={m.ign}
-                        onChange={(e) =>
-                          setTeamData({
-                            ...teamData,
-                            members: teamData.members.map((x, j) =>
-                              j === i ? { ...x, ign: e.target.value } : x,
-                            ),
-                          })
-                        }
-                      />
-                      <input
-                        className="w-20 bg-background border border-border focus:border-primary/60 outline-none px-3 py-2 text-xs font-mono rounded-lg transition-all"
-                        placeholder="UID"
-                        value={m.uid}
-                        onChange={(e) =>
-                          setTeamData({
-                            ...teamData,
-                            members: teamData.members.map((x, j) =>
-                              j === i ? { ...x, uid: e.target.value } : x,
-                            ),
-                          })
-                        }
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setTeamData({
-                            ...teamData,
-                            members: teamData.members.map((x, j) =>
-                              j === i ? { ign: "", uid: "", role: j === 3 ? "substitute" : "player" } : x,
-                            ),
-                          })
-                        }
-                        className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                      >
-                        <Trash className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsEditingTeam(false);
-                    if (!myTeam) {
-                      setTeamData({
-                        name: "",
-                        logo: "",
-                        members: [...Array(3).fill({ ign: "", uid: "", role: "player" }), { ign: "", uid: "", role: "substitute" }],
-                      });
-                    }
-                  }}
-                  className="flex-1 h-12 rounded-xl font-bold"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSaveTeam}
-                  className="flex-1 h-12 rounded-xl font-black bg-cta-gradient text-cta-foreground shadow-cta border border-cta/50 uppercase tracking-widest text-xs"
-                >
-                  <Save className="w-4 h-4 mr-2" /> Save
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        ) : myTeam ? (
-          <>
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden"
-            >
-              <div className="p-5 border-b border-border/50 bg-secondary/10">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-start gap-4">
-                      <div className="w-20 h-20 shrink-0 rounded-2xl bg-gradient-to-br from-primary to-[#d95a00] flex items-center justify-center font-display font-black text-3xl text-white shadow-lg overflow-hidden">
-                        {myTeam.logo ? (
-                          <img src={myTeam.logo} className="w-full h-full object-cover" />
-                        ) : (
-                          myTeam.name.slice(0, 2).toUpperCase()
-                        )}
-                      </div>
-                      <div>
-                        <h2 className="font-display font-black text-2xl text-foreground mb-1">
-                          {myTeam.name}
-                        </h2>
-                        <p className="text-sm text-muted-foreground">
-                          {myTeam.members.length} members
-                        </p>
-                        {myTeam.leader_id === user.id && (
-                          <span className="inline-block mt-2 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 bg-primary/10 text-primary rounded-lg">
-                            Captain
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-5 space-y-4">
-                <div>
-                  <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-3">
-                    Active Roster
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-primary/5 border border-primary/20">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-white font-bold shrink-0 border border-primary/20">
-                          C
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-bold text-sm text-foreground">{user.username || user.ign || "Captain"}</div>
-                          <div className="text-xs text-muted-foreground">Leader</div>
-                        </div>
-                      </div>
-                      <span className="text-[10px] uppercase tracking-widest text-muted-foreground">CAPTAIN</span>
-                    </div>
-                    {myTeam.members.map((member: any, idx: number) => (
-                      <div key={member.uid || idx} className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-secondary/10">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0">
-                            {member.ign?.slice(0, 2).toUpperCase() || `P${idx + 1}`}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="font-bold text-sm text-foreground">{member.ign || "Unknown"}</div>
-                            <div className="text-xs text-muted-foreground">{member.role === "substitute" ? "Substitute" : "Player"}</div>
-                          </div>
-                        </div>
-                        <span className="text-[10px] uppercase tracking-widest text-muted-foreground">{member.uid || "UID"}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-3 sm:flex-row">
-                  <Button onClick={() => setIsEditingTeam(true)} className="flex-1 h-12 rounded-xl font-black bg-cta-gradient text-cta-foreground shadow-cta border border-cta/50 uppercase tracking-widest text-xs">
-                    <Edit3 className="w-4 h-4 mr-2" /> Edit Squad
-                  </Button>
-                  <Button variant="outline" onClick={handleLeaveTeam} className="flex-1 h-12 rounded-xl font-bold">
-                    <LogOut className="w-4 h-4 mr-2" /> Leave Squad
-                  </Button>
-                  {myTeam.leader_id === user.id && (
-                    <Button variant="destructive" onClick={handleDeleteTeam} className="flex-1 h-12 rounded-xl font-bold">
-                      <Trash className="w-4 h-4 mr-2" /> Delete Squad
+          {pendingRequest ? (
+            <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="font-bold text-foreground">Join request pending</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Waiting for <span className="font-semibold text-foreground">{pendingRequest.team_name}</span> to accept you.
+                  </p>
+                  <div className="flex gap-2 mt-4">
+                    <Button variant="outline" className="rounded-xl" onClick={handleCancelRequest}>
+                      Cancel request
                     </Button>
+                    <Link to="/teams">
+                      <Button variant="secondary" className="rounded-xl">Browse teams</Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : invites.length === 0 ? (
+            <div className="rounded-2xl border border-border bg-card p-6 text-center">
+              <Users className="w-10 h-10 mx-auto text-muted-foreground mb-3 opacity-60" />
+              <h3 className="font-display font-bold text-lg mb-1">No squad yet</h3>
+              <p className="text-sm text-muted-foreground mb-5">
+                Create your team (captain + 3 players + 1 substitute) or browse squads recruiting players.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                <Button onClick={() => setIsEditing(true)} className="rounded-xl font-bold">
+                  Create squad
+                </Button>
+                <Link to="/teams">
+                  <Button variant="outline" className="rounded-xl font-bold w-full">
+                    Browse teams
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {isEditing && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-border bg-card overflow-hidden mb-5"
+        >
+          <div className="px-5 py-4 border-b border-border bg-secondary/20">
+            <h2 className="font-display font-bold text-lg">
+              {myTeam ? "Edit squad" : "Create your squad"}
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              1 captain + 3 players + 1 substitute. Invite members after creating.
+            </p>
+          </div>
+          <div className="p-5 space-y-5">
+            <div className="flex items-center gap-4">
+              <div className="relative shrink-0">
+                <div className="w-20 h-20 rounded-2xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center font-display font-black text-2xl text-primary">
+                  {teamForm.logo ? (
+                    <img src={teamForm.logo} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    getInitials(teamForm.name || "?")
                   )}
                 </div>
+                <label className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center cursor-pointer shadow-md">
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                </label>
               </div>
-            </motion.div>
-          </>
-        ) : myTeamRequest ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden"
-          >
-            <div className="p-5 border-b border-border/50 bg-secondary/10 flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-500" />
-              <h3 className="font-display font-black text-lg text-foreground">Pending Request</h3>
+              <div className="flex-1">
+                <label className="text-label block mb-1.5">Squad name</label>
+                <input
+                  value={teamForm.name}
+                  onChange={(e) => setTeamForm((p) => ({ ...p, name: e.target.value }))}
+                  placeholder="e.g. Phoenix Esports"
+                  className="w-full h-11 bg-secondary border border-border rounded-xl px-4 text-sm font-semibold outline-none focus:border-primary/60"
+                />
+              </div>
             </div>
-            <div className="p-5 space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Your request to join a squad is currently pending. We will notify you once it is accepted or declined.
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl"
+                onClick={() => {
+                  setIsEditing(false);
+                  if (myTeam) setTeamForm({ name: myTeam.name, logo: myTeam.logo || "" });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button className="flex-1 rounded-xl font-bold" disabled={saving} onClick={handleSaveTeam}>
+                {saving ? "Saving..." : myTeam ? "Save changes" : "Create squad"}
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {myTeam && !isEditing && (
+        <div className="space-y-4">
+          <div className="rounded-3xl border border-border bg-card overflow-hidden shadow-card">
+            <div className="relative px-6 pt-8 pb-6 text-center bg-gradient-to-b from-primary/8 via-card to-card">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-40 h-24 bg-primary/10 blur-3xl pointer-events-none" />
+
+              {isCaptain && (
+                <div className="absolute top-4 right-4 flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="w-9 h-9 rounded-xl border border-border bg-card/80 flex items-center justify-center text-muted-foreground hover:text-primary press-effect"
+                    aria-label="Edit squad"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteTeam}
+                    className="w-9 h-9 rounded-xl border border-destructive/30 bg-destructive/5 flex items-center justify-center text-destructive hover:bg-destructive/10 press-effect"
+                    aria-label="Delete squad"
+                  >
+                    <Trash className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              <div className="relative mx-auto w-28 h-28 rounded-3xl overflow-hidden bg-primary/10 border-2 border-primary/25 flex items-center justify-center font-display font-black text-3xl text-primary shadow-primary mb-4">
+                {myTeam.logo ? (
+                  <img src={myTeam.logo} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  getInitials(myTeam.name)
+                )}
+              </div>
+
+              <h2 className="font-display font-black text-2xl text-foreground">{myTeam.name}</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                {isCaptain ? "Captain" : "Squad member"} · {rosterSlots.squadFilled}/{TEAM_ROSTER.TOTAL_SQUAD} squad
               </p>
-              <div className="flex gap-3">
-                <Button onClick={() => router.navigate({ to: "/team-requests" })} className="flex-1 h-12 rounded-xl font-bold">
-                  View Requests
-                </Button>
-                <Button variant="outline" onClick={() => router.navigate({ to: "/" })} className="flex-1 h-12 rounded-xl font-bold">
-                  Back Home
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden"
-          >
-            <div className="p-5 border-b border-border/50 bg-secondary/10 flex items-center gap-3">
-              <Users className="w-5 h-5 text-cta" />
-              <h3 className="font-display font-black text-lg text-foreground">Create Your Squad</h3>
-            </div>
-            <div className="p-5 space-y-4">
-              <p className="text-sm text-muted-foreground">
-                You are not part of a squad yet. Start by creating your team or waiting for an invite.
+              <p className="text-xs text-muted-foreground mt-0.5">
+                1 captain + 3 players + 1 substitute
               </p>
-              <div className="flex gap-3">
-                <Button onClick={() => setIsEditingTeam(true)} className="flex-1 h-12 rounded-xl font-black bg-cta-gradient text-cta-foreground shadow-cta border border-cta/50 uppercase tracking-widest text-xs">
-                  Create Squad
-                </Button>
-                <Button variant="outline" onClick={() => router.navigate({ to: "/team-invite" })} className="flex-1 h-12 rounded-xl font-bold">
-                  Team Invites
-                </Button>
+
+              <div className="flex items-center justify-center gap-5 mt-6">
+                <SquadEmojiButton to="/chat" emoji={"\u{1F4AC}"} label="Chat" />
+                {isCaptain && (
+                  <>
+                    <SquadEmojiButton
+                      to="/team-invite"
+                      emoji={"\u{1F4E8}"}
+                      label="Invite"
+                      badge={rosterSlots.isFull ? undefined : rosterSlots.open}
+                    />
+                    <SquadEmojiButton
+                      to="/team-requests"
+                      emoji={"\u{1F4E5}"}
+                      label="Requests"
+                      badge={joinRequestCount}
+                    />
+                  </>
+                )}
               </div>
             </div>
-          </motion.div>
-        )}
-      </div>
+
+            <div className="px-5 pb-6 pt-2">
+              <TeamRoster
+                team={myTeam}
+                currentUserId={user.id}
+                onRemoveMember={isCaptain ? handleRemoveMember : undefined}
+              />
+            </div>
+          </div>
+
+          {!isCaptain && (
+            <Button variant="outline" className="w-full rounded-xl h-11" onClick={handleLeaveTeam}>
+              <LogOut className="w-4 h-4 mr-2" /> Leave squad
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
