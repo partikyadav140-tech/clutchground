@@ -204,7 +204,7 @@ export function Navbar() {
         }`}
       >
         {/* Inner content — constrained to max-w-5xl on desktop */}
-        <div className="flex items-center justify-between px-3 h-[60px] max-w-[480px] lg:max-w-5xl mx-auto w-full">
+        <div className="flex items-center justify-between px-3 h-[60px] max-w-[480px] lg:max-w-5xl mx-auto w-full border-none shadow-none box-border">
           {/* Logo — larger mark in compact header */}
           <Link to="/" className="flex items-center active:opacity-80 transition-opacity -ml-1 shrink-0">
             <Logo withText={false} className="w-[72px] h-[72px] lg:w-[52px] lg:h-[52px] -my-2" />

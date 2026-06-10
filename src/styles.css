@@ -908,19 +908,27 @@
 
 /* ── Top Header — seamless app shell (no divider line) ── */
 .app-header {
-  border: none;
-  border-top: none;
-  background: transparent;
-  box-shadow: none;
-  outline: none;
+  border: none !important;
+  border-top: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding-top: max(0px, env(safe-area-inset-top)) !important;
+}
+.app-header > div {
+  border: none !important;
+  border-top: none !important;
+  border-bottom: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 .dark .app-header {
-  background-color: transparent;
-  box-shadow: none;
+  background-color: transparent !important;
+  box-shadow: none !important;
 }
 .light .app-header {
-  background-color: transparent;
-  box-shadow: none;
+  background-color: transparent !important;
+  box-shadow: none !important;
 }
 
 /* ── Bottom tab bar — floating inset dock (Thryl-style) ── */
