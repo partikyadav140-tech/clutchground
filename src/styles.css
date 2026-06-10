@@ -909,13 +909,18 @@
 /* ── Top Header — seamless app shell (no divider line) ── */
 .app-header {
   border: none;
+  border-top: none;
   background: transparent;
+  box-shadow: none;
+  outline: none;
 }
 .dark .app-header {
   background-color: transparent;
+  box-shadow: none;
 }
 .light .app-header {
   background-color: transparent;
+  box-shadow: none;
 }
 
 /* ── Bottom tab bar — floating inset dock (Thryl-style) ── */
