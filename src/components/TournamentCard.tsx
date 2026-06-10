@@ -39,7 +39,9 @@ export function TournamentCard({
   const fillPct = Math.min(100, Math.round((filled / slots) * 100));
   const isFull = filled >= slots;
   const isLive = t.status === "live";
-  const isFree = t.entry === 0;
+  const isFree = t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf" 
+    ? (t.entry_fee || 0) === 0
+    : t.entry === 0;
   const mc = getModeColors(t.mode);
 
   const card = (
@@ -119,7 +121,7 @@ export function TournamentCard({
               ) : (
                 <>
                   <GodCoin className="w-3.5 h-3.5 text-amber-400" />
-                  {t.entry}
+                  {t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf" ? (t.entry_fee || 0) : t.entry}
                 </>
               )}
             </span>
@@ -130,7 +132,9 @@ export function TournamentCard({
             </span>
             <span className="font-display font-black text-sm text-foreground flex items-center gap-1">
               <GodCoin className="w-3.5 h-3.5 text-amber-400" />
-              {t.mode === "Solo" ? `${t.per_kill_coin}/kill` : t.prize}
+              {t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf" 
+                ? (t.prize_pool || 0)
+                : (t.mode === "Solo" ? `${t.per_kill_coin}/kill` : t.prize)}
             </span>
           </div>
           <div className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5">

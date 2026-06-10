@@ -245,6 +245,24 @@ export function Navbar() {
               </Link>
             )}
 
+            {/* Notifications */}
+            <Link
+              id="tutorial-header-bell"
+              to="/notifications"
+              className="relative w-10 h-10 lg:w-8 lg:h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
+              title="Notifications"
+            >
+              <Bell className="w-[22px] h-[22px] lg:w-4 lg:h-4" />
+              {unread > 0 && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 w-5 h-5 lg:w-4 lg:h-4 rounded-full text-[9px] lg:text-[8px] font-black grid place-items-center"
+                  style={{ background: "var(--fire)", color: "#fff" }}
+                >
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </Link>
+
             <Link
               id="tutorial-header-settings"
               to="/settings"
@@ -267,23 +285,6 @@ export function Navbar() {
                   style={{ background: "var(--primary)", color: "#fff" }}
                 >
                   {unreadChats > 9 ? "9+" : unreadChats}
-                </span>
-              )}
-            </Link>
-
-            {/* Notifications */}
-            <Link
-              id="tutorial-header-bell"
-              to="/notifications"
-              className="relative w-10 h-10 lg:w-8 lg:h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
-            >
-              <Bell className="w-[22px] h-[22px] lg:w-4 lg:h-4" />
-              {unread > 0 && (
-                <span
-                  className="absolute -top-0.5 -right-0.5 w-5 h-5 lg:w-4 lg:h-4 rounded-full text-[9px] lg:text-[8px] font-black grid place-items-center"
-                  style={{ background: "var(--fire)", color: "#fff" }}
-                >
-                  {unread > 9 ? "9+" : unread}
                 </span>
               )}
             </Link>

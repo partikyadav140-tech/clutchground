@@ -27,29 +27,10 @@ export function Footer() {
   }, []);
 
   return (
-    <footer className="relative border-t border-border/60 bg-card/30 mt-8">
-      <div className="absolute inset-x-0 top-0 h-px bg-fire-gradient opacity-40" />
-
-      {/* Mobile legal strip */}
-      <div className="lg:hidden px-4 pt-5 pb-2">
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-          {LEGAL_LINKS.map(({ to, label }) => (
-            <Link
-              key={to}
-              to={to}
-              className="text-xs font-semibold text-muted-foreground hover:text-primary transition-colors"
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
-        <p className="text-center text-xs text-muted-foreground mt-3">
-          Secure payments · Fair play · 24/7 support
-        </p>
-      </div>
-
+    <footer className="relative bg-background mt-8">
       {/* Desktop footer */}
       <div className="hidden lg:block container mx-auto px-4 lg:px-8 pt-12 lg:pt-16 pb-8 lg:pb-12">
+        <div className="absolute inset-x-0 top-0 h-px bg-fire-gradient opacity-40" />
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:gap-12 mb-8 lg:mb-12">
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-4">
@@ -120,7 +101,7 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-border/40 px-4 py-4 lg:py-8">
+      <div className="px-4 py-4 lg:py-8 pb-36 lg:pb-8">
         <div className="max-w-5xl mx-auto flex flex-col items-center gap-1.5 text-center">
           <p className="text-xs font-semibold text-muted-foreground">
             © {new Date().getFullYear()} ClutchGround. All rights reserved.

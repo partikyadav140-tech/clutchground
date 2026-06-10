@@ -1,14 +1,13 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
-  Bell, MessageCircle, Phone, FileText, Sun, Moon, RefreshCw, Wallet, Users, Trophy, ChevronRight,
+  Bell, MessageCircle, Phone, FileText, Sun, Moon, RefreshCw, Wallet, Users, Trophy, ChevronRight, LogOut, Settings,
 } from "lucide-react";
 import { useAuth } from "../../lib/auth-client";
 import { useTheme } from "../../lib/theme";
 import { useTutorialStore } from "../../lib/tutorial-store";
 import { PageHeader } from "@/components/PageHeader";
-import { Settings } from "lucide-react";
-import { toast } from "sonner";
 import { GodCoin } from "@/components/GodCoin";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "Settings — ClutchGround" }] }),
@@ -16,7 +15,7 @@ export const Route = createFileRoute("/_app/settings")({
 });
 
 function SettingsPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
   const { theme, toggleTheme, isHydrated } = useTheme();
   const balance = user
@@ -75,6 +74,16 @@ function SettingsPage() {
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </button>
         </MenuSection>
+      </div>
+
+      <div className="px-4 mt-8">
+        <Button
+          variant="outline"
+          className="w-full h-12 rounded-2xl text-red-500 border-red-500/30 hover:bg-red-500/10 font-bold"
+          onClick={logout}
+        >
+          <LogOut className="w-4 h-4 mr-2" /> Sign out
+        </Button>
       </div>
     </div>
   );

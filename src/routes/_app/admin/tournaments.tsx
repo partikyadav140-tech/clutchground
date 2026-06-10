@@ -34,6 +34,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { confirmDialog } from "@/components/ConfirmDialog";
 import { motion } from "framer-motion";
 import { GodCoin } from "@/components/GodCoin";
+import { StandingsCard } from "@/components/StandingsCard";
+import { ClashSquadResults } from "@/components/tournament/results/ClashSquadResults";
+import { LoneWolfResults } from "@/components/tournament/results/LoneWolfResults";
 
 export const Route = createFileRoute("/_app/admin/tournaments")({
   head: () => ({ meta: [{ title: "Tournaments Admin — Professional Esports Arena" }] }),
@@ -395,6 +398,10 @@ function AdminTournamentsPage() {
     hosted_by: "",
     per_kill_coin: 0,
     first_place_coin: 0,
+    tournament_type: "battle_royale",
+    entry_fee: 0,
+    prize_pool: 0,
+    open_slots: 2,
   });
 
   if (loading)
@@ -604,6 +611,10 @@ function AdminTournamentsPage() {
                   hosted_by: "",
                   per_kill_coin: 0,
                   first_place_coin: 0,
+                  tournament_type: "battle_royale",
+                  entry_fee: 0,
+                  prize_pool: 0,
+                  open_slots: 2,
                 });
                 setShowForm(true);
               }}
@@ -669,37 +680,117 @@ function AdminTournamentsPage() {
                 />
                 <div>
                   <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">
+                    Format
+                  </label>
+                  <select
+                    value={formData.tournament_type}
+                    onChange={(e) => {
+                      const type = e.target.value;
+                      let newMode = "Squad";
+                      let newFormat = "Battle Royale";
+                      if (type === "clash_squad") {
+                        newMode = "Squad";
+                        newFormat = "Clash Squad";
+                      }
+                      if (type === "lone_wolf") {
+                        newMode = "Solo";
+                        newFormat = "Lone Wolf";
+                      }
+                      setFormData({ ...formData, tournament_type: type, mode: newMode, format: newFormat });
+                    }}
+                    className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-card outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold"
+                  >
+                    <option value="battle_royale">Battle Royale</option>
+                    <option value="clash_squad">Clash Squad</option>
+                    <option value="lone_wolf">Lone Wolf</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">
                     Mode
                   </label>
                   <select
                     value={formData.mode}
                     onChange={(e) => setFormData({ ...formData, mode: e.target.value })}
-                    className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-card outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold"
+                    disabled={formData.tournament_type !== "battle_royale"}
+                    className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-card outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <option value="Solo">Solo</option>
-                    <option value="Duo">Duo</option>
-                    <option value="Squad">Squad</option>
+                    {formData.tournament_type === "battle_royale" && (
+                      <>
+                        <option value="Solo">Solo</option>
+                        <option value="Duo">Duo</option>
+                        <option value="Squad">Squad</option>
+                      </>
+                    )}
+                    {formData.tournament_type === "clash_squad" && (
+                      <option value="Squad">Squad (4 Players)</option>
+                    )}
+                    {formData.tournament_type === "lone_wolf" && (
+                      <option value="Solo">Solo (1 Player)</option>
+                    )}
                   </select>
                 </div>
-                <Input
-                  label="Format"
-                  value={formData.format}
-                  onChange={(e) => setFormData({ ...formData, format: e.target.value })}
-                  placeholder="e.g. Battle Royale"
-                />
-                <Input
-                  label="Entry Fee (Coins)"
-                  type="number"
-                  value={formData.entry}
-                  onChange={(e) => setFormData({ ...formData, entry: Number(e.target.value) })}
-                />
-                <Input
-                  label="Prize Pool (Coins)"
-                  type="number"
-                  value={formData.prize}
-                  onChange={(e) => setFormData({ ...formData, prize: Number(e.target.value) })}
-                />
-                {formData.mode === "Solo" && (
+                {formData.tournament_type === "battle_royale" && (
+                  <>
+                    <Input
+                      label="Entry Fee (Coins)"
+                      type="number"
+                      value={formData.entry}
+                      onChange={(e) => setFormData({ ...formData, entry: Number(e.target.value) })}
+                    />
+                    <Input
+                      label="Prize Pool (Coins)"
+                      type="number"
+                      value={formData.prize}
+                      onChange={(e) => setFormData({ ...formData, prize: Number(e.target.value) })}
+                    />
+                  </>
+                )}
+                {formData.tournament_type === "clash_squad" && (
+                  <>
+                    <Input
+                      label="Entry Fees (Clash Squad)"
+                      type="number"
+                      value={formData.entry_fee}
+                      onChange={(e) => setFormData({ ...formData, entry_fee: Number(e.target.value) })}
+                    />
+                    <Input
+                      label="Prize Pool (Clash Squad)"
+                      type="number"
+                      value={formData.prize_pool}
+                      onChange={(e) => setFormData({ ...formData, prize_pool: Number(e.target.value) })}
+                    />
+                    <Input
+                      label="Total Slots"
+                      type="number"
+                      value={formData.open_slots}
+                      onChange={(e) => setFormData({ ...formData, open_slots: Number(e.target.value) })}
+                    />
+                  </>
+                )}
+                {formData.tournament_type === "lone_wolf" && (
+                  <>
+                    <Input
+                      label="Entry Fees (Lone Wolf)"
+                      type="number"
+                      value={formData.entry_fee}
+                      onChange={(e) => setFormData({ ...formData, entry_fee: Number(e.target.value) })}
+                    />
+                    <Input
+                      label="Prize Pool (Lone Wolf)"
+                      type="number"
+                      value={formData.prize_pool}
+                      onChange={(e) => setFormData({ ...formData, prize_pool: Number(e.target.value) })}
+                    />
+                    <Input
+                      label="Total Slots"
+                      type="number"
+                      value={formData.open_slots}
+                      onChange={(e) => setFormData({ ...formData, open_slots: Number(e.target.value) })}
+                    />
+                  </>
+                )}
+                {formData.mode === "Solo" && formData.tournament_type === "battle_royale" && (
                   <>
                     <Input
                       label="Coins Per Kill"
@@ -960,6 +1051,21 @@ function AdminTournamentsPage() {
                             </span>
                             <span
                               className={`px-2 py-1 rounded-md uppercase tracking-wider ${
+                                t.tournament_type === "clash_squad"
+                                  ? "bg-purple-100 text-purple-700"
+                                  : t.tournament_type === "lone_wolf"
+                                    ? "bg-indigo-100 text-indigo-700"
+                                    : "bg-blue-100 text-blue-700"
+                              }`}
+                            >
+                              {t.tournament_type === "clash_squad"
+                                ? "Clash Squad"
+                                : t.tournament_type === "lone_wolf"
+                                  ? "Lone Wolf"
+                                  : "Battle Royale"}
+                            </span>
+                            <span
+                              className={`px-2 py-1 rounded-md uppercase tracking-wider ${
                                 t.status === "open"
                                   ? "bg-green-100 text-green-700"
                                   : t.status === "upcoming"
@@ -986,7 +1092,11 @@ function AdminTournamentsPage() {
                                 Prize Pool
                               </div>
                               <div className="font-display font-black text-cta text-base flex items-center gap-1 flex-wrap">
-                                {t.mode === "Solo" ? (
+                                {t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf" ? (
+                                  <>
+                                    <GodCoin className="w-4 h-4" /> {t.prize_pool || 0}
+                                  </>
+                                ) : t.mode === "Solo" ? (
                                   <>
                                     <GodCoin className="w-4 h-4" /> {t.per_kill_coin}/Kill |{" "}
                                     <GodCoin className="w-4 h-4" /> {t.first_place_coin} Booyah Points
@@ -1234,52 +1344,24 @@ function AdminTournamentsPage() {
                     <Edit className="w-3 h-3 mr-1" /> Edit Mode
                   </Button>
                 </div>
-                <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                      <thead className="text-[10px] uppercase tracking-widest text-muted-foreground bg-secondary/50 border-b border-border">
-                        <tr>
-                          <th className="px-4 py-3 font-bold text-center">#</th>
-                          <th className="px-4 py-3 font-bold">Squad / Player</th>
-                          <th className="px-4 py-3 font-bold text-center">Kills</th>
-                          <th className="px-4 py-3 font-bold text-center">Position</th>
-                          <th className="px-4 py-3 font-bold text-center">Manual Pts</th>
-                          {resultsTId?.mode === "Squad" && (
-                            <th className="px-4 py-3 font-bold text-right text-cta">Points</th>
-                          )}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/50">
-                        {resultsData.map((r, i) => (
-                          <tr key={r.id} className="hover:bg-secondary/30 transition-colors">
-                            <td className="px-4 py-3.5 font-display font-black text-muted-foreground text-center">
-                              {i < 3 ? ["🥇","🥈","🥉"][i] : i + 1}
-                            </td>
-                            <td className="px-4 py-3.5 font-bold text-foreground">
-                              {r.display_name || r.team_name || r.username}
-                            </td>
-                            <td className="px-4 py-3.5 text-center font-mono font-semibold text-orange-400">
-                              {r.kills || 0}
-                            </td>
-                            <td className="px-4 py-3.5 text-center font-mono font-semibold">
-                              {r.position ? `#${r.position}` : "—"}
-                            </td>
-                            <td className="px-4 py-3.5 text-center font-mono font-semibold">
-                              {typeof r.manualPoints !== "undefined" && r.manualPoints !== null
-                                ? r.manualPoints
-                                : "—"}
-                            </td>
-                            {resultsTId?.mode === "Squad" && (
-                              <td className="px-4 py-3.5 text-right font-display font-black text-cta text-lg">
-                                {(r.points || 0) > 0 ? r.points : "—"}
-                              </td>
-                            )}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                {/* Results Display based on Tournament Type */}
+                {resultsTId?.tournament_type === "clash_squad" ? (
+                  <ClashSquadResults
+                    tournamentName={resultsTId?.title}
+                    results={resultsData}
+                  />
+                ) : resultsTId?.tournament_type === "lone_wolf" ? (
+                  <LoneWolfResults
+                    tournamentName={resultsTId?.title}
+                    results={resultsData}
+                  />
+                ) : (
+                  <StandingsCard
+                    tournamentName={resultsTId?.title}
+                    mode={resultsTId?.mode || "Squad"}
+                    results={resultsData}
+                  />
+                )}
               </div>
             )}
           </div>

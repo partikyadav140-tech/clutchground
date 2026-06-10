@@ -165,7 +165,9 @@ function MatchCard({ m, i }: { m: any; i: number }) {
   const fillPct = Math.min(100, Math.round((filled / slots) * 100));
   const isFull  = filled >= slots;
   const isLive  = m.match_status === "live";
-  const isFree  = m.entry === 0;
+  const isFree  = m.tournament_type === "clash_squad" || m.tournament_type === "lone_wolf" 
+    ? (m.entry_fee || 0) === 0
+    : m.entry === 0;
   const mc      = MODE[m.mode] || MODE.Solo;
 
   const statusConfig: Record<string, { label: string; color: string; bg: string; border: string }> = {
@@ -225,22 +227,32 @@ function MatchCard({ m, i }: { m: any; i: number }) {
 
           {/* Stats bar */}
           <div className="flex items-stretch divide-x divide-border">
-            {[
-              { label: "Entry", value: isFree ? "FREE" : m.entry, coin: !isFree, clr: isFree ? "#10b981" : mc.color },
-              { label: "Prize", value: m.mode === "Solo" ? `${m.per_kill_coin}/kill` : m.prize, coin: true, clr: "#f59e0b" },
-              {
-                label: "Starts",
-                value: (() => {
-                  if (!m.date) return "TBD";
-                  const parsed = new Date(m.date);
-                  return isNaN(parsed.getTime())
-                    ? m.date
-                    : parsed.toLocaleString([], { dateStyle: "short", timeStyle: "short" });
-                })(),
-                coin: false,
-                clr: mc.color,
-              },
-            ].map(({ label, value, coin, clr }) => (
+            {(() => {
+              const entryValue = m.tournament_type === "clash_squad" || m.tournament_type === "lone_wolf"
+                ? (m.entry_fee || 0)
+                : m.entry;
+              const prizeValue = m.tournament_type === "clash_squad" || m.tournament_type === "lone_wolf"
+                ? (m.prize_pool || 0)
+                : (m.mode === "Solo" ? `${m.per_kill_coin}/kill` : m.prize);
+              
+              return [
+                { label: "Entry", value: isFree ? "FREE" : entryValue, coin: !isFree, clr: isFree ? "#10b981" : mc.color },
+                { label: "Prize", value: prizeValue, coin: true, clr: "#f59e0b" },
+                {
+                  label: "Starts",
+                  value: (() => {
+                    if (!m.date) return "TBD";
+                    const parsed = new Date(m.date);
+                    return isNaN(parsed.getTime())
+                      ? m.date
+                      : parsed.toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+                  })(),
+                  coin: false,
+                  clr: mc.color,
+                },
+                { label: "Slots", value: `${m.filled}/${m.slots}`, coin: false, clr: mc.color },
+              ];
+            })().map(({ label, value, coin, clr }) => (
               <div key={label} className="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5">
                 <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
                 <span className="font-display font-black text-xs text-foreground flex items-center gap-0.5">

@@ -37,7 +37,12 @@ function TournamentsPage() {
     if (filter === "Solo")  return t.mode === "Solo";
     if (filter === "Duo")   return t.mode === "Duo";
     if (filter === "Squad") return t.mode === "Squad";
-    if (filter === "Free")  return t.entry === 0;
+    if (filter === "Free")  {
+      const entryAmount = t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf" 
+        ? (t.entry_fee || 0) 
+        : t.entry;
+      return entryAmount === 0;
+    }
     return true;
   });
 

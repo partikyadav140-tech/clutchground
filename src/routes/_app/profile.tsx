@@ -1,10 +1,9 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
-import { LogOut, ShieldAlert, BarChart3, Swords } from "lucide-react";
+import { ShieldAlert, BarChart3, Swords } from "lucide-react";
 import { useAuth } from "../../lib/auth-client";
 import { useEffect, useState } from "react";
 import { getProfile } from "../../api";
 import { ProfileView } from "@/components/profile/ProfileView";
-import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_app/profile")({
   head: () => ({ meta: [{ title: "Profile — ClutchGround" }] }),
@@ -12,7 +11,7 @@ export const Route = createFileRoute("/_app/profile")({
 });
 
 function ProfilePage() {
-  const { user, loading: authLoading, logout } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -72,16 +71,6 @@ function ProfilePage() {
           </Link>
         </div>
       )}
-
-      <div className="px-4 mt-4">
-        <Button
-          variant="outline"
-          className="w-full h-12 rounded-2xl text-red-500 border-red-500/30 hover:bg-red-500/10 font-bold"
-          onClick={logout}
-        >
-          <LogOut className="w-4 h-4 mr-2" /> Sign out
-        </Button>
-      </div>
     </div>
   );
 }

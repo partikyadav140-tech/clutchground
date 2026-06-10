@@ -69,8 +69,8 @@ export const db = {
             ) {
               modText = text + " RETURNING id";
             }
-            const { rows } = await txDb.query(modText, args);
-            return { lastInsertRowid: rows[0]?.id };
+            const result = await txDb.query(modText, args);
+            return { lastInsertRowid: result.rows[0]?.id, changes: result.rowCount || 0, rowCount: result.rowCount || 0 };
           },
         }),
       };
@@ -102,8 +102,8 @@ export const db = {
         ) {
           modText = text + " RETURNING id";
         }
-        const { rows } = await db.query(modText, args);
-        return { lastInsertRowid: rows[0]?.id };
+        const result = await db.query(modText, args);
+        return { lastInsertRowid: result.rows[0]?.id, changes: result.rowCount || 0, rowCount: result.rowCount || 0 };
       },
     };
   },
@@ -147,7 +147,11 @@ async function initDb() {
         hosted_by TEXT,
         per_kill_coin INTEGER DEFAULT 0,
         first_place_coin INTEGER DEFAULT 0,
-        results_announced BOOLEAN DEFAULT false
+        results_announced BOOLEAN DEFAULT false,
+        tournament_type TEXT DEFAULT 'battle_royale',
+        entry_fee INTEGER DEFAULT 0,
+        prize_pool INTEGER DEFAULT 0,
+        open_slots INTEGER DEFAULT 2
       );
 
       CREATE TABLE IF NOT EXISTS sessions (

@@ -262,10 +262,14 @@ export const addTournament = createServerFn({ method: "POST" }).handler(async ({
     hosted_by,
     per_kill_coin,
     first_place_coin,
+    tournament_type,
+    entry_fee,
+    prize_pool,
+    open_slots,
   } = data as unknown as any;
   const stmt = db.prepare(`
-      INSERT INTO tournaments (title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id, room_pass, hosted_by, per_kill_coin, first_place_coin)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO tournaments (title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id, room_pass, hosted_by, per_kill_coin, first_place_coin, tournament_type, entry_fee, prize_pool, open_slots)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
   await stmt.run(
     title,
@@ -284,6 +288,10 @@ export const addTournament = createServerFn({ method: "POST" }).handler(async ({
     hosted_by || null,
     per_kill_coin || 0,
     first_place_coin || 0,
+    tournament_type || "battle_royale",
+    entry_fee || 0,
+    prize_pool || 0,
+    open_slots || 0,
   );
 
   if (status === "upcoming") {
@@ -340,6 +348,10 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
     hosted_by,
     per_kill_coin,
     first_place_coin,
+    tournament_type,
+    entry_fee,
+    prize_pool,
+    open_slots,
   } = data as unknown as any;
 
   const old = (await db
@@ -355,7 +367,7 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
 
   const stmt = db.prepare(`
       UPDATE tournaments 
-      SET title=?, game=?, mode=?, format=?, entry=?, prize=?, slots=?, filled=?, startsAt=?, status=?, banner=?, room_id=?, room_pass=?, hosted_by=?, per_kill_coin=?, first_place_coin=?
+      SET title=?, game=?, mode=?, format=?, entry=?, prize=?, slots=?, filled=?, startsAt=?, status=?, banner=?, room_id=?, room_pass=?, hosted_by=?, per_kill_coin=?, first_place_coin=?, tournament_type=?, entry_fee=?, prize_pool=?, open_slots=?
       WHERE id=?
     `);
   await stmt.run(
@@ -375,6 +387,10 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
     hosted_by || null,
     per_kill_coin || 0,
     first_place_coin || 0,
+    tournament_type || "battle_royale",
+    entry_fee || 0,
+    prize_pool || 0,
+    open_slots || 0,
     id,
   );
 
@@ -460,11 +476,29 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
 
     // Check if tournament exists and has slots
     const t = (await db
-      .prepare("SELECT title, startsAt, mode, format, entry, filled, slots, status FROM tournaments WHERE id = ?")
+      .prepare("SELECT title, startsAt, mode, format, entry, entry_fee, filled, slots, status, tournament_type FROM tournaments WHERE id = ?")
       .get(tournamentId)) as any;
     if (!t) throw new Error("Tournament not found");
     if (t.status === "locked") throw new Error("Tournament is locked and no longer accepting registrations");
     if (t.filled >= t.slots) throw new Error("Tournament is full");
+
+    // Determine entry fee based on tournament type
+    const entryFee = t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf" 
+      ? (t.entry_fee || 0) 
+      : (t.entry || 0);
+
+    // Validate tournament_type and mode match
+    if (t.tournament_type === "clash_squad" && t.mode !== "Squad") {
+      throw new Error("Invalid tournament configuration: Clash Squad requires Squad mode");
+    }
+    if (t.tournament_type === "lone_wolf" && t.mode !== "Solo") {
+      throw new Error("Invalid tournament configuration: Lone Wolf requires Solo mode");
+    }
+    if (t.tournament_type === "battle_royale") {
+      if (!["Solo", "Duo", "Squad"].includes(t.mode)) {
+        throw new Error("Invalid mode for Battle Royale");
+      }
+    }
 
     // Check if already registered
     const existing = await db
@@ -516,17 +550,17 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
 
     await db.transaction(async (tx) => {
       // Handle Entry Fee Deduction
-      if (t.entry > 0) {
+      if (entryFee > 0) {
         const user = (await tx
           .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
           .get(userId)) as any;
         if (!user) throw new Error("User not found");
 
-        if (user.deposit_balance + user.winning_balance < t.entry) {
-          throw new Error(`Insufficient funds. You need ${t.entry} CG Coins.`);
+        if (user.deposit_balance + user.winning_balance < entryFee) {
+          throw new Error(`Insufficient funds. You need ${entryFee} CG Coins.`);
         }
 
-        let remaining = t.entry;
+        let remaining = entryFee;
         let newDeposit = user.deposit_balance;
         let newWinning = user.winning_balance;
 
@@ -546,7 +580,7 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
           .prepare(
             "INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)",
           )
-          .run(userId, t.entry, "tournament_entry", `Entry Fee: ${t.title}`);
+          .run(userId, entryFee, "tournament_entry", `Entry Fee: ${t.title}`);
       }
 
       let needsApproval = false;
@@ -635,7 +669,7 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
           .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
           .run(
             userId,
-            `✅ Registration confirmed for ${t.title} (${t.mode}). Entry fee ${t.entry} CG. See your Upcoming Matches and prepare to compete!`,
+            `✅ Registration confirmed for ${t.title} (${t.mode}). Entry fee ${entryFee} CG. See your Upcoming Matches and prepare to compete!`,
             "/matches",
           );
         // Queue push to registrant
@@ -1528,13 +1562,21 @@ export const removeTeamMember = createServerFn({ method: "POST" }).handler(async
     const removed = (deleted as any)?.changes ?? (deleted as any)?.rowCount ?? 0;
     if (!removed) throw new Error("Member not found on your roster.");
 
-    await tx
-      .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
-      .run(
-        memberUserId,
-        `❌ You were removed from ${team.name} by the captain.`,
-        "/teams",
-      );
+    // Only insert notification if user still exists in the system
+    if (member) {
+      try {
+        await tx
+          .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+          .run(
+            memberUserId,
+            `❌ You were removed from ${team.name} by the captain.`,
+            "/teams",
+          );
+      } catch (e) {
+        // Silently fail if notification insert fails due to user not found
+        console.error("Failed to insert notification:", e);
+      }
+    }
   });
 
   try {
@@ -1633,7 +1675,7 @@ export const getMyMatches = createServerFn({ method: "POST" }).handler(async ({ 
     .prepare(
       `
       SELECT t.id, t.title as name, t.startsAt as date, t.status as match_status, t.prize, t.mode, t.format, t.room_id, t.room_pass, t.per_kill_coin, t.first_place_coin,
-             t.slots, t.filled, t.entry, t.banner, r.kills, r.position, r.points, 'approved' as reg_status
+             t.slots, t.filled, t.entry, t.banner, t.tournament_type, t.entry_fee, t.prize_pool, r.kills, r.position, r.points, 'approved' as reg_status
       FROM registrations r
       JOIN tournaments t ON r.tournament_id = t.id
       WHERE r.user_id = ? OR r.players_json LIKE ?
@@ -1641,7 +1683,7 @@ export const getMyMatches = createServerFn({ method: "POST" }).handler(async ({ 
       UNION ALL
 
       SELECT t.id, t.title as name, t.startsAt as date, t.status as match_status, t.prize, t.mode, t.format, null as room_id, null as room_pass, t.per_kill_coin, t.first_place_coin,
-             t.slots, t.filled, t.entry, t.banner, 0 as kills, 0 as position, 0 as points, req.status as reg_status
+             t.slots, t.filled, t.entry, t.banner, t.tournament_type, t.entry_fee, t.prize_pool, 0 as kills, 0 as position, 0 as points, req.status as reg_status
       FROM tournament_requests req
       JOIN tournaments t ON req.tournament_id = t.id
       WHERE req.status = 'pending' AND (req.requested_by = ? OR req.players_json LIKE ?)
@@ -1689,10 +1731,16 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
     await db.transaction(async (tx) => {
       const tourney = (await tx
         .prepare(
-          "SELECT title, prize, mode, per_kill_coin, first_place_coin FROM tournaments WHERE id = ?",
+          "SELECT title, prize, mode, per_kill_coin, first_place_coin, tournament_type, prize_pool FROM tournaments WHERE id = ?",
         )
         .get(tournamentId)) as any;
       if (!tourney) throw new Error("Tournament not found");
+
+      // Determine prize pool and tournament type
+      const prizePool = tourney.tournament_type === "clash_squad" || tourney.tournament_type === "lone_wolf" 
+        ? (tourney.prize_pool || 0) 
+        : (tourney.prize || 0);
+      const isClashOrLone = tourney.tournament_type === "clash_squad" || tourney.tournament_type === "lone_wolf";
 
       const stmt = tx.prepare(
         "UPDATE registrations SET kills = ?, position = ?, points = ?, awarded_prize = ? WHERE id = ? AND tournament_id = ?",
@@ -1702,16 +1750,17 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
         "UPDATE users SET winning_balance = winning_balance + ? WHERE id = ?",
       );
 
-      const prize1 = Math.floor(tourney.prize * 0.5);
-      const prize2 = Math.floor(tourney.prize * 0.3);
-      const prize3 = Math.floor(tourney.prize * 0.2);
+      const prize1 = isClashOrLone ? prizePool : Math.floor(prizePool * 0.5);
+      const prize2 = isClashOrLone ? 0 : Math.floor(prizePool * 0.3);
+      const prize3 = isClashOrLone ? 0 : Math.floor(prizePool * 0.2);
 
       // Calculate points for all modes
       for (const r of results) {
         let posPoints = 0;
         const pos = Number(r.position) || 0;
 
-        if (tourney.mode === "Squad") {
+        // Only calculate points for Battle Royale Squad mode, NOT for Clash Squad/Lone Wolf/Duo/Solo
+        if (!isClashOrLone && tourney.mode === "Squad") {
           if (pos === 1) posPoints = 12;
           else if (pos === 2) posPoints = 9;
           else if (pos === 3) posPoints = 8;
@@ -1727,7 +1776,7 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
         const manualPoints = typeof r.manualPoints !== "undefined" && r.manualPoints !== null ? Number(r.manualPoints) : undefined;
         const useManualPoints = manualPoints !== undefined && !Number.isNaN(manualPoints);
 
-        if (tourney.mode === "Squad") {
+        if (!isClashOrLone && tourney.mode === "Squad") {
           r.calculatedPoints = useManualPoints ? manualPoints : Number(r.kills || 0) + posPoints;
         } else {
           r.calculatedPoints = 0;
@@ -1736,7 +1785,16 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
         r.killsNum = Number(r.kills || 0);
       }
 
-      if (tourney.mode === "Duo" || tourney.mode === "Solo") {
+      // Sort results based on tournament type
+      if (isClashOrLone) {
+        // Clash Squad and Lone Wolf: sort by match position only
+        results.sort((a: any, b: any) => {
+          const posA = a.matchPosition > 0 ? a.matchPosition : 99999;
+          const posB = b.matchPosition > 0 ? b.matchPosition : 99999;
+          return posA - posB;
+        });
+      } else if (tourney.mode === "Duo" || tourney.mode === "Solo") {
+        // Battle Royale Duo/Solo: sort by position then kills
         results.sort((a: any, b: any) => {
           const posA = a.matchPosition > 0 ? a.matchPosition : 99999;
           const posB = b.matchPosition > 0 ? b.matchPosition : 99999;
@@ -1744,6 +1802,7 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
           return b.killsNum - a.killsNum;
         });
       } else {
+        // Battle Royale Squad: sort by points then kills
         results.sort((a: any, b: any) => {
           if (b.calculatedPoints !== a.calculatedPoints) {
             return b.calculatedPoints - a.calculatedPoints;
@@ -1763,13 +1822,27 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
         const oldPoints = oldReg ? oldReg.points || 0 : 0;
 
         let awardedPrize = 0;
-        let rankForPrize = tourney.mode === "Duo" || tourney.mode === "Solo" ? r.matchPosition : overallRank;
+        // For Clash Squad and Lone Wolf: use match position (1st, 2nd, 3rd from results)
+        // For Battle Royale Solo: use match position from the match
+        // For Battle Royale Duo: use match position (position-based only, no kills)
+        // For Battle Royale Squad: use overall rank from sorting (based on points+kills)
+        let rankForPrize = isClashOrLone 
+          ? r.matchPosition 
+          : (tourney.mode === "Solo" || tourney.mode === "Duo") && !isClashOrLone 
+            ? r.matchPosition 
+            : overallRank;
 
-        if (tourney.mode === "Solo") {
+        if (isClashOrLone) {
+          // Clash Squad and Lone Wolf: Full prize pool to 1st place only (match position 1)
+          if (rankForPrize === 1 && prize1 > 0) awardedPrize = prize1;
+          else awardedPrize = 0;
+        } else if (tourney.mode === "Solo") {
+          // Battle Royale Solo: kills + first place bonus
           awardedPrize =
             r.killsNum * (tourney.per_kill_coin || 0) +
             (rankForPrize === 1 ? tourney.first_place_coin || 0 : 0);
         } else {
+          // Battle Royale Duo/Squad: split prizes
           if (rankForPrize === 1 && prize1 > 0) awardedPrize = prize1;
           else if (rankForPrize === 2 && prize2 > 0) awardedPrize = prize2;
           else if (rankForPrize === 3 && prize3 > 0) awardedPrize = prize3;
@@ -1891,6 +1964,24 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
         }
       }
 
+      // Notify ALL participants that results have been announced
+      const allParticipants = (await tx
+        .prepare("SELECT DISTINCT user_id FROM registrations WHERE tournament_id = ?")
+        .all(tournamentId)) as any[];
+      
+      const notifMsg = `📋 Results announced for ${tourney.title}! Check the tournament page to view rankings and prizes.`;
+      for (const p of allParticipants) {
+        await tx
+          .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+          .run(p.user_id, notifMsg, `/tournaments/${tournamentId}`);
+        pushTargets.push({
+          userId: p.user_id,
+          title: "📋 Results Announced",
+          body: `Results announced for ${tourney.title}! Check rankings and your rewards.`,
+          url: `/tournaments/${tournamentId}`,
+        });
+      }
+
       // Optionally mark tournament as finished here if you want
       await tx
         .prepare("UPDATE tournaments SET status = 'completed', results_announced = true WHERE id = ?")
@@ -1903,6 +1994,10 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
         triggerPushNotification(t.userId, t.title, t.body, t.url).catch(e => console.error("Results push failed:", e));
       }
     } catch(e) {}
+
+    // Clear tournaments cache to ensure updated data is fetched
+    const { apiCache } = await import("./lib/cache");
+    apiCache.delete('tournaments');
 
     return { success: true };
   },
@@ -1919,21 +2014,46 @@ export const rescheduleTournament = createServerFn({ method: "POST" }).handler(a
     if (!tourney) throw new Error("Tournament not found");
     tourneyTitle = tourney.title;
 
+    // Get all registrations with their old prizes BEFORE updating
+    const registrations = (await tx
+      .prepare("SELECT user_id, awarded_prize FROM registrations WHERE tournament_id = ?")
+      .all(id)) as any[];
+
+    // Deduct old prizes from wallets before resetting
+    const deductPrize = tx.prepare(
+      "UPDATE users SET winning_balance = winning_balance - ? WHERE id = ?",
+    );
+    const insertTxn = tx.prepare(
+      "INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)",
+    );
+
+    for (const r of registrations) {
+      const oldPrize = r.awarded_prize || 0;
+      if (oldPrize > 0) {
+        // Deduct the old prize from wallet
+        await deductPrize.run(oldPrize, r.user_id);
+        // Log the deduction as a transaction
+        await insertTxn.run(
+          r.user_id,
+          oldPrize,
+          "prize_deducted",
+          `Prize reversed (reschedule): ${tourney.title}`,
+        );
+      }
+    }
+
     await tx.prepare("UPDATE tournaments SET status = 'rescheduled' WHERE id = ?").run(id);
     await tx
       .prepare(
-        "UPDATE registrations SET kills = 0, position = 0, points = 0 WHERE tournament_id = ?",
+        "UPDATE registrations SET kills = 0, position = 0, points = 0, awarded_prize = 0 WHERE tournament_id = ?",
       )
       .run(id);
 
-    const registrations = (await tx
-      .prepare("SELECT user_id FROM registrations WHERE tournament_id = ?")
-      .all(id)) as any[];
-    const insertNotif = tx.prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)");
+    const insertNotif = tx.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)");
     const notifMsg = `⚠️ The match ${tourney.title} has been RESCHEDULED. Please check your Upcoming Matches.`;
 
     for (const r of registrations) {
-      await insertNotif.run(r.user_id, notifMsg);
+      await insertNotif.run(r.user_id, notifMsg, `/tournaments/${id}`);
       userIds.push(r.user_id);
     }
   });
@@ -3574,3 +3694,102 @@ export const getRegistrationSquad = createServerFn({ method: "POST" }).handler(a
     mode: reg.team_name ? "team" : "solo",
   };
 });
+
+// ─── Tournament Results Announcement ─────────────────────────────────────────
+
+export const announceTournamentResult = createServerFn({ method: "POST" }).handler(
+  async ({ data }) => {
+    const { db } = await import("./lib/db");
+    const { tournamentId, results } = data as unknown as {
+      tournamentId: number;
+      results: Array<{
+        rank: number;
+        winnerId?: number;
+        teamId?: number;
+        prizeAmount: number;
+      }>;
+    };
+
+    // Fetch tournament details
+    const tournament = (await db
+      .prepare("SELECT id, title, tournament_type FROM tournaments WHERE id = ?")
+      .get(tournamentId)) as any;
+
+    if (!tournament) {
+      throw new Error("Tournament not found");
+    }
+
+    // Collect push targets for notifications
+    const pushTargets: Array<{ userId: number; title: string; body: string; url: string }> = [];
+
+    // Process results in transaction
+    await db.transaction(async (tx) => {
+      for (const result of results) {
+        if (result.prizeAmount <= 0) continue;
+
+        let winnerUserId: number | null = null;
+
+        // Determine winner user ID based on tournament type
+        if (tournament.tournament_type === "battle_royale" || tournament.tournament_type === "lone_wolf") {
+          // For solo modes, winnerId is the direct user ID
+          winnerUserId = result.winnerId || null;
+        } else if (tournament.tournament_type === "clash_squad") {
+          // For Clash Squad, need to check if teamId or winnerId is provided
+          // If winnerId, use it directly
+          // If teamId, we'd need to distribute among team members (not implemented yet)
+          winnerUserId = result.winnerId || null;
+        }
+
+        if (!winnerUserId) continue;
+
+        // Verify user exists
+        const user = (await tx.prepare("SELECT id, winning_balance FROM users WHERE id = ?").get(winnerUserId)) as any;
+        if (!user) continue;
+
+        // Update winning balance
+        const newBalance = (user.winning_balance || 0) + result.prizeAmount;
+        await tx
+          .prepare("UPDATE users SET winning_balance = ? WHERE id = ?")
+          .run(newBalance, winnerUserId);
+
+        // Create transaction record
+        await tx
+          .prepare(
+            "INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)",
+          )
+          .run(
+            winnerUserId,
+            result.prizeAmount,
+            "tournament_prize",
+            `${tournament.title} - Rank #${result.rank} Prize`,
+          );
+
+        // Add to push notification queue
+        pushTargets.push({
+          userId: winnerUserId,
+          title: "🎉 Prize Won!",
+          body: `You won ₹${result.prizeAmount} from ${tournament.title}!`,
+          url: `/matches`,
+        });
+      }
+
+      // Mark tournament as results announced
+      await tx
+        .prepare("UPDATE tournaments SET results_announced = true WHERE id = ?")
+        .run(tournamentId);
+    });
+
+    // Send push notifications (after transaction completes to avoid DB locks)
+    if (pushTargets.length > 0) {
+      try {
+        const { sendPushNotificationBatch } = await import("./lib/push-server");
+        await sendPushNotificationBatch(pushTargets);
+      } catch (e) {
+        console.error("Failed to send push notifications:", e);
+        // Don't fail the entire operation if push fails
+      }
+    }
+
+    return { success: true, announcedCount: results.length };
+  },
+);

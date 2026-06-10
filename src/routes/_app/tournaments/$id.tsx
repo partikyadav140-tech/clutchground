@@ -77,9 +77,11 @@ function TournamentDetailPage() {
     }
   }, [user, t.id]);
 
-  const fillPct  = Math.min(100, Math.round((t.filled / t.slots) * 100));
-  const isFull   = t.filled >= t.slots;
-  const isFree   = t.entry === 0;
+  const displaySlots = t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf" ? (t.open_slots || t.slots || 1) : (t.slots || 1);
+  const fillPct  = Math.min(100, Math.round((t.filled / displaySlots) * 100));
+  const isFull   = t.filled >= displaySlots;
+  const entryAmount = t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf" ? (t.entry_fee || 0) : t.entry;
+  const isFree   = entryAmount === 0;
   const isLive   = t.status === "live";
   const isComp   = t.status === "completed";
 
@@ -146,12 +148,21 @@ function TournamentDetailPage() {
       {/* ── QUICK STATS ROW ── */}
       <div className="mx-4 mt-3 bg-card rounded-2xl border border-border overflow-hidden shadow-card">
         <div className="flex items-stretch divide-x divide-border">
-          {[
-            { label: "Entry",  value: isFree ? "FREE" : t.entry, coin: !isFree, accent: isFree ? "#10b981" : mc.color },
-            { label: "Prize",  value: t.mode === "Solo" ? `${t.per_kill_coin}/kill` : t.prize, coin: true, accent: "#f59e0b" },
-            { label: "Starts", value: t.startsAt || t.startsat || "TBD", coin: false, accent: mc.color },
-            { label: "Slots",  value: `${t.filled}/${t.slots}`, coin: false, accent: mc.color },
-          ].map(({ label, value, coin, accent }) => (
+          {(() => {
+            const entryValue = t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf" 
+              ? (t.entry_fee || 0)
+              : t.entry;
+            const prizeValue = t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf"
+              ? (t.prize_pool || 0)
+              : (t.mode === "Solo" ? `${t.per_kill_coin}/kill` : t.prize);
+            
+            return [
+              { label: "Entry",  value: isFree ? "FREE" : entryValue, coin: !isFree, accent: isFree ? "#10b981" : mc.color },
+              { label: "Prize",  value: prizeValue, coin: true, accent: "#f59e0b" },
+              { label: "Starts", value: t.startsAt || t.startsat || "TBD", coin: false, accent: mc.color },
+              { label: "Slots",  value: `${t.filled}/${displaySlots}`, coin: false, accent: mc.color },
+            ];
+          })().map(({ label, value, coin, accent }) => (
             <div key={label} className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5">
               <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
               <span className="font-display font-black text-sm text-foreground flex items-center gap-0.5">
@@ -213,13 +224,13 @@ function TournamentDetailPage() {
             tournamentId={t.id}
             tournamentTitle={t.title}
             mode={t.mode}
-            entryFee={t.entry}
+            entryFee={entryAmount}
             trigger={
               <button
                 className="w-full h-12 rounded-2xl text-sm font-black uppercase tracking-widest flex items-center justify-center gap-2 press-effect active:scale-95 transition-all"
                 style={{ background: mc.gradient, boxShadow: `0 4px 20px ${mc.glow}`, color: "#fff" }}>
                 <Zap className="w-4 h-4" />
-                {isFree ? "Book Free Slot" : `Pay ${t.entry} & Join`}
+                {isFree ? "Book Free Slot" : `Pay ${entryAmount} & Join`}
               </button>
             }
           />
@@ -267,7 +278,7 @@ function TournamentDetailPage() {
                   { icon: Crosshair, label: "Format",    value: t.format },
                   { icon: Users,     label: "Mode",      value: t.mode },
                   { icon: Calendar,  label: "Date",      value: t.startsAt || t.startsat || "TBD" },
-                  { icon: Shield,    label: "Slots",     value: `${t.filled} / ${t.slots}` },
+                  { icon: Shield,    label: "Slots",     value: `${t.filled} / ${displaySlots}` },
                 ].map(({ icon: Icon, label, value }) => (
                   <div key={label} className="bg-card rounded-2xl border border-border p-3.5 flex items-center gap-3 shadow-card">
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: mc.bg }}>
@@ -380,15 +391,47 @@ function TournamentDetailPage() {
                   <span className="text-[9px] font-black uppercase tracking-widest text-amber-400">How Prizes Work</span>
                 </div>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {t.mode === "Solo"
-                    ? "Solo mode rewards kills directly. Earn coins per kill + bonus for Booyah placement."
-                    : `${t.mode} mode: earn placement points + kill points. Top 3 teams split the prize pool.`
+                  {t.tournament_type === "clash_squad"
+                    ? "Clash Squad: Ranked by final match position. The entire prize pool goes to the 1st place winning team only. 2nd and 3rd place teams receive no prize reward."
+                    : t.tournament_type === "lone_wolf"
+                      ? "Lone Wolf: Solo players ranked by their final match position. The entire prize pool goes to the 1st place finisher only. Players in 2nd, 3rd, and below receive no prize reward."
+                      : t.mode === "Solo"
+                        ? "Solo mode rewards kills directly. Earn coins per kill + bonus for Booyah placement."
+                        : t.mode === "Duo"
+                          ? "Duo mode: Ranked by final match position only. Top 3 teams share the prize pool: 1st place gets 50%, 2nd place gets 30%, 3rd place gets 20%. Kills do not affect rewards."
+                          : t.mode === "Squad"
+                            ? "Squad mode: Ranked by points (kills + position bonus). Top 3 teams split the prize pool: 1st place gets 50%, 2nd place gets 30%, 3rd place gets 20%."
+                            : `${t.mode} mode: earn placement points + kill points. Top 3 teams split the prize pool.`
                   }
                 </p>
               </div>
 
               {/* Prize breakdown */}
-              {t.mode === "Solo" ? (
+              {t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf" ? (
+                <div className="flex flex-col gap-2">
+                  {(() => {
+                    const prizePool = t.prize_pool || 0;
+                    
+                    return [
+                      { medal: "🥇", label: "1st Place", amount: prizePool, color: "#f59e0b" },
+                    ].map(({ medal, label, amount, color }) => (
+                      <div key={label} className="bg-card rounded-2xl border border-border p-4 flex items-center justify-between shadow-card">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{medal}</span>
+                          <div>
+                            <p className="font-black text-sm text-foreground">{label}</p>
+                            <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Full Prize Pool</p>
+                          </div>
+                        </div>
+                        <span className="font-display font-black text-lg flex items-center gap-1" style={{ color }}>
+                          <GodCoin className="w-4 h-4 text-amber-400" />
+                          {amount.toLocaleString()}
+                        </span>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              ) : t.mode === "Solo" ? (
                 <div className="flex flex-col gap-2">
                   {[
                     { label: "🥇 Booyah Points", value: t.first_place_coin, color: "#f59e0b" },
@@ -404,25 +447,29 @@ function TournamentDetailPage() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {[
-                    { medal: "🥇", label: "1st Place", pct: 50, color: "#f59e0b" },
-                    { medal: "🥈", label: "2nd Place", pct: 30, color: "#94a3b8" },
-                    { medal: "🥉", label: "3rd Place", pct: 20, color: "#b45309" },
-                  ].map(({ medal, label, pct, color }) => (
-                    <div key={label} className="bg-card rounded-2xl border border-border p-4 flex items-center justify-between shadow-card">
-                      <div className="flex items-center gap-3">
-                        <span className="text-2xl">{medal}</span>
-                        <div>
-                          <p className="font-black text-sm text-foreground">{label}</p>
-                          <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{pct}% of pool</p>
+                  {(() => {
+                    const prizePool = t.prize;
+                    
+                    return [
+                      { medal: "🥇", label: "1st Place", pct: 50, color: "#f59e0b" },
+                      { medal: "🥈", label: "2nd Place", pct: 30, color: "#94a3b8" },
+                      { medal: "🥉", label: "3rd Place", pct: 20, color: "#b45309" },
+                    ].map(({ medal, label, pct, color }) => (
+                      <div key={label} className="bg-card rounded-2xl border border-border p-4 flex items-center justify-between shadow-card">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">{medal}</span>
+                          <div>
+                            <p className="font-black text-sm text-foreground">{label}</p>
+                            <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{pct}% of pool</p>
+                          </div>
                         </div>
+                        <span className="font-display font-black text-lg flex items-center gap-1" style={{ color }}>
+                          <GodCoin className="w-4 h-4 text-amber-400" />
+                          {Math.round((prizePool * pct) / 100).toLocaleString()}
+                        </span>
                       </div>
-                      <span className="font-display font-black text-lg flex items-center gap-1" style={{ color }}>
-                        <GodCoin className="w-4 h-4 text-amber-400" />
-                        {Math.round((t.prize * pct) / 100).toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
+                    ));
+                  })()}
                 </div>
               )}
             </motion.div>
