@@ -8,6 +8,7 @@ export default defineConfig({
   plugins: [
     tanstackStart({
       server: {
+        // @ts-expect-error Vinxi server preset option
         preset: process.env.SERVER_PRESET || "node",
       },
     }),
