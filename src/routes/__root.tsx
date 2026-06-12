@@ -96,6 +96,41 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <HeadContent />
         <link rel="manifest" href="/manifest.webmanifest" />
         <script dangerouslySetInnerHTML={{ __html: `
+          // Throttled reload helper to prevent redirect loops
+          function triggerChunkReload() {
+            try {
+              const lastReload = sessionStorage.getItem('last_chunk_reload');
+              const now = Date.now();
+              if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+                sessionStorage.setItem('last_chunk_reload', now.toString());
+                window.location.reload();
+              }
+            } catch (e) {}
+          }
+
+          // Handle Vite asset preload errors
+          window.addEventListener('vite:preloadError', (event) => {
+            event.preventDefault();
+            triggerChunkReload();
+          });
+
+          // Handle runtime module fetch errors
+          window.addEventListener('error', (event) => {
+            const msg = event.message || '';
+            if (/Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(msg)) {
+              triggerChunkReload();
+            }
+          }, true);
+
+          // Handle unhandled promise rejections (async imports)
+          window.addEventListener('unhandledrejection', (event) => {
+            const reason = event.reason;
+            const msg = (reason && (reason.message || reason.stack || String(reason))) || '';
+            if (/Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(msg)) {
+              triggerChunkReload();
+            }
+          });
+
           if ('serviceWorker' in navigator) {
             window.addEventListener('load', async () => {
               if (${import.meta.env.DEV}) {

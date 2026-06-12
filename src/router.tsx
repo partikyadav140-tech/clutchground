@@ -1,8 +1,22 @@
 import { createRouter, useRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { routeTree } from "./routeTree.gen";
 
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
+
+  useEffect(() => {
+    if (error && /Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(error.message || '')) {
+      try {
+        const lastReload = sessionStorage.getItem('last_chunk_reload');
+        const now = Date.now();
+        if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
+          sessionStorage.setItem('last_chunk_reload', now.toString());
+          window.location.reload();
+        }
+      } catch (e) {}
+    }
+  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
