@@ -16,6 +16,14 @@ function PublicProfilePage() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = "/";
+    }
+  };
+
   useEffect(() => {
     (getPublicProfile as any)({ data: Number(userId) })
       .then((p: any) => setProfile(p))
@@ -26,9 +34,12 @@ function PublicProfilePage() {
     return (
       <div className="min-h-screen bg-background page-content">
         <div className="px-4 pt-4 mb-2">
-          <Link to=".." className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary">
+          <button
+            onClick={handleBack}
+            className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary active:scale-95 transition-transform"
+          >
             <ArrowLeft className="w-4 h-4" /> Back
-          </Link>
+          </button>
         </div>
         <SkeletonProfile />
       </div>
@@ -49,9 +60,12 @@ function PublicProfilePage() {
   return (
     <div className="min-h-screen bg-background page-content">
       <div className="px-4 pt-4">
-        <Link to=".." className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary">
+        <button
+          onClick={handleBack}
+          className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary active:scale-95 transition-transform"
+        >
           <ArrowLeft className="w-4 h-4" /> Back
-        </Link>
+        </button>
       </div>
       <ProfileView profile={profile} isOwner={false} />
     </div>
