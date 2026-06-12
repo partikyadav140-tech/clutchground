@@ -13,13 +13,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { GodCoin } from "@/components/GodCoin";
 import { SpinWheel } from "./SpinWheel";
+import { RewardCelebration } from "./RewardCelebration";
 import {
   getProfile,
   getSpinWheelConfig,
   getSpinWheelStatus,
   performSpin,
 } from "@/api";
-import { rotationDeltaForSlice, type SpinSegment } from "@/lib/spin-wheel";
+import { type SpinSegment } from "@/lib/spin-wheel";
 import { useAuth } from "@/lib/auth-client";
 
 type SpinWheelSheetProps = {
@@ -46,9 +47,9 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
   const [status, setStatus] = useState<SpinStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
-  const [rotation, setRotation] = useState(0);
-  const rotationRef = useRef(0);
+  const [targetSliceIndex, setTargetSliceIndex] = useState<number | null>(null);
   const [result, setResult] = useState<{ label: string; amount: number } | null>(null);
+  const [celebrationOpen, setCelebrationOpen] = useState(false);
 
   const syncUserBalances = useCallback(
     (p: { deposit_balance?: number; winning_balance?: number }) => {
@@ -63,9 +64,9 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
     [user, setUser],
   );
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (silent = false) => {
     if (!user) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const [config, spinStatus] = await Promise.all([
         getSpinWheelConfig(),
@@ -77,7 +78,7 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
     } catch (e: any) {
       toast.error(e?.message || "Failed to load spin wheel");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [user]);
 
@@ -85,58 +86,33 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
     if (open && user) refresh();
   }, [open, user, refresh]);
 
-  const runSpinAnimation = (spinResult: {
-    sliceIndex: number;
-    totalSlices: number;
-    label: string;
-    amount: number;
-  }) => {
-    const delta = rotationDeltaForSlice(
-      spinResult.sliceIndex,
-      spinResult.totalSlices,
-      rotationRef.current,
-      10,
-    );
-    const nextRotation = rotationRef.current + delta;
-    rotationRef.current = nextRotation;
-    setRotation(nextRotation);
-
-    // Wait for wheel to fully stop (matches CSS transition duration)
-    setTimeout(() => {
-      setSpinning(false);
-
-      // Dramatic pause before revealing the prize
-      setTimeout(() => {
-        setResult({ label: spinResult.label, amount: spinResult.amount });
-        if (spinResult.amount > 0) {
-          toast.success(`You won ${spinResult.amount} CG coins!`, {
-            description: "Added to your deposit balance",
-          });
-        } else {
-          toast.info("No luck this time!", { description: spinResult.label });
-        }
-        refresh();
-        if (user) {
-          (getProfile as any)({ data: user.id }).then((p: any) => syncUserBalances(p));
-        }
-      }, 800);
-    }, 7200);
-  };
-
   const handleSpin = async () => {
     if (!user || spinning || !status?.canSpin) return;
 
     setSpinning(true);
+    setTargetSliceIndex(null);
     setResult(null);
 
     try {
       const spinResult = await (performSpin as any)({ data: user.id });
-      runSpinAnimation(spinResult);
+      setTargetSliceIndex(spinResult.sliceIndex);
+      setResult({ label: spinResult.label, amount: spinResult.amount });
     } catch (e: any) {
       setSpinning(false);
+      setTargetSliceIndex(null);
       toast.error(e?.message || "Spin failed");
     }
   };
+
+  const handleSpinFinished = useCallback((winningSegment: SpinSegment) => {
+    setSpinning(false);
+    setTargetSliceIndex(null);
+    setCelebrationOpen(true);
+    refresh(true); // silent refresh
+    if (user) {
+      (getProfile as any)({ data: user.id }).then((p: any) => syncUserBalances(p));
+    }
+  }, [user, refresh, syncUserBalances]);
 
 
   const spinCredits = status?.spinCredits ?? 0;
@@ -179,34 +155,11 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
               <SpinWheel
                 segments={segments}
                 activePrizeIds={activePrizeIds}
-                rotation={rotation}
-                spinning={spinning}
+                isSpinning={spinning}
+                targetSliceIndex={targetSliceIndex}
+                onFinished={handleSpinFinished}
                 size={300}
               />
-
-              <AnimatePresence>
-                {result && !spinning && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-4 rounded-2xl bg-card border border-primary/25 px-4 py-3 text-center"
-                  >
-                    <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
-                      You won
-                    </p>
-                    <p className="font-display font-black text-xl text-foreground mt-1 flex items-center justify-center gap-2">
-                      {result.amount > 0 ? (
-                        <>
-                          <GodCoin className="w-6 h-6" />
-                          +{result.amount} CG
-                        </>
-                      ) : (
-                        result.label
-                      )}
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
 
             <Button
@@ -253,6 +206,12 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
             </Link>
           </div>
         )}
+
+        <RewardCelebration
+          open={celebrationOpen}
+          onClose={() => setCelebrationOpen(false)}
+          prize={result}
+        />
       </DialogContent>
     </Dialog>
   );
