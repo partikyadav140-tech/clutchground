@@ -7,6 +7,7 @@ const STATIC_ASSETS = [
   '/manifest.webmanifest',
   '/pwa-192x192.png',
   '/pwa-512x512.png',
+  '/logo-transparent.png',
 ];
 
 // ── Install: pre-cache shell assets ──────────────────────────────────────────

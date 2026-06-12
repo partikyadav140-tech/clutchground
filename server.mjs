@@ -3,7 +3,7 @@
  * Serves static files from dist/client, then falls back to SSR handler.
  */
 import { createServer } from "node:http";
-import { createReadStream, existsSync, statSync } from "node:fs";
+import { createReadStream, promises as fs } from "node:fs";
 import { join, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import app from "./dist/server/server.js";
@@ -41,19 +41,24 @@ createServer(async (req, res) => {
 
     // ── 1. Try to serve static file from dist/client ──────────────────────
     const filePath = join(clientDir, pathname);
-    if (existsSync(filePath) && statSync(filePath).isFile()) {
-      const ext = extname(filePath).toLowerCase();
-      const contentType = MIME_TYPES[ext] || "application/octet-stream";
-      // Hashed assets get long cache; everything else no-cache
-      const isHashed = /\.[a-f0-9]{8,}\.[a-z]+$/.test(pathname);
-      res.writeHead(200, {
-        "Content-Type": contentType,
-        "Cache-Control": isHashed
-          ? "public, max-age=31536000, immutable"
-          : "no-cache, must-revalidate",
-      });
-      createReadStream(filePath).pipe(res);
-      return;
+    try {
+      const stats = await fs.stat(filePath);
+      if (stats.isFile()) {
+        const ext = extname(filePath).toLowerCase();
+        const contentType = MIME_TYPES[ext] || "application/octet-stream";
+        // Hashed assets get long cache; everything else no-cache
+        const isHashed = /\.[a-f0-9]{8,}\.[a-z]+$/.test(pathname);
+        res.writeHead(200, {
+          "Content-Type": contentType,
+          "Cache-Control": isHashed
+            ? "public, max-age=31536000, immutable"
+            : "no-cache, must-revalidate",
+        });
+        createReadStream(filePath).pipe(res);
+        return;
+      }
+    } catch {
+      // File does not exist, fall through to TanStack Start SSR handler
     }
 
     // ── 2. Fall through to TanStack Start SSR handler ─────────────────────

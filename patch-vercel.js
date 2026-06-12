@@ -23,7 +23,7 @@ try {
         continue: true
       },
       {
-        src: '^/(manifest\\.webmanifest|new-banner\\.png|hero-banner\\.png|robots\\.txt|sitemap\\.xml|sw\\.js|posters/.*|pwa-.*)',
+        src: '^/(manifest\\.webmanifest|logo-transparent\\.png|new-banner\\.png|hero-banner\\.png|robots\\.txt|sitemap\\.xml|sw\\.js|posters/.*|pwa-.*)',
         continue: true
       },
       // Proxy everything else directly to the Render backend service
