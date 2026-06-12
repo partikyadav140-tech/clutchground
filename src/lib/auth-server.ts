@@ -1,4 +1,3 @@
-import { getCookie, getCookies, getRequestHeaders } from "@tanstack/react-start/server";
 import { db } from "./db";
 
 export async function getCurrentUser(requiredRole?: "admin" | "user", dataSessionId?: string) {
@@ -6,42 +5,33 @@ export async function getCurrentUser(requiredRole?: "admin" | "user", dataSessio
 
   if (!sessionId) {
     try {
-      sessionId = getCookie("sessionId");
-      console.log("[getCurrentUser] sessionId from getCookie:", sessionId);
-    } catch (e: any) {
-      console.error("[getCurrentUser] getCookie threw error:", e.message);
-    }
-  }
-
-  // Fallback to manual parsing from request headers
-  if (!sessionId) {
-    try {
-      const headers = getRequestHeaders();
-      const cookieHeader = headers.get("cookie") || headers.get("Cookie");
-      if (cookieHeader) {
-        const nameEQ = "sessionId=";
-        const ca = cookieHeader.split(";");
-        for (let i = 0; i < ca.length; i++) {
-          let c = ca[i].trim();
-          if (c.indexOf(nameEQ) === 0) {
-            sessionId = decodeURIComponent(c.substring(nameEQ.length, c.length));
-            console.log("[getCurrentUser] sessionId parsed manually from headers:", sessionId);
-            break;
+      const storageKey = Symbol.for("tanstack-start:event-storage");
+      const storage = (globalThis as any)[storageKey];
+      if (storage) {
+        const store = storage.getStore();
+        const event = store?.h3Event;
+        if (event && event.node && event.node.req) {
+          const req = event.node.req;
+          const cookieHeader = req.headers.cookie || req.headers.Cookie;
+          if (cookieHeader) {
+            const nameEQ = "sessionId=";
+            const ca = cookieHeader.split(";");
+            for (let i = 0; i < ca.length; i++) {
+              let c = ca[i].trim();
+              if (c.indexOf(nameEQ) === 0) {
+                sessionId = decodeURIComponent(c.substring(nameEQ.length, c.length));
+                break;
+              }
+            }
           }
         }
       }
     } catch (e: any) {
-      console.error("[getCurrentUser] getRequestHeaders fallback error:", e.message);
+      console.error("[getCurrentUser] Error parsing cookies from global store:", e.message);
     }
   }
 
   if (!sessionId) {
-    try {
-      const allCookies = getCookies();
-      console.log("[getCurrentUser] Available cookies:", allCookies);
-    } catch (e: any) {
-      console.error("[getCurrentUser] getCookies threw error:", e.message);
-    }
     throw new Error("Authentication required: No session ID provided");
   }
 
