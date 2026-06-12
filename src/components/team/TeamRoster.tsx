@@ -50,7 +50,7 @@ function RosterRow({
   avatarUrl?: string | null;
   accent?: string;
   trailing?: ReactNode;
-  userId?: number;
+  userId?: number | null;
   linkProfiles?: boolean;
 }) {
   const inner = (

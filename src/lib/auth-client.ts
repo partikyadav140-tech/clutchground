@@ -11,10 +11,18 @@ export function getSessionId() {
 
 export function setSessionId(id: string) {
   localStorage.setItem("sessionId", id);
+  if (typeof document !== "undefined") {
+    const isSecure = window.location.protocol === "https:";
+    document.cookie = `sessionId=${encodeURIComponent(id)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax${isSecure ? "; Secure" : ""}`;
+  }
 }
 
 export function clearSessionId() {
   localStorage.removeItem("sessionId");
+  if (typeof document !== "undefined") {
+    const isSecure = window.location.protocol === "https:";
+    document.cookie = `sessionId=; path=/; max-age=0; SameSite=Lax${isSecure ? "; Secure" : ""}`;
+  }
 }
 
 // Global state for live updates across components
@@ -43,6 +51,13 @@ export function useAuth() {
       setLoading(false);
     };
     listeners.add(listener);
+
+    // Sync cookie with localStorage session if needed
+    const initialSessionId = getSessionId();
+    if (initialSessionId && typeof document !== "undefined" && !document.cookie.includes("sessionId=")) {
+      const isSecure = window.location.protocol === "https:";
+      document.cookie = `sessionId=${encodeURIComponent(initialSessionId)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax${isSecure ? "; Secure" : ""}`;
+    }
 
     async function fetchUser() {
       const sessionId = getSessionId();

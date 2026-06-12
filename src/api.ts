@@ -5,6 +5,14 @@ import { getEnvVar } from "./lib/env";
 export { getWalletBalance, getTransactionHistory } from "./lib/razorpay";
 export { createUpiDeposit, submitUpiUtr, getPendingUpiDeposits, approveUpiDeposit, rejectUpiDeposit, getUserUpiDeposits, getActiveUpiConfig } from "./lib/upi";
 
+export async function getCurrentUser(requiredRole?: "admin" | "user", dataSessionId?: string) {
+  const get = (globalThis as any).getCurrentUser;
+  if (!get) {
+    throw new Error("Security validation failed: Authentication manager not initialized.");
+  }
+  return get(requiredRole, dataSessionId);
+}
+
 // ─── Cloudinary Image Upload ───────────────────────────────────────────────
 export const uploadImage = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { uploadToCloudinary } = await import("./lib/cloudinary");
@@ -43,9 +51,24 @@ export const loginUser = createServerFn({ method: "POST" }).handler(async ({ dat
     throw new Error("Invalid phone number or password");
   }
 
-  if (user.password !== password) {
-    console.log("Password mismatch for user:", user.username);
-    throw new Error("Invalid phone number or password");
+  // Use scrypt verification and handle legacy plaintext auto-upgrading
+  const { verifyPassword, hashPassword } = await import("./lib/auth-crypto");
+  if (!user.password.includes(":")) {
+    if (user.password === password) {
+      // Auto-upgrade plaintext to secure hash
+      const hashedPassword = hashPassword(password);
+      await db.prepare("UPDATE users SET password = ? WHERE id = ?").run(hashedPassword, user.id);
+      user.password = hashedPassword;
+      console.log(`[Auth] Auto-upgraded password hash for user: ${user.username}`);
+    } else {
+      console.log("Plaintext password mismatch for user:", user.username);
+      throw new Error("Invalid phone number or password");
+    }
+  } else {
+    if (!verifyPassword(password, user.password)) {
+      console.log("Hashed password verification failed for user:", user.username);
+      throw new Error("Invalid phone number or password");
+    }
   }
 
   if (user.banned) {
@@ -99,12 +122,15 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
     throw new Error("Phone number already registered");
   }
 
+  const { hashPassword } = await import("./lib/auth-crypto");
+  const hashedPassword = hashPassword(password);
+
   const insertStmt = db.prepare(
     "INSERT INTO users (username, password, ign, uid, email, phone, security_question, security_answer) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
   );
   const result = await insertStmt.run(
     username,
-    password,
+    hashedPassword,
     ign || null,
     uid || null,
     email || null,
@@ -142,7 +168,10 @@ export const resetPassword = createServerFn({ method: "POST" }).handler(async ({
     throw new Error("Incorrect security question or answer");
   }
 
-  await db.prepare("UPDATE users SET password = ? WHERE id = ?").run(new_password, user.id);
+  const { hashPassword } = await import("./lib/auth-crypto");
+  const hashedPassword = hashPassword(new_password);
+
+  await db.prepare("UPDATE users SET password = ? WHERE id = ?").run(hashedPassword, user.id);
   return { success: true };
 });
 
@@ -165,11 +194,14 @@ export const createAdminUser = createServerFn({ method: "POST" }).handler(async 
     const deletePhoneResult = await db.prepare("DELETE FROM users WHERE phone = '8307224756'").run();
     console.log("Delete phone result:", deletePhoneResult);
 
+    const { hashPassword } = await import("./lib/auth-crypto");
+    const hashedPassword = hashPassword("admin123");
+
     // Create new admin user
     const insertStmt = db.prepare(
       "INSERT INTO users (username, password, role, phone) VALUES (?, ?, ?, ?)",
     );
-    const result = await insertStmt.run('admin', 'admin123', 'admin', '8307224756');
+    const result = await insertStmt.run('admin', hashedPassword, 'admin', '8307224756');
     console.log("Insert result:", result);
 
     // Verify the user was created
@@ -218,6 +250,7 @@ export const logoutUser = createServerFn({ method: "POST" }).handler(async ({ da
 });
 
 export const getUsers = createServerFn({ method: "GET" }).handler(async () => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   return await db
     .prepare(
@@ -244,6 +277,7 @@ export const getTournaments = createServerFn({ method: "GET" }).handler(async ()
 });
 
 export const addTournament = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const {
     title,
@@ -342,6 +376,7 @@ export const addTournament = createServerFn({ method: "POST" }).handler(async ({
 });
 
 export const updateTournament = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const {
     id,
@@ -448,6 +483,7 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
 });
 
 export const deleteTournament = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const id = data as unknown as number;
   await db.transaction(async (tx) => {
@@ -463,6 +499,7 @@ export const deleteTournament = createServerFn({ method: "POST" }).handler(async
 });
 
 export const toggleHeroTournament = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const id = data as unknown as number;
   const current = (await db.prepare("SELECT is_hero FROM tournaments WHERE id = ?").get(id)) as any;
@@ -477,8 +514,10 @@ export const toggleHeroTournament = createServerFn({ method: "POST" }).handler(a
 
 export const registerForTournament = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
+    const caller = await getCurrentUser();
     const { db } = await import("./lib/db");
-    const { userId, tournamentId, teamName, players, contactEmail, contactPhone } = data as any;
+    const { userId: clientUserId, tournamentId, teamName, players, contactEmail, contactPhone } = data as any;
+    const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
 
     // Check if user is banned
     const userCheck = (await db
@@ -747,6 +786,7 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
 );
 
 export const getRegistrations = createServerFn({ method: "GET" }).handler(async () => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   return db
     .prepare(
@@ -762,8 +802,10 @@ export const getRegistrations = createServerFn({ method: "GET" }).handler(async 
 
 export const checkUserRegistration = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
+    const caller = await getCurrentUser();
     const { db } = await import("./lib/db");
-    const { userId, tournamentId } = data as any;
+    const { userId: clientUserId, tournamentId } = data as any;
+    const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
     
     const existing = await db
       .prepare("SELECT id FROM registrations WHERE user_id = ? AND tournament_id = ?")
@@ -894,9 +936,10 @@ async function getPlayerStatsHandler(userId: number, db: any) {
 }
 
 export const updateProfile = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const {
-    userId,
+    userId: clientUserId,
     ign,
     uid,
     email,
@@ -959,6 +1002,7 @@ export const updateProfile = createServerFn({ method: "POST" }).handler(async ({
     values.push(JSON.stringify(showcase_achievements));
   }
 
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   if (fields.length > 0) {
     values.push(userId);
     await db.prepare(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`).run(...values);
@@ -967,8 +1011,10 @@ export const updateProfile = createServerFn({ method: "POST" }).handler(async ({
 });
 
 export const getProfile = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const userId = data as unknown as number;
+  const clientUserId = data as unknown as number;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   const profile = (await db.prepare(`SELECT ${PROFILE_SELECT} FROM users WHERE id = ?`).get(userId)) as any;
   return enrichProfile(db, profile, true);
 });
@@ -1088,6 +1134,7 @@ export const getPlayerStats = createServerFn({ method: "POST" }).handler(async (
 });
 
 export const updateCoinBalance = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const { userId, type, amount } = data as unknown as {
     userId: number;
@@ -1124,8 +1171,10 @@ export const updateCoinBalance = createServerFn({ method: "POST" }).handler(asyn
 });
 
 export const getMyTeam = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const userId = data as unknown as number;
+  const clientUserId = data as unknown as number;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   let team = (await db.prepare("SELECT * FROM teams WHERE leader_id = ?").get(userId)) as any;
 
   if (!team) {
@@ -1155,8 +1204,10 @@ export const getMyTeam = createServerFn({ method: "POST" }).handler(async ({ dat
 });
 
 export const saveMyTeam = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { userId, teamName, logo, members } = data as any;
+  const { userId: clientUserId, teamName, logo, members } = data as any;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   const removedMembers: number[] = [];
   const rosterMembers = Array.isArray(members) ? members : null;
 
@@ -1237,8 +1288,10 @@ export const saveMyTeam = createServerFn({ method: "POST" }).handler(async ({ da
 });
 
 export const leaveTeam = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { userId, teamId } = data as any;
+  const { userId: clientUserId, teamId } = data as any;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   let leaderId: number | null = null;
   let notifMsg = "";
 
@@ -1276,8 +1329,10 @@ export const leaveTeam = createServerFn({ method: "POST" }).handler(async ({ dat
 });
 
 export const deleteTeam = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { userId, teamId } = data as any;
+  const { userId: clientUserId, teamId } = data as any;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   const notifiedMembers: number[] = [];
   let teamName = "";
 
@@ -1380,8 +1435,10 @@ export const getTeamById = createServerFn({ method: "POST" }).handler(async ({ d
 });
 
 export const requestJoinTeam = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { teamId, userId, ign, uid } = data as any;
+  const { teamId, userId: clientUserId, ign, uid } = data as any;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   if (!ign || !uid) throw new Error("Please set your IGN and UID in your profile first.");
 
   const existing = await db
@@ -1429,8 +1486,10 @@ export const requestJoinTeam = createServerFn({ method: "POST" }).handler(async 
 });
 
 export const getTeamRequests = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const leaderId = data as unknown as number;
+  const clientLeaderId = data as unknown as number;
+  const leaderId = caller.role === 'admin' ? (clientLeaderId || caller.id) : caller.id;
   const team = (await db.prepare("SELECT id FROM teams WHERE leader_id = ?").get(leaderId)) as any;
   if (!team) return [];
 
@@ -1448,8 +1507,10 @@ export const getTeamRequests = createServerFn({ method: "POST" }).handler(async 
 });
 
 export const getMyTeamRequest = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const userId = data as unknown as number;
+  const clientUserId = data as unknown as number;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
 
   return db
     .prepare(
@@ -1466,8 +1527,10 @@ export const getMyTeamRequest = createServerFn({ method: "POST" }).handler(async
 });
 
 export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { requestId, status, userId } = data as any;
+  const { requestId, status, userId: clientUserId } = data as any;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
 
   const req = (await db.prepare("SELECT * FROM team_requests WHERE id = ?").get(requestId)) as any;
   if (!req || req.status !== "pending") throw new Error("Request not found or already handled.");
@@ -1575,8 +1638,10 @@ export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(asy
 });
 
 export const cancelTeamRequest = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { userId, requestId } = data as any;
+  const { userId: clientUserId, requestId } = data as any;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
 
   const req = (await db.prepare("SELECT * FROM team_requests WHERE id = ?").get(requestId)) as any;
   if (!req || req.status !== "pending") throw new Error("Request not found.");
@@ -1587,8 +1652,10 @@ export const cancelTeamRequest = createServerFn({ method: "POST" }).handler(asyn
 });
 
 export const removeTeamMember = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { captainId, memberUserId } = data as any;
+  const { captainId: clientCaptainId, memberUserId } = data as any;
+  const captainId = caller.role === 'admin' ? (clientCaptainId || caller.id) : caller.id;
 
   const team = (await db.prepare("SELECT id, name, leader_id FROM teams WHERE leader_id = ?").get(captainId)) as any;
   if (!team) throw new Error("You do not captain a team.");
@@ -1635,8 +1702,10 @@ export const removeTeamMember = createServerFn({ method: "POST" }).handler(async
 });
 
 export const getNotifications = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const userId = data as unknown as number;
+  const clientUserId = data as unknown as number;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   return await db
     .prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 20")
     .all(userId);
@@ -1644,19 +1713,18 @@ export const getNotifications = createServerFn({ method: "POST" }).handler(async
 
 export const markNotificationsRead = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
+    const caller = await getCurrentUser();
     const { db } = await import("./lib/db");
-    const userId = data as unknown as number;
+    const clientUserId = data as unknown as number;
+    const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
     await db.prepare("UPDATE notifications SET is_read = true WHERE user_id = ?").run(userId);
     return { success: true };
   },
 );
 export const sendPushNotification = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
-  const { targetType, targetData, message, redirectUrl, adminId } = data as any;
-
-  // Verify Admin
-  const adminCheck = (await db.prepare("SELECT role FROM users WHERE id = ?").get(adminId)) as any;
-  if (!adminCheck || adminCheck.role !== "admin") throw new Error("Unauthorized");
+  const { targetType, targetData, message, redirectUrl } = data as any;
 
   const notifyUrl = redirectUrl || null;
   const { sendNotificationHelper } = await import("./lib/push-server");
@@ -1707,8 +1775,10 @@ export const sendPushNotification = createServerFn({ method: "POST" }).handler(a
 });
 
 export const getMyMatches = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const userId = data as unknown as number;
+  const clientUserId = data as unknown as number;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
 
   const userProfile = (await db.prepare("SELECT uid FROM users WHERE id = ?").get(userId)) as any;
   const uidPattern = userProfile?.uid ? `%"uid":"${userProfile.uid}"%` : "NON_EXISTENT_UID_PATTERN";
@@ -1766,6 +1836,7 @@ export const getTournamentResults = createServerFn({ method: "POST" }).handler(a
 
 export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
+    await getCurrentUser("admin");
     const { db } = await import("./lib/db");
     const { tournamentId, results } = data as any;
     const pushTargets: any[] = [];
@@ -2046,6 +2117,7 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
 );
 
 export const rescheduleTournament = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const id = data as unknown as number;
   const userIds: number[] = [];
@@ -2234,6 +2306,7 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
 
 export const updateLeaderboardPoints = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
+    await getCurrentUser("admin");
     const { db } = await import("./lib/db");
     const { userId, points } = data as any;
     const targetPoints = Number(points);
@@ -2332,6 +2405,7 @@ export const updateLeaderboardPoints = createServerFn({ method: "POST" }).handle
 
 export const resolveTournamentRequest = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
+    await getCurrentUser("admin");
     const { db } = await import("./lib/db");
     const { requestId, status } = data as any;
 
@@ -2460,13 +2534,15 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" }).handl
 );
 
 export const processWithdrawal = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { userId, amount, upiId, upiNumber } = data as unknown as {
+  const { userId: clientUserId, amount, upiId, upiNumber } = data as unknown as {
     userId: number;
     amount: number;
     upiId: string;
     upiNumber: string;
   };
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
 
   await db.transaction(async (tx) => {
     const user = (await tx
@@ -2519,6 +2595,7 @@ export const processWithdrawal = createServerFn({ method: "POST" }).handler(asyn
 });
 
 export const getPayouts = createServerFn({ method: "GET" }).handler(async () => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   return db
     .prepare(
@@ -2533,6 +2610,7 @@ export const getPayouts = createServerFn({ method: "GET" }).handler(async () => 
 });
 
 export const updatePayoutStatus = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const { payoutId, status, userId, amount } = data as unknown as {
     payoutId: number;
@@ -2583,6 +2661,7 @@ export const updatePayoutStatus = createServerFn({ method: "POST" }).handler(asy
 });
 
 export const deleteUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const { id } = data as unknown as { id: number };
 
@@ -2596,6 +2675,7 @@ export const deleteUser = createServerFn({ method: "POST" }).handler(async ({ da
 });
 
 export const banUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const { id } = data as unknown as { id: number };
 
@@ -2609,6 +2689,7 @@ export const banUser = createServerFn({ method: "POST" }).handler(async ({ data 
 });
 
 export const deleteAllUsers = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   // Only keep admin (assuming role = 'admin')
   await db.prepare("DELETE FROM users WHERE role != 'admin'").run();
@@ -2616,6 +2697,7 @@ export const deleteAllUsers = createServerFn({ method: "POST" }).handler(async (
 });
 
 export const unbanUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const { id } = data as unknown as { id: number };
   await db.prepare("UPDATE users SET banned = false WHERE id = ?").run(id);
@@ -2623,6 +2705,7 @@ export const unbanUser = createServerFn({ method: "POST" }).handler(async ({ dat
 });
 
 export const updateUserRole = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const { id, role } = data as unknown as { id: number; role: string };
   await db.prepare("UPDATE users SET role = ? WHERE id = ?").run(role, id);
@@ -2630,6 +2713,7 @@ export const updateUserRole = createServerFn({ method: "POST" }).handler(async (
 });
 
 export const getAdminStats = createServerFn({ method: "GET" }).handler(async () => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const totalUsers = ((await db.prepare("SELECT COUNT(*) as c FROM users WHERE role != 'admin'").get()) as any)?.c || 0;
   const bannedUsers = ((await db.prepare("SELECT COUNT(*) as c FROM users WHERE banned = true").get()) as any)?.c || 0;
@@ -2666,6 +2750,7 @@ export const getAdminStats = createServerFn({ method: "GET" }).handler(async () 
 });
 
 export const deleteAllTournaments = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   await db.prepare("DELETE FROM tournaments").run();
   return { success: true };
@@ -2682,6 +2767,7 @@ export const getSiteSettings = createServerFn({ method: "POST" }).handler(async 
 });
 
 export const saveSiteSetting = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const { key, value } = data as unknown as { key: string; value: string };
   await db.prepare(`
@@ -2695,6 +2781,7 @@ export const saveSiteSetting = createServerFn({ method: "POST" }).handler(async 
 });
 
 export const clearSiteSetting = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const { key } = data as unknown as { key: string };
   await db.prepare("DELETE FROM site_settings WHERE key = ?").run(key);
@@ -2711,13 +2798,16 @@ export const saveContactMessage = createServerFn({ method: "POST" }).handler(asy
 });
 
 export const getContactMessages = createServerFn({ method: "GET" }).handler(async () => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   return await db.prepare("SELECT * FROM contact_messages ORDER BY created_at DESC").all();
 });
 
 export const getTransactions = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const userId = data as unknown as number;
+  const clientUserId = data as unknown as number;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   return await db
     .prepare("SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 10")
     .all(userId);
@@ -2725,8 +2815,10 @@ export const getTransactions = createServerFn({ method: "POST" }).handler(async 
 
 export const addDepositUpi = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
+    const caller = await getCurrentUser();
     const { db } = await import("./lib/db");
-    const { userId, amount, utr } = data as any;
+    const { userId: clientUserId, amount, utr } = data as any;
+    const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
     
     await db.transaction(async (tx: any) => {
       await tx.prepare('UPDATE users SET deposit_balance = deposit_balance + ? WHERE id = ?').run(amount, userId);
@@ -2804,8 +2896,10 @@ async function deleteTicketImagesFromCloudinary(ticketId: number) {
 }
 
 export const createTicket = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { userId, subject, message } = data as any;
+  const { userId: clientUserId, subject, message } = data as any;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   const processedMessage = await processTicketMessage(message);
   const res = await db.prepare("INSERT INTO tickets (user_id, subject) VALUES (?, ?)").run(userId, subject);
   const ticketId = res.lastInsertRowid;
@@ -2825,16 +2919,22 @@ export const createTicket = createServerFn({ method: "POST" }).handler(async ({ 
 });
 
 export const getMyTickets = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const userId = data as unknown as number;
+  const clientUserId = data as unknown as number;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   return await db.prepare("SELECT * FROM tickets WHERE user_id = ? ORDER BY updated_at DESC").all(userId);
 });
 
 export const getTicket = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { ticketId } = data as any;
   const ticket = await db.prepare("SELECT * FROM tickets WHERE id = ?").get(ticketId) as any;
   if (!ticket) return null;
+  if (caller.role !== "admin" && ticket.user_id !== caller.id) {
+    throw new Error("Access denied: Not your ticket");
+  }
   const replies = await db.prepare(`
     SELECT r.*, u.username, u.ign, u.role
     FROM ticket_replies r
@@ -2846,8 +2946,23 @@ export const getTicket = createServerFn({ method: "POST" }).handler(async ({ dat
 });
 
 export const replyTicket = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { ticketId, userId, message, isAdmin } = data as any;
+  const { ticketId, userId: clientUserId, message, isAdmin } = data as any;
+  
+  if (isAdmin && caller.role !== "admin") {
+    throw new Error("Unauthorized: Admin privilege required");
+  }
+  
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  
+  // Verify ticket ownership for regular user
+  if (caller.role !== "admin") {
+    const ticket = await db.prepare("SELECT user_id FROM tickets WHERE id = ?").get(ticketId) as any;
+    if (!ticket || ticket.user_id !== caller.id) {
+      throw new Error("Access denied: Not your ticket");
+    }
+  }
   const tId = Number(ticketId);
   const processedMessage = await processTicketMessage(message);
   
@@ -2867,6 +2982,7 @@ export const replyTicket = createServerFn({ method: "POST" }).handler(async ({ d
 });
 
 export const getAllTickets = createServerFn({ method: "GET" }).handler(async () => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   return await db.prepare(`
     SELECT t.*, u.username, u.ign 
@@ -2877,6 +2993,7 @@ export const getAllTickets = createServerFn({ method: "GET" }).handler(async () 
 });
 
 export const updateTicketStatus = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const { ticketId, status } = data as any;
   const tId = Number(ticketId);
@@ -2894,8 +3011,10 @@ export const updateTicketStatus = createServerFn({ method: "POST" }).handler(asy
 // --- CHAT & FRIENDS SYSTEM ---
 
 export const searchUsers = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { query, userId } = data as any;
+  const { query, userId: clientUserId } = data as any;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   const searchTerm = `%${query}%`;
   return await db.prepare(`
     SELECT id, username, ign, uid, avatar_url 
@@ -2906,8 +3025,10 @@ export const searchUsers = createServerFn({ method: "POST" }).handler(async ({ d
 });
 
 export const sendFriendRequest = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { fromUserId, toUserId } = data as any;
+  const { fromUserId: clientFromUserId, toUserId } = data as any;
+  const fromUserId = caller.role === 'admin' ? (clientFromUserId || caller.id) : caller.id;
   const existing = await db.prepare("SELECT * FROM friendships WHERE (user_id1 = ? AND user_id2 = ?) OR (user_id1 = ? AND user_id2 = ?)").get(fromUserId, toUserId, toUserId, fromUserId);
   if (existing) throw new Error("Friendship or request already exists.");
   await db.prepare("INSERT INTO friendships (user_id1, user_id2) VALUES (?, ?)").run(fromUserId, toUserId);
@@ -2930,8 +3051,10 @@ export const sendFriendRequest = createServerFn({ method: "POST" }).handler(asyn
 });
 
 export const getFriendRequests = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const userId = data as unknown as number;
+  const clientUserId = data as unknown as number;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   return await db.prepare(`
     SELECT f.id, u.id as user_id, u.username, u.ign, u.uid, u.avatar_url 
     FROM friendships f 
@@ -2941,9 +3064,17 @@ export const getFriendRequests = createServerFn({ method: "POST" }).handler(asyn
 });
 
 export const resolveFriendRequest = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { requestId, status } = data as any; // status can be 'accepted' or 'rejected'
   
+  // Verify that the caller is indeed the receiver of this request (user_id2)
+  const req = await db.prepare("SELECT user_id2 FROM friendships WHERE id = ?").get(requestId) as any;
+  if (!req) throw new Error("Friend request not found.");
+  if (caller.role !== "admin" && req.user_id2 !== caller.id) {
+    throw new Error("Access denied: Not authorized to resolve this request.");
+  }
+
   if (status === 'accepted') {
     const f = await db.prepare("SELECT user_id1, user_id2 FROM friendships WHERE id = ?").get(requestId) as any;
     await db.prepare("UPDATE friendships SET status = 'accepted' WHERE id = ?").run(requestId);
@@ -2970,8 +3101,10 @@ export const resolveFriendRequest = createServerFn({ method: "POST" }).handler(a
 });
 
 export const getFriends = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const userId = data as unknown as number;
+  const clientUserId = data as unknown as number;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   return await db.prepare(`
     SELECT 
       f.id as friendship_id,
@@ -2985,8 +3118,22 @@ export const getFriends = createServerFn({ method: "POST" }).handler(async ({ da
 });
 
 export const getChatMessages = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { userId, otherUserId, teamId, lastMessageId } = data as any;
+  const { userId: clientUserId, otherUserId, teamId, lastMessageId } = data as any;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  
+  // Verify team membership or friend chat participation
+  if (teamId) {
+    const member = await db.prepare("SELECT id FROM team_members WHERE team_id = ? AND user_id = ? LIMIT 1").get(teamId, userId);
+    if (!member && caller.role !== "admin") {
+      throw new Error("Access denied: Not a team member.");
+    }
+  } else {
+    if (caller.role !== "admin" && userId !== caller.id) {
+      throw new Error("Access denied: Cannot query other users' DMs.");
+    }
+  }
   
   let query = "";
   let params: any[] = [];
@@ -3016,8 +3163,17 @@ export const getChatMessages = createServerFn({ method: "POST" }).handler(async 
 });
 
 export const sendMessage = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { senderId, receiverId, teamId, message } = data as any;
+  const { senderId: clientSenderId, receiverId, teamId, message } = data as any;
+  const senderId = caller.role === 'admin' ? (clientSenderId || caller.id) : caller.id;
+  
+  if (teamId) {
+    const member = await db.prepare("SELECT id FROM team_members WHERE team_id = ? AND user_id = ? LIMIT 1").get(teamId, senderId);
+    if (!member && caller.role !== "admin") {
+      throw new Error("Access denied: Not a team member.");
+    }
+  }
   
   const res = await db.prepare(`
     INSERT INTO chat_messages (sender_id, receiver_id, team_id, message) 
@@ -3028,8 +3184,10 @@ export const sendMessage = createServerFn({ method: "POST" }).handler(async ({ d
 });
 
 export const getUnreadChatCount = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const userId = data as unknown as number;
+  const clientUserId = data as unknown as number;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   const res = (await db.prepare(`
     SELECT COUNT(*) as count 
     FROM chat_messages 
@@ -3039,8 +3197,10 @@ export const getUnreadChatCount = createServerFn({ method: "POST" }).handler(asy
 });
 
 export const markChatMessagesAsRead = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { userId, otherUserId } = data as any;
+  const { userId: clientUserId, otherUserId } = data as any;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   await db.prepare(`
     UPDATE chat_messages 
     SET is_read = true 
@@ -3050,8 +3210,10 @@ export const markChatMessagesAsRead = createServerFn({ method: "POST" }).handler
 });
 
 export const saveUpiId = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { userId, upiId } = data as any;
+  const { userId: clientUserId, upiId } = data as any;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   await db.prepare("UPDATE users SET upi_id = ? WHERE id = ?").run(upiId, userId);
   return { success: true };
 });
@@ -3086,11 +3248,13 @@ export const getSocialLinks = createServerFn({ method: "POST" }).handler(async (
 });
 
 export const savePushSubscription = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { userId, subscription } = data as unknown as {
+  const { userId: clientUserId, subscription } = data as unknown as {
     userId: number;
     subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
   };
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
 
   await db
     .prepare(`
@@ -3104,6 +3268,7 @@ export const savePushSubscription = createServerFn({ method: "POST" }).handler(a
 });
 
 export const removePushSubscription = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser();
   const { db } = await import("./lib/db");
   const { endpoint } = data as unknown as { endpoint: string };
   await db.prepare("DELETE FROM push_subscriptions WHERE endpoint = ?").run(endpoint);
@@ -3119,6 +3284,7 @@ export const getVapidPublicKey = createServerFn({ method: "GET" }).handler(async
 });
 
 export const resetFinanceStat = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const { type } = data as unknown as { type: "revenue" | "payouts" | "withdrawable" };
 
@@ -3137,8 +3303,10 @@ export const resetFinanceStat = createServerFn({ method: "POST" }).handler(async
 });
 
 export const inviteTeamMember = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { captainId, inviteKey } = data as any;
+  const { captainId: clientCaptainId, inviteKey } = data as any;
+  const captainId = caller.role === 'admin' ? (clientCaptainId || caller.id) : caller.id;
 
   if (!inviteKey || !inviteKey.trim()) {
     throw new Error("Invitation key (username, IGN, or UID) is required.");
@@ -3229,8 +3397,10 @@ export const inviteTeamMember = createServerFn({ method: "POST" }).handler(async
 });
 
 export const searchPlayers = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { query, captainId } = data as any;
+  const { query, captainId: clientCaptainId } = data as any;
+  const captainId = caller.role === 'admin' ? (clientCaptainId || caller.id) : caller.id;
 
   try {
     // Get all users except the captain themselves
@@ -3276,8 +3446,10 @@ export const searchPlayers = createServerFn({ method: "POST" }).handler(async ({
 });
 
 export const getMyTeamInvitations = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const userId = data as unknown as number;
+  const clientUserId = data as unknown as number;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
 
   return db
     .prepare(
@@ -3374,10 +3546,11 @@ async function deductCgCoins(
 }
 
 export const getSpinWheelStatus = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { getTodayStartIST } = await import("./lib/spin-wheel");
-  const userId = data as unknown as number;
-  if (!userId) throw new Error("Login required");
+  const clientUserId = data as unknown as number;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
 
   const config = await loadSpinWheelConfig(db);
   const user = (await db
@@ -3424,9 +3597,10 @@ export const getSpinWheelStatus = createServerFn({ method: "POST" }).handler(asy
 });
 
 export const purchaseSpinPack = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const userId = (data as any).userId as number;
-  const packId = (data as any).packId as string;
+  const { userId: clientUserId, packId } = data as any;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   if (!userId || !packId) throw new Error("Invalid request");
 
   const config = await loadSpinWheelConfig(db);
@@ -3461,6 +3635,7 @@ export const purchaseSpinPack = createServerFn({ method: "POST" }).handler(async
 });
 
 export const performSpin = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const {
     buildWheelSlices,
@@ -3468,8 +3643,8 @@ export const performSpin = createServerFn({ method: "POST" }).handler(async ({ d
     pickRandomSliceIndexForSegment,
   } = await import("./lib/spin-wheel");
 
-  const userId = data as unknown as number;
-  if (!userId) throw new Error("Login required");
+  const clientUserId = data as unknown as number;
+  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
 
   const config = await loadSpinWheelConfig(db);
   const activeIds = config.activePrizeIds.filter((id) => config.segments.some((s) => s.id === id));
@@ -3549,21 +3724,18 @@ export const performSpin = createServerFn({ method: "POST" }).handler(async ({ d
   return result;
 });
 
-export const getSpinWheelAdminConfig = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+export const getSpinWheelAdminConfig = createServerFn({ method: "POST" }).handler(async () => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
-  const adminId = data as unknown as number;
-  const admin = (await db.prepare("SELECT role FROM users WHERE id = ?").get(adminId)) as any;
-  if (!admin || admin.role !== "admin") throw new Error("Unauthorized");
-
   return loadSpinWheelConfig(db);
 });
 
 export const saveSpinWheelAdminConfig = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const { SPIN_WHEEL_SETTINGS_KEY, SPIN_MAX_ACTIVE_PRIZES } = await import("./lib/spin-wheel");
 
-  const { adminId, config } = data as unknown as {
-    adminId: number;
+  const { config } = data as unknown as {
     config: {
       segments: Array<{ id: string; label: string; amount: number; quantity: number; color: string }>;
       activePrizeIds: string[];
@@ -3571,9 +3743,6 @@ export const saveSpinWheelAdminConfig = createServerFn({ method: "POST" }).handl
       spinPacks: Array<{ id: string; spins: number; cost: number; label?: string }>;
     };
   };
-
-  const admin = (await db.prepare("SELECT role FROM users WHERE id = ?").get(adminId)) as any;
-  if (!admin || admin.role !== "admin") throw new Error("Unauthorized");
 
   if (!config?.segments?.length) throw new Error("At least one wheel segment is required");
 
@@ -3631,15 +3800,19 @@ async function loadProfileShopConfig(db: any) {
 }
 
 export const getProfileShop = createServerFn({ method: "POST" }).handler(async () => {
+  await getCurrentUser();
   const { db } = await import("./lib/db");
   return loadProfileShopConfig(db);
 });
 
 export const purchaseProfileCosmetic = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const currentUser = await getCurrentUser();
+  const userId = currentUser.id;
+
   const { db } = await import("./lib/db");
   const { parseJsonArray } = await import("./lib/profile-customization");
-  const { userId, itemId } = data as unknown as { userId: number; itemId: string };
-  if (!userId || !itemId) throw new Error("Invalid request");
+  const { itemId } = data as unknown as { itemId: string };
+  if (!itemId) throw new Error("Invalid request");
 
   const shop = await loadProfileShopConfig(db);
   const allItems = [...(shop.frames || []), ...(shop.banners || []), ...(shop.effects || [])];
@@ -3687,20 +3860,17 @@ export const purchaseProfileCosmetic = createServerFn({ method: "POST" }).handle
   return result;
 });
 
-export const getProfileShopAdminConfig = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+export const getProfileShopAdminConfig = createServerFn({ method: "POST" }).handler(async () => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
-  const adminId = data as unknown as number;
-  const admin = (await db.prepare("SELECT role FROM users WHERE id = ?").get(adminId)) as any;
-  if (!admin || admin.role !== "admin") throw new Error("Unauthorized");
   return loadProfileShopConfig(db);
 });
 
 export const saveProfileShopAdminConfig = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const { PROFILE_SHOP_SETTINGS_KEY } = await import("./lib/profile-customization");
-  const { adminId, config } = data as unknown as { adminId: number; config: any };
-  const admin = (await db.prepare("SELECT role FROM users WHERE id = ?").get(adminId)) as any;
-  if (!admin || admin.role !== "admin") throw new Error("Unauthorized");
+  const { config } = data as unknown as { config: any };
   await db
     .prepare(
       `INSERT INTO site_settings (key, value) VALUES (?, ?)
@@ -3711,6 +3881,7 @@ export const saveProfileShopAdminConfig = createServerFn({ method: "POST" }).han
 });
 
 export const getRegistrationSquad = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser();
   const { db } = await import("./lib/db");
   const registrationId = data as unknown as number;
   const reg = (await db
@@ -3767,6 +3938,7 @@ export const getRegistrationSquad = createServerFn({ method: "POST" }).handler(a
 
 export const announceTournamentResult = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
+    await getCurrentUser("admin");
     const { db } = await import("./lib/db");
     const { tournamentId, results } = data as unknown as {
       tournamentId: number;

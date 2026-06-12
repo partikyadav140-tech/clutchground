@@ -12,7 +12,13 @@ import { AdminNavBar } from "@/components/AdminNavBar";
 
 export const Route = createFileRoute("/_app/admin/payouts")({
   head: () => ({ meta: [{ title: "Payouts Admin — CLUTCHGROUND" }] }),
-  loader: async () => await getPayouts(),
+  loader: async () => {
+    try {
+      return await getPayouts();
+    } catch {
+      return [];
+    }
+  },
   component: AdminPayoutsPage,
 });
 

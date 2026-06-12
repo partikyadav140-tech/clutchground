@@ -11,7 +11,13 @@ import { AdminNavBar } from "@/components/AdminNavBar";
 
 export const Route = createFileRoute("/_app/admin/leaderboard")({
   head: () => ({ meta: [{ title: "Leaderboard Admin — Professional Esports Arena" }] }),
-  loader: async () => await getGlobalLeaderboard(),
+  loader: async () => {
+    try {
+      return await getGlobalLeaderboard();
+    } catch {
+      return [];
+    }
+  },
   component: AdminLeaderboardPage,
 });
 

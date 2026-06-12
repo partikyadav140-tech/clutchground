@@ -3,10 +3,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { createHmac } from "crypto";
 import { db } from "./db";
 import { getEnvVar } from "./env";
+import { getCurrentUser } from "./auth-server";
 
 export const createRazorpayOrder = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
-    const { userId, amount, description } = data as any;
+    const user = await getCurrentUser();
+    const userId = user.id;
+    const { amount, description } = data as any;
 
     if (!amount || amount < 100) {
       throw new Error("Minimum deposit amount is ₹100");
@@ -60,7 +63,9 @@ export const createRazorpayOrder = createServerFn({ method: "POST" }).handler(
 
 export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
-    const { userId, orderId, paymentId, signature } = data as any;
+    const userObj = await getCurrentUser();
+    const userId = userObj.id;
+    const { orderId, paymentId, signature } = data as any;
 
     if (!orderId || !paymentId || !signature) {
       throw new Error("Missing payment fields");
@@ -80,11 +85,15 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
     }
 
     const order = (await db
-      .prepare("SELECT amount FROM razorpay_orders WHERE order_id = ?")
+      .prepare("SELECT amount, user_id FROM razorpay_orders WHERE order_id = ?")
       .get(orderId)) as any;
 
     if (!order) {
       throw new Error("Order not found");
+    }
+
+    if (order.user_id !== userId) {
+      throw new Error("Unauthorized: Order ownership verification failed");
     }
 
     await db.transaction(async (tx: any) => {
@@ -125,8 +134,7 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
       ).catch(e => console.error("Razorpay deposit push error:", e));
 
       // Notify Admins
-      const user = await db.prepare("SELECT username FROM users WHERE id = ?").get(userId) as any;
-      const username = user?.username || "A user";
+      const username = userObj.username || "A user";
       await notifyAllAdmins(`💰 Successful Razorpay Deposit: ${username} added ₹${order.amount}`, "/admin/deposits");
     } catch(e) {
       console.error("Error notifying admins about Razorpay deposit:", e);
@@ -137,8 +145,9 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
 );
 
 export const getWalletBalance = createServerFn({ method: "POST" }).handler(
-  async ({ data }) => {
-    const userId = data as any;
+  async () => {
+    const userObj = await getCurrentUser();
+    const userId = userObj.id;
 
     const user = (await db
       .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
@@ -156,7 +165,9 @@ export const getWalletBalance = createServerFn({ method: "POST" }).handler(
 
 export const getTransactionHistory = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
-    const { userId, limit = 10, offset = 0 } = data as any;
+    const userObj = await getCurrentUser();
+    const userId = userObj.id;
+    const { limit = 10, offset = 0 } = data as any;
 
     const transactions = (await db
       .prepare(

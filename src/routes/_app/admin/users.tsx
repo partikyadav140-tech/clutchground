@@ -15,7 +15,13 @@ import { AdminNavBar } from "@/components/AdminNavBar";
 
 export const Route = createFileRoute("/_app/admin/users")({
   head: () => ({ meta: [{ title: "Users Admin — CLUTCHGROUND" }] }),
-  loader: async () => await getUsers(),
+  loader: async () => {
+    try {
+      return await getUsers();
+    } catch {
+      return [];
+    }
+  },
   component: AdminUsersPage,
 });
 

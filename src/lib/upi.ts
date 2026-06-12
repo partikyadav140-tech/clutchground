@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "./db";
 import { getEnvVar } from "./env";
+import { getCurrentUser } from "./auth-server";
 
 // Your platform UPI ID
 export const PLATFORM_UPI_ID = getEnvVar("UPI_ID") || "clutchground@nyes";
@@ -9,6 +10,7 @@ export const PLATFORM_NAME = "CLUTCHGROUND";
 
 /** Get active UPI configuration */
 export const getActiveUpiConfig = createServerFn({ method: "GET" }).handler(async () => {
+  await getCurrentUser();
   const row = await db.prepare("SELECT value FROM site_settings WHERE key = 'upi_config'").get();
   if (row) {
     try {
@@ -32,7 +34,9 @@ export const getActiveUpiConfig = createServerFn({ method: "GET" }).handler(asyn
 /** Create a pending UPI deposit request */
 export const createUpiDeposit = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
-    const { userId, amount, description } = data as any;
+    const user = await getCurrentUser();
+    const userId = user.id;
+    const { amount, description } = data as any;
 
     if (!amount || amount < 1) {
       throw new Error("Deposit amount must be at least ₹1");
@@ -77,6 +81,7 @@ export const createUpiDeposit = createServerFn({ method: "POST" }).handler(
 /** User submits their sender UPI ID after paying (stored in utr column for backward-compat) */
 export const submitUpiUtr = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
+    const user = await getCurrentUser();
     const { txnRef, utr: senderUpiId } = data as any;
 
     const upiIdRegex = /^[a-zA-Z0-9._\-]+@[a-zA-Z0-9]+$/;
@@ -89,6 +94,9 @@ export const submitUpiUtr = createServerFn({ method: "POST" }).handler(
       .get(txnRef)) as any;
 
     if (!deposit) throw new Error("Deposit request not found");
+    if (deposit.user_id !== user.id) {
+      throw new Error("Unauthorized");
+    }
     if (deposit.status !== "pending") {
       throw new Error("This deposit request is no longer pending");
     }
@@ -101,8 +109,8 @@ export const submitUpiUtr = createServerFn({ method: "POST" }).handler(
 
     // Notify Admins
     try {
-      const user = await db.prepare("SELECT username FROM users WHERE id = ?").get(deposit.user_id) as any;
-      const username = user?.username || "A user";
+      const userObj = await db.prepare("SELECT username FROM users WHERE id = ?").get(deposit.user_id) as any;
+      const username = userObj?.username || "A user";
       const { notifyAllAdmins } = await import("./push-server");
       await notifyAllAdmins(`💳 UPI Deposit Submitted: ${username} submitted ₹${deposit.amount} (${senderUpiId.trim()})`, "/admin/deposits");
     } catch (err) {
@@ -116,6 +124,7 @@ export const submitUpiUtr = createServerFn({ method: "POST" }).handler(
 /** Admin: get all UPI deposits */
 export const getPendingUpiDeposits = createServerFn({ method: "GET" }).handler(
   async () => {
+    await getCurrentUser("admin");
     return (await db
       .prepare(
         `SELECT d.*, u.username, u.phone
@@ -130,6 +139,7 @@ export const getPendingUpiDeposits = createServerFn({ method: "GET" }).handler(
 /** Admin: approve a UPI deposit → credit wallet */
 export const approveUpiDeposit = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
+    await getCurrentUser("admin");
     const { depositId } = data as any;
 
     const deposit = (await db
@@ -187,6 +197,7 @@ export const approveUpiDeposit = createServerFn({ method: "POST" }).handler(
 /** Admin: reject a UPI deposit */
 export const rejectUpiDeposit = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
+    await getCurrentUser("admin");
     const { depositId, reason } = data as any;
 
     const deposit = (await db
@@ -225,8 +236,9 @@ export const rejectUpiDeposit = createServerFn({ method: "POST" }).handler(
 
 /** Get UPI deposit history for a user */
 export const getUserUpiDeposits = createServerFn({ method: "POST" }).handler(
-  async ({ data }) => {
-    const userId = data as any;
+  async () => {
+    const user = await getCurrentUser();
+    const userId = user.id;
     return (await db
       .prepare(
         `SELECT * FROM upi_deposits WHERE user_id = ? ORDER BY created_at DESC LIMIT 20`,

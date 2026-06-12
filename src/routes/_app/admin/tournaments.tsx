@@ -44,7 +44,13 @@ import { LoneWolfResults } from "@/components/tournament/results/LoneWolfResults
 
 export const Route = createFileRoute("/_app/admin/tournaments")({
   head: () => ({ meta: [{ title: "Tournaments Admin — Professional Esports Arena" }] }),
-  loader: async () => await getTournaments(),
+  loader: async () => {
+    try {
+      return await getTournaments();
+    } catch {
+      return [];
+    }
+  },
   component: AdminTournamentsPage,
 });
 

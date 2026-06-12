@@ -15,7 +15,13 @@ import { AdminNavBar } from "@/components/AdminNavBar";
 
 export const Route = createFileRoute("/_app/admin/deposits")({
   head: () => ({ meta: [{ title: "UPI Deposits — Admin" }] }),
-  loader: async () => await getPendingUpiDeposits(),
+  loader: async () => {
+    try {
+      return await getPendingUpiDeposits();
+    } catch {
+      return [];
+    }
+  },
   component: AdminDepositsPage,
 });
 

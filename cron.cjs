@@ -10,11 +10,21 @@ const pool = new Pool({
   connectionString: connString,
 });
 
-// Run every Sunday at 11:59 PM to award 500 points to top team captain
+// Run every Sunday at 11:59 PM to award configured points to top team captain
 cron.schedule('59 23 * * 0', async () => {
   console.log("Running weekly rewards cron job...");
   const client = await pool.connect();
   try {
+    // Fetch dynamic prize amount from site_settings (key: 'leaderboard_prize')
+    const settingsRes = await client.query("SELECT value FROM site_settings WHERE key = 'leaderboard_prize'");
+    let prizeAmount = 500; // default fallback
+    if (settingsRes.rows.length > 0) {
+      const dbVal = parseInt(settingsRes.rows[0].value, 10);
+      if (!isNaN(dbVal) && dbVal >= 0) {
+        prizeAmount = dbVal;
+      }
+    }
+
     // Top player of the week (we assume the top player is the team captain, or we find their team captain)
     const { rows } = await client.query(`
       SELECT 
@@ -42,11 +52,11 @@ cron.schedule('59 23 * * 0', async () => {
         }
       }
 
-      // Add 500 winning coins
-      await client.query('UPDATE users SET winning_balance = winning_balance + 500 WHERE id = $1', [captainId]);
-      await client.query('INSERT INTO transactions (user_id, amount, type, description) VALUES ($1, 500, $2, $3)', [captainId, 'winnings_added', 'Weekly Leaderboard Top Captain Reward']);
-      await client.query('INSERT INTO notifications (user_id, message, redirect_url) VALUES ($1, $2, $3)', [captainId, '🎉 You received 500 Coins for your team topping the Weekly Leaderboard!', '/wallet']);
-      console.log(`Awarded 500 points to user ${captainId}`);
+      // Add configured winning coins
+      await client.query('UPDATE users SET winning_balance = winning_balance + $1 WHERE id = $2', [prizeAmount, captainId]);
+      await client.query('INSERT INTO transactions (user_id, amount, type, description) VALUES ($1, $2, $3, $4)', [captainId, prizeAmount, 'winnings_added', 'Weekly Leaderboard Top Captain Reward']);
+      await client.query('INSERT INTO notifications (user_id, message, redirect_url) VALUES ($1, $2, $3)', [captainId, `🎉 You received ${prizeAmount} Coins for your team topping the Weekly Leaderboard!`, '/wallet']);
+      console.log(`Awarded ${prizeAmount} points to user ${captainId}`);
     }
   } catch (err) {
     console.error("Cron error:", err);

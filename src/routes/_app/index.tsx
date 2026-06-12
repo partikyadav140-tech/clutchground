@@ -210,49 +210,123 @@ function HomePage() {
           </div>
         ) : (
           /* ── Logged-out: Hero Card ── */
-          <div className="hero-card p-6 text-center">
-            {/* Radial glow */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 rounded-full blur-[50px] pointer-events-none"
-                 style={{ background: "var(--primary)", opacity: 0.08 }} />
+          <div className="hero-card p-6 text-center border-border/80 bg-gradient-to-b from-[#0e1626] to-[#0a0f1d] shadow-2xl relative overflow-hidden">
+            {/* Ambient glow blobs */}
+            <div className="absolute -top-16 -left-16 w-36 h-36 rounded-full blur-[45px] pointer-events-none bg-primary/10" />
+            <div className="absolute -bottom-16 -right-16 w-36 h-36 rounded-full blur-[45px] pointer-events-none bg-fire/10" />
 
             <div className="relative">
-              <h1 className="font-display font-black text-2xl text-foreground leading-tight">
+              {/* Premium Title */}
+              <h1 className="font-display font-black text-3xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-primary via-[#7c3aed] to-fire drop-shadow-[0_0_12px_rgba(0,200,255,0.25)]">
                 CLUTCHGROUND
               </h1>
-              <p className="text-sm text-muted-foreground font-medium mt-1.5 mb-5">
-                India&apos;s Free Fire esports arena
-              </p>
-
-              {/* Social proof stats */}
-              <div className="flex items-center justify-center gap-6 mb-5">
-                {[
-                  { label: "Players", value: "10K+" },
-                  { label: "Matches", value: "2K+" },
-                  { label: "Prize Pool", value: "₹50K+" },
-                ].map((s) => (
-                  <div key={s.label} className="text-center">
-                    <p className="font-display font-black text-base text-foreground">{s.value}</p>
-                    <p className="text-label mt-0.5">{s.label}</p>
-                  </div>
-                ))}
+              
+              {/* Professional Subtitle Tag */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-black uppercase tracking-wider text-primary mt-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                India&apos;s Free Fire Esports Arena
               </div>
 
-              <Link to="/login">
-                <button className="h-12 w-full max-w-[240px] rounded-2xl font-bold text-sm text-white press-effect active:scale-95 flex items-center justify-center gap-2 mx-auto"
-                        style={{ background: "var(--gradient-cta)", boxShadow: "var(--shadow-cta)" }}>
-                  <Zap className="w-4 h-4" />
-                  Join the Arena
-                </button>
-              </Link>
+              {/* Social proof stats */}
+              <div className="grid grid-cols-3 gap-3.5 my-6 w-full">
+                {[
+                  { label: "Players Active", value: "10K+", icon: Users, color: "var(--primary)" },
+                  { label: "Matches Hosted", value: "2K+", icon: Swords, color: "var(--fire)" },
+                  { label: "Prize Pool", value: "₹50K+", icon: Trophy, color: "var(--gold)" },
+                ].map((s) => {
+                  const Icon = s.icon;
+                  return (
+                    <div key={s.label} className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-secondary/30 border border-border/40 backdrop-blur-md relative group hover:border-primary/40 transition-all">
+                      <div className="absolute top-0 inset-x-4 h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                      
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2"
+                           style={{ background: `${s.color}12`, color: s.color }}>
+                        <Icon className="w-4.5 h-4.5" />
+                      </div>
+                      <p className="font-display font-black text-sm text-foreground leading-none">{s.value}</p>
+                      <p className="text-[9px] font-bold text-muted-foreground mt-1.5 leading-tight text-center uppercase tracking-wider">{s.label}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-col gap-2.5 max-w-[280px] mx-auto w-full">
+                <Link to="/login" className="w-full">
+                  <button className="h-12 w-full rounded-2xl font-bold text-sm text-white press-effect flex items-center justify-center gap-2 relative overflow-hidden group shadow-lg"
+                          style={{ background: "var(--gradient-cta)", boxShadow: "var(--shadow-cta)" }}>
+                    {/* Animated sweep effect */}
+                    <span className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-out" />
+                    <Zap className="w-4 h-4 text-white animate-pulse" />
+                    <span className="tracking-wide">Join the Arena</span>
+                    <ArrowRight className="w-4 h-4 text-white/80 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </Link>
+                <p className="text-[10px] text-muted-foreground font-semibold">
+                  Already have an account? <Link to="/login" className="text-primary hover:underline font-bold">Sign In</Link>
+                </p>
+              </div>
             </div>
           </div>
         )}
       </motion.div>
 
       {/* ═══════════════════════════════════════════════
-          SECTION 2: Live Stats Strip (logged-in only)
+          SECTION 2: Live Stats Strip (logged-in) / Preview (logged-out)
          ═══════════════════════════════════════════════ */}
-      {user && (
+      {!user ? (
+        /* ── Logged-out: Tracker Preview ── */
+        <motion.div variants={fadeUp} className="px-4 py-2">
+          <div className="relative rounded-2xl border border-border bg-card/45 backdrop-blur-md p-4 overflow-hidden group">
+            {/* Soft decorative background glows */}
+            <div className="absolute -bottom-8 -right-8 w-24 h-24 rounded-full blur-2xl opacity-10 pointer-events-none"
+                 style={{ background: "var(--primary)" }} />
+            
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-bold text-foreground uppercase tracking-wider">Live Player Tracker</span>
+              </div>
+              <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                Preview
+              </span>
+            </div>
+
+            {/* Blurred Mock Stats row */}
+            <div className="relative">
+              <div className="flex gap-2.5 overflow-x-auto hide-scrollbar pb-1 select-none pointer-events-none filter blur-[1.5px] opacity-40">
+                {[
+                  { label: "Matches", value: "42", icon: Gamepad2, color: "var(--primary)" },
+                  { label: "Kills", value: "189", icon: Swords, color: "#f59e0b" },
+                  { label: "K/D Ratio", value: "4.50", icon: Target, color: "#a78bfa" },
+                  { label: "Win Rate", value: "68%", icon: Trophy, color: "#10b981" },
+                ].map((item) => (
+                  <div key={item.label} className="stat-pill shrink-0">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                         style={{ background: `${item.color}15`, color: item.color }}>
+                      <item.icon className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-label leading-none">{item.label}</p>
+                      <p className="font-display font-black text-sm text-foreground mt-0.5 leading-none">{item.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Centered overlay with call-to-action */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-t from-card/60 via-card/20 to-transparent">
+                <Link to="/login" className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-background/90 hover:bg-background border border-border text-[11px] font-bold text-foreground press-effect shadow-md transition-all">
+                  <Zap className="w-3 h-3 text-primary animate-pulse" />
+                  <span>Sign up to track your stats</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      ) : (
+        /* ── Logged-in: Live Stats Strip ── */
         <motion.div variants={fadeUp} className="px-4 py-2">
           {hasStats ? (
             <Link to="/stats" className="block">

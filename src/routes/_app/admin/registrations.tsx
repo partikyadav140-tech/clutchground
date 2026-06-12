@@ -10,9 +10,13 @@ import { AdminNavBar } from "@/components/AdminNavBar";
 export const Route = createFileRoute("/_app/admin/registrations")({
   head: () => ({ meta: [{ title: "Registrations Admin — Professional Esports Arena" }] }),
   loader: async () => {
-    const t = await getTournaments();
-    const r = await getRegistrations();
-    return { tournaments: t, registrations: r };
+    try {
+      const t = await getTournaments();
+      const r = await getRegistrations();
+      return { tournaments: t, registrations: r };
+    } catch {
+      return { tournaments: [], registrations: [] };
+    }
   },
   component: AdminRegistrationsPage,
 });

@@ -5,6 +5,7 @@ import { X, ChevronRight, ChevronLeft, SkipForward, Sparkles, Trophy, Wallet, Us
 import { useTutorialStore, type TutorialStep } from "../lib/tutorial-store";
 import { useAuth } from "../lib/auth-client";
 import { confirmDialog } from "./ConfirmDialog";
+import { getSiteSettings } from "../api";
 
 /* ──────────────────────────────────────────────────
    SPOTLIGHT RECT — measures the target element
@@ -89,6 +90,17 @@ export function LiveTutorial() {
   const step: TutorialStep | undefined = steps[currentStep];
   const rect = useTargetRect(step?.target ?? null, isActive, currentStep);
   const actionListenerRef = useRef<(() => void) | null>(null);
+  const [prizeAmount, setPrizeAmount] = useState("500");
+
+  useEffect(() => {
+    (getSiteSettings as any)()
+      .then((settings: any) => {
+        if (settings?.leaderboard_prize) {
+          setPrizeAmount(settings.leaderboard_prize);
+        }
+      })
+      .catch((err: any) => console.error("Failed to load site settings in tutorial:", err));
+  }, []);
 
   // Auto-start on first login (delay to let page load)
   useEffect(() => {
@@ -312,7 +324,9 @@ export function LiveTutorial() {
 
             {/* Description */}
             <p className="text-[13px] text-muted-foreground font-semibold leading-relaxed mb-4 pr-4">
-              {step.description}
+              {step.id === "ranks-page-rewards"
+                ? step.description.replace("500 CG Coins", `${prizeAmount} CG Coins`)
+                : step.description}
             </p>
 
             {/* Progress bar */}

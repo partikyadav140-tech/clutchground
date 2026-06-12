@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import {
   Settings, Bell, CreditCard, AlertTriangle, Save, X,
   Shield, Megaphone, ArrowLeft, ToggleLeft, ToggleRight, Trash2,
-  Image, Plus, Edit, Send, Instagram,
+  Image, Plus, Edit, Send, Instagram, Trophy,
 } from "lucide-react";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,13 @@ import { getSiteSettings, saveSiteSetting, clearSiteSetting, uploadImage } from 
 
 export const Route = createFileRoute("/_app/admin/site-settings")({
   head: () => ({ meta: [{ title: "Site Settings — Admin" }] }),
-  loader: async () => await getSiteSettings(),
+  loader: async () => {
+    try {
+      return await getSiteSettings();
+    } catch {
+      return {};
+    }
+  },
   component: AdminSiteSettingsPage,
 });
 
@@ -58,6 +64,9 @@ function AdminSiteSettingsPage() {
   // Announcement
   const [announcement, setAnnouncement] = useState(initialSettings.announcement || "");
   const [savedAnnouncement, setSavedAnnouncement] = useState(initialSettings.announcement || "");
+
+  // Leaderboard Config
+  const [leaderboardPrize, setLeaderboardPrize] = useState(initialSettings.leaderboard_prize || "500");
 
   // UPI config
   const [upiId, setUpiId] = useState(() => {
@@ -181,6 +190,25 @@ function AdminSiteSettingsPage() {
       await router.invalidate();
     } catch (e: any) {
       toast.error(e.message || "Failed to save UPI config");
+    }
+  };
+
+  const saveLeaderboardConfig = async () => {
+    const prizeVal = Number(leaderboardPrize);
+    if (Number.isNaN(prizeVal) || prizeVal < 0) {
+      return toast.error("Please enter a valid reward amount.");
+    }
+    try {
+      await (saveSiteSetting as any)({
+        data: {
+          key: "leaderboard_prize",
+          value: String(prizeVal),
+        },
+      });
+      toast.success("Leaderboard settings saved successfully!");
+      await router.invalidate();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save leaderboard settings");
     }
   };
 
@@ -344,6 +372,26 @@ function AdminSiteSettingsPage() {
             )}
             <Button className="w-full h-10 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-600 text-white" onClick={saveUpiConfig}>
               <Save className="w-3.5 h-3.5 mr-1.5" /> Save UPI Config
+            </Button>
+          </div>
+        </SectionCard>
+
+        {/* ─── Leaderboard Config ─── */}
+        <SectionCard title="Leaderboard Championship Reward" icon={Trophy} color="text-amber-500" bg="bg-amber-500/10">
+          <div className="space-y-3">
+            <div className="text-xs text-amber-600 font-semibold bg-amber-500/10 rounded-xl p-3 border border-amber-500/20 flex items-center gap-2">
+              🏆 Modify the reward coins paid to the weekly #1 leader.
+            </div>
+            <InputField
+              label="Championship Reward (CG Coins)"
+              type="number"
+              min="0"
+              value={leaderboardPrize}
+              onChange={e => setLeaderboardPrize(e.target.value)}
+              placeholder="500"
+            />
+            <Button className="w-full h-10 rounded-xl font-bold text-xs bg-amber-500 hover:bg-amber-600 text-white" onClick={saveLeaderboardConfig}>
+              <Save className="w-3.5 h-3.5 mr-1.5" /> Save Leaderboard Settings
             </Button>
           </div>
         </SectionCard>

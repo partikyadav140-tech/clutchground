@@ -3,8 +3,7 @@ import { Pool } from "pg";
 import { getEnvVar } from "./env";
 
 // Supabase PostgreSQL connection (Transaction Pooler)
-const connString = getEnvVar("DATABASE_URL") ||
-  "postgresql://postgres.mvkvdxphxzvviaunqmlb:partikbahi09@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres";
+const connString = getEnvVar("DATABASE_URL");
 
 if (!connString) {
   throw new Error("DATABASE_URL environment variable is required");
@@ -399,14 +398,19 @@ async function initDb() {
 
     // Seed Admin
     try {
-      // First delete any existing admin account
-      await pool.query(`DELETE FROM users WHERE username = 'admin'`);
-
-      // Then create new admin account
-      await pool.query(`
-        INSERT INTO users (username, password, role, phone)
-        VALUES ('admin', 'admin123', 'admin', '8307224756')
-      `);
+      // Check if admin already exists to prevent resetting/overwriting existing admin credentials
+      const adminCheck = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
+      if (adminCheck.rows.length === 0) {
+        const { hashPassword } = await import("./auth-crypto");
+        const hashedPassword = hashPassword("admin123");
+        await pool.query(`
+          INSERT INTO users (username, password, role, phone)
+          VALUES ('admin', $1, 'admin', '8307224756')
+        `, [hashedPassword]);
+        console.log("[DB] Default admin seeded successfully.");
+      } else {
+        console.log("[DB] Admin accounts already exist. Skipping seed.");
+      }
     } catch (e) {
       console.error("Admin seeding error:", e);
     }

@@ -16,7 +16,13 @@ import { GodCoin } from "@/components/GodCoin";
 
 export const Route = createFileRoute("/_app/admin/")({
   head: () => ({ meta: [{ title: "Command Center — CLUTCHGROUND" }] }),
-  loader: async () => await (getAdminStats as any)(),
+  loader: async () => {
+    try {
+      return await (getAdminStats as any)();
+    } catch {
+      return null;
+    }
+  },
   component: AdminDashboard,
 } as any);
 

@@ -1,18 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "../../lib/auth-client";
-import { getGlobalLeaderboard } from "../../api";
+import { getGlobalLeaderboard, getSiteSettings } from "../../api";
 import { Crown, Trophy, Star, Medal, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/_app/leaderboard")({
   head: () => ({ meta: [{ title: "Leaderboard — CLUTCHGROUND" }] }),
-  loader: async () => await (getGlobalLeaderboard as any)(),
+  loader: async () => {
+    const [leaderboard, settings] = await Promise.all([
+      (getGlobalLeaderboard as any)(),
+      (getSiteSettings as any)(),
+    ]);
+    return { leaderboard, settings };
+  },
   component: LeaderboardPage,
 });
 
 function LeaderboardPage() {
-  const leaderboard = Route.useLoaderData() as any[];
+  const { leaderboard, settings } = Route.useLoaderData() as { leaderboard: any[]; settings: Record<string, string> };
   const { user } = useAuth();
   const myEntry = user
     ? leaderboard.find(
@@ -24,6 +30,7 @@ function LeaderboardPage() {
 
   const top3 = leaderboard.slice(0, 3);
   const rest = leaderboard.slice(3);
+  const prizeAmount = settings?.leaderboard_prize || "500";
 
   const rankConfig: Record<number, { medal: string; color: string; glow: string; bg: string; size: string }> = {
     1: { medal: "🥇", color: "#f59e0b", glow: "0 0 24px rgba(245,158,11,0.4)", bg: "rgba(245,158,11,0.12)", size: "w-16 h-16" },
@@ -59,7 +66,7 @@ function LeaderboardPage() {
           <div className="flex-1">
             <h4 className="font-display font-black text-[11px] text-amber-500 uppercase tracking-widest mb-1">Weekly Championship Reward</h4>
             <p className="text-xs text-muted-foreground font-semibold leading-relaxed">
-              The team or player securing the <span className="text-amber-500 font-bold">1st position</span> on the leaderboard at the weekly reset (Sunday 11:59 PM) will be rewarded with <span className="text-amber-500 font-bold">500 CG Coins</span>!
+              The team or player securing the <span className="text-amber-500 font-bold">1st position</span> on the leaderboard at the weekly reset (Sunday 11:59 PM) will be rewarded with <span className="text-amber-500 font-bold">{prizeAmount} CG Coins</span>!
             </p>
           </div>
         </div>

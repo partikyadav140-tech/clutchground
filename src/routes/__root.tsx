@@ -35,7 +35,7 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1.0, viewport-fit=cover" },
+      { name: "viewport", content: "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" },
       { title: "ClutchGround | Rule the Battleground" },
       {
         name: "description",
@@ -182,21 +182,98 @@ function RootComponent() {
 
     if (typeof window !== "undefined") {
       window.history.scrollRestoration = "manual";
-    }
 
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      requestIdleCallback(() => {
-        const links = document.querySelectorAll('a[href^="/"]');
-        links.forEach((link) => {
-          const href = link.getAttribute("href");
-          if (href && !href.startsWith("http")) {
-            const prefetchLink = document.createElement("link");
-            prefetchLink.rel = "prefetch";
-            prefetchLink.href = href;
-            document.head.appendChild(prefetchLink);
+      // 1. Lock Inspect Element shortcuts, View Source and Zoom Shortcuts
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "F12") {
+          e.preventDefault();
+          return;
+        }
+
+        const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+        const isShiftOrOpt = e.shiftKey || e.altKey;
+
+        if (isCtrlOrCmd) {
+          // Ctrl+Shift+I / J / C (inspect, console, element select)
+          // Ctrl+U (view source), Ctrl+S (save page)
+          if (
+            (isShiftOrOpt && ["i", "j", "c"].includes(e.key?.toLowerCase())) ||
+            ["u", "s"].includes(e.key?.toLowerCase())
+          ) {
+            e.preventDefault();
+            return;
           }
+
+          // Ctrl + zoom key shortcuts (+, -, 0)
+          if (["=", "-", "0", "+"].includes(e.key)) {
+            e.preventDefault();
+            return;
+          }
+        }
+      };
+
+      // 2. Lock Right Click context menu
+      const handleContextMenu = (e: MouseEvent) => {
+        e.preventDefault();
+      };
+
+      // 3. Lock Wheel Zoom (Ctrl + Wheel)
+      const handleWheel = (e: WheelEvent) => {
+        if (e.ctrlKey) {
+          e.preventDefault();
+        }
+      };
+
+      // 4. Lock Pinch Zoom Touch Events
+      const handleTouchStart = (e: TouchEvent) => {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      };
+      const handleTouchMove = (e: TouchEvent) => {
+        if (e.touches.length > 1) {
+          e.preventDefault();
+        }
+      };
+
+      // 5. Lock Safari Gesture Zoom
+      const handleGesture = (e: Event) => {
+        e.preventDefault();
+      };
+
+      document.addEventListener("keydown", handleKeyDown);
+      document.addEventListener("contextmenu", handleContextMenu);
+      document.addEventListener("wheel", handleWheel, { passive: false });
+      document.addEventListener("touchstart", handleTouchStart, { passive: false });
+      document.addEventListener("touchmove", handleTouchMove, { passive: false });
+      document.addEventListener("gesturestart", handleGesture);
+      document.addEventListener("gesturechange", handleGesture);
+
+      // Trigger prefetch of client routes on idle
+      if ("requestIdleCallback" in window) {
+        requestIdleCallback(() => {
+          const links = document.querySelectorAll('a[href^="/"]');
+          links.forEach((link) => {
+            const href = link.getAttribute("href");
+            if (href && !href.startsWith("http")) {
+              const prefetchLink = document.createElement("link");
+              prefetchLink.rel = "prefetch";
+              prefetchLink.href = href;
+              document.head.appendChild(prefetchLink);
+            }
+          });
         });
-      });
+      }
+
+      return () => {
+        document.removeEventListener("keydown", handleKeyDown);
+        document.removeEventListener("contextmenu", handleContextMenu);
+        document.removeEventListener("wheel", handleWheel);
+        document.removeEventListener("touchstart", handleTouchStart);
+        document.removeEventListener("touchmove", handleTouchMove);
+        document.removeEventListener("gesturestart", handleGesture);
+        document.removeEventListener("gesturechange", handleGesture);
+      };
     }
   }, []);
 

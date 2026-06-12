@@ -8,7 +8,13 @@ import { AdminNavBar } from "@/components/AdminNavBar";
 
 export const Route = createFileRoute("/_app/admin/messages")({
   head: () => ({ meta: [{ title: "Admin: Messages — Professional Esports Arena" }] }),
-  loader: async () => await getContactMessages(),
+  loader: async () => {
+    try {
+      return await getContactMessages();
+    } catch {
+      return [];
+    }
+  },
   component: AdminMessages,
 });
 
