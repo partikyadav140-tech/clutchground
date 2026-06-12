@@ -105,27 +105,27 @@ export const Route = createFileRoute("/_app")({
             !isAuthRoute ? "max-w-[480px] lg:max-w-5xl" : "",
             isChatPage ? "h-full flex flex-col overflow-hidden" : "",
           ].filter(Boolean).join(" ")}>
-            <Suspense fallback={<PageSpinner />}>
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={path}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.18, ease: "easeOut" }}
-                  onAnimationComplete={(definition) => {
-                    // When the enter animation completes, ensure scroll is at top
-                    if (definition === "animate" && scrollRef.current) {
-                      scrollRef.current.scrollTop = 0;
-                    }
-                  }}
-                  className={isChatPage ? "h-full flex flex-col" : "min-h-full flex flex-col"}
-                >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={path}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                onAnimationComplete={(definition) => {
+                  // When the enter animation completes, ensure scroll is at top
+                  if (definition === "animate" && scrollRef.current) {
+                    scrollRef.current.scrollTop = 0;
+                  }
+                }}
+                className={isChatPage ? "h-full flex flex-col" : "min-h-full flex flex-col"}
+              >
+                <Suspense fallback={<PageSpinner />}>
                   <Outlet />
                   {!isAuthRoute && !isChatPage && <Footer />}
-                </motion.div>
-              </AnimatePresence>
-            </Suspense>
+                </Suspense>
+              </motion.div>
+            </AnimatePresence>
           </div>
         </main>
 
