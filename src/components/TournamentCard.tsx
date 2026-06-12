@@ -4,6 +4,7 @@ import { Clock, Shield, Star, Users, Zap } from "lucide-react";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { GodCoin } from "@/components/GodCoin";
 import { getModeColors, getTournamentPoster } from "@/lib/mode-colors";
+import { CountdownTimer } from "@/components/CountdownTimer";
 
 type TournamentCardProps = {
   t: {
@@ -19,6 +20,8 @@ type TournamentCardProps = {
     banner?: string | null;
     startsAt?: string;
     startsat?: string;
+    tournament_code?: string;
+    [key: string]: any;
   };
   index?: number;
   isJoined?: boolean;
@@ -93,8 +96,25 @@ export function TournamentCard({
           </div>
 
           {isFree && (
-            <div className="absolute top-3 right-3">
+            <div className="absolute top-3 right-3 flex items-center gap-1.5">
               <span className="badge-free text-xs">Free</span>
+            </div>
+          )}
+
+          {/* Tournament Code Badge */}
+          {t.tournament_code && (
+            <div className={`absolute ${isFree ? 'top-10' : 'top-3'} right-3`}>
+              <span
+                className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold"
+                style={{
+                  background: "rgba(0,0,0,0.6)",
+                  backdropFilter: "blur(8px)",
+                  color: "rgba(255,255,255,0.8)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                }}
+              >
+                {t.tournament_code}
+              </span>
             </div>
           )}
 
@@ -139,10 +159,9 @@ export function TournamentCard({
           </div>
           <div className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5">
             <span className="text-label">Starts</span>
-            <span className="font-bold text-xs text-foreground flex items-center gap-1">
-              <Clock className="w-3 h-3 text-muted-foreground" />
-              {t.startsAt || t.startsat || "TBD"}
-            </span>
+            <div className="flex items-center justify-center">
+              <CountdownTimer targetDate={t.startsAt || t.startsat || ""} status={t.status} compact />
+            </div>
           </div>
         </div>
 
@@ -177,7 +196,7 @@ export function TournamentCard({
           </div>
 
           <div className="flex gap-3">
-            <Link to={`/tournaments/${t.id}` as "/tournaments/$id"} className="flex-[0_0_auto]">
+            <Link to="/tournaments/$id" params={{ id: String(t.id) }} className="flex-[0_0_auto]">
               <button
                 type="button"
                 className={`rounded-2xl text-xs font-bold border border-border text-foreground bg-secondary hover:bg-accent transition-all press-effect active:scale-95 flex items-center gap-1.5 ${

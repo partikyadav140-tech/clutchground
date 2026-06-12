@@ -74,7 +74,7 @@ export function SpinWheel({
             style={{
               transform: `rotate(${rotation}deg)`,
               transition: spinning
-                ? "transform 5.2s cubic-bezier(0.12, 0.75, 0.18, 1)"
+                ? "transform 7s cubic-bezier(0.05, 0.7, 0.1, 1)"
                 : "none",
             }}
           >

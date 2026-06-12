@@ -4,7 +4,7 @@ import { getTournaments, getTournamentResults, getMyMatches } from "../../../api
 import {
   Calendar, Trophy, Users, Target, Shield, ArrowLeft,
   Crosshair, Share2, Lock, CheckCircle2, Zap,
-  Star, Clock, ChevronRight, Swords,
+  Star, Clock, ChevronRight, Swords, Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,6 +13,7 @@ import { GodCoin } from "@/components/GodCoin";
 import { useAuth } from "../../../lib/auth-client";
 import { StandingsCard } from "@/components/StandingsCard";
 import { TournamentSquadSheet } from "@/components/tournament/TournamentSquadSheet";
+import { CountdownTimer } from "@/components/CountdownTimer";
 
 export const Route = createFileRoute("/_app/tournaments/$id")({
   component: TournamentDetailPage,
@@ -129,7 +130,7 @@ function TournamentDetailPage() {
           </div>
         )}
 
-        {/* Title on image — always white: on dark overlay, inline style bypasses .light .text-white override */}
+        {/* Title on image */}
         <div className="absolute bottom-5 left-4 right-4">
           <div className="flex items-center gap-2 mb-2">
             <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider"
@@ -139,6 +140,17 @@ function TournamentDetailPage() {
             {isFree && (
               <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider"
                 style={{ background: "rgba(16,185,129,0.85)", color: "#ffffff" }}>FREE</span>
+            )}
+            {t.tournament_code && (
+              <button
+                type="button"
+                onClick={() => { navigator.clipboard?.writeText(t.tournament_code); toast.success("Code copied!"); }}
+                className="px-2.5 py-1 rounded-full text-[9px] font-mono font-black uppercase tracking-wider flex items-center gap-1 press-effect"
+                style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", color: "rgba(255,255,255,0.85)", border: "1px solid rgba(255,255,255,0.2)" }}
+              >
+                {t.tournament_code}
+                <Copy className="w-2.5 h-2.5" />
+              </button>
             )}
           </div>
           <h1 className="font-display font-black text-2xl leading-tight drop-shadow-lg line-clamp-2" style={{ color: "#ffffff" }}>{t.title}</h1>
@@ -157,18 +169,22 @@ function TournamentDetailPage() {
               : (t.mode === "Solo" ? `${t.per_kill_coin}/kill` : t.prize);
             
             return [
-              { label: "Entry",  value: isFree ? "FREE" : entryValue, coin: !isFree, accent: isFree ? "#10b981" : mc.color },
-              { label: "Prize",  value: prizeValue, coin: true, accent: "#f59e0b" },
-              { label: "Starts", value: t.startsAt || t.startsat || "TBD", coin: false, accent: mc.color },
-              { label: "Slots",  value: `${t.filled}/${displaySlots}`, coin: false, accent: mc.color },
+              { label: "Entry",  value: isFree ? "FREE" : entryValue, coin: !isFree, accent: isFree ? "#10b981" : mc.color, isTimer: false },
+              { label: "Prize",  value: prizeValue, coin: true, accent: "#f59e0b", isTimer: false },
+              { label: "Starts", value: t.startsAt || t.startsat || "TBD", coin: false, accent: mc.color, isTimer: true },
+              { label: "Slots",  value: `${t.filled}/${displaySlots}`, coin: false, accent: mc.color, isTimer: false },
             ];
-          })().map(({ label, value, coin, accent }) => (
+          })().map(({ label, value, coin, accent, isTimer }) => (
             <div key={label} className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5">
               <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
-              <span className="font-display font-black text-sm text-foreground flex items-center gap-0.5">
-                {coin && <GodCoin className="w-3 h-3 text-amber-400" />}
-                <span style={{ color: accent }}>{value}</span>
-              </span>
+              {isTimer ? (
+                <CountdownTimer targetDate={String(value)} status={t.status} compact />
+              ) : (
+                <span className="font-display font-black text-sm text-foreground flex items-center gap-0.5">
+                  {coin && <GodCoin className="w-3 h-3 text-amber-400" />}
+                  <span style={{ color: accent }}>{value}</span>
+                </span>
+              )}
             </div>
           ))}
         </div>
@@ -277,7 +293,7 @@ function TournamentDetailPage() {
                 {[
                   { icon: Crosshair, label: "Format",    value: t.format },
                   { icon: Users,     label: "Mode",      value: t.mode },
-                  { icon: Calendar,  label: "Date",      value: t.startsAt || t.startsat || "TBD" },
+                  { icon: Calendar,  label: "Starts",    value: "__TIMER__" },
                   { icon: Shield,    label: "Slots",     value: `${t.filled} / ${displaySlots}` },
                 ].map(({ icon: Icon, label, value }) => (
                   <div key={label} className="bg-card rounded-2xl border border-border p-3.5 flex items-center gap-3 shadow-card">
@@ -286,7 +302,13 @@ function TournamentDetailPage() {
                     </div>
                     <div>
                       <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">{label}</p>
-                      <p className="font-black text-sm text-foreground mt-0.5">{value}</p>
+                      {value === "__TIMER__" ? (
+                        <div className="mt-0.5">
+                          <CountdownTimer targetDate={t.startsAt || t.startsat || ""} status={t.status} compact />
+                        </div>
+                      ) : (
+                        <p className="font-black text-sm text-foreground mt-0.5">{value}</p>
+                      )}
                     </div>
                   </div>
                 ))}

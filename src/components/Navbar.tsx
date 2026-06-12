@@ -186,7 +186,7 @@ export function Navbar() {
   const cleanPath = path === "/" ? "/" : path.replace(/\/$/, "");
   const isAuth = ["/login", "/signup"].includes(cleanPath);
   // Hide bottom nav on ticket/chat detail pages (like WhatsApp)
-  const isTicketChat = /^\/support\/[^/]+/.test(cleanPath);
+  const isTicketChat = /^\/support\/[^/]+/.test(cleanPath) || /^\/admin\/tickets\/[^/]+/.test(cleanPath);
   const isChatPage = cleanPath.startsWith("/support/") || cleanPath.startsWith("/admin/tickets/") || cleanPath === "/chat";
 
   if (isAuth) return null;
@@ -233,6 +233,19 @@ export function Navbar() {
 
           {/* Right actions */}
           <div className="flex items-center gap-2">
+            {/* Wallet pill shown only on other pages */}
+            {user && cleanPath !== "/" && (
+              <motion.div layoutId="shared-wallet-pill" className="shrink-0 mr-1">
+                <Link
+                  to="/wallet"
+                  className="relative w-10 h-10 lg:w-8 lg:h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
+                  title="Wallet"
+                >
+                  <Wallet className="w-[22px] h-[22px] lg:w-4 lg:h-4" />
+                </Link>
+              </motion.div>
+            )}
+
             {/* Support Tickets button with premium ticket icon */}
             {user && (
               <Link

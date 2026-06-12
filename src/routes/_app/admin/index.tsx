@@ -3,6 +3,7 @@ import {
   Users, Trophy, ClipboardList, Banknote, Mail, ShieldAlert,
   RefreshCw, Bell, LifeBuoy, IndianRupee, Settings, TrendingUp,
   AlertCircle, Activity, Zap, Crown, Coins, RotateCcw,
+  ChevronRight, Clock, Eye, Sparkles, Store,
 } from "lucide-react";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,8 @@ import { motion } from "framer-motion";
 import { getAdminStats, resetFinanceStat } from "../../../api";
 import { AdminNavBar } from "@/components/AdminNavBar";
 import { toast } from "sonner";
+import { CountdownTimer } from "@/components/CountdownTimer";
+import { GodCoin } from "@/components/GodCoin";
 
 export const Route = createFileRoute("/_app/admin/")({
   head: () => ({ meta: [{ title: "Command Center — CLUTCHGROUND" }] }),
@@ -17,49 +20,71 @@ export const Route = createFileRoute("/_app/admin/")({
   component: AdminDashboard,
 } as any);
 
-function StatCard({
-  icon: Icon, label, value, color, bg, urgent = false, to, action,
+/* ── Stat Strip ── */
+function StatStrip({
+  icon: Icon, label, value, color, bg, urgent = false, to,
 }: {
   icon: any; label: string; value: number | string; color: string; bg: string;
-  urgent?: boolean; to?: string; action?: React.ReactNode;
+  urgent?: boolean; to?: string;
 }) {
   const inner = (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`relative bg-card rounded-2xl border overflow-hidden p-4 transition-all active:scale-95 ${urgent && Number(value) > 0 ? "border-amber-400/40 shadow-amber-500/10 shadow-lg" : "border-border/50 shadow-sm"}`}
-    >
+    <div className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl border transition-all active:scale-[0.98] ${
+      urgent && Number(value) > 0
+        ? "border-amber-400/40 bg-amber-500/5 shadow-sm"
+        : "border-border/40 bg-card shadow-sm"
+    }`}>
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${bg}`}>
+        <Icon className={`w-4 h-4 ${color}`} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground leading-none">{label}</p>
+        <p className={`font-display font-black text-lg leading-tight mt-0.5 ${
+          urgent && Number(value) > 0 ? "text-amber-500" : "text-foreground"
+        }`}>
+          {value}
+        </p>
+      </div>
       {urgent && Number(value) > 0 && (
-        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+        <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shrink-0" />
       )}
-      {action && (
-        <div className="absolute top-2 right-2 z-30" onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}>
-          {action}
-        </div>
-      )}
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${bg} ${color}`}>
-        <Icon className="w-4.5 h-4.5 w-[18px] h-[18px]" />
-      </div>
-      <div className={`font-display font-black text-2xl leading-none mb-1 ${urgent && Number(value) > 0 ? "text-amber-500" : "text-foreground"}`}>
-        {value}
-      </div>
-      <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground leading-tight">
-        {label}
-      </div>
-    </motion.div>
+      {to && <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
+    </div>
   );
-
   if (to) return <Link to={to} className="block">{inner}</Link>;
   return inner;
 }
 
+/* ── Section Header ── */
 function SectionHeader({ label, icon: Icon, color }: { label: string; icon: any; color: string }) {
   return (
-    <div className={`flex items-center gap-2 mb-3 mt-6`}>
-      <Icon className={`w-4 h-4 ${color}`} />
-      <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">{label}</span>
-      <div className="flex-1 h-px bg-border/50" />
+    <div className="flex items-center gap-2 mb-2.5 mt-5">
+      <Icon className={`w-3.5 h-3.5 ${color}`} />
+      <span className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">{label}</span>
+      <div className="flex-1 h-px bg-border/40" />
     </div>
+  );
+}
+
+/* ── Quick Action Link ── */
+function QuickAction({ to, icon: Icon, title, desc, color, bg, badge }: {
+  to: string; icon: any; title: string; desc: string; color: string; bg: string; badge?: number;
+}) {
+  return (
+    <Link to={to} className="block">
+      <div className="flex items-center gap-3 px-3.5 py-3 rounded-2xl border border-border/40 bg-card shadow-sm transition-all active:scale-[0.98] hover:border-border">
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${bg}`}>
+          <Icon className={`w-5 h-5 ${color}`} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-display font-black text-[13px] text-foreground leading-tight">{title}</h3>
+          <p className="text-[10px] font-semibold text-muted-foreground mt-0.5 leading-snug">{desc}</p>
+        </div>
+        {badge !== undefined && badge > 0 && (
+          <span className="bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full min-w-[22px] text-center">{badge}</span>
+        )}
+        <ChevronRight className="w-4 h-4 text-muted-foreground/50 shrink-0" />
+      </div>
+    </Link>
   );
 }
 
@@ -71,7 +96,6 @@ function AdminDashboard() {
   const handleResetFinance = async (type: "revenue" | "payouts" | "withdrawable") => {
     const ok = window.confirm(`Are you sure you want to reset this calculation to zero? This won't affect any user's real balance.`);
     if (!ok) return;
-
     try {
       await (resetFinanceStat as any)({ data: { type } });
       toast.success("Calculation refreshed to zero!");
@@ -107,144 +131,150 @@ function AdminDashboard() {
     );
   }
 
-  const hasPendingActions = (stats?.pendingDeposits || 0) + (stats?.pendingPayouts || 0) + (stats?.openTickets || 0) > 0;
+  const pendingTotal = (stats?.pendingDeposits || 0) + (stats?.pendingPayouts || 0) + (stats?.openTickets || 0);
+  const latestTournaments = (stats?.latestTournaments || []).slice(0, 3);
 
   return (
-    <div className="bg-background min-h-screen pb-2">
+    <div className="bg-background min-h-screen pb-24">
       {/* ─── Hero Header ─── */}
-      <div className="relative overflow-hidden bg-card border-b border-border pt-6 pb-6 px-4">
+      <div className="relative overflow-hidden bg-card border-b border-border/50 pt-5 pb-5 px-4">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-0 w-48 h-48 rounded-full blur-3xl opacity-20" style={{ background: "var(--neon)" }} />
-          <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full blur-2xl opacity-10" style={{ background: "var(--primary)" }} />
+          <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl opacity-15" style={{ background: "var(--neon)" }} />
         </div>
 
         <div className="relative z-10">
-          <div className="flex items-center gap-2 text-cta font-black text-xs uppercase tracking-widest mb-2">
-            <Crown className="w-4 h-4" /> Admin Panel
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-1.5 text-primary font-black text-[10px] uppercase tracking-[0.2em] mb-1">
+                <Crown className="w-3.5 h-3.5" /> Admin Panel
+              </div>
+              <h1 className="text-2xl font-display font-black text-foreground leading-tight">Command Center</h1>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] text-muted-foreground font-bold">Welcome</p>
+              <p className="text-sm font-black text-foreground">{user.username}</p>
+            </div>
           </div>
-          <h1 className="text-3xl font-display font-black text-foreground">Command Center</h1>
-          <p className="text-sm text-muted-foreground font-semibold mt-1">Full platform control. Welcome, {user.username}.</p>
 
-          {hasPendingActions && (
+          {/* Pending actions banner */}
+          {pendingTotal > 0 && (
             <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="mt-4 bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-2.5 flex items-center gap-2.5"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-3 bg-amber-500/10 border border-amber-500/25 rounded-xl px-3.5 py-2.5 flex items-center gap-2"
             >
               <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
-              <span className="text-xs font-bold text-amber-600">
+              <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 flex-1">
                 {[
-                  stats?.pendingDeposits > 0 && `${stats.pendingDeposits} pending deposit${stats.pendingDeposits > 1 ? "s" : ""}`,
-                  stats?.pendingPayouts > 0 && `${stats.pendingPayouts} pending payout${stats.pendingPayouts > 1 ? "s" : ""}`,
-                  stats?.openTickets > 0 && `${stats.openTickets} open ticket${stats.openTickets > 1 ? "s" : ""}`,
-                ].filter(Boolean).join(" • ")} — action needed
+                  stats?.pendingDeposits > 0 && `${stats.pendingDeposits} deposit${stats.pendingDeposits > 1 ? "s" : ""}`,
+                  stats?.pendingPayouts > 0 && `${stats.pendingPayouts} payout${stats.pendingPayouts > 1 ? "s" : ""}`,
+                  stats?.openTickets > 0 && `${stats.openTickets} ticket${stats.openTickets > 1 ? "s" : ""}`,
+                ].filter(Boolean).join(" · ")} pending
               </span>
             </motion.div>
           )}
         </div>
       </div>
 
-      <div className="px-4 pt-4">
-
+      <div className="px-4">
         {/* ─── Urgent Actions ─── */}
         <SectionHeader label="Needs Attention" icon={AlertCircle} color="text-amber-500" />
-        <div className="grid grid-cols-3 gap-2.5">
-          <StatCard icon={IndianRupee} label="Deposits" value={stats?.pendingDeposits ?? 0} color="text-blue-500" bg="bg-blue-500/10" urgent to="/admin/deposits" />
-          <StatCard icon={Banknote} label="Payouts" value={stats?.pendingPayouts ?? 0} color="text-emerald-500" bg="bg-emerald-500/10" urgent to="/admin/payouts" />
-          <StatCard icon={LifeBuoy} label="Tickets" value={stats?.openTickets ?? 0} color="text-teal-500" bg="bg-teal-500/10" urgent to="/admin/tickets" />
+        <div className="space-y-2">
+          <StatStrip icon={IndianRupee} label="Pending Deposits" value={stats?.pendingDeposits ?? 0} color="text-blue-500" bg="bg-blue-500/10" urgent to="/admin/deposits" />
+          <StatStrip icon={Banknote} label="Pending Payouts" value={stats?.pendingPayouts ?? 0} color="text-emerald-500" bg="bg-emerald-500/10" urgent to="/admin/payouts" />
+          <StatStrip icon={LifeBuoy} label="Open Tickets" value={stats?.openTickets ?? 0} color="text-teal-500" bg="bg-teal-500/10" urgent to="/admin/tickets" />
         </div>
 
+        {/* ─── Latest Tournaments ─── */}
+        {latestTournaments.length > 0 && (
+          <>
+            <SectionHeader label="Latest Tournaments" icon={Trophy} color="text-amber-500" />
+            <div className="space-y-2">
+              {latestTournaments.map((t: any) => (
+                <Link key={t.id} to="/admin/tournaments" className="block">
+                  <div className="flex items-center gap-3 px-3.5 py-3 rounded-2xl border border-border/40 bg-card shadow-sm transition-all active:scale-[0.98]">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
+                      <Trophy className="w-5 h-5 text-amber-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-display font-black text-[13px] text-foreground truncate">{t.title}</h4>
+                        {t.tournament_code && (
+                          <span className="text-[9px] font-mono font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded shrink-0">
+                            {t.tournament_code}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                          t.status === "open" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                          : t.status === "live" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                          : t.status === "upcoming" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                          : "bg-secondary text-muted-foreground"
+                        }`}>
+                          {t.status}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-semibold">{t.mode} · {t.filled}/{t.slots}</span>
+                      </div>
+                    </div>
+                    {t.startsat && (
+                      <div className="shrink-0">
+                        <CountdownTimer targetDate={t.startsat} status={t.status} compact />
+                      </div>
+                    )}
+                  </div>
+                </Link>
+              ))}
+              <Link to="/admin/tournaments" className="block">
+                <div className="flex items-center justify-center gap-1.5 py-2 text-[10px] font-bold text-primary uppercase tracking-widest">
+                  View all tournaments <ChevronRight className="w-3.5 h-3.5" />
+                </div>
+              </Link>
+            </div>
+          </>
+        )}
+
         {/* ─── Platform Overview ─── */}
-        <SectionHeader label="Platform Overview" icon={Activity} color="text-primary" />
-        <div className="grid grid-cols-2 gap-2.5">
-          <StatCard icon={Users} label="Total Users" value={stats?.totalUsers ?? 0} color="text-purple-500" bg="bg-purple-500/10" to="/admin/users" />
-          <StatCard icon={ShieldAlert} label="Banned" value={stats?.bannedUsers ?? 0} color="text-red-500" bg="bg-red-500/10" to="/admin/users" />
-          <StatCard icon={Trophy} label="Live Events" value={stats?.liveTournaments ?? 0} color="text-amber-500" bg="bg-amber-500/10" to="/admin/tournaments" />
-          <StatCard icon={Zap} label="Open Slots" value={stats?.openTournaments ?? 0} color="text-sky-500" bg="bg-sky-500/10" to="/admin/tournaments" />
+        <SectionHeader label="Platform" icon={Activity} color="text-primary" />
+        <div className="grid grid-cols-2 gap-2">
+          <StatStrip icon={Users} label="Users" value={stats?.totalUsers ?? 0} color="text-purple-500" bg="bg-purple-500/10" to="/admin/users" />
+          <StatStrip icon={ShieldAlert} label="Banned" value={stats?.bannedUsers ?? 0} color="text-red-500" bg="bg-red-500/10" to="/admin/users" />
+          <StatStrip icon={Trophy} label="Live" value={stats?.liveTournaments ?? 0} color="text-amber-500" bg="bg-amber-500/10" to="/admin/tournaments" />
+          <StatStrip icon={Zap} label="Open" value={stats?.openTournaments ?? 0} color="text-sky-500" bg="bg-sky-500/10" to="/admin/tournaments" />
         </div>
 
         {/* ─── Finance ─── */}
         <SectionHeader label="Finance" icon={TrendingUp} color="text-emerald-500" />
-        <div className="grid grid-cols-3 gap-2.5">
-          <StatCard
-            icon={IndianRupee}
-            label="Total Deposited"
-            value={`₹${stats?.totalRevenue ?? 0}`}
-            color="text-emerald-500"
-            bg="bg-emerald-500/10"
-            to="/admin/deposits"
-            action={
+        <div className="space-y-2">
+          {[
+            { icon: IndianRupee, label: "Total Deposited", value: `₹${stats?.totalRevenue ?? 0}`, color: "text-emerald-500", bg: "bg-emerald-500/10", type: "revenue" as const, to: "/admin/deposits" },
+            { icon: Banknote, label: "Total Paid Out", value: `₹${stats?.totalPayouts ?? 0}`, color: "text-rose-500", bg: "bg-rose-500/10", type: "payouts" as const, to: "/admin/payouts" },
+            { icon: Coins, label: "Total Withdrawable", value: `₹${stats?.totalWithdrawable ?? 0}`, color: "text-amber-500", bg: "bg-amber-500/10", type: "withdrawable" as const, to: "/admin/users" },
+          ].map((item) => (
+            <div key={item.type} className="relative">
+              <StatStrip icon={item.icon} label={item.label} value={item.value} color={item.color} bg={item.bg} to={item.to} />
               <button
-                onClick={() => handleResetFinance("revenue")}
-                className="p-1 rounded-lg bg-secondary hover:bg-muted-foreground/15 text-muted-foreground transition-colors cursor-pointer"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleResetFinance(item.type); }}
+                className="absolute top-3 right-10 p-1.5 rounded-lg bg-secondary/80 hover:bg-muted-foreground/15 text-muted-foreground transition-colors cursor-pointer z-10"
                 title="Reset calculation to zero"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-3 h-3" />
               </button>
-            }
-          />
-          <StatCard
-            icon={Banknote}
-            label="Total Paid Out"
-            value={`₹${stats?.totalPayouts ?? 0}`}
-            color="text-rose-500"
-            bg="bg-rose-500/10"
-            to="/admin/payouts"
-            action={
-              <button
-                onClick={() => handleResetFinance("payouts")}
-                className="p-1 rounded-lg bg-secondary hover:bg-muted-foreground/15 text-muted-foreground transition-colors cursor-pointer"
-                title="Reset calculation to zero"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
-            }
-          />
-          <StatCard
-            icon={Coins}
-            label="Total Withdrawable"
-            value={`₹${stats?.totalWithdrawable ?? 0}`}
-            color="text-amber-500"
-            bg="bg-amber-500/10"
-            to="/admin/users"
-            action={
-              <button
-                onClick={() => handleResetFinance("withdrawable")}
-                className="p-1 rounded-lg bg-secondary hover:bg-muted-foreground/15 text-muted-foreground transition-colors cursor-pointer"
-                title="Reset calculation to zero"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
-            }
-          />
+            </div>
+          ))}
         </div>
 
-        {/* ─── Quick Actions Grid ─── */}
+        {/* ─── Quick Actions ─── */}
         <SectionHeader label="Quick Actions" icon={Zap} color="text-violet-500" />
-        <div className="grid grid-cols-2 gap-2.5 mb-4">
-          {[
-            { to: "/admin/tournaments", icon: Trophy, title: "Manage Tournaments", desc: "Create, edit & delete events", color: "text-amber-500", bg: "bg-amber-500/10" },
-            { to: "/admin/registrations", icon: ClipboardList, title: "Registrations", desc: "View player rosters", color: "text-blue-500", bg: "bg-blue-500/10" },
-            { to: "/admin/leaderboard", icon: RefreshCw, title: "Leaderboard", desc: "Adjust weekly standings", color: "text-violet-500", bg: "bg-violet-500/10" },
-            { to: "/admin/notifications", icon: Bell, title: "Broadcast", desc: "Push alerts to users", color: "text-pink-500", bg: "bg-pink-500/10" },
-            { to: "/admin/messages", icon: Mail, title: "Messages", desc: "User contact inbox", color: "text-sky-500", bg: "bg-sky-500/10" },
-            { to: "/admin/site-settings", icon: Settings, title: "Site Settings", desc: "UPI, announcements, etc.", color: "text-orange-500", bg: "bg-orange-500/10" },
-          ].map((link, i) => (
-            <Link key={link.to} to={link.to} className="block">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: i * 0.04 }}
-                className="bg-card rounded-2xl border border-border/50 shadow-sm hover:shadow-md hover:border-border transition-all p-4 flex flex-col h-full group active:scale-95"
-              >
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 ${link.bg} ${link.color}`}>
-                  <link.icon className="w-[18px] h-[18px]" />
-                </div>
-                <h3 className="font-display font-black text-[13px] text-foreground leading-tight mb-1">{link.title}</h3>
-                <p className="text-[10px] font-bold text-muted-foreground leading-snug">{link.desc}</p>
-              </motion.div>
-            </Link>
-          ))}
+        <div className="space-y-2 mb-4">
+          <QuickAction to="/admin/tournaments" icon={Trophy} title="Manage Tournaments" desc="Create, edit & delete events" color="text-amber-500" bg="bg-amber-500/10" />
+          <QuickAction to="/admin/registrations" icon={ClipboardList} title="Registrations" desc="View player rosters" color="text-blue-500" bg="bg-blue-500/10" />
+          <QuickAction to="/admin/leaderboard" icon={RefreshCw} title="Leaderboard" desc="Adjust weekly standings" color="text-violet-500" bg="bg-violet-500/10" />
+          <QuickAction to="/admin/notifications" icon={Bell} title="Broadcast" desc="Push alerts to users" color="text-pink-500" bg="bg-pink-500/10" />
+          <QuickAction to="/admin/messages" icon={Mail} title="Messages" desc="User contact inbox" color="text-sky-500" bg="bg-sky-500/10" />
+          <QuickAction to="/admin/spin-wheel" icon={Sparkles} title="Spin Wheel" desc="Manage wheel & prizes" color="text-primary" bg="bg-primary/10" />
+          <QuickAction to="/admin/profile-shop" icon={Store} title="Profile Shop" desc="Cosmetics & banners" color="text-orange-500" bg="bg-orange-500/10" />
+          <QuickAction to="/admin/site-settings" icon={Settings} title="Site Settings" desc="UPI, announcements, etc." color="text-orange-500" bg="bg-orange-500/10" />
         </div>
       </div>
 

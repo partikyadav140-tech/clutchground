@@ -12,7 +12,11 @@ import {
   Star,
   Settings,
   ImageOff,
+  Copy,
+  Clock,
+  Filter,
 } from "lucide-react";
+import { CountdownTimer } from "@/components/CountdownTimer";
 import {
   getTournaments,
   addTournament,
@@ -61,6 +65,8 @@ function AdminTournamentsPage() {
   const [q, setQ] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [completedSubTab, setCompletedSubTab] = useState<"all" | "pending" | "announced">("all");
+  const [hostFilter, setHostFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState<"all" | "today" | "week" | "month">("all");
 
   useEffect(() => {
     setTournaments(initialTournaments);
@@ -100,7 +106,13 @@ function AdminTournamentsPage() {
     }
   };
 
-  const filteredTournaments = tournaments.filter((t: any) => {
+  // Get unique hosts for filter dropdown
+  const uniqueHosts = [...new Set(tournaments.map((t: any) => t.hosted_by).filter(Boolean))] as string[];
+
+  // Sort latest first (by id DESC)
+  const sortedTournaments = [...tournaments].sort((a: any, b: any) => b.id - a.id);
+
+  const filteredTournaments = sortedTournaments.filter((t: any) => {
     const matchesMainTab =
       activeTab === "all" ||
       (activeTab === "open"
@@ -111,17 +123,43 @@ function AdminTournamentsPage() {
 
     if (activeTab === "completed") {
       if (completedSubTab === "pending") {
-        return !t.results_announced;
+        if (t.results_announced) return false;
       }
       if (completedSubTab === "announced") {
-        return !!t.results_announced;
+        if (!t.results_announced) return false;
       }
     }
 
-    return (
-      t.title.toLowerCase().includes(q.toLowerCase()) ||
-      t.game.toLowerCase().includes(q.toLowerCase())
-    );
+    // Host filter
+    if (hostFilter && t.hosted_by !== hostFilter) return false;
+
+    // Date filter
+    if (dateFilter !== "all") {
+      const startDate = new Date(t.startsAt || t.startsat || "");
+      const now = new Date();
+      if (dateFilter === "today") {
+        if (startDate.toDateString() !== now.toDateString()) return false;
+      } else if (dateFilter === "week") {
+        const weekAgo = new Date(now.getTime() - 7 * 86400000);
+        if (startDate < weekAgo) return false;
+      } else if (dateFilter === "month") {
+        const monthAgo = new Date(now.getTime() - 30 * 86400000);
+        if (startDate < monthAgo) return false;
+      }
+    }
+
+    // Search by title, game, tournament code, host
+    if (q) {
+      const query = q.toLowerCase();
+      return (
+        t.title.toLowerCase().includes(query) ||
+        t.game.toLowerCase().includes(query) ||
+        (t.tournament_code || "").toLowerCase().includes(query) ||
+        (t.hosted_by || "").toLowerCase().includes(query)
+      );
+    }
+
+    return true;
   });
 
   const openResults = async (t: any) => {
@@ -822,13 +860,21 @@ function AdminTournamentsPage() {
                   value={formData.filled}
                   onChange={(e) => setFormData({ ...formData, filled: Number(e.target.value) })}
                 />
-                <Input
-                  label="Starts At (ISO Date)"
-                  value={formData.startsAt}
-                  onChange={(e) => setFormData({ ...formData, startsAt: e.target.value })}
-                  required
-                  placeholder="YYYY-MM-DD HH:MM:SS"
-                />
+                <div>
+                  <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">
+                    Start Date & Time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={formData.startsAt ? formData.startsAt.slice(0, 16) : ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData({ ...formData, startsAt: val ? val + ":00" : "" });
+                    }}
+                    required
+                    className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-card outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold"
+                  />
+                </div>
                 <div>
                   <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">
                     Status
@@ -1003,14 +1049,44 @@ function AdminTournamentsPage() {
               </div>
             )}
 
-            <div className="relative mb-6">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search tournaments..."
-                className="w-full bg-card border border-border focus:border-primary outline-none pl-10 pr-4 h-12 text-sm rounded-xl transition-all shadow-sm font-semibold"
-              />
+            {/* Search + Filters */}
+            <div className="space-y-2 mb-5">
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search by title, code, host..."
+                  className="w-full bg-card border border-border focus:border-primary outline-none pl-10 pr-4 h-11 text-sm rounded-xl transition-all shadow-sm font-semibold"
+                />
+              </div>
+              <div className="flex gap-2 overflow-x-auto hide-scrollbar">
+                {/* Host filter */}
+                {uniqueHosts.length > 0 && (
+                  <select
+                    value={hostFilter}
+                    onChange={(e) => setHostFilter(e.target.value)}
+                    className="shrink-0 bg-card border border-border rounded-xl px-3 h-9 text-xs font-bold text-foreground outline-none"
+                  >
+                    <option value="">All Hosts</option>
+                    {uniqueHosts.map((h) => <option key={h} value={h}>{h}</option>)}
+                  </select>
+                )}
+                {/* Date filter */}
+                {["all", "today", "week", "month"].map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setDateFilter(d as any)}
+                    className={`shrink-0 px-3 h-9 rounded-xl text-xs font-bold border transition-all ${
+                      dateFilter === d
+                        ? "bg-primary/10 text-primary border-primary/30"
+                        : "bg-card text-muted-foreground border-border"
+                    }`}
+                  >
+                    {d === "all" ? "All dates" : d === "today" ? "Today" : d === "week" ? "This week" : "This month"}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -1024,64 +1100,75 @@ function AdminTournamentsPage() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.2, delay: i * 0.05 }}
+                    transition={{ duration: 0.2, delay: Math.min(i * 0.03, 0.3) }}
                     key={t.id}
-                    className="bg-card rounded-[1.5rem] border border-border shadow-sm overflow-hidden group"
+                    className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden group"
                   >
-                    <div className="p-5">
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div className="p-4">
+                      <div className="flex flex-col gap-3">
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <h3 className="font-display font-black text-lg text-foreground truncate group-hover:text-cta transition-colors">
-                              {t.title}
-                            </h3>
-                            {t.is_hero && (
-                              <span className="bg-amber-100 text-amber-600 text-[9px] px-2 py-0.5 rounded-full uppercase tracking-widest font-bold border border-amber-200">
-                                Featured
-                              </span>
-                            )}
+                          {/* Title + Code row */}
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-display font-black text-base text-foreground truncate">
+                                  {t.title}
+                                </h3>
+                                {t.is_hero && (
+                                  <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />
+                                )}
+                              </div>
+                              {/* Tournament Code */}
+                              {t.tournament_code && (
+                                <button
+                                  type="button"
+                                  onClick={() => { navigator.clipboard.writeText(t.tournament_code); toast.success("Code copied!"); }}
+                                  className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md hover:bg-primary/20 transition-colors"
+                                >
+                                  {t.tournament_code}
+                                  <Copy className="w-2.5 h-2.5" />
+                                </button>
+                              )}
+                            </div>
+                            {/* Countdown */}
+                            <div className="shrink-0">
+                              <CountdownTimer targetDate={t.startsAt || t.startsat || ""} status={t.status} compact />
+                            </div>
                           </div>
 
-                          <div className="flex flex-wrap gap-2 text-[11px] font-bold">
-                            <span className="bg-secondary px-2 py-1 rounded-md text-muted-foreground uppercase tracking-wider">
-                              {t.game}
-                            </span>
-                            <span className="bg-secondary px-2 py-1 rounded-md text-muted-foreground uppercase tracking-wider">
+                          {/* Tags */}
+                          <div className="flex flex-wrap gap-1.5 text-[10px] font-bold">
+                            <span className="bg-secondary px-2 py-0.5 rounded-md text-muted-foreground uppercase tracking-wider">
                               {t.mode}
                             </span>
                             <span
-                              className={`px-2 py-1 rounded-md uppercase tracking-wider ${
+                              className={`px-2 py-0.5 rounded-md uppercase tracking-wider ${
                                 t.tournament_type === "clash_squad"
-                                  ? "bg-purple-100 text-purple-700"
+                                  ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
                                   : t.tournament_type === "lone_wolf"
-                                    ? "bg-indigo-100 text-indigo-700"
-                                    : "bg-blue-100 text-blue-700"
+                                    ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
+                                    : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
                               }`}
                             >
-                              {t.tournament_type === "clash_squad"
-                                ? "Clash Squad"
-                                : t.tournament_type === "lone_wolf"
-                                  ? "Lone Wolf"
-                                  : "Battle Royale"}
+                              {t.tournament_type === "clash_squad" ? "CS" : t.tournament_type === "lone_wolf" ? "LW" : "BR"}
                             </span>
                             <span
-                              className={`px-2 py-1 rounded-md uppercase tracking-wider ${
-                                t.status === "open"
-                                  ? "bg-green-100 text-green-700"
-                                  : t.status === "upcoming"
-                                    ? "bg-amber-100 text-amber-700"
-                                    : t.status === "live"
-                                      ? "bg-red-100 text-red-700"
-                                      : t.status === "rescheduled"
-                                        ? "bg-orange-100 text-orange-700"
-                                        : "bg-slate-100 text-slate-700"
+                              className={`px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                                t.status === "open" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                : t.status === "upcoming" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                : t.status === "live" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                : t.status === "rescheduled" ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                                : "bg-secondary text-muted-foreground"
                               }`}
                             >
                               {t.status}
                             </span>
+                            <span className="bg-secondary px-2 py-0.5 rounded-md text-muted-foreground">
+                              {t.filled}/{t.slots} slots
+                            </span>
                             {t.hosted_by && (
-                              <span className="bg-primary/10 text-cta px-2 py-1 rounded-md uppercase tracking-wider">
-                                Host: {t.hosted_by}
+                              <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-md">
+                                {t.hosted_by}
                               </span>
                             )}
                           </div>

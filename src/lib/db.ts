@@ -390,6 +390,7 @@ async function initDb() {
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS banner_preset TEXT DEFAULT 'default';`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_animation TEXT DEFAULT 'none';`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_frame TEXT DEFAULT 'none';`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_effect TEXT DEFAULT 'none';`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS owned_cosmetics TEXT DEFAULT '[]';`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS showcase_achievements TEXT DEFAULT '[]';`);
     } catch (e) {

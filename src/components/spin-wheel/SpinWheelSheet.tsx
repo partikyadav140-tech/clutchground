@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Gift, Zap, Ticket } from "lucide-react";
+import { Sparkles, Gift, Zap, Ticket, ShoppingCart, ChevronRight } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -12,15 +13,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { GodCoin } from "@/components/GodCoin";
 import { SpinWheel } from "./SpinWheel";
-import { confirmDialog } from "@/components/ConfirmDialog";
 import {
   getProfile,
   getSpinWheelConfig,
   getSpinWheelStatus,
   performSpin,
-  purchaseSpinPack,
 } from "@/api";
-import { rotationDeltaForSlice, type SpinPack, type SpinSegment } from "@/lib/spin-wheel";
+import { rotationDeltaForSlice, type SpinSegment } from "@/lib/spin-wheel";
 import { useAuth } from "@/lib/auth-client";
 
 type SpinWheelSheetProps = {
@@ -44,11 +43,9 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
   const { user, setUser } = useAuth();
   const [segments, setSegments] = useState<SpinSegment[]>([]);
   const [activePrizeIds, setActivePrizeIds] = useState<string[]>([]);
-  const [spinPacks, setSpinPacks] = useState<SpinPack[]>([]);
   const [status, setStatus] = useState<SpinStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [spinning, setSpinning] = useState(false);
-  const [buyingPackId, setBuyingPackId] = useState<string | null>(null);
   const [rotation, setRotation] = useState(0);
   const rotationRef = useRef(0);
   const [result, setResult] = useState<{ label: string; amount: number } | null>(null);
@@ -76,7 +73,6 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
       ]);
       setSegments(config.segments);
       setActivePrizeIds(config.activePrizeIds || []);
-      setSpinPacks(config.spinPacks || []);
       setStatus(spinStatus);
     } catch (e: any) {
       toast.error(e?.message || "Failed to load spin wheel");
@@ -99,27 +95,32 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
       spinResult.sliceIndex,
       spinResult.totalSlices,
       rotationRef.current,
-      8,
+      10,
     );
     const nextRotation = rotationRef.current + delta;
     rotationRef.current = nextRotation;
     setRotation(nextRotation);
 
+    // Wait for wheel to fully stop (matches CSS transition duration)
     setTimeout(() => {
       setSpinning(false);
-      setResult({ label: spinResult.label, amount: spinResult.amount });
-      if (spinResult.amount > 0) {
-        toast.success(`You won ${spinResult.amount} CG coins!`, {
-          description: "Added to your deposit balance",
-        });
-      } else {
-        toast.info("No luck this time!", { description: spinResult.label });
-      }
-      refresh();
-      if (user) {
-        (getProfile as any)({ data: user.id }).then((p: any) => syncUserBalances(p));
-      }
-    }, 5300);
+
+      // Dramatic pause before revealing the prize
+      setTimeout(() => {
+        setResult({ label: spinResult.label, amount: spinResult.amount });
+        if (spinResult.amount > 0) {
+          toast.success(`You won ${spinResult.amount} CG coins!`, {
+            description: "Added to your deposit balance",
+          });
+        } else {
+          toast.info("No luck this time!", { description: spinResult.label });
+        }
+        refresh();
+        if (user) {
+          (getProfile as any)({ data: user.id }).then((p: any) => syncUserBalances(p));
+        }
+      }, 800);
+    }, 7200);
   };
 
   const handleSpin = async () => {
@@ -137,48 +138,6 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
     }
   };
 
-  const handleBuyPack = async (pack: SpinPack) => {
-    if (!user || buyingPackId) return;
-
-    const deposit = status?.depositBalance ?? 0;
-    const winning = status?.winningBalance ?? 0;
-    const total = deposit + winning;
-
-    if (total < pack.cost) {
-      toast.error(`You need ${pack.cost} CG coins for this pack`);
-      return;
-    }
-
-    const shortfall = pack.cost - deposit;
-    if (shortfall > 0) {
-      const yes = await confirmDialog({
-        title: "Use withdrawable coins?",
-        description: `Your deposit balance (${deposit} CG) is not enough. ${shortfall} CG will be taken from your withdrawable winnings. Continue?`,
-        confirmText: "Yes, buy spins",
-        cancelText: "Cancel",
-      });
-      if (!yes) return;
-    }
-
-    setBuyingPackId(pack.id);
-    try {
-      const res = await (purchaseSpinPack as any)({ data: { userId: user.id, packId: pack.id } });
-      toast.success(`+${res.spinsAdded} spin${res.spinsAdded > 1 ? "s" : ""} added!`, {
-        description: res.usedWinning
-          ? `${res.cost} CG paid (included withdrawable coins)`
-          : `${res.cost} CG paid from deposit`,
-      });
-      syncUserBalances({
-        deposit_balance: res.depositBalance,
-        winning_balance: res.winningBalance,
-      });
-      await refresh();
-    } catch (e: any) {
-      toast.error(e?.message || "Purchase failed");
-    } finally {
-      setBuyingPackId(null);
-    }
-  };
 
   const spinCredits = status?.spinCredits ?? 0;
   const freeAvailable = status?.freeSpinAvailable ?? false;
@@ -261,7 +220,7 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
                   Spinning...
                 </span>
               ) : !status?.canSpin ? (
-                "Buy spins below"
+                "No spins — buy more below"
               ) : freeAvailable ? (
                 <span className="flex items-center gap-2">
                   <Gift className="w-5 h-5" />
@@ -275,56 +234,23 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
               )}
             </Button>
 
-            {/* Spin packs */}
-            <div className="space-y-2">
-              <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground text-center">
-                Buy more spins
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {spinPacks.map((pack) => {
-                  const deposit = status?.depositBalance ?? 0;
-                  const total = status?.totalBalance ?? 0;
-                  const needsWinning = pack.cost > deposit;
-                  const canAfford = total >= pack.cost;
-                  const perSpin = (pack.cost / pack.spins).toFixed(1);
-
-                  return (
-                    <button
-                      key={pack.id}
-                      type="button"
-                      disabled={!canAfford || buyingPackId !== null}
-                      onClick={() => handleBuyPack(pack)}
-                      className={`relative rounded-2xl border p-3 text-left transition-all press-effect active:scale-[0.98] ${
-                        canAfford
-                          ? "border-border bg-card hover:border-primary/40"
-                          : "border-border/50 bg-secondary/20 opacity-50 cursor-not-allowed"
-                      }`}
-                    >
-                      {buyingPackId === pack.id && (
-                        <span className="absolute inset-0 flex items-center justify-center bg-card/80 rounded-2xl">
-                          <span className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                        </span>
-                      )}
-                      <p className="font-display font-black text-sm text-foreground">
-                        {pack.label || `${pack.spins} Spin${pack.spins > 1 ? "s" : ""}`}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {perSpin} CG / spin
-                      </p>
-                      <p className="flex items-center gap-1 font-bold text-primary text-sm mt-2">
-                        <GodCoin className="w-3.5 h-3.5" />
-                        {pack.cost} CG
-                      </p>
-                      {needsWinning && canAfford && (
-                        <p className="text-[9px] text-amber-600 dark:text-amber-400 mt-1 font-semibold">
-                          Uses withdrawable
-                        </p>
-                      )}
-                    </button>
-                  );
-                })}
+            {/* Buy more spins CTA */}
+            <Link
+              to="/spin-wheel/buy"
+              onClick={() => onOpenChange(false)}
+              className="flex items-center justify-between w-full p-4 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-card to-primary/5 hover:border-primary/40 transition-all group press-effect"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                  <ShoppingCart className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-display font-black text-sm text-foreground">Buy more spins</p>
+                  <p className="text-[10px] text-muted-foreground font-semibold mt-0.5">Get bonus spins & exclusive offers</p>
+                </div>
               </div>
-            </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+            </Link>
           </div>
         )}
       </DialogContent>

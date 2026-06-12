@@ -99,6 +99,16 @@ export const submitUpiUtr = createServerFn({ method: "POST" }).handler(
       )
       .run(senderUpiId.trim(), txnRef);
 
+    // Notify Admins
+    try {
+      const user = await db.prepare("SELECT username FROM users WHERE id = ?").get(deposit.user_id) as any;
+      const username = user?.username || "A user";
+      const { notifyAllAdmins } = await import("./push-server");
+      await notifyAllAdmins(`💳 UPI Deposit Submitted: ${username} submitted ₹${deposit.amount} (${senderUpiId.trim()})`, "/admin/deposits");
+    } catch (err) {
+      console.error("Error notifying admins about UPI deposit submission:", err);
+    }
+
     return { success: true };
   },
 );

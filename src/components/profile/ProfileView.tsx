@@ -1,11 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import Cropper from "react-easy-crop";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Camera, Edit3, Gamepad2, Share2, Sparkles, Trophy, Users, Upload,
-  Target, Flame, ChevronRight, Check,
+  Target, Flame, ChevronRight, Check, Swords, Award, Shield, Crown,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { GodCoin } from "@/components/GodCoin";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,7 +17,8 @@ import {
   FRAME_CLASS,
   type ProfileShopConfig,
 } from "@/lib/profile-customization";
-import { getProfileShop, purchaseProfileCosmetic, updateProfile, uploadImage } from "@/api";
+import { updateProfile, uploadImage } from "@/api";
+import { ProfileEffectRenderer } from "@/components/profile/ProfileEffectRenderer";
 
 type ProfileViewProps = {
   profile: any;
@@ -25,9 +26,51 @@ type ProfileViewProps = {
   onUpdated?: (profile: any) => void;
 };
 
+/* ── Animated number counter ── */
+function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
+  const [display, setDisplay] = useState(0);
+  const ref = useRef<number>(0);
+
+  useEffect(() => {
+    const start = ref.current;
+    const diff = value - start;
+    if (diff === 0) { setDisplay(value); return; }
+    const startTime = performance.now();
+
+    const tick = (now: number) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+      const current = Math.round(start + diff * eased);
+      setDisplay(current);
+      if (progress < 1) requestAnimationFrame(tick);
+      else ref.current = value;
+    };
+    requestAnimationFrame(tick);
+  }, [value, duration]);
+
+  return <>{display}</>;
+}
+
+/* ── Stagger container variants ── */
+const staggerContainer = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08, delayChildren: 0.6 } },
+};
+const staggerItem = {
+  hidden: { opacity: 0, y: 20, scale: 0.9 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 300, damping: 24 } },
+};
+const achievementContainer = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.1, delayChildren: 0.9 } },
+};
+const achievementItem = {
+  hidden: { opacity: 0, scale: 0.5, rotate: -8 },
+  show: { opacity: 1, scale: 1, rotate: 0, transition: { type: "spring" as const, stiffness: 400, damping: 20 } },
+};
+
 export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
-  const [shop, setShop] = useState<ProfileShopConfig | null>(null);
-  const [shopOpen, setShopOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState({
     ign: profile?.ign || "",
@@ -46,19 +89,13 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
   const [uploading, setUploading] = useState(false);
 
   const initials = profile?.ign?.[0]?.toUpperCase() || profile?.username?.[0]?.toUpperCase() || "?";
-  const bannerStyle = profile?.banner_url
-    ? { backgroundImage: `url(${profile.banner_url})`, backgroundSize: "cover", backgroundPosition: "center" }
-    : { background: BANNER_GRADIENTS[profile?.banner_preset || "default"] || BANNER_GRADIENTS.default };
 
-  const animClass = ANIMATION_CLASS[profile?.profile_animation || "none"] || "";
+  // Banner display logic — preset runs in the background of custom URL banner
+  const bannerPreset = profile?.banner_preset || "default";
+  const bannerClass = `profile-banner-${bannerPreset}`;
+
+  const animClass = ANIMATION_CLASS[profile?.profile_frame || "none"] || "";
   const frameClass = FRAME_CLASS[profile?.profile_frame || "none"] || "";
-  const owned: string[] = profile?.owned_cosmetics || [];
-
-  const openShop = async () => {
-    const s = await getProfileShop();
-    setShop(s as ProfileShopConfig);
-    setShopOpen(true);
-  };
 
   const handleSaveInfo = async () => {
     await (updateProfile as any)({
@@ -111,10 +148,30 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
       const base64 = canvas.toDataURL("image/jpeg", 0.82);
       const folder = cropTarget === "avatar" ? "clutchground/avatars" : "clutchground/banners";
       const result = await (uploadImage as any)({ data: { base64, folder } });
-      if (cropTarget === "avatar") setForm((f) => ({ ...f, avatar_url: result.url }));
-      else setForm((f) => ({ ...f, banner_url: result.url }));
+
+      // Build update payload
+      const updatePayload: Record<string, any> = { userId: profile.id };
+      const profilePatch: Record<string, any> = {};
+
+      if (cropTarget === "avatar") {
+        updatePayload.avatar_url = result.url;
+        profilePatch.avatar_url = result.url;
+        setForm((f) => ({ ...f, avatar_url: result.url }));
+      } else {
+        // Custom banner upload — keep currently equipped preset animation in the background
+        updatePayload.banner_url = result.url;
+        profilePatch.banner_url = result.url;
+        setForm((f) => ({ ...f, banner_url: result.url }));
+      }
+
+      // Auto-save to server immediately
+      await (updateProfile as any)({ data: { ...updatePayload, ign: profile.ign, uid: profile.uid, email: profile.email, phone: profile.phone } });
+
+      // Update parent profile state so the banner/avatar shows right away
+      onUpdated?.({ ...profile, ...profilePatch });
+
       setCropSrc(null);
-      toast.success("Image uploaded");
+      toast.success("Image saved!");
     } catch {
       toast.error("Upload failed");
     } finally {
@@ -122,16 +179,7 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
     }
   };
 
-  const buyCosmetic = async (itemId: string) => {
-    try {
-      const res = await (purchaseProfileCosmetic as any)({ data: { userId: profile.id, itemId } });
-      toast.success(`Equipped ${res.item.label}`);
-      onUpdated?.(res.profile);
-      setShopOpen(false);
-    } catch (e: any) {
-      toast.error(e?.message || "Purchase failed");
-    }
-  };
+
 
   const toggleShowcase = (id: string) => {
     setShowcase((prev) => {
@@ -150,160 +198,321 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
     toast.success("Profile link copied!");
   };
 
+  const statItems = [
+    { label: "Matches", value: profile?.stats?.matchesPlayed ?? 0, icon: Gamepad2, color: "text-sky-400" },
+    { label: "Kills", value: profile?.stats?.totalKills ?? 0, icon: Swords, color: "text-amber-500" },
+    { label: "Wins", value: profile?.stats?.firstPlaces ?? 0, icon: Trophy, color: "text-emerald-400" },
+    { label: "Earned", value: profile?.stats?.totalEarnings ?? 0, icon: Award, color: "text-primary", coin: true },
+  ];
+
   return (
     <div className="pb-6">
-      {/* Banner + avatar hero */}
-      <div className="relative mx-4 mt-4 rounded-3xl overflow-hidden border border-border shadow-card">
-        <div className="h-36 sm:h-40 relative" style={bannerStyle}>
+      {/* ════════════ HERO BANNER — Full-bleed ════════════ */}
+      <motion.div
+        initial={{ opacity: 0, y: -20, scale: 1.02 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        className="relative overflow-hidden"
+      >
+        <ProfileEffectRenderer value={profile?.profile_effect} />
+        {/* Banner image/gradient */}
+        <div
+          className={`h-48 sm:h-56 w-full relative overflow-hidden ${bannerClass}`}
+        >
+          {/* Custom banner image layer: slightly semi-transparent so preset animation in background shows through */}
+          {profile?.banner_url && (
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-opacity duration-300"
+              style={{
+                backgroundImage: `url(${profile.banner_url})`,
+                opacity: 0.85, // allow animated background gradient to shine through
+              }}
+            />
+          )}
+
+          {/* Gradient overlay fading to background */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(to bottom, transparent 40%, var(--background) 100%)",
+            }}
+          />
+          {/* Subtle noise texture overlay */}
+          <div
+            className="absolute inset-0 opacity-[0.03]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+            }}
+          />
+
           {isOwner && (
-            <label className="absolute top-3 right-3 w-9 h-9 rounded-xl bg-black/40 backdrop-blur flex items-center justify-center cursor-pointer border border-white/20">
-              <Camera className="w-4 h-4 text-white" />
+            <label className="absolute top-4 right-4 w-10 h-10 rounded-2xl bg-black/50 backdrop-blur-md flex items-center justify-center cursor-pointer border border-white/15 hover:bg-black/70 transition-all hover:scale-105 active:scale-95 z-10">
+              <Camera className="w-4.5 h-4.5 text-white" />
               <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImagePick(e, "banner")} />
             </label>
           )}
         </div>
 
-        <div className="relative px-4 pb-5 -mt-12">
-          <div className={`relative w-24 h-24 mx-auto ${animClass}`}>
-            <div
-              className={`w-full h-full rounded-2xl overflow-hidden border-4 bg-card ${frameClass}`}
-              style={{ borderColor: "var(--card)" }}
-            >
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center font-display font-black text-3xl text-white bg-primary">
-                  {initials}
-                </div>
+        {/* ════════════ AVATAR — Overlapping banner ════════════ */}
+        <div className="relative px-4 -mt-16 z-10">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.3 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.8, type: "spring", stiffness: 200, damping: 15 }}
+            className="flex justify-center"
+          >
+            <div className={`relative w-28 h-28 rounded-full ${animClass}`}>
+              <div
+                className={`w-full h-full rounded-full overflow-hidden border-[5px] bg-card shadow-xl ${frameClass}`}
+                style={{ borderColor: "var(--background)" }}
+              >
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center font-display font-black text-4xl text-white" style={{ background: "var(--gradient-primary)" }}>
+                    {initials}
+                  </div>
+                )}
+              </div>
+              {isOwner && (
+                <label className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-primary flex items-center justify-center cursor-pointer border-[3px] shadow-lg hover:scale-110 transition-transform active:scale-95" style={{ borderColor: "var(--background)" }}>
+                  <Camera className="w-4 h-4 text-primary-foreground" />
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImagePick(e, "avatar")} />
+                </label>
               )}
             </div>
-            {isOwner && (
-              <label className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary flex items-center justify-center cursor-pointer border-2 border-card shadow-lg">
-                <Camera className="w-3.5 h-3.5 text-primary-foreground" />
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImagePick(e, "avatar")} />
-              </label>
-            )}
-          </div>
+          </motion.div>
 
-          <div className="text-center mt-3">
-            <h1 className="font-display font-black text-xl text-foreground">{profile?.ign || profile?.username}</h1>
-            <p className="text-xs text-muted-foreground font-mono mt-0.5">@{profile?.username}</p>
+          {/* ════════════ USERNAME + UID ════════════ */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="text-center mt-4"
+          >
+            <h1 className="font-display font-black text-2xl text-foreground profile-name-glow tracking-wide">
+              {profile?.ign || profile?.username}
+            </h1>
+            <p className="text-xs text-muted-foreground font-mono mt-1 tracking-wider">@{profile?.username}</p>
             {profile?.uid && (
-              <p className="text-[10px] font-bold text-primary mt-1 flex items-center justify-center gap-1">
-                <Gamepad2 className="w-3 h-3" /> UID {profile.uid}
-              </p>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.55, duration: 0.4 }}
+                className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20"
+              >
+                <Gamepad2 className="w-3 h-3 text-primary" />
+                <span className="text-[10px] font-black text-primary tracking-wider">UID {profile.uid}</span>
+              </motion.div>
             )}
-          </div>
+          </motion.div>
 
+          {/* ════════════ ACTION BUTTONS ════════════ */}
           {isOwner && (
-            <div className="flex justify-center gap-2 mt-4">
-              <Button size="sm" variant="outline" className="rounded-xl h-9" onClick={() => setEditOpen(true)}>
-                <Edit3 className="w-3.5 h-3.5 mr-1.5" /> Edit
-              </Button>
-              <Button size="sm" variant="outline" className="rounded-xl h-9" onClick={openShop}>
-                <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Style
-              </Button>
-              <Button size="sm" variant="outline" className="rounded-xl h-9" onClick={shareProfile}>
-                <Share2 className="w-3.5 h-3.5 mr-1.5" /> Share
-              </Button>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.55, duration: 0.5 }}
+              className="flex justify-center gap-2.5 mt-5"
+            >
+              {[
+                { label: "Edit", icon: Edit3, onClick: () => setEditOpen(true) },
+                { label: "Share", icon: Share2, onClick: shareProfile },
+              ].map((btn) => (
+                <Button
+                  key={btn.label}
+                  size="sm"
+                  variant="outline"
+                  className="rounded-full h-9 px-4 border-border/50 bg-card/50 backdrop-blur-sm hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all duration-300 active:scale-95"
+                  onClick={btn.onClick}
+                >
+                  <btn.icon className="w-3.5 h-3.5 mr-1.5" /> {btn.label}
+                </Button>
+              ))}
+            </motion.div>
+          )}
+
+          {/* ════════════ ANIMATION SHOP CTA ════════════ */}
+          {isOwner && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.65, duration: 0.4 }}
+              className="mt-5 max-w-sm mx-auto"
+            >
+              <Link
+                to="/profile-shop"
+                className="flex items-center gap-3 w-full p-3 py-2.5 px-3.5 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-card to-primary/5 hover:border-primary/40 transition-all press-effect group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="font-display font-black text-xs text-foreground uppercase tracking-wider">Animation Shop</p>
+                  <p className="text-[10px] text-muted-foreground font-semibold line-clamp-1">Equip epic profile animations</p>
+                </div>
+                <span className="text-[10px] font-bold text-primary uppercase tracking-widest group-hover:translate-x-0.5 transition-transform shrink-0">Shop ›</span>
+              </Link>
+            </motion.div>
           )}
         </div>
-      </div>
+      </motion.div>
 
-      {/* Stats strip */}
-      <div className="grid grid-cols-4 gap-2 px-4 mt-4">
-        {[
-          { label: "Matches", value: profile?.stats?.matchesPlayed ?? 0 },
-          { label: "Kills", value: profile?.stats?.totalKills ?? 0 },
-          { label: "Wins", value: profile?.stats?.firstPlaces ?? 0 },
-          { label: "Earned", value: profile?.stats?.totalEarnings ?? 0, coin: true },
-        ].map((s) => (
-          <div key={s.label} className="rounded-2xl border border-border bg-card p-2.5 text-center">
-            <p className="text-[9px] uppercase font-bold text-muted-foreground">{s.label}</p>
-            <p className="font-display font-black text-sm mt-0.5 flex items-center justify-center gap-0.5">
+      {/* ════════════ STATS STRIP — Glassmorphism ════════════ */}
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-4 gap-2 px-4 mt-6"
+      >
+        {statItems.map((s, idx) => (
+          <motion.div
+            key={s.label}
+            variants={staggerItem}
+            className="profile-stat-glass rounded-2xl p-3 text-center group cursor-default"
+          >
+            <s.icon className={`w-4 h-4 mx-auto mb-1.5 ${s.color} opacity-70 group-hover:opacity-100 transition-opacity`} />
+            <p className="text-[8px] uppercase font-black tracking-[0.15em] text-muted-foreground">{s.label}</p>
+            <p className="font-display font-black text-base mt-0.5 flex items-center justify-center gap-0.5 text-foreground">
               {s.coin && <GodCoin className="w-3 h-3" />}
-              {s.value}
+              <AnimatedNumber value={s.value} duration={1000 + idx * 200} />
             </p>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
 
-      {/* Team card */}
-      {profile?.team && (isOwner ? (
-        <Link
-          to="/my-team"
-          className="mx-4 mt-4 flex items-center gap-3 p-4 rounded-2xl border border-border bg-card press-effect"
+      {/* ════════════ TEAM CARD ════════════ */}
+      {profile?.team && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.5, type: "spring", stiffness: 200, damping: 20 }}
+          className="px-4 mt-5"
         >
-          <div className="w-12 h-12 rounded-xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center font-display font-black text-primary shrink-0">
-            {profile.team.logo ? (
-              <img src={profile.team.logo} alt="" className="w-full h-full object-cover" />
-            ) : (
-              profile.team.name?.[0]
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase font-bold text-muted-foreground">Squad</p>
-            <p className="font-display font-black text-foreground truncate">{profile.team.name}</p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-        </Link>
-      ) : (
-        <div className="mx-4 mt-4 flex items-center gap-3 p-4 rounded-2xl border border-border bg-card">
-          <div className="w-12 h-12 rounded-xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center font-display font-black text-primary shrink-0">
-            {profile.team.logo ? (
-              <img src={profile.team.logo} alt="" className="w-full h-full object-cover" />
-            ) : (
-              profile.team.name?.[0]
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase font-bold text-muted-foreground">Squad</p>
-            <p className="font-display font-black text-foreground truncate">{profile.team.name}</p>
-          </div>
-        </div>
-      ))}
+          {isOwner ? (
+            <Link
+              to="/my-team"
+              className="flex items-center gap-4 p-4 rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm press-effect group hover:border-primary/20 transition-all duration-300 relative overflow-hidden"
+            >
+              {/* Subtle gradient accent */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: "linear-gradient(135deg, rgba(0,200,255,0.03), rgba(124,58,237,0.03))" }} />
 
-      {/* Achievements */}
-      <div className="px-4 mt-5">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Achievements</p>
-          {isOwner && <span className="text-[10px] text-muted-foreground">Tap to showcase (max 4)</span>}
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {(isOwner ? (profile?.achievements || []) : (profile?.showcase || [])).map((a: any) => {
+              <div className="w-14 h-14 rounded-xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center font-display font-black text-xl text-primary shrink-0 relative">
+                {profile.team.logo ? (
+                  <img src={profile.team.logo} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  profile.team.name?.[0]
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <Shield className="w-3 h-3 text-primary" />
+                  <p className="text-[9px] uppercase font-black tracking-[0.2em] text-muted-foreground">Squad</p>
+                </div>
+                <p className="font-display font-black text-lg text-foreground truncate mt-0.5">{profile.team.name}</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+            </Link>
+          ) : (
+            <div className="flex items-center gap-4 p-4 rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm relative overflow-hidden">
+              <div className="w-14 h-14 rounded-xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center font-display font-black text-xl text-primary shrink-0">
+                {profile.team.logo ? (
+                  <img src={profile.team.logo} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  profile.team.name?.[0]
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <Shield className="w-3 h-3 text-primary" />
+                  <p className="text-[9px] uppercase font-black tracking-[0.2em] text-muted-foreground">Squad</p>
+                </div>
+                <p className="font-display font-black text-lg text-foreground truncate mt-0.5">{profile.team.name}</p>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* ════════════ ACHIEVEMENTS — Staggered pop-in ════════════ */}
+      <div className="px-4 mt-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.85 }}
+          className="flex items-center justify-between mb-3"
+        >
+          <div className="flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-primary" />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Achievements</p>
+          </div>
+          {isOwner && <span className="text-[10px] text-muted-foreground font-semibold">Tap to showcase (max 4)</span>}
+        </motion.div>
+        <motion.div
+          variants={achievementContainer}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-2 gap-2.5"
+        >
+          {(isOwner ? (profile?.achievements || []) : (profile?.showcase || [])).map((a: any, idx: number) => {
             const selected = showcase.includes(a.id);
             return (
-              <button
+              <motion.button
                 key={a.id}
+                variants={achievementItem}
                 type="button"
                 disabled={!isOwner}
                 onClick={() => isOwner && toggleShowcase(a.id)}
-                className={`text-left p-3 rounded-2xl border transition-all ${
-                  selected ? "border-primary/50 bg-primary/10" : "border-border bg-card"
-                } ${!isOwner ? "cursor-default" : ""}`}
+                className={`text-left p-3.5 rounded-2xl border transition-all duration-300 relative overflow-hidden group ${
+                  selected
+                    ? "border-primary/40 bg-primary/8 shadow-[0_0_16px_rgba(0,200,255,0.08)]"
+                    : "border-border/50 bg-card/60 backdrop-blur-sm hover:border-primary/20"
+                } ${!isOwner ? "cursor-default" : "active:scale-[0.97]"}`}
               >
-                <span className="text-xl">{a.emoji}</span>
-                <p className="font-bold text-xs text-foreground mt-1">{a.label}</p>
-                <p className="text-[10px] text-muted-foreground line-clamp-1">{a.description}</p>
-                {isOwner && selected && <Check className="w-3.5 h-3.5 text-primary mt-1" />}
-              </button>
+                {/* Subtle selected glow */}
+                {selected && (
+                  <div className="absolute inset-0 opacity-20" style={{ background: "radial-gradient(circle at 30% 30%, rgba(0,200,255,0.15), transparent 70%)" }} />
+                )}
+                <span className="text-2xl block profile-emoji-pop">{a.emoji}</span>
+                <p className="font-bold text-xs text-foreground mt-1.5 leading-tight">{a.label}</p>
+                <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">{a.description}</p>
+                {isOwner && selected && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
+                  >
+                    <Check className="w-3 h-3 text-primary-foreground" />
+                  </motion.div>
+                )}
+              </motion.button>
             );
           })}
           {!(isOwner ? profile?.achievements : profile?.showcase)?.length && (
-            <p className="col-span-2 text-sm text-muted-foreground text-center py-6">
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1 }}
+              className="col-span-2 text-sm text-muted-foreground text-center py-8 font-semibold"
+            >
               {isOwner ? "No achievements yet — play tournaments!" : "No showcased achievements"}
-            </p>
+            </motion.p>
           )}
-        </div>
+        </motion.div>
         {isOwner && (
-          <Button className="w-full mt-3 rounded-xl" variant="outline" onClick={handleSaveInfo}>
-            Save showcased achievements
-          </Button>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.1 }}
+          >
+            <Button className="w-full mt-4 rounded-xl h-11 font-bold" variant="outline" onClick={handleSaveInfo}>
+              <Check className="w-4 h-4 mr-2" /> Save showcased achievements
+            </Button>
+          </motion.div>
         )}
       </div>
 
-      {/* Edit dialog */}
+      {/* ════════════ EDIT DIALOG ════════════ */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="rounded-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -331,59 +540,7 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Shop dialog */}
-      <Dialog open={shopOpen} onOpenChange={setShopOpen}>
-        <DialogContent className="rounded-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-display font-black flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" /> Profile style shop
-            </DialogTitle>
-          </DialogHeader>
-          {shop && (
-            <div className="space-y-4 pt-2">
-              {(["banners", "animations", "frames"] as const).map((cat) => (
-                <div key={cat}>
-                  <p className="text-[10px] font-black uppercase text-muted-foreground mb-2">{cat}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {shop[cat].map((item) => {
-                      const has = item.cost === 0 || owned.includes(item.id);
-                      const active =
-                        (cat === "banners" && profile.banner_preset === item.value) ||
-                        (cat === "animations" && profile.profile_animation === item.value) ||
-                        (cat === "frames" && profile.profile_frame === item.value);
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => buyCosmetic(item.id)}
-                          className={`p-3 rounded-xl border text-left ${active ? "border-primary bg-primary/10" : "border-border bg-card"}`}
-                        >
-                          <p className="font-bold text-sm">{item.label}</p>
-                          <p className="text-xs text-primary mt-1 flex items-center gap-1">
-                            {item.cost > 0 ? (
-                              <>
-                                <GodCoin className="w-3 h-3" /> {item.cost} CG
-                              </>
-                            ) : (
-                              "Free"
-                            )}
-                          </p>
-                          {!has && item.cost > 0 && (
-                            <p className="text-[9px] text-muted-foreground mt-0.5">Tap to buy & equip</p>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Crop */}
+      {/* ════════════ CROP DIALOG ════════════ */}
       <Dialog open={!!cropSrc} onOpenChange={() => setCropSrc(null)}>
         <DialogContent className="rounded-3xl">
           <DialogHeader>

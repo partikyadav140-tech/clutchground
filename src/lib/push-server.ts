@@ -126,3 +126,21 @@ export async function sendNotificationHelper(
 
   return notifId;
 }
+
+/**
+ * Sends a real-time notification (database + push) to all admin users.
+ */
+export async function notifyAllAdmins(message: string, redirectUrl?: string | null) {
+  const { db } = await import("./db");
+  try {
+    const admins = (await db.prepare("SELECT id FROM users WHERE role = 'admin'").all()) as any[];
+    if (admins && admins.length > 0) {
+      const promises = admins.map((admin) =>
+        sendNotificationHelper(admin.id, message, redirectUrl)
+      );
+      await Promise.all(promises);
+    }
+  } catch (err) {
+    console.error("Failed to notify admins:", err);
+  }
+}

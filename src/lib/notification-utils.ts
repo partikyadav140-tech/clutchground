@@ -40,10 +40,14 @@ export async function showBrowserNotification(
   const tag = opts.tag ?? `cg-${Date.now()}`;
   const important = opts.important ?? false;
 
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const iconUrl = origin ? `${origin}/logo-transparent.png` : "/logo-transparent.png";
+  const badgeUrl = origin ? `${origin}/logo-transparent.png` : "/logo-transparent.png";
+
   const notifPayload: any = {
     body: opts.body,
-    icon: "/pwa-192x192.png",
-    badge: "/pwa-192x192.png",
+    icon: iconUrl,
+    badge: badgeUrl,
     tag,
     data: { url }, // SW reads this on click
     silent: false,

@@ -1,9 +1,12 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
-import { ShieldAlert, BarChart3, Swords } from "lucide-react";
+import { ShieldAlert, BarChart3, Swords, Sparkles } from "lucide-react";
 import { useAuth } from "../../lib/auth-client";
 import { useEffect, useState } from "react";
 import { getProfile } from "../../api";
 import { ProfileView } from "@/components/profile/ProfileView";
+
+import { SkeletonProfile } from "@/components/SkeletonPage";
+import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/_app/profile")({
   head: () => ({ meta: [{ title: "Profile — ClutchGround" }] }),
@@ -33,8 +36,8 @@ function ProfilePage() {
 
   if (loading || authLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background page-content">
+        <SkeletonProfile />
       </div>
     );
   }
@@ -44,32 +47,42 @@ function ProfilePage() {
     <div className="min-h-screen bg-background page-content">
       <ProfileView profile={profile} isOwner onUpdated={setProfile} />
 
-      <div className="px-4 mt-2 grid grid-cols-2 gap-2">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.2, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="px-4 mt-3 grid grid-cols-2 gap-2"
+      >
         <Link
           to="/stats"
-          className="flex items-center gap-2 p-3 rounded-2xl border border-border bg-card press-effect"
+          className="flex items-center gap-2 p-3.5 rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm press-effect hover:border-primary/20 transition-all duration-300"
         >
           <BarChart3 className="w-5 h-5 text-primary" />
           <span className="text-sm font-bold">Player stats</span>
         </Link>
         <Link
           to="/matches"
-          className="flex items-center gap-2 p-3 rounded-2xl border border-border bg-card press-effect"
+          className="flex items-center gap-2 p-3.5 rounded-2xl border border-border/50 bg-card/60 backdrop-blur-sm press-effect hover:border-primary/20 transition-all duration-300"
         >
           <Swords className="w-5 h-5 text-primary" />
           <span className="text-sm font-bold">Matches</span>
         </Link>
-      </div>
+      </motion.div>
 
       {user.role === "admin" && (
-        <div className="px-4 mt-3">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.35, duration: 0.4 }}
+          className="px-4 mt-3"
+        >
           <Link
             to="/admin"
-            className="flex items-center justify-center gap-2 h-11 rounded-2xl border border-destructive/30 bg-destructive/10 text-destructive font-bold text-sm"
+            className="flex items-center justify-center gap-2 h-11 rounded-2xl border border-destructive/30 bg-destructive/10 text-destructive font-bold text-sm hover:bg-destructive/15 transition-all"
           >
             <ShieldAlert className="w-4 h-4" /> Admin panel
           </Link>
-        </div>
+        </motion.div>
       )}
     </div>
   );

@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { processWithdrawal, getTransactionHistory, saveUpiId } from "../../api";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTutorialStore } from "../../lib/tutorial-store";
+import { SkeletonWallet } from "@/components/SkeletonPage";
 
 export const Route = createFileRoute("/_app/wallet")({
   head: () => ({ meta: [{ title: "Wallet — CLUTCHGROUND" }] }),
@@ -107,9 +108,15 @@ export const Route = createFileRoute("/_app/wallet")({
   };
 
   if (!mounted || authLoading || !user) {
-    return <div className="h-screen flex items-center justify-center bg-background">
-      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-    </div>;
+    return (
+      <div className="min-h-screen bg-background pb-[80px]">
+        <div className="px-4 pt-5 pb-2">
+          <div className="w-12 h-2 rounded-full bg-secondary animate-pulse mb-1" />
+          <div className="w-28 h-6 rounded-full bg-secondary animate-pulse" />
+        </div>
+        <SkeletonWallet />
+      </div>
+    );
   }
 
   return (

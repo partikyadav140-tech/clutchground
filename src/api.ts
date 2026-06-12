@@ -267,9 +267,21 @@ export const addTournament = createServerFn({ method: "POST" }).handler(async ({
     prize_pool,
     open_slots,
   } = data as unknown as any;
+
+  // Generate unique tournament code (CG-XXXXXX)
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let tournament_code = "";
+  for (let attempt = 0; attempt < 10; attempt++) {
+    let code = "CG-";
+    for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    const existing = await db.prepare("SELECT id FROM tournaments WHERE tournament_code = ?").get(code);
+    if (!existing) { tournament_code = code; break; }
+  }
+  if (!tournament_code) tournament_code = "CG-" + Date.now().toString(36).toUpperCase().slice(-6);
+
   const stmt = db.prepare(`
-      INSERT INTO tournaments (title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id, room_pass, hosted_by, per_kill_coin, first_place_coin, tournament_type, entry_fee, prize_pool, open_slots)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO tournaments (title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id, room_pass, hosted_by, per_kill_coin, first_place_coin, tournament_type, entry_fee, prize_pool, open_slots, tournament_code)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
   await stmt.run(
     title,
@@ -292,6 +304,7 @@ export const addTournament = createServerFn({ method: "POST" }).handler(async ({
     entry_fee || 0,
     prize_pool || 0,
     open_slots || 0,
+    tournament_code,
   );
 
   if (status === "upcoming") {
@@ -794,7 +807,7 @@ export const checkUserRegistration = createServerFn({ method: "POST" }).handler(
 
 const PROFILE_SELECT = `
   id, username, role, ign, uid, email, phone, avatar_url, banner_url, banner_preset,
-  profile_animation, profile_frame, owned_cosmetics, showcase_achievements,
+  profile_animation, profile_frame, profile_effect, owned_cosmetics, showcase_achievements,
   created_at, deposit_balance, winning_balance, upi_id
 `;
 
@@ -893,11 +906,29 @@ export const updateProfile = createServerFn({ method: "POST" }).handler(async ({
     banner_preset,
     profile_animation,
     profile_frame,
+    profile_effect,
     showcase_achievements,
   } = data as any;
 
-  const fields: string[] = ["ign = ?", "uid = ?", "email = ?", "phone = ?"];
-  const values: any[] = [ign, uid, email, phone];
+  const fields: string[] = [];
+  const values: any[] = [];
+
+  if (ign !== undefined) {
+    fields.push("ign = ?");
+    values.push(ign);
+  }
+  if (uid !== undefined) {
+    fields.push("uid = ?");
+    values.push(uid);
+  }
+  if (email !== undefined) {
+    fields.push("email = ?");
+    values.push(email);
+  }
+  if (phone !== undefined) {
+    fields.push("phone = ?");
+    values.push(phone);
+  }
 
   if (avatar_url !== undefined) {
     fields.push("avatar_url = ?");
@@ -919,13 +950,19 @@ export const updateProfile = createServerFn({ method: "POST" }).handler(async ({
     fields.push("profile_frame = ?");
     values.push(profile_frame);
   }
+  if (profile_effect !== undefined) {
+    fields.push("profile_effect = ?");
+    values.push(profile_effect);
+  }
   if (showcase_achievements !== undefined) {
     fields.push("showcase_achievements = ?");
     values.push(JSON.stringify(showcase_achievements));
   }
 
-  values.push(userId);
-  await db.prepare(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`).run(...values);
+  if (fields.length > 0) {
+    values.push(userId);
+    await db.prepare(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`).run(...values);
+  }
   return { success: true };
 });
 
@@ -939,9 +976,14 @@ export const getProfile = createServerFn({ method: "POST" }).handler(async ({ da
 export const getPublicProfile = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const userId = data as unknown as number;
-  const profile = (await db.prepare(`SELECT ${PROFILE_SELECT} FROM users WHERE id = ? AND banned = false`).get(userId)) as any;
-  if (!profile || profile.role === "admin") return null;
-  return enrichProfile(db, profile, false);
+  try {
+    const profile = (await db.prepare(`SELECT ${PROFILE_SELECT} FROM users WHERE id = ? AND COALESCE(banned, false) = false`).get(userId)) as any;
+    if (!profile || profile.role === "admin") return null;
+    return enrichProfile(db, profile, false);
+  } catch (e) {
+    console.error("getPublicProfile error:", e);
+    return null;
+  }
 });
 
 export const getPlayerStats = createServerFn({ method: "POST" }).handler(async ({ data }) => {
@@ -2457,14 +2499,21 @@ export const processWithdrawal = createServerFn({ method: "POST" }).handler(asyn
   });
 
   try {
-    const { triggerPushNotification } = await import("./lib/push-server");
+    const { triggerPushNotification, notifyAllAdmins } = await import("./lib/push-server");
     triggerPushNotification(
       userId,
       "💸 Withdrawal Requested",
       `💸 Withdrawal requested: ${amount} CG Coins to UPI ${upiId}. Processing time 2-3 working days.`,
       "/wallet"
     ).catch(e => console.error("Withdrawal push error:", e));
-  } catch (e) {}
+
+    // Notify Admins
+    const user = await db.prepare("SELECT username FROM users WHERE id = ?").get(userId) as any;
+    const username = user?.username || "A user";
+    await notifyAllAdmins(`💸 Withdrawal Requested: ${username} requested ₹${amount} (UPI: ${upiId})`, "/admin/payouts");
+  } catch (e) {
+    console.error("Error notifying admins about withdrawal:", e);
+  }
 
   return { success: true };
 });
@@ -2608,7 +2657,12 @@ export const getAdminStats = createServerFn({ method: "GET" }).handler(async () 
   const totalPayouts = Math.max(0, rawPayouts - payoutsOffset);
   const totalWithdrawable = Math.max(0, rawWithdrawable - withdrawableOffset);
 
-  return { totalUsers, bannedUsers, totalTournaments, liveTournaments, openTournaments, pendingDeposits, pendingPayouts, openTickets, totalRevenue, totalPayouts, totalWithdrawable };
+  // Latest 3 tournaments for dashboard preview
+  const latestTournaments = await db.prepare(
+    "SELECT id, title, status, mode, game, filled, slots, startsat, tournament_code, tournament_type FROM tournaments ORDER BY id DESC LIMIT 3"
+  ).all() as any[];
+
+  return { totalUsers, bannedUsers, totalTournaments, liveTournaments, openTournaments, pendingDeposits, pendingPayouts, openTickets, totalRevenue, totalPayouts, totalWithdrawable, latestTournaments };
 });
 
 export const deleteAllTournaments = createServerFn({ method: "POST" }).handler(async ({ data }) => {
@@ -2756,6 +2810,17 @@ export const createTicket = createServerFn({ method: "POST" }).handler(async ({ 
   const res = await db.prepare("INSERT INTO tickets (user_id, subject) VALUES (?, ?)").run(userId, subject);
   const ticketId = res.lastInsertRowid;
   await db.prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)").run(ticketId, userId, processedMessage, false);
+
+  // Notify Admins
+  try {
+    const user = await db.prepare("SELECT username FROM users WHERE id = ?").get(userId) as any;
+    const username = user?.username || "A user";
+    const { notifyAllAdmins } = await import("./lib/push-server");
+    await notifyAllAdmins(`🎫 New Support Ticket created by ${username}: ${subject}`, `/admin/tickets/${ticketId}`);
+  } catch (err) {
+    console.error("Error notifying admins about new ticket:", err);
+  }
+
   return { success: true, ticketId };
 });
 
@@ -3573,18 +3638,18 @@ export const getProfileShop = createServerFn({ method: "POST" }).handler(async (
 export const purchaseProfileCosmetic = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const { parseJsonArray } = await import("./lib/profile-customization");
-  const { userId, itemId } = data as { userId: number; itemId: string };
+  const { userId, itemId } = data as unknown as { userId: number; itemId: string };
   if (!userId || !itemId) throw new Error("Invalid request");
 
   const shop = await loadProfileShopConfig(db);
-  const allItems = [...shop.animations, ...shop.frames, ...shop.banners];
+  const allItems = [...(shop.frames || []), ...(shop.banners || []), ...(shop.effects || [])];
   const item = allItems.find((i) => i.id === itemId);
   if (!item) throw new Error("Item not found");
 
   const result = await db.transaction(async (tx) => {
     const user = (await tx
       .prepare(
-        `SELECT deposit_balance, winning_balance, owned_cosmetics, profile_animation, profile_frame, banner_preset FROM users WHERE id = ?`,
+        `SELECT deposit_balance, winning_balance, owned_cosmetics, profile_animation, profile_frame, profile_effect, banner_preset FROM users WHERE id = ?`,
       )
       .get(userId)) as any;
     if (!user) throw new Error("User not found");
@@ -3598,10 +3663,13 @@ export const purchaseProfileCosmetic = createServerFn({ method: "POST" }).handle
       await tx.prepare("UPDATE users SET owned_cosmetics = ? WHERE id = ?").run(JSON.stringify(owned), userId);
     }
 
-    const patch: Record<string, string> = {};
+    const patch: Record<string, string | null> = {};
     if (item.type === "animation") patch.profile_animation = item.value;
     if (item.type === "frame") patch.profile_frame = item.value;
-    if (item.type === "banner") patch.banner_preset = item.value;
+    if (item.type === "effect") patch.profile_effect = item.value;
+    if (item.type === "banner") {
+      patch.banner_preset = item.value;
+    }
 
     const sets = Object.entries(patch).map(([k]) => `${k} = ?`);
     if (sets.length) {
@@ -3630,7 +3698,7 @@ export const getProfileShopAdminConfig = createServerFn({ method: "POST" }).hand
 export const saveProfileShopAdminConfig = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const { PROFILE_SHOP_SETTINGS_KEY } = await import("./lib/profile-customization");
-  const { adminId, config } = data as { adminId: number; config: any };
+  const { adminId, config } = data as unknown as { adminId: number; config: any };
   const admin = (await db.prepare("SELECT role FROM users WHERE id = ?").get(adminId)) as any;
   if (!admin || admin.role !== "admin") throw new Error("Unauthorized");
   await db
@@ -3782,8 +3850,10 @@ export const announceTournamentResult = createServerFn({ method: "POST" }).handl
     // Send push notifications (after transaction completes to avoid DB locks)
     if (pushTargets.length > 0) {
       try {
-        const { sendPushNotificationBatch } = await import("./lib/push-server");
-        await sendPushNotificationBatch(pushTargets);
+        const { triggerPushNotification } = await import("./lib/push-server");
+        for (const t of pushTargets) {
+          triggerPushNotification(t.userId, t.title, t.body, t.url).catch(() => {});
+        }
       } catch (e) {
         console.error("Failed to send push notifications:", e);
         // Don't fail the entire operation if push fails

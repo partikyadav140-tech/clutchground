@@ -116,14 +116,21 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
     });
 
     try {
-      const { triggerPushNotification } = await import("./push-server");
+      const { triggerPushNotification, notifyAllAdmins } = await import("./push-server");
       triggerPushNotification(
         userId,
         "💰 Wallet Deposit",
         `💰 ₹${order.amount} deposited — ${order.amount} CG Coins added to your wallet!`,
         "/wallet"
       ).catch(e => console.error("Razorpay deposit push error:", e));
-    } catch(e) {}
+
+      // Notify Admins
+      const user = await db.prepare("SELECT username FROM users WHERE id = ?").get(userId) as any;
+      const username = user?.username || "A user";
+      await notifyAllAdmins(`💰 Successful Razorpay Deposit: ${username} added ₹${order.amount}`, "/admin/deposits");
+    } catch(e) {
+      console.error("Error notifying admins about Razorpay deposit:", e);
+    }
 
     return { success: true, amount: order.amount };
   },

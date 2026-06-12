@@ -107,7 +107,7 @@ export function Footer() {
             © {new Date().getFullYear()} ClutchGround. All rights reserved.
           </p>
           <p className="text-xs text-muted-foreground/80">
-            Designed and developed by{" "}
+            Designed and Developed by{" "}
             <span className="font-semibold text-foreground">Pratikk Yadav</span>
             {" · "}
             <a href="tel:+918307224756" className="hover:text-primary transition-colors">

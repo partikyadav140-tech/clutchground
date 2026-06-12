@@ -14,6 +14,7 @@ import { TeamInvitesPanel } from "@/components/team/TeamInvitesPanel";
 import { TeamRoster } from "@/components/team/TeamRoster";
 import { confirmDialog } from "@/components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
+import { SkeletonTeam } from "@/components/SkeletonPage";
 import {
   cancelTeamRequest,
   deleteTeam,
@@ -247,8 +248,9 @@ function MyTeamPage() {
 
   if (loading || authLoading) {
     return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background pb-4 page-content">
+        <PageHeader eyebrow="Squad HQ" eyebrowIcon={Users} title="My squad" />
+        <SkeletonTeam />
       </div>
     );
   }

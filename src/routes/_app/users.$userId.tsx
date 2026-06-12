@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { getPublicProfile } from "@/api";
 import { ProfileView } from "@/components/profile/ProfileView";
 
+import { SkeletonProfile } from "@/components/SkeletonPage";
+
 export const Route = createFileRoute("/_app/users/$userId")({
   head: () => ({ meta: [{ title: "Player Profile — ClutchGround" }] }),
   component: PublicProfilePage,
@@ -22,8 +24,13 @@ function PublicProfilePage() {
 
   if (loading) {
     return (
-      <div className="h-[60vh] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background page-content">
+        <div className="px-4 pt-4 mb-2">
+          <Link to=".." className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary">
+            <ArrowLeft className="w-4 h-4" /> Back
+          </Link>
+        </div>
+        <SkeletonProfile />
       </div>
     );
   }

@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { GodCoin } from "@/components/GodCoin";
 import { StandingsCard } from "@/components/StandingsCard";
+import { CountdownTimer } from "@/components/CountdownTimer";
+import { SkeletonMatchCard } from "@/components/SkeletonPage";
 
 const POSTERS = [
   "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319133/clutchground/posters/axuescfjvf4ldjhzjah2.jpg",
@@ -62,8 +64,16 @@ function MatchesPage() {
   };
 
   if (!user || loading) return (
-    <div className="h-screen flex items-center justify-center bg-background">
-      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen bg-background pb-[80px]">
+      <div className="px-4 pt-5 pb-4">
+        <div className="w-12 h-2 rounded-full bg-secondary animate-pulse mb-1" />
+        <div className="w-32 h-6 rounded-full bg-secondary animate-pulse" />
+      </div>
+      <div className="px-4 space-y-3">
+        <SkeletonMatchCard />
+        <SkeletonMatchCard />
+        <SkeletonMatchCard />
+      </div>
     </div>
   );
 
@@ -236,29 +246,22 @@ function MatchCard({ m, i }: { m: any; i: number }) {
                 : (m.mode === "Solo" ? `${m.per_kill_coin}/kill` : m.prize);
               
               return [
-                { label: "Entry", value: isFree ? "FREE" : entryValue, coin: !isFree, clr: isFree ? "#10b981" : mc.color },
-                { label: "Prize", value: prizeValue, coin: true, clr: "#f59e0b" },
-                {
-                  label: "Starts",
-                  value: (() => {
-                    if (!m.date) return "TBD";
-                    const parsed = new Date(m.date);
-                    return isNaN(parsed.getTime())
-                      ? m.date
-                      : parsed.toLocaleString([], { dateStyle: "short", timeStyle: "short" });
-                  })(),
-                  coin: false,
-                  clr: mc.color,
-                },
-                { label: "Slots", value: `${m.filled}/${m.slots}`, coin: false, clr: mc.color },
+                { label: "Entry", value: isFree ? "FREE" : entryValue, coin: !isFree, clr: isFree ? "#10b981" : mc.color, isTimer: false },
+                { label: "Prize", value: prizeValue, coin: true, clr: "#f59e0b", isTimer: false },
+                { label: "Starts", value: m.date || "TBD", coin: false, clr: mc.color, isTimer: true },
+                { label: "Slots", value: `${m.filled}/${m.slots}`, coin: false, clr: mc.color, isTimer: false },
               ];
-            })().map(({ label, value, coin, clr }) => (
+            })().map(({ label, value, coin, clr, isTimer }) => (
               <div key={label} className="flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5">
                 <span className="text-[7px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
-                <span className="font-display font-black text-xs text-foreground flex items-center gap-0.5">
-                  {coin && <GodCoin className="w-2.5 h-2.5 text-amber-400" />}
-                  <span style={{ color: clr }}>{value}</span>
-                </span>
+                {isTimer ? (
+                  <CountdownTimer targetDate={String(value)} status={m.match_status} compact />
+                ) : (
+                  <span className="font-display font-black text-xs text-foreground flex items-center gap-0.5">
+                    {coin && <GodCoin className="w-2.5 h-2.5 text-amber-400" />}
+                    <span style={{ color: clr }}>{value}</span>
+                  </span>
+                )}
               </div>
             ))}
           </div>

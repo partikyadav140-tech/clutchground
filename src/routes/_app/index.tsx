@@ -188,22 +188,24 @@ function HomePage() {
               </div>
 
               {/* Wallet shortcut */}
-              <Link
-                id="tutorial-wallet-pill"
-                to="/wallet"
-                className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border border-primary/25 bg-primary/10 hover:bg-primary/15 hover:border-primary/40 press-effect active:scale-95 transition-all"
-              >
-                <div className="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center">
-                  <Wallet className="w-4 h-4 text-primary" />
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary leading-none">Wallet</span>
-                  <span className="font-display font-black text-sm text-foreground leading-tight tabular-nums mt-0.5 flex items-center gap-1">
-                    <GodCoin className="w-3.5 h-3.5" />
-                    {balance}
-                  </span>
-                </div>
-              </Link>
+              <motion.div layoutId="shared-wallet-pill" className="shrink-0">
+                <Link
+                  id="tutorial-wallet-pill"
+                  to="/wallet"
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border border-primary/25 bg-primary/10 hover:bg-primary/15 hover:border-primary/40 press-effect active:scale-95 transition-all"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-primary/20 flex items-center justify-center">
+                    <Wallet className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary leading-none">Wallet</span>
+                    <span className="font-display font-black text-sm text-foreground leading-tight tabular-nums mt-0.5 flex items-center gap-1">
+                      <GodCoin className="w-3.5 h-3.5" />
+                      {balance}
+                    </span>
+                  </div>
+                </Link>
+              </motion.div>
             </div>
           </div>
         ) : (

@@ -57,12 +57,15 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "ClutchGround";
   const body = payload.body || "You have a new notification.";
   const url = payload.url || "/notifications";
+  const origin = self.location.origin;
+  const icon = new URL(payload.icon || "/logo-transparent.png", origin).href;
+  const badge = new URL("/logo-transparent.png", origin).href;
 
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
-      icon: "/pwa-192x192.png",
-      badge: "/pwa-192x192.png",
+      icon,
+      badge,
       data: { url },
       vibrate: [100, 50, 100, 50, 200],
       tag: `cg-push-${Date.now()}`,

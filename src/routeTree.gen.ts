@@ -22,6 +22,7 @@ import { Route as AppSpinWheelRouteImport } from './routes/_app/spin-wheel'
 import { Route as AppSignupRouteImport } from './routes/_app/signup'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppRulesRouteImport } from './routes/_app/rules'
+import { Route as AppProfileShopRouteImport } from './routes/_app/profile-shop'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppPrivacyRouteImport } from './routes/_app/privacy'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
@@ -35,10 +36,12 @@ import { Route as AppChatRouteImport } from './routes/_app/chat'
 import { Route as AppAntiCheatRouteImport } from './routes/_app/anti-cheat'
 import { Route as AppTournamentsIndexRouteImport } from './routes/_app/tournaments/index'
 import { Route as AppSupportIndexRouteImport } from './routes/_app/support.index'
+import { Route as AppSpinWheelIndexRouteImport } from './routes/_app/spin-wheel/index'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
 import { Route as AppUsersUserIdRouteImport } from './routes/_app/users.$userId'
 import { Route as AppTournamentsIdRouteImport } from './routes/_app/tournaments/$id'
 import { Route as AppSupportTicketIdRouteImport } from './routes/_app/support.$ticketId'
+import { Route as AppSpinWheelBuyRouteImport } from './routes/_app/spin-wheel/buy'
 import { Route as AppAdminUsersRouteImport } from './routes/_app/admin/users'
 import { Route as AppAdminTournamentsRouteImport } from './routes/_app/admin/tournaments'
 import { Route as AppAdminSpinWheelRouteImport } from './routes/_app/admin/spin-wheel'
@@ -118,6 +121,11 @@ const AppRulesRoute = AppRulesRouteImport.update({
   path: '/rules',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProfileShopRoute = AppProfileShopRouteImport.update({
+  id: '/profile-shop',
+  path: '/profile-shop',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -183,6 +191,11 @@ const AppSupportIndexRoute = AppSupportIndexRouteImport.update({
   path: '/support/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSpinWheelIndexRoute = AppSpinWheelIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppSpinWheelRoute,
+} as any)
 const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
@@ -202,6 +215,11 @@ const AppSupportTicketIdRoute = AppSupportTicketIdRouteImport.update({
   id: '/support/$ticketId',
   path: '/support/$ticketId',
   getParentRoute: () => AppRoute,
+} as any)
+const AppSpinWheelBuyRoute = AppSpinWheelBuyRouteImport.update({
+  id: '/buy',
+  path: '/buy',
+  getParentRoute: () => AppSpinWheelRoute,
 } as any)
 const AppAdminUsersRoute = AppAdminUsersRouteImport.update({
   id: '/admin/users',
@@ -287,10 +305,11 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AppNotificationsRoute
   '/privacy': typeof AppPrivacyRoute
   '/profile': typeof AppProfileRoute
+  '/profile-shop': typeof AppProfileShopRoute
   '/rules': typeof AppRulesRoute
   '/settings': typeof AppSettingsRoute
   '/signup': typeof AppSignupRoute
-  '/spin-wheel': typeof AppSpinWheelRoute
+  '/spin-wheel': typeof AppSpinWheelRouteWithChildren
   '/stats': typeof AppStatsRoute
   '/team-chat': typeof AppTeamChatRoute
   '/team-invite': typeof AppTeamInviteRoute
@@ -310,10 +329,12 @@ export interface FileRoutesByFullPath {
   '/admin/spin-wheel': typeof AppAdminSpinWheelRoute
   '/admin/tournaments': typeof AppAdminTournamentsRoute
   '/admin/users': typeof AppAdminUsersRoute
+  '/spin-wheel/buy': typeof AppSpinWheelBuyRoute
   '/support/$ticketId': typeof AppSupportTicketIdRoute
   '/tournaments/$id': typeof AppTournamentsIdRoute
   '/users/$userId': typeof AppUsersUserIdRoute
   '/admin/': typeof AppAdminIndexRoute
+  '/spin-wheel/': typeof AppSpinWheelIndexRoute
   '/support/': typeof AppSupportIndexRoute
   '/tournaments/': typeof AppTournamentsIndexRoute
   '/admin/tickets/$ticketId': typeof AppAdminTicketsTicketIdRoute
@@ -331,10 +352,10 @@ export interface FileRoutesByTo {
   '/notifications': typeof AppNotificationsRoute
   '/privacy': typeof AppPrivacyRoute
   '/profile': typeof AppProfileRoute
+  '/profile-shop': typeof AppProfileShopRoute
   '/rules': typeof AppRulesRoute
   '/settings': typeof AppSettingsRoute
   '/signup': typeof AppSignupRoute
-  '/spin-wheel': typeof AppSpinWheelRoute
   '/stats': typeof AppStatsRoute
   '/team-chat': typeof AppTeamChatRoute
   '/team-invite': typeof AppTeamInviteRoute
@@ -355,10 +376,12 @@ export interface FileRoutesByTo {
   '/admin/spin-wheel': typeof AppAdminSpinWheelRoute
   '/admin/tournaments': typeof AppAdminTournamentsRoute
   '/admin/users': typeof AppAdminUsersRoute
+  '/spin-wheel/buy': typeof AppSpinWheelBuyRoute
   '/support/$ticketId': typeof AppSupportTicketIdRoute
   '/tournaments/$id': typeof AppTournamentsIdRoute
   '/users/$userId': typeof AppUsersUserIdRoute
   '/admin': typeof AppAdminIndexRoute
+  '/spin-wheel': typeof AppSpinWheelIndexRoute
   '/support': typeof AppSupportIndexRoute
   '/tournaments': typeof AppTournamentsIndexRoute
   '/admin/tickets/$ticketId': typeof AppAdminTicketsTicketIdRoute
@@ -378,10 +401,11 @@ export interface FileRoutesById {
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/privacy': typeof AppPrivacyRoute
   '/_app/profile': typeof AppProfileRoute
+  '/_app/profile-shop': typeof AppProfileShopRoute
   '/_app/rules': typeof AppRulesRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/signup': typeof AppSignupRoute
-  '/_app/spin-wheel': typeof AppSpinWheelRoute
+  '/_app/spin-wheel': typeof AppSpinWheelRouteWithChildren
   '/_app/stats': typeof AppStatsRoute
   '/_app/team-chat': typeof AppTeamChatRoute
   '/_app/team-invite': typeof AppTeamInviteRoute
@@ -402,10 +426,12 @@ export interface FileRoutesById {
   '/_app/admin/spin-wheel': typeof AppAdminSpinWheelRoute
   '/_app/admin/tournaments': typeof AppAdminTournamentsRoute
   '/_app/admin/users': typeof AppAdminUsersRoute
+  '/_app/spin-wheel/buy': typeof AppSpinWheelBuyRoute
   '/_app/support/$ticketId': typeof AppSupportTicketIdRoute
   '/_app/tournaments/$id': typeof AppTournamentsIdRoute
   '/_app/users/$userId': typeof AppUsersUserIdRoute
   '/_app/admin/': typeof AppAdminIndexRoute
+  '/_app/spin-wheel/': typeof AppSpinWheelIndexRoute
   '/_app/support/': typeof AppSupportIndexRoute
   '/_app/tournaments/': typeof AppTournamentsIndexRoute
   '/_app/admin/tickets/$ticketId': typeof AppAdminTicketsTicketIdRoute
@@ -426,6 +452,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/privacy'
     | '/profile'
+    | '/profile-shop'
     | '/rules'
     | '/settings'
     | '/signup'
@@ -449,10 +476,12 @@ export interface FileRouteTypes {
     | '/admin/spin-wheel'
     | '/admin/tournaments'
     | '/admin/users'
+    | '/spin-wheel/buy'
     | '/support/$ticketId'
     | '/tournaments/$id'
     | '/users/$userId'
     | '/admin/'
+    | '/spin-wheel/'
     | '/support/'
     | '/tournaments/'
     | '/admin/tickets/$ticketId'
@@ -470,10 +499,10 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/privacy'
     | '/profile'
+    | '/profile-shop'
     | '/rules'
     | '/settings'
     | '/signup'
-    | '/spin-wheel'
     | '/stats'
     | '/team-chat'
     | '/team-invite'
@@ -494,10 +523,12 @@ export interface FileRouteTypes {
     | '/admin/spin-wheel'
     | '/admin/tournaments'
     | '/admin/users'
+    | '/spin-wheel/buy'
     | '/support/$ticketId'
     | '/tournaments/$id'
     | '/users/$userId'
     | '/admin'
+    | '/spin-wheel'
     | '/support'
     | '/tournaments'
     | '/admin/tickets/$ticketId'
@@ -516,6 +547,7 @@ export interface FileRouteTypes {
     | '/_app/notifications'
     | '/_app/privacy'
     | '/_app/profile'
+    | '/_app/profile-shop'
     | '/_app/rules'
     | '/_app/settings'
     | '/_app/signup'
@@ -540,10 +572,12 @@ export interface FileRouteTypes {
     | '/_app/admin/spin-wheel'
     | '/_app/admin/tournaments'
     | '/_app/admin/users'
+    | '/_app/spin-wheel/buy'
     | '/_app/support/$ticketId'
     | '/_app/tournaments/$id'
     | '/_app/users/$userId'
     | '/_app/admin/'
+    | '/_app/spin-wheel/'
     | '/_app/support/'
     | '/_app/tournaments/'
     | '/_app/admin/tickets/$ticketId'
@@ -647,6 +681,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRulesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/profile-shop': {
+      id: '/_app/profile-shop'
+      path: '/profile-shop'
+      fullPath: '/profile-shop'
+      preLoaderRoute: typeof AppProfileShopRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/profile': {
       id: '/_app/profile'
       path: '/profile'
@@ -738,6 +779,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSupportIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/spin-wheel/': {
+      id: '/_app/spin-wheel/'
+      path: '/'
+      fullPath: '/spin-wheel/'
+      preLoaderRoute: typeof AppSpinWheelIndexRouteImport
+      parentRoute: typeof AppSpinWheelRoute
+    }
     '/_app/admin/': {
       id: '/_app/admin/'
       path: '/admin'
@@ -765,6 +813,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/support/$ticketId'
       preLoaderRoute: typeof AppSupportTicketIdRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/spin-wheel/buy': {
+      id: '/_app/spin-wheel/buy'
+      path: '/buy'
+      fullPath: '/spin-wheel/buy'
+      preLoaderRoute: typeof AppSpinWheelBuyRouteImport
+      parentRoute: typeof AppSpinWheelRoute
     }
     '/_app/admin/users': {
       id: '/_app/admin/users'
@@ -867,6 +922,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppSpinWheelRouteChildren {
+  AppSpinWheelBuyRoute: typeof AppSpinWheelBuyRoute
+  AppSpinWheelIndexRoute: typeof AppSpinWheelIndexRoute
+}
+
+const AppSpinWheelRouteChildren: AppSpinWheelRouteChildren = {
+  AppSpinWheelBuyRoute: AppSpinWheelBuyRoute,
+  AppSpinWheelIndexRoute: AppSpinWheelIndexRoute,
+}
+
+const AppSpinWheelRouteWithChildren = AppSpinWheelRoute._addFileChildren(
+  AppSpinWheelRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAntiCheatRoute: typeof AppAntiCheatRoute
   AppChatRoute: typeof AppChatRoute
@@ -879,10 +948,11 @@ interface AppRouteChildren {
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppPrivacyRoute: typeof AppPrivacyRoute
   AppProfileRoute: typeof AppProfileRoute
+  AppProfileShopRoute: typeof AppProfileShopRoute
   AppRulesRoute: typeof AppRulesRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSignupRoute: typeof AppSignupRoute
-  AppSpinWheelRoute: typeof AppSpinWheelRoute
+  AppSpinWheelRoute: typeof AppSpinWheelRouteWithChildren
   AppStatsRoute: typeof AppStatsRoute
   AppTeamChatRoute: typeof AppTeamChatRoute
   AppTeamInviteRoute: typeof AppTeamInviteRoute
@@ -925,10 +995,11 @@ const AppRouteChildren: AppRouteChildren = {
   AppNotificationsRoute: AppNotificationsRoute,
   AppPrivacyRoute: AppPrivacyRoute,
   AppProfileRoute: AppProfileRoute,
+  AppProfileShopRoute: AppProfileShopRoute,
   AppRulesRoute: AppRulesRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSignupRoute: AppSignupRoute,
-  AppSpinWheelRoute: AppSpinWheelRoute,
+  AppSpinWheelRoute: AppSpinWheelRouteWithChildren,
   AppStatsRoute: AppStatsRoute,
   AppTeamChatRoute: AppTeamChatRoute,
   AppTeamInviteRoute: AppTeamInviteRoute,
