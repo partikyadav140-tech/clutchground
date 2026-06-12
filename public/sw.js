@@ -43,8 +43,8 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
-  // Skip API calls — always network
-  if (url.pathname.startsWith('/api/')) return;
+  // Skip API calls and server functions — always network
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/_server')) return;
 
   event.respondWith(
     fetch(event.request)
