@@ -32,9 +32,22 @@ function remapRow(row: any): any {
   return out;
 }
 
+let dbInitializationPromise: Promise<void> | null = null;
+
+export async function ensureDbInitialized() {
+  if (typeof window !== "undefined") {
+    return;
+  }
+  if (!dbInitializationPromise) {
+    dbInitializationPromise = initDb();
+  }
+  return dbInitializationPromise;
+}
+
 export const db = {
   pool,
   query: async (text: string, params: any[] = [], client: any = pool) => {
+    await ensureDbInitialized();
     let pgText = text;
     let i = 1;
     while (pgText.includes("?")) {
@@ -418,5 +431,3 @@ async function initDb() {
     console.error("DB Init error:", e);
   }
 }
-
-initDb();
