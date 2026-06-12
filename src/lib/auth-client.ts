@@ -9,6 +9,16 @@ export function getSessionId() {
   return null;
 }
 
+export function getCookieClient(name: string) {
+  if (typeof document === "undefined") return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return decodeURIComponent(parts.pop()?.split(";").shift() || "");
+  }
+  return null;
+}
+
 export function setSessionId(id: string) {
   localStorage.setItem("sessionId", id);
   if (typeof document !== "undefined") {
@@ -54,9 +64,12 @@ export function useAuth() {
 
     // Sync cookie with localStorage session if needed
     const initialSessionId = getSessionId();
-    if (initialSessionId && typeof document !== "undefined" && !document.cookie.includes("sessionId=")) {
-      const isSecure = window.location.protocol === "https:";
-      document.cookie = `sessionId=${encodeURIComponent(initialSessionId)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax${isSecure ? "; Secure" : ""}`;
+    if (initialSessionId && typeof document !== "undefined") {
+      const cookieVal = getCookieClient("sessionId");
+      if (cookieVal !== initialSessionId) {
+        const isSecure = window.location.protocol === "https:";
+        document.cookie = `sessionId=${encodeURIComponent(initialSessionId)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax${isSecure ? "; Secure" : ""}`;
+      }
     }
 
     async function fetchUser() {

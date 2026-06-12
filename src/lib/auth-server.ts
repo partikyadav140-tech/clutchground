@@ -1,4 +1,4 @@
-import { getCookie } from "@tanstack/react-start/server";
+import { getCookie, getCookies, getRequestHeaders } from "@tanstack/react-start/server";
 import { db } from "./db";
 
 export async function getCurrentUser(requiredRole?: "admin" | "user", dataSessionId?: string) {
@@ -7,12 +7,41 @@ export async function getCurrentUser(requiredRole?: "admin" | "user", dataSessio
   if (!sessionId) {
     try {
       sessionId = getCookie("sessionId");
-    } catch (e) {
-      // getCookie might throw if called outside of request context
+      console.log("[getCurrentUser] sessionId from getCookie:", sessionId);
+    } catch (e: any) {
+      console.error("[getCurrentUser] getCookie threw error:", e.message);
+    }
+  }
+
+  // Fallback to manual parsing from request headers
+  if (!sessionId) {
+    try {
+      const headers = getRequestHeaders();
+      const cookieHeader = headers.get("cookie") || headers.get("Cookie");
+      if (cookieHeader) {
+        const nameEQ = "sessionId=";
+        const ca = cookieHeader.split(";");
+        for (let i = 0; i < ca.length; i++) {
+          let c = ca[i].trim();
+          if (c.indexOf(nameEQ) === 0) {
+            sessionId = decodeURIComponent(c.substring(nameEQ.length, c.length));
+            console.log("[getCurrentUser] sessionId parsed manually from headers:", sessionId);
+            break;
+          }
+        }
+      }
+    } catch (e: any) {
+      console.error("[getCurrentUser] getRequestHeaders fallback error:", e.message);
     }
   }
 
   if (!sessionId) {
+    try {
+      const allCookies = getCookies();
+      console.log("[getCurrentUser] Available cookies:", allCookies);
+    } catch (e: any) {
+      console.error("[getCurrentUser] getCookies threw error:", e.message);
+    }
     throw new Error("Authentication required: No session ID provided");
   }
 

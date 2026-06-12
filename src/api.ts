@@ -6,10 +6,8 @@ export { getWalletBalance, getTransactionHistory } from "./lib/razorpay";
 export { createUpiDeposit, submitUpiUtr, getPendingUpiDeposits, approveUpiDeposit, rejectUpiDeposit, getUserUpiDeposits, getActiveUpiConfig } from "./lib/upi";
 
 export async function getCurrentUser(requiredRole?: "admin" | "user", dataSessionId?: string) {
-  const get = (globalThis as any).getCurrentUser;
-  if (!get) {
-    throw new Error("Security validation failed: Authentication manager not initialized.");
-  }
+  const modPath = "./lib/auth-server";
+  const { getCurrentUser: get } = await import(modPath);
   return get(requiredRole, dataSessionId);
 }
 
