@@ -22,66 +22,14 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// ── Activate: clean up old caches ────────────────────────────────────────────
+// ── Activate: clean up all caches ────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
+      Promise.all(keys.map((key) => caches.delete(key)))
     )
   );
   self.clients.claim();
-});
-
-// ── Fetch: network-first with cache fallback ─────────────────────────────────
-self.addEventListener('fetch', (event) => {
-  // Only handle GET requests for same-origin or cached assets
-  if (event.request.method !== 'GET') return;
-
-  const url = new URL(event.request.url);
-
-  // Skip API calls and server functions — always network
-  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/_server')) return;
-
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Cache successful responses for static assets
-        if (
-          response.ok &&
-          (url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|ico|woff2|webmanifest)$/) ||
-            url.pathname === '/')
-        ) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      })
-      .catch(() => {
-        // Offline fallback: serve from cache
-        return caches.match(event.request).then((cached) => {
-          if (cached) return cached;
-          // For navigation requests, serve root
-          if (event.request.mode === 'navigate') {
-            return caches.match('/').then((rootCached) => {
-              if (rootCached) return rootCached;
-              // Return a fallback Response instead of undefined to prevent TypeError: Failed to convert value to 'Response'
-              return new Response(
-                '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Offline — CLUTCHGROUND</title><style>body{background:#0a0a0c;color:#fff;font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center;padding:20px}h1{font-size:24px;margin-bottom:8px;color:#f97316}p{color:#a1a1aa;font-size:14px;margin-top:0}</style></head><body><h1>Connection Error</h1><p>It looks like you are offline or the server took too long to respond. Please check your network connection and try again.</p></body></html>',
-                {
-                  status: 503,
-                  statusText: 'Service Unavailable',
-                  headers: { 'Content-Type': 'text/html' }
-                }
-              );
-            });
-          }
-        });
-      })
-  );
 });
 
 // ── Push: receive server-sent Web Push notifications ─────────────────────────
