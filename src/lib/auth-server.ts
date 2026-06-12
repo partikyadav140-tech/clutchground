@@ -10,9 +10,22 @@ export async function getCurrentUser(requiredRole?: "admin" | "user", dataSessio
       if (storage) {
         const store = storage.getStore();
         const event = store?.h3Event;
-        if (event && event.node && event.node.req) {
-          const req = event.node.req;
-          const cookieHeader = req.headers.cookie || req.headers.Cookie;
+        if (event) {
+          let cookieHeader = "";
+          if (event.node?.req) {
+            cookieHeader = event.node.req.headers.cookie || event.node.req.headers.Cookie || "";
+          }
+          if (!cookieHeader && event.headers) {
+            if (typeof event.headers.get === "function") {
+              cookieHeader = event.headers.get("cookie") || "";
+            } else {
+              cookieHeader = event.headers.cookie || event.headers.Cookie || "";
+            }
+          }
+          if (!cookieHeader && event.web?.request?.headers) {
+            cookieHeader = event.web.request.headers.get("cookie") || "";
+          }
+
           if (cookieHeader) {
             const nameEQ = "sessionId=";
             const ca = cookieHeader.split(";");
