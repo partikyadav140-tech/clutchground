@@ -1,13 +1,18 @@
 "use server";
 import { createServerFn } from "@tanstack/react-start";
-import { createHmac } from "crypto";
-import { db } from "./db";
 import { getEnvVar } from "./env";
-import { getCurrentUser } from "./auth-server";
+
+const getDb = async () => (await import("./db")).db;
+
+async function getCurrentUser(requiredRole?: "admin" | "user", dataSessionId?: string) {
+  const { getCurrentUser: get } = await import("./auth-server");
+  return get(requiredRole, dataSessionId);
+}
 
 export const createRazorpayOrder = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
     const user = await getCurrentUser();
+    const db = await getDb();
     const userId = user.id;
     const { amount, description } = data as any;
 
@@ -64,6 +69,7 @@ export const createRazorpayOrder = createServerFn({ method: "POST" }).handler(
 export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
     const userObj = await getCurrentUser();
+    const db = await getDb();
     const userId = userObj.id;
     const { orderId, paymentId, signature } = data as any;
 
@@ -76,6 +82,7 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
       throw new Error("Razorpay secret not configured on server");
     }
 
+    const { createHmac } = await import("crypto");
     const hmac = createHmac("sha256", keySecret);
     hmac.update(`${orderId}|${paymentId}`);
     const generatedSignature = hmac.digest("hex");
@@ -98,6 +105,10 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
 
     await db.transaction(async (tx: any) => {
       await tx
+        .prepare("UPDATE razorpay_orders SET status = 'completed', paid_at = CURRENT_TIMESTAMP WHERE order_id = ?")
+        .run(orderId);
+
+      await tx
         .prepare("UPDATE users SET deposit_balance = deposit_balance + ? WHERE id = ?")
         .run(order.amount, userId);
 
@@ -106,12 +117,6 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
           "INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)",
         )
         .run(userId, order.amount, "deposit_added", "Wallet deposit via Razorpay");
-
-      await tx
-        .prepare(
-          "UPDATE razorpay_orders SET status = 'completed', paid_at = CURRENT_TIMESTAMP WHERE order_id = ?",
-        )
-        .run(orderId);
 
       await tx
         .prepare(
@@ -147,6 +152,7 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
 export const getWalletBalance = createServerFn({ method: "POST" }).handler(
   async () => {
     const userObj = await getCurrentUser();
+    const db = await getDb();
     const userId = userObj.id;
 
     const user = (await db
@@ -166,6 +172,7 @@ export const getWalletBalance = createServerFn({ method: "POST" }).handler(
 export const getTransactionHistory = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
     const userObj = await getCurrentUser();
+    const db = await getDb();
     const userId = userObj.id;
     const { limit = 10, offset = 0 } = data as any;
 

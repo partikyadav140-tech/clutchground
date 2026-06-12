@@ -1,8 +1,13 @@
 "use server";
 import { createServerFn } from "@tanstack/react-start";
-import { db } from "./db";
 import { getEnvVar } from "./env";
-import { getCurrentUser } from "./auth-server";
+
+const getDb = async () => (await import("./db")).db;
+
+async function getCurrentUser(requiredRole?: "admin" | "user", dataSessionId?: string) {
+  const { getCurrentUser: get } = await import("./auth-server");
+  return get(requiredRole, dataSessionId);
+}
 
 // Your platform UPI ID
 export const PLATFORM_UPI_ID = getEnvVar("UPI_ID") || "clutchground@nyes";
@@ -11,6 +16,7 @@ export const PLATFORM_NAME = "CLUTCHGROUND";
 /** Get active UPI configuration */
 export const getActiveUpiConfig = createServerFn({ method: "GET" }).handler(async () => {
   await getCurrentUser();
+  const db = await getDb();
   const row = await db.prepare("SELECT value FROM site_settings WHERE key = 'upi_config'").get();
   if (row) {
     try {
@@ -35,6 +41,7 @@ export const getActiveUpiConfig = createServerFn({ method: "GET" }).handler(asyn
 export const createUpiDeposit = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
     const user = await getCurrentUser();
+    const db = await getDb();
     const userId = user.id;
     const { amount, description } = data as any;
 
@@ -82,6 +89,7 @@ export const createUpiDeposit = createServerFn({ method: "POST" }).handler(
 export const submitUpiUtr = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
     const user = await getCurrentUser();
+    const db = await getDb();
     const { txnRef, utr: senderUpiId } = data as any;
 
     const upiIdRegex = /^[a-zA-Z0-9._\-]+@[a-zA-Z0-9]+$/;
@@ -125,6 +133,7 @@ export const submitUpiUtr = createServerFn({ method: "POST" }).handler(
 export const getPendingUpiDeposits = createServerFn({ method: "GET" }).handler(
   async () => {
     await getCurrentUser("admin");
+    const db = await getDb();
     return (await db
       .prepare(
         `SELECT d.*, u.username, u.phone
@@ -140,6 +149,7 @@ export const getPendingUpiDeposits = createServerFn({ method: "GET" }).handler(
 export const approveUpiDeposit = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
     await getCurrentUser("admin");
+    const db = await getDb();
     const { depositId } = data as any;
 
     const deposit = (await db
@@ -198,6 +208,7 @@ export const approveUpiDeposit = createServerFn({ method: "POST" }).handler(
 export const rejectUpiDeposit = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
     await getCurrentUser("admin");
+    const db = await getDb();
     const { depositId, reason } = data as any;
 
     const deposit = (await db
@@ -238,6 +249,7 @@ export const rejectUpiDeposit = createServerFn({ method: "POST" }).handler(
 export const getUserUpiDeposits = createServerFn({ method: "POST" }).handler(
   async () => {
     const user = await getCurrentUser();
+    const db = await getDb();
     const userId = user.id;
     return (await db
       .prepare(

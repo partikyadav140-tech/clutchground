@@ -2,12 +2,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getEnvVar } from "./lib/env";
-import { getCurrentUser as getCurrentUserImpl } from "./lib/auth-server";
 export { getWalletBalance, getTransactionHistory } from "./lib/razorpay";
 export { createUpiDeposit, submitUpiUtr, getPendingUpiDeposits, approveUpiDeposit, rejectUpiDeposit, getUserUpiDeposits, getActiveUpiConfig } from "./lib/upi";
 
 export async function getCurrentUser(requiredRole?: "admin" | "user", dataSessionId?: string) {
-  return getCurrentUserImpl(requiredRole, dataSessionId);
+  const { getCurrentUser: get } = await import("./lib/auth-server");
+  return get(requiredRole, dataSessionId);
 }
 
 // ─── Cloudinary Image Upload ───────────────────────────────────────────────
