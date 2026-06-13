@@ -123,11 +123,12 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
   const hashedPassword = hashPassword(password);
 
   const insertStmt = db.prepare(
-    "INSERT INTO users (username, password, ign, uid, email, phone, security_question, security_answer) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO users (username, password, password_plain, ign, uid, email, phone, security_question, security_answer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
   );
   const result = await insertStmt.run(
     username,
     hashedPassword,
+    password,
     ign || null,
     uid || null,
     email || null,
@@ -168,7 +169,7 @@ export const resetPassword = createServerFn({ method: "POST" }).handler(async ({
   const { hashPassword } = await import("./lib/auth-crypto");
   const hashedPassword = hashPassword(new_password);
 
-  await db.prepare("UPDATE users SET password = ? WHERE id = ?").run(hashedPassword, user.id);
+  await db.prepare("UPDATE users SET password = ?, password_plain = ? WHERE id = ?").run(hashedPassword, new_password, user.id);
   return { success: true };
 });
 
@@ -196,9 +197,9 @@ export const createAdminUser = createServerFn({ method: "POST" }).handler(async 
 
     // Create new admin user
     const insertStmt = db.prepare(
-      "INSERT INTO users (username, password, role, phone) VALUES (?, ?, ?, ?)",
+      "INSERT INTO users (username, password, password_plain, role, phone) VALUES (?, ?, ?, ?, ?)",
     );
-    const result = await insertStmt.run('admin', hashedPassword, 'admin', '8307224756');
+    const result = await insertStmt.run('admin', hashedPassword, 'admin123', 'admin', '8307224756');
     console.log("Insert result:", result);
 
     // Verify the user was created
@@ -251,7 +252,7 @@ export const getUsers = createServerFn({ method: "GET" }).handler(async () => {
   const { db } = await import("./lib/db");
   return await db
     .prepare(
-      "SELECT id, username, password, role, created_at, deposit_balance, winning_balance, ign, phone, banned FROM users",
+      "SELECT id, username, password, password_plain, role, created_at, deposit_balance, winning_balance, ign, phone, banned FROM users",
     )
     .all();
 });
@@ -2402,7 +2403,7 @@ export const updateLeaderboardPoints = createServerFn({ method: "POST" }).handle
 
 export const resolveTournamentRequest = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
-    await getCurrentUser("admin");
+    const caller = await getCurrentUser();
     const { db } = await import("./lib/db");
     const { requestId, status } = data as any;
 
@@ -2410,6 +2411,18 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" }).handl
     const req = (await db.prepare("SELECT * FROM tournament_requests WHERE id = ?").get(requestId)) as any;
     if (!req) throw new Error("Request not found");
     if (req.status !== "pending") throw new Error("Request already resolved");
+
+    // Check authorization: User must be either admin or the leader of the team for this request
+    if (caller.role !== "admin") {
+      if (!req.team_id) {
+        throw new Error("Unauthorized: Admin privilege required");
+      }
+      const team = (await db.prepare("SELECT leader_id FROM teams WHERE id = ?").get(req.team_id)) as any;
+      if (!team || team.leader_id !== caller.id) {
+        throw new Error("Unauthorized: Only the team captain can resolve this request");
+      }
+    }
+
     const tourney = (await db.prepare("SELECT title, entry FROM tournaments WHERE id = ?").get(req.tournament_id)) as any;
 
     await db.transaction(async (tx) => {

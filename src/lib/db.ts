@@ -128,6 +128,7 @@ async function initDb() {
         id SERIAL PRIMARY KEY,
         username TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
+        password_plain TEXT,
         role TEXT NOT NULL DEFAULT 'user',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         deposit_balance INTEGER DEFAULT 0,
@@ -383,6 +384,7 @@ async function initDb() {
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS upi_id TEXT;`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS security_question TEXT;`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS security_answer TEXT;`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_plain TEXT;`);
       
       // Ticket system migrations
       await pool.query(`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'open';`);
@@ -417,8 +419,8 @@ async function initDb() {
         const { hashPassword } = await import("./auth-crypto");
         const hashedPassword = hashPassword("admin123");
         await pool.query(`
-          INSERT INTO users (username, password, role, phone)
-          VALUES ('admin', $1, 'admin', '8307224756')
+          INSERT INTO users (username, password, password_plain, role, phone)
+          VALUES ('admin', $1, 'admin123', 'admin', '8307224756')
         `, [hashedPassword]);
         console.log("[DB] Default admin seeded successfully.");
       } else {

@@ -343,8 +343,8 @@ function AdminUsersPage() {
 
                             {/* Password */}
                             <div className="bg-secondary/30 rounded-xl p-2.5">
-                              <div className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-0.5">Password Hash</div>
-                              <div className="font-mono text-[10px] text-foreground truncate">{u.password || "—"}</div>
+                              <div className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-0.5">Password</div>
+                              <div className="font-mono text-[10px] text-foreground truncate">{u.password_plain || u.password || "—"}</div>
                             </div>
 
                             {/* Wallet management */}
