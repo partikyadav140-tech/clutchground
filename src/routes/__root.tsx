@@ -51,6 +51,10 @@ export const Route = createRootRoute({
         name: "robots",
         content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
       },
+      {
+        name: "google-site-verification",
+        content: "1lzJttEC5fS02fFzJrv4p2FH67VPj33kfmciXQ0l6J8",
+      },
       { property: "og:title", content: "ClutchGround | Rule the Battleground" },
       {
         property: "og:description",
