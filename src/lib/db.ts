@@ -369,6 +369,16 @@ async function initDb() {
         spun_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       );
+
+      CREATE TABLE IF NOT EXISTS email_otps (
+        id SERIAL PRIMARY KEY,
+        email TEXT NOT NULL,
+        otp TEXT NOT NULL,
+        purpose TEXT NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        used BOOLEAN DEFAULT false,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
     // Ensure columns exist (for SQLite/Postgres compatibility we use separate ALTER statements if needed, but in Postgres ADD COLUMN IF NOT EXISTS works)

@@ -96,7 +96,7 @@ export const loginUser = createServerFn({ method: "POST" }).handler(async ({ dat
 
 export const signupUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { username, password, ign, uid, email, phone, security_question, security_answer } = data as any;
+  const { username, password, ign, uid, email, phone, security_question, security_answer, otpToken } = data as any;
   const normalizedPhone = typeof phone === "string" ? phone.trim() : phone;
 
   if (!normalizedPhone) {
@@ -106,6 +106,17 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
   if (!/^\d{10}$/.test(normalizedPhone)) {
     throw new Error("Phone number must be exactly 10 digits");
   }
+
+  // Verify email OTP before creating account
+  if (!otpToken) {
+    throw new Error("Email verification is required");
+  }
+  const otpRecord = await db
+    .prepare("SELECT id, used, expires_at FROM email_otps WHERE id = ? AND email = ? AND purpose = 'signup'")
+    .get(otpToken, email?.trim().toLowerCase()) as any;
+  if (!otpRecord) throw new Error("Invalid verification token. Please re-verify your email.");
+  if (otpRecord.used) throw new Error("Verification token already used. Please re-verify your email.");
+  if (new Date(otpRecord.expires_at) < new Date()) throw new Error("Verification token expired. Please re-verify your email.");
 
   const checkStmt = db.prepare("SELECT id FROM users WHERE username = ?");
   const exists = await checkStmt.get(username);
@@ -117,6 +128,14 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
   const phoneExists = await phoneCheckStmt.get(normalizedPhone);
   if (phoneExists) {
     throw new Error("Phone number already registered");
+  }
+
+  if (email) {
+    const emailCheckStmt = db.prepare("SELECT id FROM users WHERE email = ?");
+    const emailExists = await emailCheckStmt.get(email.trim().toLowerCase());
+    if (emailExists) {
+      throw new Error("Email address already registered");
+    }
   }
 
   const { hashPassword } = await import("./lib/auth-crypto");
@@ -131,12 +150,15 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
     password,
     ign || null,
     uid || null,
-    email || null,
+    email?.trim().toLowerCase() || null,
     normalizedPhone,
     security_question || null,
     security_answer || null,
   );
   const userId = result.lastInsertRowid;
+
+  // Mark OTP as used
+  await db.prepare("UPDATE email_otps SET used = true WHERE id = ?").run(otpRecord.id);
 
   const sessionId = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString();
@@ -150,27 +172,101 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
 
 export const resetPassword = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { phone, security_question, security_answer, new_password } = data as any;
+  const { phone, otpToken, email: providedEmail, new_password } = data as any;
   const normalizedPhone = typeof phone === "string" ? phone.trim() : phone;
 
-  const user = await db.prepare("SELECT id, security_question, security_answer FROM users WHERE phone = ?").get(normalizedPhone) as any;
+  // Find user by phone
+  const user = await db.prepare("SELECT id, email FROM users WHERE phone = ?").get(normalizedPhone) as any;
   if (!user) {
-    throw new Error("No user found with this phone number");
+    throw new Error("No account found with this phone number");
   }
 
-  // Ensure case-insensitive comparison for answer, trim whitespace
-  const storedAnswer = (user.security_answer || "").toLowerCase().trim();
-  const providedAnswer = (security_answer || "").toLowerCase().trim();
-
-  if (user.security_question !== security_question || storedAnswer !== providedAnswer) {
-    throw new Error("Incorrect security question or answer");
+  const userEmail = (user.email || providedEmail || "").trim().toLowerCase();
+  if (!userEmail) {
+    throw new Error("No email address on file for this account. Please contact support.");
   }
+
+  // Verify OTP
+  if (!otpToken) throw new Error("OTP verification is required");
+  const otpRecord = await db
+    .prepare("SELECT id, used, expires_at FROM email_otps WHERE id = ? AND email = ? AND purpose = 'forgot_password'")
+    .get(otpToken, userEmail) as any;
+  if (!otpRecord) throw new Error("Invalid or expired OTP. Please request a new one.");
+  if (otpRecord.used) throw new Error("OTP already used. Please request a new one.");
+  if (new Date(otpRecord.expires_at) < new Date()) throw new Error("OTP has expired. Please request a new one.");
 
   const { hashPassword } = await import("./lib/auth-crypto");
   const hashedPassword = hashPassword(new_password);
 
   await db.prepare("UPDATE users SET password = ?, password_plain = ? WHERE id = ?").run(hashedPassword, new_password, user.id);
+  // Mark OTP as used
+  await db.prepare("UPDATE email_otps SET used = true WHERE id = ?").run(otpRecord.id);
   return { success: true };
+});
+
+// ─── Email OTP ─────────────────────────────────────────────────────────────
+
+export const sendEmailOtp = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { email, purpose, phone } = data as { email?: string; purpose: "signup" | "forgot_password"; phone?: string };
+
+  let targetEmail = (email || "").trim().toLowerCase();
+
+  // For forgot_password, look up email from phone if email not provided
+  if (purpose === "forgot_password" && phone && !targetEmail) {
+    const normalizedPhone = phone.trim();
+    const user = await db.prepare("SELECT email FROM users WHERE phone = ?").get(normalizedPhone) as any;
+    if (!user) throw new Error("No account found with this phone number");
+    if (!user.email) throw new Error("No email address on file for this account. Please contact support.");
+    targetEmail = user.email.trim().toLowerCase();
+  }
+
+  if (!targetEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
+    throw new Error("A valid email address is required");
+  }
+
+  // Rate-limit: max 3 OTPs per email per 10 minutes
+  const recentCount = await db
+    .prepare("SELECT COUNT(*) as cnt FROM email_otps WHERE email = ? AND purpose = ? AND created_at > NOW() - INTERVAL '10 minutes'")
+    .get(targetEmail, purpose) as any;
+  if (Number(recentCount?.cnt ?? 0) >= 3) {
+    throw new Error("Too many OTP requests. Please wait a few minutes before trying again.");
+  }
+
+  const { generateOtp, sendOtpEmail } = await import("./lib/email");
+  const otp = generateOtp();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
+
+  const result = await db
+    .prepare("INSERT INTO email_otps (email, otp, purpose, expires_at) VALUES (?, ?, ?, ?)")
+    .run(targetEmail, otp, purpose, expiresAt);
+
+  await sendOtpEmail(targetEmail, otp, purpose);
+
+  // Return masked email and otp record id (used as token)
+  const masked = targetEmail.replace(/^(.)(.*)(@.*)$/, (_, first, mid, domain) =>
+    first + "*".repeat(Math.min(mid.length, 4)) + domain
+  );
+
+  return { masked, otpId: result.lastInsertRowid };
+});
+
+export const verifyEmailOtp = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { otpId, otp, purpose } = data as { otpId: number | string; otp: string; purpose: "signup" | "forgot_password" };
+
+  const record = await db
+    .prepare("SELECT id, otp, used, expires_at FROM email_otps WHERE id = ? AND purpose = ?")
+    .get(otpId, purpose) as any;
+
+  if (!record) throw new Error("Invalid verification code. Please try again.");
+  if (record.used) throw new Error("This code has already been used. Please request a new one.");
+  if (new Date(record.expires_at) < new Date()) throw new Error("Code has expired. Please request a new one.");
+  if (record.otp !== otp.trim()) throw new Error("Incorrect code. Please check and try again.");
+
+  // Don't mark used here — mark it used only on successful account creation / password reset
+  // to allow retry if form submission fails
+  return { success: true, otpToken: record.id };
 });
 
 // Temporary function to create admin user - remove after use
