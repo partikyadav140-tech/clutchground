@@ -97,7 +97,11 @@ export async function sendOtpEmail(to: string, otp: string, purpose: "signup" | 
   console.log(`[Email OTP] ────────────────────────────────\n`);
 
   if (!apiKey) {
-    console.warn("[Email OTP] RESEND_API_KEY not set — email not sent, use OTP from console above.");
+    const isProd = getEnvVar("NODE_ENV") === "production";
+    if (isProd) {
+      throw new Error("Email service not configured. Please contact support.");
+    }
+    console.warn("[Email OTP] RESEND_API_KEY not set — DEV MODE: use OTP from console above.");
     return;
   }
 
