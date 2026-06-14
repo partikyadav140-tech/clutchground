@@ -208,7 +208,7 @@ export const resetPassword = createServerFn({ method: "POST" }).handler(async ({
 
 export const sendEmailOtp = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { email, purpose, phone } = data as { email?: string; purpose: "signup" | "forgot_password"; phone?: string };
+  const { email, purpose, phone } = data as unknown as { email?: string; purpose: "signup" | "forgot_password"; phone?: string };
 
   let targetEmail = (email || "").trim().toLowerCase();
 
@@ -259,7 +259,7 @@ export const sendEmailOtp = createServerFn({ method: "POST" }).handler(async ({ 
 
 export const verifyEmailOtp = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { otpId, otp, purpose } = data as { otpId: number | string; otp: string; purpose: "signup" | "forgot_password" };
+  const { otpId, otp, purpose } = data as unknown as { otpId: number | string; otp: string; purpose: "signup" | "forgot_password" };
 
   const record = await db
     .prepare("SELECT id, otp, used, expires_at FROM email_otps WHERE id = ? AND purpose = ?")
