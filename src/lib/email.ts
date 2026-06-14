@@ -17,7 +17,7 @@ export function generateOtp(): string {
  */
 export async function sendOtpEmail(to: string, otp: string, purpose: "signup" | "forgot_password"): Promise<void> {
   const apiKey = getEnvVar("RESEND_API_KEY");
-  const fromEmail = getEnvVar("RESEND_FROM_EMAIL") || "noreply@clutchground.in";
+  const fromEmail = getEnvVar("RESEND_FROM_EMAIL") || "noreply@clutchground.games";
 
   const subject =
     purpose === "signup"
