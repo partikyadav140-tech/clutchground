@@ -404,7 +404,7 @@ function AdminTournamentsPage() {
     ctx.textAlign = "center";
     ctx.fillStyle = "rgba(255,255,255,0.25)";
     ctx.fillText(
-      `clutchground.onrender.com  •  Generated ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`,
+      `clutchground.games  •  Generated ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`,
       W / 2,
       footerY + 28,
     );

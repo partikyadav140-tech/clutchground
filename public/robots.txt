@@ -1,4 +1,19 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://clutchground.onrender.com/sitemap.xml
+# Block admin routes from indexing
+Disallow: /admin
+Disallow: /admin/
+
+# Block private user pages
+Disallow: /profile/
+Disallow: /my-team
+Disallow: /team-chat
+
+# Block auth pages
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+
+# Sitemap
+Sitemap: https://clutchground.games/sitemap.xml

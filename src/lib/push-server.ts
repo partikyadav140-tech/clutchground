@@ -8,7 +8,7 @@ function ensureVapidInitialized() {
 
   let publicVapidKey = getEnvVar("VITE_VAPID_PUBLIC_KEY");
   let privateVapidKey = getEnvVar("VAPID_PRIVATE_KEY");
-  let vapidSubject = getEnvVar("VAPID_SUBJECT") || "https://clutchground.onrender.com";
+  let vapidSubject = getEnvVar("VAPID_SUBJECT") || "https://clutchground.games";
 
   // Clean quotes if any are present
   if (publicVapidKey) publicVapidKey = publicVapidKey.replace(/['"]/g, "").trim();

@@ -1,33 +1,89 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+
+  <!-- Homepage -->
   <url>
-    <loc>https://clutchground.onrender.com/</loc>
-    <lastmod>2024-05-01</lastmod>
+    <loc>https://clutchground.games/</loc>
+    <lastmod>2025-06-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319417/clutchground/placeholders/mygshudhl9qltqroxrmi.png</image:loc>
+      <image:title>ClutchGround — India's #1 Free Fire Esports Tournament Platform</image:title>
+    </image:image>
   </url>
+
+  <!-- Tournaments -->
   <url>
-    <loc>https://clutchground.onrender.com/tournaments</loc>
-    <lastmod>2024-05-01</lastmod>
+    <loc>https://clutchground.games/tournaments</loc>
+    <lastmod>2025-06-14</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <priority>0.95</priority>
   </url>
+
+  <!-- Leaderboard -->
   <url>
-    <loc>https://clutchground.onrender.com/leaderboard</loc>
-    <lastmod>2024-05-01</lastmod>
+    <loc>https://clutchground.games/leaderboard</loc>
+    <lastmod>2025-06-14</lastmod>
     <changefreq>hourly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.90</priority>
   </url>
+
+  <!-- Matches -->
   <url>
-    <loc>https://clutchground.onrender.com/teams</loc>
-    <lastmod>2024-05-01</lastmod>
+    <loc>https://clutchground.games/matches</loc>
+    <lastmod>2025-06-14</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <priority>0.85</priority>
   </url>
+
+  <!-- Teams -->
   <url>
-    <loc>https://clutchground.onrender.com/matches</loc>
-    <lastmod>2024-05-01</lastmod>
+    <loc>https://clutchground.games/teams</loc>
+    <lastmod>2025-06-14</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <priority>0.85</priority>
   </url>
+
+  <!-- Profile Shop -->
+  <url>
+    <loc>https://clutchground.games/profile-shop</loc>
+    <lastmod>2025-06-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+
+  <!-- Spin Wheel -->
+  <url>
+    <loc>https://clutchground.games/spin-wheel</loc>
+    <lastmod>2025-06-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.70</priority>
+  </url>
+
+  <!-- Login -->
+  <url>
+    <loc>https://clutchground.games/login</loc>
+    <lastmod>2025-06-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.60</priority>
+  </url>
+
+  <!-- Signup -->
+  <url>
+    <loc>https://clutchground.games/signup</loc>
+    <lastmod>2025-06-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.60</priority>
+  </url>
+
+  <!-- Contact -->
+  <url>
+    <loc>https://clutchground.games/contact</loc>
+    <lastmod>2025-06-14</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.50</priority>
+  </url>
+
 </urlset>

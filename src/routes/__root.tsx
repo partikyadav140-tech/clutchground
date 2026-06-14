@@ -36,54 +36,137 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" },
-      { title: "ClutchGround | Rule the Battleground" },
+
+      // ── Primary SEO ──────────────────────────────────────────────────────────
+      { title: "ClutchGround — India's #1 Free Fire Esports Tournament Platform | Win Real Cash" },
       {
         name: "description",
         content:
-          "Join ClutchGround to compete in top-tier Free Fire and Free Fire MAX tournaments. Win massive real cash prizes, join elite esports teams, and climb the Leaderboard.",
+          "ClutchGround is India's #1 Free Fire & Free Fire MAX esports tournament platform. Join daily & weekly tournaments, win real cash prizes up to ₹10,000, form squads, climb the national leaderboard, and battle the best players in India. Free to join. Register now at clutchground.games!",
       },
       {
         name: "keywords",
         content:
-          "ClutchGround, clutch ground, clutch, tournament free fire, free fire tournament app, free fire esports, ff max tournament, clutch esports, play free fire earn money, best free fire tournament app",
+          "ClutchGround, clutchground.games, clutch ground, free fire tournament, free fire tournament India, free fire esports India, free fire max tournament, ff tournament app, free fire cash tournament, garena free fire tournament, best free fire tournament app, online free fire tournament, free fire squad tournament, free fire duo tournament, free fire solo tournament, free fire tournament registration, win money free fire, free fire prize pool, free fire leaderboard India, free fire esports team, join free fire tournament, free fire gaming platform, ff max esports, clutch esports, indian gaming tournament, mobile esports India, battle royale tournament India",
       },
-      {
-        name: "robots",
-        content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
-      },
-      {
-        name: "google-site-verification",
-        content: "1lzJttEC5fS02fFzJrv4p2FH67VPj33kfmciXQ0l6J8",
-      },
-      { property: "og:title", content: "ClutchGround | Rule the Battleground" },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
+      { name: "googlebot", content: "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" },
+      { name: "google-site-verification", content: "1lzJttEC5fS02fFzJrv4p2FH67VPj33kfmciXQ0l6J8" },
+      { name: "author", content: "ClutchGround" },
+      { name: "theme-color", content: "#7c3aed" },
+      { name: "application-name", content: "ClutchGround" },
+      { name: "category", content: "Gaming, Esports, Tournaments" },
+      { name: "language", content: "English" },
+      { name: "geo.region", content: "IN" },
+      { name: "geo.placename", content: "India" },
+      { name: "rating", content: "general" },
+      { name: "revisit-after", content: "1 days" },
+
+      // ── Canonical ────────────────────────────────────────────────────────────
+      { property: "og:url", content: "https://clutchground.games/" },
+
+      // ── Open Graph ───────────────────────────────────────────────────────────
+      { property: "og:site_name", content: "ClutchGround" },
+      { property: "og:type", content: "website" },
+      { property: "og:title", content: "ClutchGround — India's #1 Free Fire Esports Tournament Platform" },
       {
         property: "og:description",
         content:
-          "Join ClutchGround to compete in top-tier Free Fire and Free Fire MAX tournaments. Win massive real cash prizes, join elite esports teams, and climb the Leaderboard.",
+          "Join ClutchGround — India's biggest Free Fire & Free Fire MAX tournament platform. Compete in daily tournaments, win real cash prizes, build your esports team, and dominate the national leaderboard. 10,000+ players trust ClutchGround. Join free at clutchground.games!",
       },
       { property: "og:image", content: "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319417/clutchground/placeholders/mygshudhl9qltqroxrmi.png" },
-      { property: "og:type", content: "website" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "ClutchGround — Free Fire Esports Tournament Platform India" },
+      { property: "og:locale", content: "en_IN" },
+
+      // ── Twitter / X Card ─────────────────────────────────────────────────────
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Clutch Ground | Rule the Battleground" },
+      { name: "twitter:site", content: "@clutchground" },
+      { name: "twitter:creator", content: "@clutchground" },
+      { name: "twitter:title", content: "ClutchGround — India's #1 Free Fire Esports Tournament Platform" },
       {
         name: "twitter:description",
         content:
-          "Join ClutchGround to compete in top-tier Free Fire and Free Fire MAX tournaments. Win massive real cash prizes, join elite esports teams, and climb the Leaderboard.",
+          "India's biggest Free Fire tournament platform. Win real cash prizes, join squads, and climb the leaderboard. 10,000+ gamers. Join free at clutchground.games!",
       },
       { name: "twitter:image", content: "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319417/clutchground/placeholders/mygshudhl9qltqroxrmi.png" },
+      { name: "twitter:image:alt", content: "ClutchGround Free Fire Esports Platform" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      // Fonts — single optimised request (Orbitron display + Inter body)
+      { rel: "canonical", href: "https://clutchground.games/" },
+      // Fonts
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500;600;700&display=swap",
       },
-      // DNS prefetch for API & CDN
-      { rel: "dns-prefetch", href: "//api.clutchground.com" },
+      // DNS prefetch
       { rel: "dns-prefetch", href: "//res.cloudinary.com" },
+      { rel: "dns-prefetch", href: "//fonts.googleapis.com" },
+    ],
+    scripts: [
+      {
+        // JSON-LD structured data for rich results
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "WebSite",
+              "@id": "https://clutchground.games/#website",
+              "url": "https://clutchground.games/",
+              "name": "ClutchGround",
+              "description": "India's #1 Free Fire Esports Tournament Platform",
+              "inLanguage": "en-IN",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": {
+                  "@type": "EntryPoint",
+                  "urlTemplate": "https://clutchground.games/tournaments?q={search_term_string}"
+                },
+                "query-input": "required name=search_term_string"
+              }
+            },
+            {
+              "@type": "Organization",
+              "@id": "https://clutchground.games/#organization",
+              "name": "ClutchGround",
+              "url": "https://clutchground.games/",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319417/clutchground/placeholders/mygshudhl9qltqroxrmi.png",
+                "width": 512,
+                "height": 512
+              },
+              "description": "ClutchGround is India's leading Free Fire and Free Fire MAX esports tournament platform where players compete for real cash prizes.",
+              "foundingDate": "2024",
+              "areaServed": "IN",
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "contactType": "customer support",
+                "url": "https://clutchground.games/contact"
+              },
+              "sameAs": []
+            },
+            {
+              "@type": "SportsEvent",
+              "@id": "https://clutchground.games/tournaments#event",
+              "name": "ClutchGround Free Fire Tournaments",
+              "sport": "Esports - Free Fire",
+              "organizer": { "@id": "https://clutchground.games/#organization" },
+              "location": {
+                "@type": "VirtualLocation",
+                "url": "https://clutchground.games/tournaments"
+              },
+              "description": "Daily and weekly Free Fire esports tournaments with real cash prizes for Indian players.",
+              "url": "https://clutchground.games/tournaments"
+            }
+          ]
+        }),
+      },
     ],
   }),
   shellComponent: RootShell,
