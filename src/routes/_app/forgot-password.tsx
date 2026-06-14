@@ -58,7 +58,11 @@ function ForgotPasswordPage() {
       const res = await (sendEmailOtp as any)({ data: { phone: phone.trim(), purpose: "forgot_password" } });
       setOtpId(res.otpId);
       setMaskedEmail(res.masked);
-      toast.success(`Verification code sent to ${res.masked}`);
+      if (res.emailError) {
+        toast.warning(`⚠️ Email delivery failed — check spam or contact support. Code is valid.`);
+      } else {
+        toast.success(`Verification code sent to ${res.masked}`);
+      }
       startCooldown();
       goTo(2);
     } catch (err: any) {
@@ -75,7 +79,11 @@ function ForgotPasswordPage() {
       setMaskedEmail(res.masked);
       setOtp(["", "", "", "", "", ""]);
       setOtpToken(null);
-      toast.success("New code sent!");
+      if (res.emailError) {
+        toast.warning(`⚠️ Email delivery failed — check spam or contact support.`);
+      } else {
+        toast.success("New code sent!");
+      }
       startCooldown();
       otpRefs.current[0]?.focus();
     } catch (err: any) {

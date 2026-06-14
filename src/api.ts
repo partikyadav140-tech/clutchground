@@ -241,14 +241,20 @@ export const sendEmailOtp = createServerFn({ method: "POST" }).handler(async ({ 
     .prepare("INSERT INTO email_otps (email, otp, purpose, expires_at) VALUES (?, ?, ?, ?)")
     .run(targetEmail, otp, purpose, expiresAt);
 
-  await sendOtpEmail(targetEmail, otp, purpose);
+  let emailError = false;
+  try {
+    await sendOtpEmail(targetEmail, otp, purpose);
+  } catch (emailErr: any) {
+    console.error("[sendEmailOtp] Email delivery failed, OTP still valid in DB:", emailErr?.message);
+    emailError = true;
+  }
 
   // Return masked email and otp record id (used as token)
   const masked = targetEmail.replace(/^(.)(.*)(@.*)$/, (_, first, mid, domain) =>
     first + "*".repeat(Math.min(mid.length, 4)) + domain
   );
 
-  return { masked, otpId: result.lastInsertRowid };
+  return { masked, otpId: result.lastInsertRowid, emailError };
 });
 
 export const verifyEmailOtp = createServerFn({ method: "POST" }).handler(async ({ data }) => {

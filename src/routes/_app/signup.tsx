@@ -65,7 +65,11 @@ function SignupPage() {
       const res = await (sendEmailOtp as any)({ data: { email: form.email.trim(), purpose: "signup" } });
       setOtpId(res.otpId);
       setMaskedEmail(res.masked);
-      toast.success(`Verification code sent to ${res.masked}`);
+      if (res.emailError) {
+        toast.warning(`⚠️ Email delivery failed — check your spam or contact support. Code is valid.`);
+      } else {
+        toast.success(`Verification code sent to ${res.masked}`);
+      }
       startCooldown();
       goTo(2);
     } catch (err: any) {
@@ -82,7 +86,11 @@ function SignupPage() {
       setMaskedEmail(res.masked);
       setOtp(["", "", "", "", "", ""]);
       setOtpToken(null);
-      toast.success("New code sent!");
+      if (res.emailError) {
+        toast.warning(`⚠️ Email delivery failed — check spam or contact support.`);
+      } else {
+        toast.success("New code sent!");
+      }
       startCooldown();
       otpRefs.current[0]?.focus();
     } catch (err: any) {
