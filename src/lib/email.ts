@@ -87,24 +87,39 @@ export async function sendOtpEmail(to: string, otp: string, purpose: "signup" | 
 </html>
   `.trim();
 
+  // Always log OTP to server console for debugging
+  console.log(`\n[Email OTP] ────────────────────────────────`);
+  console.log(`[Email OTP] PURPOSE : ${purpose.toUpperCase()}`);
+  console.log(`[Email OTP] TO      : ${to}`);
+  console.log(`[Email OTP] FROM    : ${fromEmail}`);
+  console.log(`[Email OTP] API KEY : ${apiKey ? apiKey.slice(0, 8) + "..." : "NOT SET"}`);
+  console.log(`[Email OTP] OTP CODE: ${otp}`);
+  console.log(`[Email OTP] ────────────────────────────────\n`);
+
   if (!apiKey) {
-    // Development fallback — log OTP to console
-    console.log(`[Email OTP] ${purpose.toUpperCase()} OTP for ${to}: ${otp}`);
+    console.warn("[Email OTP] RESEND_API_KEY not set — email not sent, use OTP from console above.");
     return;
   }
 
   const { Resend } = await import("resend");
   const resend = new Resend(apiKey);
 
-  const { error } = await resend.emails.send({
+  const result = await resend.emails.send({
     from: fromEmail,
     to,
     subject,
     html,
   });
 
-  if (error) {
-    console.error("[Resend] Failed to send OTP email:", error);
-    throw new Error("Failed to send verification email. Please try again.");
+  console.log("[Resend] Response:", JSON.stringify(result));
+
+  if (result.error) {
+    console.error("[Resend] ERROR:", result.error);
+    // Still don't block the user — OTP is in DB, they can use console OTP
+    // But surface the real error message
+    const msg = (result.error as any)?.message || JSON.stringify(result.error);
+    throw new Error(`Email delivery failed: ${msg}. Check server logs for the OTP code.`);
   }
+
+  console.log("[Resend] Email sent successfully. ID:", (result.data as any)?.id);
 }
