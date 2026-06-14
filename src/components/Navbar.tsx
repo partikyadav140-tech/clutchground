@@ -15,7 +15,7 @@ import { Logo } from "./Logo";
 import { GodCoin } from "./GodCoin";
 import { TicketIcon } from "./TicketIcon";
 import { useAuth } from "../lib/auth-client";
-import { useTutorialStore } from "../lib/tutorial-store";
+
 import { getNotifications, getUnreadChatCount } from "../api";
 import {
   requestBrowserNotificationPermission,
@@ -51,7 +51,8 @@ export function Navbar() {
   const [unreadChats, setUnreadChats] = useState(0);
   const [showPromo, setShowPromo] = useState(false);
   const notifsRef = useRef<string[]>([]);
-  const { isActive: isTutorialActive, isCompleted: isTutorialCompleted } = useTutorialStore();
+  const isTutorialActive = false;
+  const isTutorialCompleted = true;
   const prevActiveRef = useRef(isTutorialActive);
 
   const balance = user

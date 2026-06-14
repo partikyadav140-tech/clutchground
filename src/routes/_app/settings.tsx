@@ -4,7 +4,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../lib/auth-client";
 import { useTheme } from "../../lib/theme";
-import { useTutorialStore } from "../../lib/tutorial-store";
+
 import { PageHeader } from "@/components/PageHeader";
 import { GodCoin } from "@/components/GodCoin";
 import { Button } from "@/components/ui/button";
@@ -60,20 +60,7 @@ function SettingsPage() {
           <MenuItem icon={FileText} color="#fbbf24" label="Terms & conditions" to="/terms" />
         </MenuSection>
 
-        <MenuSection label="App">
-          <button
-            type="button"
-            onClick={() => {
-              useTutorialStore.getState().replayTutorial();
-              router.navigate({ to: "/" });
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-secondary/50"
-          >
-            <IconBox color="#f59e0b"><RefreshCw className="w-4 h-4" /></IconBox>
-            <span className="flex-1 text-sm font-bold text-left">Replay tutorial</span>
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </MenuSection>
+
       </div>
 
       <div className="px-4 mt-8">

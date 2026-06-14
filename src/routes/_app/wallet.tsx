@@ -11,7 +11,7 @@ import { WalletDepositDialog } from "@/components/WalletDepositDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { processWithdrawal, getTransactionHistory, saveUpiId } from "../../api";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTutorialStore } from "../../lib/tutorial-store";
+
 import { SkeletonWallet } from "@/components/SkeletonPage";
 
 export const Route = createFileRoute("/_app/wallet")({
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_app/wallet")({
 
  function WalletPage() {
   const { user, loading: authLoading, setUser } = useAuth();
-  const { isActive: isTutorialActive } = useTutorialStore();
+  const isTutorialActive = false;
   const router = useRouter();
 
   const [transactions, setTransactions] = useState<any[]>([]);

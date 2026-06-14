@@ -227,31 +227,8 @@ function HomePage() {
                 India&apos;s Free Fire Esports Arena
               </div>
 
-              {/* Social proof stats */}
-              <div className="grid grid-cols-3 gap-3.5 my-6 w-full">
-                {[
-                  { label: "Players Active", value: "10K+", icon: Users, color: "var(--primary)" },
-                  { label: "Matches Hosted", value: "2K+", icon: Swords, color: "var(--fire)" },
-                  { label: "Prize Pool", value: "₹50K+", icon: Trophy, color: "var(--gold)" },
-                ].map((s) => {
-                  const Icon = s.icon;
-                  return (
-                    <div key={s.label} className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-secondary/30 border border-border/40 backdrop-blur-md relative group hover:border-primary/40 transition-all">
-                      <div className="absolute top-0 inset-x-4 h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-                      
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2"
-                           style={{ background: `${s.color}12`, color: s.color }}>
-                        <Icon className="w-4.5 h-4.5" />
-                      </div>
-                      <p className="font-display font-black text-sm text-foreground leading-none">{s.value}</p>
-                      <p className="text-[9px] font-bold text-muted-foreground mt-1.5 leading-tight text-center uppercase tracking-wider">{s.label}</p>
-                    </div>
-                  );
-                })}
-              </div>
-
               {/* CTA Buttons */}
-              <div className="flex flex-col gap-2.5 max-w-[280px] mx-auto w-full">
+              <div className="flex flex-col gap-2.5 max-w-[280px] mx-auto w-full mt-6">
                 <Link to="/login" className="w-full">
                   <button className="h-12 w-full rounded-2xl font-bold text-sm text-white press-effect flex items-center justify-center gap-2 relative overflow-hidden group shadow-lg"
                           style={{ background: "var(--gradient-cta)", boxShadow: "var(--shadow-cta)" }}>
