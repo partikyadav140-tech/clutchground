@@ -128,7 +128,7 @@ async function initDb() {
         id SERIAL PRIMARY KEY,
         username TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
-        password_plain TEXT,
+        password_encrypted TEXT,
         role TEXT NOT NULL DEFAULT 'user',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         deposit_balance INTEGER DEFAULT 0,
@@ -377,6 +377,7 @@ async function initDb() {
         purpose TEXT NOT NULL,
         expires_at TIMESTAMP NOT NULL,
         used BOOLEAN DEFAULT false,
+        verified BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
@@ -394,7 +395,9 @@ async function initDb() {
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS upi_id TEXT;`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS security_question TEXT;`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS security_answer TEXT;`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_plain TEXT;`);
+      await pool.query(`ALTER TABLE users DROP COLUMN IF EXISTS password_plain;`);
+      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_encrypted TEXT;`);
+      await pool.query(`ALTER TABLE email_otps ADD COLUMN IF NOT EXISTS verified BOOLEAN DEFAULT false;`);
       
       // Ticket system migrations
       await pool.query(`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'open';`);
@@ -426,12 +429,13 @@ async function initDb() {
       // Check if admin already exists to prevent resetting/overwriting existing admin credentials
       const adminCheck = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
       if (adminCheck.rows.length === 0) {
-        const { hashPassword } = await import("./auth-crypto");
+        const { hashPassword, encryptPassword } = await import("./auth-crypto");
         const hashedPassword = hashPassword("admin123");
+        const encryptedPassword = encryptPassword("admin123");
         await pool.query(`
-          INSERT INTO users (username, password, password_plain, role, phone)
-          VALUES ('admin', $1, 'admin123', 'admin', '8307224756')
-        `, [hashedPassword]);
+          INSERT INTO users (username, password, password_encrypted, role, phone)
+          VALUES ('admin', $1, $2, 'admin', '8307224756')
+        `, [hashedPassword, encryptedPassword]);
         console.log("[DB] Default admin seeded successfully.");
       } else {
         console.log("[DB] Admin accounts already exist. Skipping seed.");

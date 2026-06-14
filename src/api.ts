@@ -112,9 +112,10 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
     throw new Error("Email verification is required");
   }
   const otpRecord = await db
-    .prepare("SELECT id, used, expires_at FROM email_otps WHERE id = ? AND email = ? AND purpose = 'signup'")
+    .prepare("SELECT id, used, verified, expires_at FROM email_otps WHERE id = ? AND email = ? AND purpose = 'signup'")
     .get(otpToken, email?.trim().toLowerCase()) as any;
   if (!otpRecord) throw new Error("Invalid verification token. Please re-verify your email.");
+  if (!otpRecord.verified) throw new Error("Email has not been verified yet. Please complete verification.");
   if (otpRecord.used) throw new Error("Verification token already used. Please re-verify your email.");
   if (new Date(otpRecord.expires_at) < new Date()) throw new Error("Verification token expired. Please re-verify your email.");
 
@@ -138,16 +139,17 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
     }
   }
 
-  const { hashPassword } = await import("./lib/auth-crypto");
+  const { hashPassword, encryptPassword } = await import("./lib/auth-crypto");
   const hashedPassword = hashPassword(password);
+  const encryptedPassword = encryptPassword(password);
 
   const insertStmt = db.prepare(
-    "INSERT INTO users (username, password, password_plain, ign, uid, email, phone, security_question, security_answer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO users (username, password, password_encrypted, ign, uid, email, phone, security_question, security_answer) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
   );
   const result = await insertStmt.run(
     username,
     hashedPassword,
-    password,
+    encryptedPassword,
     ign || null,
     uid || null,
     email?.trim().toLowerCase() || null,
@@ -186,16 +188,18 @@ export const resetPassword = createServerFn({ method: "POST" }).handler(async ({
   // Verify OTP
   if (!otpToken) throw new Error("OTP verification is required");
   const otpRecord = await db
-    .prepare("SELECT id, used, expires_at FROM email_otps WHERE id = ? AND email = ? AND purpose = 'forgot_password'")
+    .prepare("SELECT id, used, verified, expires_at FROM email_otps WHERE id = ? AND email = ? AND purpose = 'forgot_password'")
     .get(otpToken, normalizedEmail) as any;
   if (!otpRecord) throw new Error("Invalid or expired OTP. Please request a new one.");
+  if (!otpRecord.verified) throw new Error("Email has not been verified yet. Please complete verification.");
   if (otpRecord.used) throw new Error("OTP already used. Please request a new one.");
   if (new Date(otpRecord.expires_at) < new Date()) throw new Error("OTP has expired. Please request a new one.");
 
-  const { hashPassword } = await import("./lib/auth-crypto");
+  const { hashPassword, encryptPassword } = await import("./lib/auth-crypto");
   const hashedPassword = hashPassword(new_password);
+  const encryptedPassword = encryptPassword(new_password);
 
-  await db.prepare("UPDATE users SET password = ?, password_plain = ? WHERE id = ?").run(hashedPassword, new_password, user.id);
+  await db.prepare("UPDATE users SET password = ?, password_encrypted = ? WHERE id = ?").run(hashedPassword, encryptedPassword, user.id);
   // Mark OTP as used
   await db.prepare("UPDATE email_otps SET used = true WHERE id = ?").run(otpRecord.id);
   return { success: true };
@@ -265,59 +269,14 @@ export const verifyEmailOtp = createServerFn({ method: "POST" }).handler(async (
   if (new Date(record.expires_at) < new Date()) throw new Error("Code has expired. Please request a new one.");
   if (record.otp !== otp.trim()) throw new Error("Incorrect code. Please check and try again.");
 
+  // Mark verification token as verified
+  await db.prepare("UPDATE email_otps SET verified = true WHERE id = ?").run(record.id);
+
   // Don't mark used here — mark it used only on successful account creation / password reset
   // to allow retry if form submission fails
   return { success: true, otpToken: record.id };
 });
 
-// Temporary function to create admin user - remove after use
-export const createAdminUser = createServerFn({ method: "POST" }).handler(async () => {
-  const { db } = await import("./lib/db");
-
-  try {
-    // Check if admin already exists
-    const existingAdmin = await db.prepare("SELECT * FROM users WHERE username = 'admin'").get();
-    if (existingAdmin) {
-      console.log("Existing admin found:", existingAdmin);
-    }
-
-    // Delete existing admin if any
-    const deleteResult = await db.prepare("DELETE FROM users WHERE username = 'admin'").run();
-    console.log("Delete result:", deleteResult);
-
-    // Also delete any user with the admin phone number
-    const deletePhoneResult = await db.prepare("DELETE FROM users WHERE phone = '8307224756'").run();
-    console.log("Delete phone result:", deletePhoneResult);
-
-    const { hashPassword } = await import("./lib/auth-crypto");
-    const hashedPassword = hashPassword("admin123");
-
-    // Create new admin user
-    const insertStmt = db.prepare(
-      "INSERT INTO users (username, password, password_plain, role, phone) VALUES (?, ?, ?, ?, ?)",
-    );
-    const result = await insertStmt.run('admin', hashedPassword, 'admin123', 'admin', '8307224756');
-    console.log("Insert result:", result);
-
-    // Verify the user was created
-    const verifyUser = await db.prepare("SELECT * FROM users WHERE username = 'admin'").get();
-    console.log("Created admin user:", verifyUser);
-
-    return {
-      success: true,
-      message: "Admin user created successfully",
-      user: verifyUser
-    };
-  } catch (error) {
-    const err = error as Error;
-    console.error("Error creating admin user:", err);
-    return {
-      success: false,
-      message: `Failed to create admin user: ${err.message}`,
-      error: err.message
-    };
-  }
-});
 
 export const getUserFromSession = createServerFn({ method: "GET" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
@@ -347,11 +306,22 @@ export const logoutUser = createServerFn({ method: "POST" }).handler(async ({ da
 export const getUsers = createServerFn({ method: "GET" }).handler(async () => {
   await getCurrentUser("admin");
   const { db } = await import("./lib/db");
-  return await db
+  const { decryptPassword } = await import("./lib/auth-crypto");
+  
+  const list = (await db
     .prepare(
-      "SELECT id, username, password, password_plain, role, created_at, deposit_balance, winning_balance, ign, phone, banned FROM users",
+      "SELECT id, username, password_encrypted, role, created_at, deposit_balance, winning_balance, ign, phone, banned FROM users",
     )
-    .all();
+    .all()) as any[];
+
+  return list.map((u) => {
+    const plain = u.password_encrypted ? decryptPassword(u.password_encrypted) : null;
+    const { password_encrypted, ...rest } = u;
+    return {
+      ...rest,
+      password_plain: plain,
+    };
+  });
 });
 
 export const getTournaments = createServerFn({ method: "GET" }).handler(async () => {

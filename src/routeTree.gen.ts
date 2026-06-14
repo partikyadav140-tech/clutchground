@@ -46,7 +46,6 @@ import { Route as AppAdminUsersRouteImport } from './routes/_app/admin/users'
 import { Route as AppAdminTournamentsRouteImport } from './routes/_app/admin/tournaments'
 import { Route as AppAdminSpinWheelRouteImport } from './routes/_app/admin/spin-wheel'
 import { Route as AppAdminSiteSettingsRouteImport } from './routes/_app/admin/site-settings'
-import { Route as AppAdminSetupRouteImport } from './routes/_app/admin/setup'
 import { Route as AppAdminRegistrationsRouteImport } from './routes/_app/admin/registrations'
 import { Route as AppAdminProfileShopRouteImport } from './routes/_app/admin/profile-shop'
 import { Route as AppAdminPayoutsRouteImport } from './routes/_app/admin/payouts'
@@ -241,11 +240,6 @@ const AppAdminSiteSettingsRoute = AppAdminSiteSettingsRouteImport.update({
   path: '/admin/site-settings',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAdminSetupRoute = AppAdminSetupRouteImport.update({
-  id: '/admin/setup',
-  path: '/admin/setup',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppAdminRegistrationsRoute = AppAdminRegistrationsRouteImport.update({
   id: '/admin/registrations',
   path: '/admin/registrations',
@@ -324,7 +318,6 @@ export interface FileRoutesByFullPath {
   '/admin/payouts': typeof AppAdminPayoutsRoute
   '/admin/profile-shop': typeof AppAdminProfileShopRoute
   '/admin/registrations': typeof AppAdminRegistrationsRoute
-  '/admin/setup': typeof AppAdminSetupRoute
   '/admin/site-settings': typeof AppAdminSiteSettingsRoute
   '/admin/spin-wheel': typeof AppAdminSpinWheelRoute
   '/admin/tournaments': typeof AppAdminTournamentsRoute
@@ -371,7 +364,6 @@ export interface FileRoutesByTo {
   '/admin/payouts': typeof AppAdminPayoutsRoute
   '/admin/profile-shop': typeof AppAdminProfileShopRoute
   '/admin/registrations': typeof AppAdminRegistrationsRoute
-  '/admin/setup': typeof AppAdminSetupRoute
   '/admin/site-settings': typeof AppAdminSiteSettingsRoute
   '/admin/spin-wheel': typeof AppAdminSpinWheelRoute
   '/admin/tournaments': typeof AppAdminTournamentsRoute
@@ -421,7 +413,6 @@ export interface FileRoutesById {
   '/_app/admin/payouts': typeof AppAdminPayoutsRoute
   '/_app/admin/profile-shop': typeof AppAdminProfileShopRoute
   '/_app/admin/registrations': typeof AppAdminRegistrationsRoute
-  '/_app/admin/setup': typeof AppAdminSetupRoute
   '/_app/admin/site-settings': typeof AppAdminSiteSettingsRoute
   '/_app/admin/spin-wheel': typeof AppAdminSpinWheelRoute
   '/_app/admin/tournaments': typeof AppAdminTournamentsRoute
@@ -471,7 +462,6 @@ export interface FileRouteTypes {
     | '/admin/payouts'
     | '/admin/profile-shop'
     | '/admin/registrations'
-    | '/admin/setup'
     | '/admin/site-settings'
     | '/admin/spin-wheel'
     | '/admin/tournaments'
@@ -518,7 +508,6 @@ export interface FileRouteTypes {
     | '/admin/payouts'
     | '/admin/profile-shop'
     | '/admin/registrations'
-    | '/admin/setup'
     | '/admin/site-settings'
     | '/admin/spin-wheel'
     | '/admin/tournaments'
@@ -567,7 +556,6 @@ export interface FileRouteTypes {
     | '/_app/admin/payouts'
     | '/_app/admin/profile-shop'
     | '/_app/admin/registrations'
-    | '/_app/admin/setup'
     | '/_app/admin/site-settings'
     | '/_app/admin/spin-wheel'
     | '/_app/admin/tournaments'
@@ -849,13 +837,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminSiteSettingsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/admin/setup': {
-      id: '/_app/admin/setup'
-      path: '/admin/setup'
-      fullPath: '/admin/setup'
-      preLoaderRoute: typeof AppAdminSetupRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/admin/registrations': {
       id: '/_app/admin/registrations'
       path: '/admin/registrations'
@@ -968,7 +949,6 @@ interface AppRouteChildren {
   AppAdminPayoutsRoute: typeof AppAdminPayoutsRoute
   AppAdminProfileShopRoute: typeof AppAdminProfileShopRoute
   AppAdminRegistrationsRoute: typeof AppAdminRegistrationsRoute
-  AppAdminSetupRoute: typeof AppAdminSetupRoute
   AppAdminSiteSettingsRoute: typeof AppAdminSiteSettingsRoute
   AppAdminSpinWheelRoute: typeof AppAdminSpinWheelRoute
   AppAdminTournamentsRoute: typeof AppAdminTournamentsRoute
@@ -1015,7 +995,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminPayoutsRoute: AppAdminPayoutsRoute,
   AppAdminProfileShopRoute: AppAdminProfileShopRoute,
   AppAdminRegistrationsRoute: AppAdminRegistrationsRoute,
-  AppAdminSetupRoute: AppAdminSetupRoute,
   AppAdminSiteSettingsRoute: AppAdminSiteSettingsRoute,
   AppAdminSpinWheelRoute: AppAdminSpinWheelRoute,
   AppAdminTournamentsRoute: AppAdminTournamentsRoute,

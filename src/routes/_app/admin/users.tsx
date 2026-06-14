@@ -34,6 +34,7 @@ function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterType>("all");
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [showPasswords, setShowPasswords] = useState<Record<number, boolean>>({});
 
   if (loading)
     return (
@@ -341,10 +342,21 @@ function AdminUsersPage() {
                               ))}
                             </div>
 
-                            {/* Password */}
-                            <div className="bg-secondary/30 rounded-xl p-2.5">
-                              <div className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-0.5">Password</div>
-                              <div className="font-mono text-[10px] text-foreground truncate">{u.password_plain || u.password || "—"}</div>
+                            {/* Password (Show/Hide toggle for Admin only) */}
+                            <div className="bg-secondary/30 rounded-xl p-2.5 flex items-center justify-between">
+                              <div className="min-w-0 flex-1">
+                                <div className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-0.5">Password</div>
+                                <div className="font-mono text-sm font-bold text-foreground truncate">
+                                  {showPasswords[u.id] ? (u.password_plain || "—") : "••••••••"}
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setShowPasswords(prev => ({ ...prev, [u.id]: !prev[u.id] }))}
+                                className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary/80 press-effect shrink-0 ml-2"
+                              >
+                                {showPasswords[u.id] ? "Hide" : "Show"}
+                              </button>
                             </div>
 
                             {/* Wallet management */}
