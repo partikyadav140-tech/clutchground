@@ -2,7 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { sendEmailOtp, verifyEmailOtp, resetPassword } from "../../api";
-import { Phone, Lock, ArrowRight, ChevronLeft, Mail, ShieldCheck, RefreshCw, KeyRound } from "lucide-react";
+import { Lock, ArrowRight, ChevronLeft, Mail, ShieldCheck, RefreshCw, KeyRound } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/Logo";
 
@@ -18,10 +18,10 @@ const SLIDE = {
 };
 
 function ForgotPasswordPage() {
-  const [step, setStep] = useState(1); // 1=phone, 2=OTP, 3=new password
+  const [step, setStep] = useState(1); // 1=email, 2=OTP, 3=new password
   const [dir, setDir] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [maskedEmail, setMaskedEmail] = useState("");
   const [otpId, setOtpId] = useState<number | null>(null);
   const [otpToken, setOtpToken] = useState<number | null>(null);
@@ -55,7 +55,7 @@ function ForgotPasswordPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await (sendEmailOtp as any)({ data: { phone: phone.trim(), purpose: "forgot_password" } });
+      const res = await (sendEmailOtp as any)({ data: { email: email.trim(), purpose: "forgot_password" } });
       setOtpId(res.otpId);
       setMaskedEmail(res.masked);
       if (res.emailError) {
@@ -74,7 +74,7 @@ function ForgotPasswordPage() {
     if (cooldown > 0) return;
     setLoading(true);
     try {
-      const res = await (sendEmailOtp as any)({ data: { phone: phone.trim(), purpose: "forgot_password" } });
+      const res = await (sendEmailOtp as any)({ data: { email: email.trim(), purpose: "forgot_password" } });
       setOtpId(res.otpId);
       setMaskedEmail(res.masked);
       setOtp(["", "", "", "", "", ""]);
@@ -111,7 +111,7 @@ function ForgotPasswordPage() {
     if (newPassword.length < 6) { toast.error("Password must be at least 6 characters"); return; }
     setLoading(true);
     try {
-      await (resetPassword as any)({ data: { phone: phone.trim(), otpToken, new_password: newPassword } });
+      await (resetPassword as any)({ data: { email: email.trim(), otpToken, new_password: newPassword } });
       toast.success("Password reset successfully! Please sign in.");
       router.navigate({ to: "/login" });
     } catch (err: any) {
@@ -141,7 +141,7 @@ function ForgotPasswordPage() {
 
   const stepTitles = ["Find Account", "Verify Email", "New Password"];
   const stepSubs = [
-    "Enter your registered phone number",
+    "Enter your registered email address",
     maskedEmail ? `Code sent to ${maskedEmail}` : "Check your email",
     "Choose a strong new password",
   ];
@@ -191,35 +191,35 @@ function ForgotPasswordPage() {
         className="bg-card border-t border-border rounded-t-[32px] px-6 pt-7 pb-8 shadow-[0_-20px_60px_rgba(0,0,0,0.25)] flex-1 overflow-y-auto"
       >
         <AnimatePresence mode="wait" custom={dir}>
-          {/* ── Step 1: Phone number ── */}
+          {/* ── Step 1: Email ── */}
           {step === 1 && (
             <motion.form key="fp-step1" custom={dir} variants={SLIDE} initial="initial" animate="animate" exit="exit"
               transition={{ duration: 0.25 }} onSubmit={handleSendOtp} className="space-y-4">
               <div>
                 <label className="block text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2 ml-1">
-                  Phone Number
+                  Email Address
                 </label>
                 <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                   <input
-                    id="fp-phone"
-                    type="tel"
-                    inputMode="numeric"
-                    placeholder="10-digit phone number"
-                    value={phone}
-                    onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    id="fp-email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
                     required
+                    autoComplete="email"
                     className="w-full h-14 bg-secondary border border-border focus:border-primary/60 rounded-2xl pl-12 pr-4 text-sm font-semibold text-foreground outline-none transition-all"
                   />
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-2 ml-1 font-medium">
-                  We'll send a verification code to the email linked to your account.
+                  We'll send a 6-digit code to this email to verify it's you.
                 </p>
               </div>
 
-              <button type="submit" disabled={loading || phone.length < 10}
+              <button type="submit" disabled={loading || !email.trim()}
                 className="w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest text-white flex items-center justify-center gap-2 transition-all active:scale-95 press-effect shadow-cta mt-4"
-                style={{ background: (loading || phone.length < 10) ? "var(--secondary)" : "var(--gradient-cta)" }}>
+                style={{ background: (loading || !email.trim()) ? "var(--secondary)" : "var(--gradient-cta)" }}>
                 {loading
                   ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Sending...</>
                   : <>Send OTP <ArrowRight className="w-4 h-4" /></>}
@@ -314,7 +314,7 @@ function ForgotPasswordPage() {
                   <input
                     id="fp-new-password"
                     type={showPass ? "text" : "password"}
-                    placeholder="Enter new password"
+                    placeholder="Enter new password (min 6 chars)"
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
                     required
@@ -324,7 +324,7 @@ function ForgotPasswordPage() {
                   />
                   <button type="button" onClick={() => setShowPass(!showPass)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                    {showPass ? <Lock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                    <Lock className="w-4 h-4" />
                   </button>
                 </div>
               </div>

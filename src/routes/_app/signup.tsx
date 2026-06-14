@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { signupUser, sendEmailOtp, verifyEmailOtp } from "../../api";
 import { setSessionId } from "../../lib/auth-client";
-import { Eye, EyeOff, ArrowRight, User, Phone, Lock, Gamepad2, Mail, Hash, ChevronLeft, ChevronDown, ShieldCheck, RefreshCw } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, User, Phone, Lock, Gamepad2, Mail, Hash, ChevronLeft, ShieldCheck, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/Logo";
 
@@ -25,7 +25,6 @@ function SignupPage() {
   const [showPass, setShowPass] = useState(false);
   const [form, setForm] = useState({
     username: "", ign: "", uid: "", email: "", phone: "", password: "",
-    security_question: "What is your childhood nickname?", security_answer: ""
   });
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
@@ -224,16 +223,6 @@ function SignupPage() {
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <div className="relative">
-                <select value={form.security_question} onChange={set("security_question")}
-                  className="w-full h-13 bg-secondary/50 border border-border focus:border-primary/60 focus:bg-secondary/80 focus:ring-1 focus:ring-primary/20 rounded-2xl pl-4 pr-10 text-sm font-semibold text-foreground outline-none transition-all appearance-none">
-                  <option value="What is your childhood nickname?">What is your childhood nickname?</option>
-                  <option value="What is the name of your favorite childhood friend?">What is the name of your favorite childhood friend?</option>
-                  <option value="What was the name of your first pet?">What was the name of your first pet?</option>
-                </select>
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              </div>
-              <AppInput icon={Lock} placeholder="Security Answer (for backup reset)" value={form.security_answer} onChange={set("security_answer")} required />
               <button type="submit" disabled={loading}
                 className="w-full h-13 rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center justify-center gap-2 transition-all active:scale-95 press-effect shadow-cta mt-2"
                 style={{ background: loading ? "var(--secondary)" : "var(--gradient-cta)" }}>

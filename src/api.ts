@@ -172,25 +172,22 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
 
 export const resetPassword = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { phone, otpToken, email: providedEmail, new_password } = data as any;
-  const normalizedPhone = typeof phone === "string" ? phone.trim() : phone;
+  const { email, otpToken, new_password } = data as any;
+  const normalizedEmail = (email || "").trim().toLowerCase();
 
-  // Find user by phone
-  const user = await db.prepare("SELECT id, email FROM users WHERE phone = ?").get(normalizedPhone) as any;
+  if (!normalizedEmail) throw new Error("Email address is required");
+
+  // Find user by email
+  const user = await db.prepare("SELECT id FROM users WHERE email = ?").get(normalizedEmail) as any;
   if (!user) {
-    throw new Error("No account found with this phone number");
-  }
-
-  const userEmail = (user.email || providedEmail || "").trim().toLowerCase();
-  if (!userEmail) {
-    throw new Error("No email address on file for this account. Please contact support.");
+    throw new Error("No account found with this email address");
   }
 
   // Verify OTP
   if (!otpToken) throw new Error("OTP verification is required");
   const otpRecord = await db
     .prepare("SELECT id, used, expires_at FROM email_otps WHERE id = ? AND email = ? AND purpose = 'forgot_password'")
-    .get(otpToken, userEmail) as any;
+    .get(otpToken, normalizedEmail) as any;
   if (!otpRecord) throw new Error("Invalid or expired OTP. Please request a new one.");
   if (otpRecord.used) throw new Error("OTP already used. Please request a new one.");
   if (new Date(otpRecord.expires_at) < new Date()) throw new Error("OTP has expired. Please request a new one.");
@@ -208,17 +205,15 @@ export const resetPassword = createServerFn({ method: "POST" }).handler(async ({
 
 export const sendEmailOtp = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { email, purpose, phone } = data as unknown as { email?: string; purpose: "signup" | "forgot_password"; phone?: string };
+  const { email, purpose } = data as unknown as { email?: string; purpose: "signup" | "forgot_password" };
 
   let targetEmail = (email || "").trim().toLowerCase();
 
-  // For forgot_password, look up email from phone if email not provided
-  if (purpose === "forgot_password" && phone && !targetEmail) {
-    const normalizedPhone = phone.trim();
-    const user = await db.prepare("SELECT email FROM users WHERE phone = ?").get(normalizedPhone) as any;
-    if (!user) throw new Error("No account found with this phone number");
-    if (!user.email) throw new Error("No email address on file for this account. Please contact support.");
-    targetEmail = user.email.trim().toLowerCase();
+  // For forgot_password, verify the email exists in DB
+  if (purpose === "forgot_password") {
+    if (!targetEmail) throw new Error("Email address is required");
+    const user = await db.prepare("SELECT id FROM users WHERE email = ?").get(targetEmail) as any;
+    if (!user) throw new Error("No account found with this email address");
   }
 
   if (!targetEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
