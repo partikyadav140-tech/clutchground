@@ -12,6 +12,8 @@ import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { GodCoin } from "@/components/GodCoin";
 import { useAuth } from "../../../lib/auth-client";
 import { StandingsCard } from "@/components/StandingsCard";
+import { ClashSquadResults } from "@/components/tournament/results/ClashSquadResults";
+import { LoneWolfResults } from "@/components/tournament/results/LoneWolfResults";
 import { TournamentSquadSheet } from "@/components/tournament/TournamentSquadSheet";
 import { CountdownTimer } from "@/components/CountdownTimer";
 
@@ -500,11 +502,24 @@ function TournamentDetailPage() {
           {/* STANDINGS TAB */}
           {tab === "standings" && results?.length > 0 && (
             <motion.div key="standings" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-              <StandingsCard
-                tournamentName={t.title}
-                mode={t.mode}
-                results={results}
-              />
+              {t.tournament_type === "clash_squad" ? (
+                <ClashSquadResults
+                  tournamentName={t.title}
+                  results={results}
+                />
+              ) : t.tournament_type === "lone_wolf" ? (
+                <LoneWolfResults
+                  tournamentName={t.title}
+                  results={results}
+                />
+              ) : (
+                <StandingsCard
+                  tournamentName={t.title}
+                  mode={t.mode}
+                  results={results}
+                  tournamentType={t.tournament_type}
+                />
+              )}
             </motion.div>
           )}
 
