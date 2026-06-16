@@ -380,7 +380,7 @@ export const getUsers = createServerFn({ method: "GET" }).handler(async () => {
 
   const list = (await db
     .prepare(
-      "SELECT id, username, password_encrypted, role, created_at, deposit_balance, winning_balance, ign, phone, banned FROM users",
+      "SELECT id, username, password_encrypted, role, created_at, deposit_balance, winning_balance, ign, phone, banned, email FROM users",
     )
     .all()) as any[];
 
