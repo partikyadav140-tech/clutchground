@@ -77,7 +77,12 @@ function AdminProfileShopPage() {
   };
 
   const addItem = () => {
-    const type = activeTab === "dp" ? ("frame" as const) : activeTab === "banners" ? ("banner" as const) : ("effect" as const);
+    const type =
+      activeTab === "dp"
+        ? ("frame" as const)
+        : activeTab === "banners"
+          ? ("banner" as const)
+          : ("effect" as const);
     const newItem: ProfileCosmeticItem = {
       id: `${type}-custom-${Date.now()}`,
       label: `New ${activeTab === "dp" ? "DP Anim" : activeTab === "banners" ? "Banner" : "Effect"}`,
@@ -139,7 +144,10 @@ function AdminProfileShopPage() {
       {/* Header */}
       <div className="bg-card border-b border-border/50 px-4 pt-5 pb-4">
         <div className="flex items-center gap-3">
-          <Link to="/admin" className="w-9 h-9 rounded-xl border border-border flex items-center justify-center shrink-0 active:scale-95 transition-transform">
+          <Link
+            to="/admin"
+            className="w-9 h-9 rounded-xl border border-border flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+          >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div className="flex-1">
@@ -152,7 +160,11 @@ function AdminProfileShopPage() {
               {activeTab === "effects" && "Profile Effects"}
             </h1>
           </div>
-          <Button onClick={handleSave} disabled={saving} className="rounded-xl font-bold text-xs h-9 px-4">
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className="rounded-xl font-bold text-xs h-9 px-4"
+          >
             <Save className="w-3.5 h-3.5 mr-1.5" /> {saving ? "Saving…" : "Save"}
           </Button>
         </div>
@@ -160,16 +172,26 @@ function AdminProfileShopPage() {
         {/* Quick stats */}
         <div className="flex gap-2 mt-3">
           <div className="flex-1 bg-secondary/50 rounded-xl py-2 text-center">
-            <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground font-display">Items</p>
+            <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground font-display">
+              Items
+            </p>
             <p className="font-display font-black text-sm text-blue-500">{currentItems.length}</p>
           </div>
           <div className="flex-1 bg-secondary/50 rounded-xl py-2 text-center">
-            <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground font-display">Free</p>
-            <p className="font-display font-black text-sm text-emerald-500">{currentItems.filter(a => a.cost === 0).length}</p>
+            <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground font-display">
+              Free
+            </p>
+            <p className="font-display font-black text-sm text-emerald-500">
+              {currentItems.filter((a) => a.cost === 0).length}
+            </p>
           </div>
           <div className="flex-1 bg-secondary/50 rounded-xl py-2 text-center">
-            <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground font-display">Paid</p>
-            <p className="font-display font-black text-sm text-amber-500">{currentItems.filter(a => a.cost > 0).length}</p>
+            <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground font-display">
+              Paid
+            </p>
+            <p className="font-display font-black text-sm text-amber-500">
+              {currentItems.filter((a) => a.cost > 0).length}
+            </p>
           </div>
         </div>
       </div>
@@ -206,7 +228,16 @@ function AdminProfileShopPage() {
         <div className="flex items-start gap-2 bg-blue-500/5 border border-blue-500/15 rounded-xl p-3">
           <Info className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
           <p className="text-[11px] text-muted-foreground leading-snug">
-            Manage <strong className="text-foreground">{activeTab === "dp" ? "DP Animations" : activeTab === "banners" ? "Banners" : "Effects"}</strong> that users can buy. Change <strong className="text-foreground">names and prices</strong>.
+            Manage{" "}
+            <strong className="text-foreground">
+              {activeTab === "dp"
+                ? "DP Animations"
+                : activeTab === "banners"
+                  ? "Banners"
+                  : "Effects"}
+            </strong>{" "}
+            that users can buy. Change <strong className="text-foreground">names and prices</strong>
+            .
           </p>
         </div>
 
@@ -221,10 +252,7 @@ function AdminProfileShopPage() {
                 : PROFILE_EFFECTS.find((a) => a.value === item.value);
 
           return (
-            <div
-              key={item.id}
-              className="bg-card rounded-2xl border border-border overflow-hidden"
-            >
+            <div key={item.id} className="bg-card rounded-2xl border border-border overflow-hidden">
               {/* Collapsed header */}
               <button
                 type="button"
@@ -261,23 +289,36 @@ function AdminProfileShopPage() {
                       {/* Visual Preview */}
                       <div className="flex justify-center py-2 bg-black/20 rounded-xl">
                         {activeTab === "dp" ? (
-                          <div className="relative flex items-center justify-center bg-black/40 border border-border/40 rounded-2xl overflow-hidden" style={{ width: 100, height: 100 }}>
-                            <div className={`relative w-14 h-14 rounded-full flex items-center justify-center ${item.value === "none" ? "" : ANIMATION_CLASS[item.value] || ""}`}>
+                          <div
+                            className="relative flex items-center justify-center bg-black/40 border border-border/40 rounded-2xl overflow-hidden"
+                            style={{ width: 100, height: 100 }}
+                          >
+                            <div
+                              className={`relative w-14 h-14 rounded-full flex items-center justify-center ${item.value === "none" ? "" : ANIMATION_CLASS[item.value] || ""}`}
+                            >
                               <div className="w-full h-full rounded-full overflow-hidden border-[3px] border-card bg-secondary/80 flex items-center justify-center">
                                 <span className="text-2xl">{registryDef?.emoji || "✨"}</span>
                               </div>
                             </div>
                           </div>
                         ) : activeTab === "banners" ? (
-                          <div className={`relative border border-border/40 rounded-2xl overflow-hidden ${item.value === "default" ? "profile-banner-default" : `profile-banner-${item.value}`}`} style={{ width: 100, height: 100 }}>
+                          <div
+                            className={`relative border border-border/40 rounded-2xl overflow-hidden ${item.value === "default" ? "profile-banner-default" : `profile-banner-${item.value}`}`}
+                            style={{ width: 100, height: 100 }}
+                          >
                             <div className="absolute inset-0 flex items-center justify-center bg-black/10">
                               <span className="text-2xl">{registryDef?.emoji || "🌌"}</span>
                             </div>
                           </div>
                         ) : (
-                          <div className="relative flex items-center justify-center bg-black/40 border border-border/40 rounded-2xl overflow-hidden" style={{ width: 100, height: 100 }}>
+                          <div
+                            className="relative flex items-center justify-center bg-black/40 border border-border/40 rounded-2xl overflow-hidden"
+                            style={{ width: 100, height: 100 }}
+                          >
                             <ProfileEffectRenderer value={item.value} />
-                            <span className="text-2xl relative z-10">{registryDef?.emoji || "🔥"}</span>
+                            <span className="text-2xl relative z-10">
+                              {registryDef?.emoji || "🔥"}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -285,7 +326,9 @@ function AdminProfileShopPage() {
                       {/* Fields */}
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">Display Name</label>
+                          <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">
+                            Display Name
+                          </label>
                           <input
                             className="w-full h-10 rounded-lg border border-border bg-secondary/40 px-3 text-sm font-bold outline-none focus:border-primary"
                             value={item.label}
@@ -307,7 +350,9 @@ function AdminProfileShopPage() {
                       </div>
 
                       <div>
-                        <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">Value Key</label>
+                        <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">
+                          Value Key
+                        </label>
                         <input
                           className="w-full h-10 rounded-lg border border-border bg-secondary/20 px-3 text-xs font-mono text-muted-foreground outline-none"
                           value={item.value}
@@ -316,7 +361,9 @@ function AdminProfileShopPage() {
                       </div>
 
                       <div>
-                        <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">Item ID</label>
+                        <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">
+                          Item ID
+                        </label>
                         <input
                           className="w-full h-10 rounded-lg border border-border bg-secondary/20 px-3 text-xs font-mono text-muted-foreground outline-none"
                           value={item.id}
@@ -342,7 +389,11 @@ function AdminProfileShopPage() {
         })}
 
         {/* Add new */}
-        <Button variant="outline" onClick={addItem} className="w-full h-11 rounded-xl text-xs font-bold">
+        <Button
+          variant="outline"
+          onClick={addItem}
+          className="w-full h-11 rounded-xl text-xs font-bold"
+        >
           <Plus className="w-4 h-4 mr-2" /> Add Cosmetic
         </Button>
       </div>

@@ -11,7 +11,7 @@ const API_SECRET = getEnvVar("CLOUDINARY_API_SECRET");
  */
 export async function uploadToCloudinary(
   fileBase64OrUrl: string,
-  folder: string = "clutchground"
+  folder: string = "clutchground",
 ): Promise<string> {
   if (!CLOUD_NAME || !API_KEY || !API_SECRET) {
     // Cloudinary not configured yet — return the URL as-is (graceful fallback)
@@ -32,17 +32,17 @@ export async function uploadToCloudinary(
   formData.append("folder", folder);
   formData.append("signature", signature);
 
-  const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-    { method: "POST", body: formData }
-  );
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+    method: "POST",
+    body: formData,
+  });
 
   if (!response.ok) {
     const err = await response.text();
     throw new Error(`Cloudinary upload failed: ${err}`);
   }
 
-  const result = await response.json() as { secure_url: string };
+  const result = (await response.json()) as { secure_url: string };
   return result.secure_url;
 }
 
@@ -89,10 +89,10 @@ export async function deleteFromCloudinary(url: string): Promise<boolean> {
     formData.append("timestamp", timestamp.toString());
     formData.append("signature", signature);
 
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/destroy`,
-      { method: "POST", body: formData }
-    );
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/destroy`, {
+      method: "POST",
+      body: formData,
+    });
 
     if (!response.ok) {
       const err = await response.text();
@@ -100,14 +100,13 @@ export async function deleteFromCloudinary(url: string): Promise<boolean> {
       return false;
     }
 
-    const result = await response.json() as { result: string };
+    const result = (await response.json()) as { result: string };
     return result.result === "ok";
   } catch (error) {
     console.error("[Cloudinary] Delete error:", error);
     return false;
   }
 }
-
 
 /** Simple SHA-1 using Web Crypto API */
 async function sha1(message: string): Promise<string> {

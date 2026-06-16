@@ -82,7 +82,11 @@ export const db = {
               modText = text + " RETURNING id";
             }
             const result = await txDb.query(modText, args);
-            return { lastInsertRowid: result.rows[0]?.id, changes: result.rowCount || 0, rowCount: result.rowCount || 0 };
+            return {
+              lastInsertRowid: result.rows[0]?.id,
+              changes: result.rowCount || 0,
+              rowCount: result.rowCount || 0,
+            };
           },
         }),
       };
@@ -115,7 +119,11 @@ export const db = {
           modText = text + " RETURNING id";
         }
         const result = await db.query(modText, args);
-        return { lastInsertRowid: result.rows[0]?.id, changes: result.rowCount || 0, rowCount: result.rowCount || 0 };
+        return {
+          lastInsertRowid: result.rows[0]?.id,
+          changes: result.rowCount || 0,
+          rowCount: result.rowCount || 0,
+        };
       },
     };
   },
@@ -389,37 +397,72 @@ async function initDb() {
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS uid TEXT;`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT;`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT;`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS deposit_balance INTEGER DEFAULT 0;`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS winning_balance INTEGER DEFAULT 0;`);
+      await pool.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS deposit_balance INTEGER DEFAULT 0;`,
+      );
+      await pool.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS winning_balance INTEGER DEFAULT 0;`,
+      );
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS banned BOOLEAN DEFAULT false;`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS upi_id TEXT;`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS security_question TEXT;`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS security_answer TEXT;`);
       await pool.query(`ALTER TABLE users DROP COLUMN IF EXISTS password_plain;`);
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_encrypted TEXT;`);
-      await pool.query(`ALTER TABLE email_otps ADD COLUMN IF NOT EXISTS verified BOOLEAN DEFAULT false;`);
-      
+      await pool.query(
+        `ALTER TABLE email_otps ADD COLUMN IF NOT EXISTS verified BOOLEAN DEFAULT false;`,
+      );
+
       // Ticket system migrations
       await pool.query(`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'open';`);
-      await pool.query(`ALTER TABLE tickets ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`);
-      await pool.query(`ALTER TABLE ticket_replies ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;`);
-      await pool.query(`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT false;`);
+      await pool.query(
+        `ALTER TABLE tickets ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;`,
+      );
+      await pool.query(
+        `ALTER TABLE ticket_replies ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;`,
+      );
+      await pool.query(
+        `ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT false;`,
+      );
 
       // Tournaments results status migration
-      await pool.query(`ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS results_announced BOOLEAN DEFAULT false;`);
+      await pool.query(
+        `ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS results_announced BOOLEAN DEFAULT false;`,
+      );
+
+      // Tournament map column (bermuda, kalahari, nextera, purgatory, solara, alpine, clash_squad, lone_wolf)
+      await pool.query(`ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS map TEXT;`);
 
       // Team requests initiated_by migration
-      await pool.query(`ALTER TABLE team_requests ADD COLUMN IF NOT EXISTS initiated_by TEXT DEFAULT 'player';`);
+      await pool.query(
+        `ALTER TABLE team_requests ADD COLUMN IF NOT EXISTS initiated_by TEXT DEFAULT 'player';`,
+      );
 
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS spin_credits INTEGER DEFAULT 0;`);
-      await pool.query(`ALTER TABLE spin_history ADD COLUMN IF NOT EXISTS is_free BOOLEAN DEFAULT false;`);
+      await pool.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS spin_credits INTEGER DEFAULT 0;`,
+      );
+      await pool.query(
+        `ALTER TABLE spin_history ADD COLUMN IF NOT EXISTS is_free BOOLEAN DEFAULT false;`,
+      );
       await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS banner_url TEXT;`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS banner_preset TEXT DEFAULT 'default';`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_animation TEXT DEFAULT 'none';`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_frame TEXT DEFAULT 'none';`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_effect TEXT DEFAULT 'none';`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS owned_cosmetics TEXT DEFAULT '[]';`);
-      await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS showcase_achievements TEXT DEFAULT '[]';`);
+      await pool.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS banner_preset TEXT DEFAULT 'default';`,
+      );
+      await pool.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_animation TEXT DEFAULT 'none';`,
+      );
+      await pool.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_frame TEXT DEFAULT 'none';`,
+      );
+      await pool.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_effect TEXT DEFAULT 'none';`,
+      );
+      await pool.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS owned_cosmetics TEXT DEFAULT '[]';`,
+      );
+      await pool.query(
+        `ALTER TABLE users ADD COLUMN IF NOT EXISTS showcase_achievements TEXT DEFAULT '[]';`,
+      );
     } catch (e) {
       console.log("Column addition skipped or failed:", e);
     }
@@ -432,10 +475,13 @@ async function initDb() {
         const { hashPassword, encryptPassword } = await import("./auth-crypto");
         const hashedPassword = hashPassword("admin123");
         const encryptedPassword = encryptPassword("admin123");
-        await pool.query(`
+        await pool.query(
+          `
           INSERT INTO users (username, password, password_encrypted, role, phone)
           VALUES ('admin', $1, $2, 'admin', '8307224756')
-        `, [hashedPassword, encryptedPassword]);
+        `,
+          [hashedPassword, encryptedPassword],
+        );
         console.log("[DB] Default admin seeded successfully.");
       } else {
         console.log("[DB] Admin accounts already exist. Skipping seed.");

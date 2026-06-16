@@ -41,13 +41,22 @@ function AdminNotificationsPage() {
     }
   }, [user]);
 
-  if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading)
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   if (!user || user.role !== "admin") {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 text-center">
         <ShieldAlert className="w-10 h-10 text-destructive mb-4" />
         <h1 className="text-2xl font-display font-black text-foreground mb-4">Access Denied</h1>
-        <Link to="/login"><Button className="bg-primary text-white rounded-xl font-bold h-12 px-8">Return to Login</Button></Link>
+        <Link to="/login">
+          <Button className="bg-primary text-white rounded-xl font-bold h-12 px-8">
+            Return to Login
+          </Button>
+        </Link>
       </div>
     );
   }
@@ -55,7 +64,8 @@ function AdminNotificationsPage() {
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return toast.error("Message cannot be empty.");
-    if (targetType === "users" && !targetData.trim()) return toast.error("Enter usernames to target.");
+    if (targetType === "users" && !targetData.trim())
+      return toast.error("Enter usernames to target.");
     if (targetType === "tournament" && !targetData) return toast.error("Select a tournament.");
 
     setIsSending(true);
@@ -78,7 +88,7 @@ function AdminNotificationsPage() {
         targetData,
         sentAt: new Date(),
       };
-      setHistory(prev => [log, ...prev.slice(0, 9)]);
+      setHistory((prev) => [log, ...prev.slice(0, 9)]);
       setMessage("");
       setTitle("");
       setTargetData("");
@@ -101,7 +111,10 @@ function AdminNotificationsPage() {
       {/* Header */}
       <div className="bg-card border-b border-border pt-6 pb-5 px-4 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 bg-pink-500/5 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/3" />
-        <Link to="/admin" className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground mb-4 bg-secondary/50 px-3 py-1.5 rounded-full transition-colors">
+        <Link
+          to="/admin"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground mb-4 bg-secondary/50 px-3 py-1.5 rounded-full transition-colors"
+        >
           <ArrowLeft className="w-3.5 h-3.5" /> Back
         </Link>
         <div className="flex items-center gap-3">
@@ -110,24 +123,33 @@ function AdminNotificationsPage() {
           </div>
           <div>
             <h1 className="font-display text-2xl font-black text-foreground">Broadcast</h1>
-            <p className="text-xs text-muted-foreground font-semibold">Push notifications to users</p>
+            <p className="text-xs text-muted-foreground font-semibold">
+              Push notifications to users
+            </p>
           </div>
         </div>
       </div>
 
       <div className="px-4 pt-5 space-y-4 max-w-2xl mx-auto">
         {/* Send form */}
-        <form onSubmit={handleSend} className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-5">
-
+        <form
+          onSubmit={handleSend}
+          className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-5"
+        >
           {/* Target audience */}
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Target Audience</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              Target Audience
+            </label>
             <div className="grid grid-cols-3 gap-2">
               {TARGET_OPTIONS.map(({ key, icon: Icon, label, desc }) => (
                 <button
                   key={key}
                   type="button"
-                  onClick={() => { setTargetType(key); setTargetData(""); }}
+                  onClick={() => {
+                    setTargetType(key);
+                    setTargetData("");
+                  }}
                   className={`p-3 rounded-xl border text-center transition-all active:scale-95 ${
                     targetType === key
                       ? "bg-primary/10 border-primary/40 text-primary shadow-sm"
@@ -136,7 +158,9 @@ function AdminNotificationsPage() {
                 >
                   <Icon className="w-4 h-4 mx-auto mb-1" />
                   <div className="text-[10px] font-black leading-tight">{label}</div>
-                  <div className="text-[9px] text-muted-foreground leading-tight mt-0.5 hidden sm:block">{desc}</div>
+                  <div className="text-[9px] text-muted-foreground leading-tight mt-0.5 hidden sm:block">
+                    {desc}
+                  </div>
                 </button>
               ))}
             </div>
@@ -145,10 +169,12 @@ function AdminNotificationsPage() {
           {/* Specific input for users/tournament */}
           {targetType === "users" && (
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Usernames (comma separated)</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Usernames (comma separated)
+              </label>
               <input
                 value={targetData}
-                onChange={e => setTargetData(e.target.value)}
+                onChange={(e) => setTargetData(e.target.value)}
                 placeholder="e.g. player1, toxicguy, mvp2024"
                 className="w-full h-11 bg-secondary/50 border border-border focus:border-primary outline-none px-4 text-sm rounded-xl font-semibold transition-all"
               />
@@ -157,15 +183,19 @@ function AdminNotificationsPage() {
 
           {targetType === "tournament" && (
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Select Tournament</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Select Tournament
+              </label>
               <select
                 value={targetData}
-                onChange={e => setTargetData(e.target.value)}
+                onChange={(e) => setTargetData(e.target.value)}
                 className="w-full h-11 bg-secondary/50 border border-border focus:border-primary outline-none px-4 text-sm rounded-xl font-semibold transition-all appearance-none"
               >
                 <option value="">— Choose Tournament —</option>
                 {tournaments.map((t: any) => (
-                  <option key={t.id} value={t.id}>{t.title} ({t.status})</option>
+                  <option key={t.id} value={t.id}>
+                    {t.title} ({t.status})
+                  </option>
                 ))}
               </select>
             </div>
@@ -173,10 +203,13 @@ function AdminNotificationsPage() {
 
           {/* Title */}
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Title <span className="text-muted-foreground/50 normal-case font-semibold">(optional)</span></label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              Title{" "}
+              <span className="text-muted-foreground/50 normal-case font-semibold">(optional)</span>
+            </label>
             <input
               value={title}
-              onChange={e => setTitle(e.target.value)}
+              onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. 🏆 Match Alert"
               className="w-full h-11 bg-secondary/50 border border-border focus:border-primary outline-none px-4 text-sm rounded-xl font-semibold transition-all"
             />
@@ -184,28 +217,36 @@ function AdminNotificationsPage() {
 
           {/* Message */}
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Message <span className="text-red-500">*</span></label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              Message <span className="text-red-500">*</span>
+            </label>
             <textarea
               value={message}
-              onChange={e => setMessage(e.target.value)}
+              onChange={(e) => setMessage(e.target.value)}
               placeholder="Enter the notification message..."
               className="w-full min-h-[100px] bg-secondary/50 border border-border focus:border-primary outline-none px-4 py-3 text-sm rounded-xl font-semibold transition-all resize-y"
               required
             />
             {title && message && (
               <div className="bg-secondary/40 rounded-xl p-3 border border-border text-xs font-semibold text-muted-foreground">
-                <span className="text-[9px] uppercase tracking-widest font-black block mb-1">Preview</span>
-                <span className="text-foreground font-black">{title}: </span>{message}
+                <span className="text-[9px] uppercase tracking-widest font-black block mb-1">
+                  Preview
+                </span>
+                <span className="text-foreground font-black">{title}: </span>
+                {message}
               </div>
             )}
           </div>
 
           {/* Action URL */}
           <div className="space-y-1.5">
-            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Action URL <span className="text-muted-foreground/50 normal-case font-semibold">(optional)</span></label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              Action URL{" "}
+              <span className="text-muted-foreground/50 normal-case font-semibold">(optional)</span>
+            </label>
             <input
               value={redirectUrl}
-              onChange={e => setRedirectUrl(e.target.value)}
+              onChange={(e) => setRedirectUrl(e.target.value)}
               placeholder="e.g. /tournaments/5"
               className="w-full h-11 bg-secondary/50 border border-border focus:border-primary outline-none px-4 text-sm rounded-xl font-semibold transition-all"
             />
@@ -215,7 +256,9 @@ function AdminNotificationsPage() {
             type="submit"
             disabled={isSending}
             className="w-full h-12 rounded-xl font-display font-black tracking-wider text-white relative overflow-hidden group"
-            style={{ background: isSending ? "var(--muted)" : "var(--gradient-cta, var(--primary))" }}
+            style={{
+              background: isSending ? "var(--muted)" : "var(--gradient-cta, var(--primary))",
+            }}
           >
             {isSending ? (
               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -233,10 +276,12 @@ function AdminNotificationsPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Recent Broadcasts (this session)</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Recent Broadcasts (this session)
+              </span>
               <div className="flex-1 h-px bg-border/50" />
             </div>
-            {history.map(log => (
+            {history.map((log) => (
               <motion.div
                 key={log.id}
                 initial={{ opacity: 0, y: 6 }}
@@ -245,18 +290,32 @@ function AdminNotificationsPage() {
               >
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <div className="flex items-center gap-1.5">
-                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
-                      log.targetType === "all" ? "bg-primary/10 text-primary" :
-                      log.targetType === "tournament" ? "bg-amber-500/10 text-amber-600" :
-                      "bg-blue-500/10 text-blue-500"
-                    }`}>
-                      {log.targetType === "all" ? "All Users" : log.targetType === "tournament" ? "Tournament" : "Specific"}
+                    <span
+                      className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${
+                        log.targetType === "all"
+                          ? "bg-primary/10 text-primary"
+                          : log.targetType === "tournament"
+                            ? "bg-amber-500/10 text-amber-600"
+                            : "bg-blue-500/10 text-blue-500"
+                      }`}
+                    >
+                      {log.targetType === "all"
+                        ? "All Users"
+                        : log.targetType === "tournament"
+                          ? "Tournament"
+                          : "Specific"}
                     </span>
-                    {log.title && <span className="font-bold text-xs text-foreground">{log.title}</span>}
+                    {log.title && (
+                      <span className="font-bold text-xs text-foreground">{log.title}</span>
+                    )}
                   </div>
-                  <span className="text-[9px] text-muted-foreground whitespace-nowrap">{log.sentAt.toLocaleTimeString("en-IN")}</span>
+                  <span className="text-[9px] text-muted-foreground whitespace-nowrap">
+                    {log.sentAt.toLocaleTimeString("en-IN")}
+                  </span>
                 </div>
-                <p className="text-xs text-muted-foreground font-semibold line-clamp-2">{log.message}</p>
+                <p className="text-xs text-muted-foreground font-semibold line-clamp-2">
+                  {log.message}
+                </p>
               </motion.div>
             ))}
           </div>

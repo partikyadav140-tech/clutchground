@@ -1,7 +1,18 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard, Trophy, Users, IndianRupee, Banknote,
-  Bell, LifeBuoy, ClipboardList, Mail, Settings, RefreshCw, Sparkles, Palette,
+  LayoutDashboard,
+  Trophy,
+  Users,
+  IndianRupee,
+  Banknote,
+  Bell,
+  LifeBuoy,
+  ClipboardList,
+  Mail,
+  Settings,
+  RefreshCw,
+  Sparkles,
+  Palette,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -23,7 +34,11 @@ const MORE_ITEMS = [
   { to: "/admin/site-settings", icon: Settings, label: "Settings" },
 ];
 
-export function AdminNavBar({ pendingDeposits = 0, pendingPayouts = 0, openTickets = 0 }: {
+export function AdminNavBar({
+  pendingDeposits = 0,
+  pendingPayouts = 0,
+  openTickets = 0,
+}: {
   pendingDeposits?: number;
   pendingPayouts?: number;
   openTickets?: number;
@@ -56,9 +71,7 @@ export function AdminNavBar({ pendingDeposits = 0, pendingPayouts = 0, openTicke
                 key={to}
                 to={to}
                 className={`flex-1 flex flex-col items-center justify-center gap-0.5 relative transition-colors ${
-                  active
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {active && (
@@ -72,7 +85,9 @@ export function AdminNavBar({ pendingDeposits = 0, pendingPayouts = 0, openTicke
                     </span>
                   )}
                 </div>
-                <span className={`text-[9px] font-bold uppercase tracking-wider ${active ? "text-primary" : ""}`}>
+                <span
+                  className={`text-[9px] font-bold uppercase tracking-wider ${active ? "text-primary" : ""}`}
+                >
                   {label}
                 </span>
               </Link>

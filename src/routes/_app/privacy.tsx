@@ -34,11 +34,7 @@ const SECTIONS = [
 function PrivacyPage() {
   return (
     <div className="min-h-screen bg-background pb-8 page-content">
-      <PageHeader
-        eyebrow="Legal"
-        eyebrowIcon={ShieldAlert}
-        title="Privacy policy"
-      />
+      <PageHeader eyebrow="Legal" eyebrowIcon={ShieldAlert} title="Privacy policy" />
       <p className="text-sm text-muted-foreground -mt-1 mb-6">
         How ClutchGround collects, uses, and protects your data.
       </p>

@@ -1,8 +1,9 @@
 // fix-column.cjs
 const { Pool } = require("pg");
 const pool = new Pool({
-  connectionString: "postgresql://postgres.mvkvdxphxzvviaunqmlb:partikbahi09@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres",
-  ssl: { rejectUnauthorized: false }
+  connectionString:
+    "postgresql://postgres.mvkvdxphxzvviaunqmlb:partikbahi09@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres",
+  ssl: { rejectUnauthorized: false },
 });
 
 async function main() {
@@ -20,9 +21,9 @@ async function main() {
 
   // Verify
   const { rows } = await pool.query(
-    `SELECT column_name FROM information_schema.columns WHERE table_name='tournaments' ORDER BY column_name`
+    `SELECT column_name FROM information_schema.columns WHERE table_name='tournaments' ORDER BY column_name`,
   );
-  console.log("📋 Columns now:", rows.map(r => r.column_name).join(", "));
+  console.log("📋 Columns now:", rows.map((r) => r.column_name).join(", "));
   await pool.end();
 }
 

@@ -27,7 +27,9 @@ export function TeamRequestsPanel({ captainId, requests, onUpdated }: TeamReques
     const toastId = toast.loading(status === "approved" ? "Approving..." : "Declining...");
     try {
       await (resolveTeamRequest as any)({ data: { requestId, status, userId: captainId } });
-      toast.success(status === "approved" ? "Player added to roster" : "Request declined", { id: toastId });
+      toast.success(status === "approved" ? "Player added to roster" : "Request declined", {
+        id: toastId,
+      });
       onUpdated();
     } catch (err: any) {
       toast.error(err.message || "Action failed", { id: toastId });
@@ -67,7 +69,11 @@ export function TeamRequestsPanel({ captainId, requests, onUpdated }: TeamReques
               onClick={() => handleResolve(req.id, "rejected")}
               className="flex-1 h-10 rounded-xl border border-border text-sm font-semibold flex items-center justify-center gap-1.5 press-effect"
             >
-              {actingId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+              {actingId === req.id ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <X className="w-4 h-4" />
+              )}
               Decline
             </button>
             <button
@@ -76,7 +82,11 @@ export function TeamRequestsPanel({ captainId, requests, onUpdated }: TeamReques
               onClick={() => handleResolve(req.id, "approved")}
               className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-1.5 press-effect"
             >
-              {actingId === req.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              {actingId === req.id ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Check className="w-4 h-4" />
+              )}
               Accept
             </button>
           </div>

@@ -12,11 +12,11 @@ export function SpeedDial() {
     whatsapp: "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s",
     discord: "https://discord.gg/uYXFJswHdg",
     telegram: "https://t.me/clutchground",
-    email: "clutchgroundofficial@gmail.com"
+    email: "clutchgroundofficial@gmail.com",
   });
 
   useEffect(() => {
-    getSocialLinks().then(links => {
+    getSocialLinks().then((links) => {
       if (links) {
         setSocialLinks(links);
       }
@@ -53,17 +53,36 @@ export function SpeedDial() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [open]);
 
-  const safeWhatsapp = socialLinks.whatsapp || "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s";
+  const safeWhatsapp =
+    socialLinks.whatsapp || "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s";
   const safeDiscord = socialLinks.discord || "https://discord.gg/uYXFJswHdg";
   const safeTelegram = socialLinks.telegram || "https://t.me/clutchground";
   const safeEmail = socialLinks.email || "clutchgroundofficial@gmail.com";
 
   const links = [
-    { name: "Spin Wheel", icon: Sparkles, url: "/spin-wheel", color: "bg-gradient-to-br from-amber-500 to-orange-600", internal: true },
+    {
+      name: "Spin Wheel",
+      icon: Sparkles,
+      url: "/spin-wheel",
+      color: "bg-gradient-to-br from-amber-500 to-orange-600",
+      internal: true,
+    },
     { name: "WhatsApp", icon: MessageCircle, url: safeWhatsapp, color: "bg-[#25D366]" },
     { name: "Discord", icon: Hash, url: safeDiscord, color: "bg-[#5865F2]" },
-    { name: "Telegram", icon: Send, url: safeTelegram.startsWith("http") ? safeTelegram : `https://t.me/${safeTelegram.replace("@", "")}`, color: "bg-[#0088cc]" },
-    { name: "Email", icon: Mail, url: safeEmail.startsWith("mailto:") ? safeEmail : `mailto:${safeEmail}`, color: "bg-[#D44638]" },
+    {
+      name: "Telegram",
+      icon: Send,
+      url: safeTelegram.startsWith("http")
+        ? safeTelegram
+        : `https://t.me/${safeTelegram.replace("@", "")}`,
+      color: "bg-[#0088cc]",
+    },
+    {
+      name: "Email",
+      icon: Mail,
+      url: safeEmail.startsWith("mailto:") ? safeEmail : `mailto:${safeEmail}`,
+      color: "bg-[#D44638]",
+    },
   ];
 
   return (
@@ -113,7 +132,9 @@ export function SpeedDial() {
                       }}
                       className="relative group"
                     >
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform ${link.color}`}>
+                      <div
+                        className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform ${link.color}`}
+                      >
                         <link.icon className="w-5 h-5" />
                       </div>
                       {/* Tooltip */}

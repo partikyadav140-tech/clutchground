@@ -15,7 +15,11 @@ export function generateOtp(): string {
  * Sends an OTP verification email using Resend.
  * Falls back to console.log in development if RESEND_API_KEY is not set.
  */
-export async function sendOtpEmail(to: string, otp: string, purpose: "signup" | "forgot_password"): Promise<void> {
+export async function sendOtpEmail(
+  to: string,
+  otp: string,
+  purpose: "signup" | "forgot_password",
+): Promise<void> {
   const apiKey = getEnvVar("RESEND_API_KEY");
   const fromEmail = getEnvVar("RESEND_FROM_EMAIL") || "noreply@clutchground.games";
 

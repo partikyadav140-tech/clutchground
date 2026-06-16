@@ -148,7 +148,11 @@ export function urlBase64ToUint8Array(base64String: string) {
 
 /** Subscribe the current browser to Web Push notifications and register it on the server */
 export async function subscribeUserToPush(userId: number): Promise<PushSubscription | undefined> {
-  if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+  if (
+    typeof window === "undefined" ||
+    !("serviceWorker" in navigator) ||
+    !("PushManager" in window)
+  ) {
     console.warn("[Push] Browser does not support push notifications.");
     return;
   }
@@ -168,7 +172,10 @@ export async function subscribeUserToPush(userId: number): Promise<PushSubscript
       await Promise.race([
         new Promise<void>((resolve) => {
           const sw = reg!.installing || reg!.waiting;
-          if (!sw) { resolve(); return; }
+          if (!sw) {
+            resolve();
+            return;
+          }
           sw.addEventListener("statechange", function handler(e) {
             if ((e.target as ServiceWorker).state === "activated") {
               sw.removeEventListener("statechange", handler);
@@ -176,7 +183,9 @@ export async function subscribeUserToPush(userId: number): Promise<PushSubscript
             }
           });
         }),
-        new Promise<void>((_, reject) => setTimeout(() => reject(new Error("SW activation timeout")), 5000)),
+        new Promise<void>((_, reject) =>
+          setTimeout(() => reject(new Error("SW activation timeout")), 5000),
+        ),
       ]).catch(() => console.warn("[Push] SW activation timed out, proceeding anyway."));
     }
 
@@ -202,7 +211,9 @@ export async function subscribeUserToPush(userId: number): Promise<PushSubscript
     const vapidKeyRes = await (getVapidPublicKey as any)();
     const publicVapidKey = vapidKeyRes?.publicKey;
     if (!publicVapidKey) {
-      throw new Error("VAPID public key is not configured on the server. Please check environment variables.");
+      throw new Error(
+        "VAPID public key is not configured on the server. Please check environment variables.",
+      );
     }
 
     // Step 5: Subscribe the browser
@@ -231,4 +242,3 @@ export async function subscribeUserToPush(userId: number): Promise<PushSubscript
     throw err;
   }
 }
-

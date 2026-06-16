@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Clock, Shield, Star, Users, Zap } from "lucide-react";
+import { Clock, Calendar, Shield, Star, Users, Zap } from "lucide-react";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { GodCoin } from "@/components/GodCoin";
 import { getModeColors, getTournamentPoster } from "@/lib/mode-colors";
@@ -42,10 +42,29 @@ export function TournamentCard({
   const fillPct = Math.min(100, Math.round((filled / slots) * 100));
   const isFull = filled >= slots;
   const isLive = t.status === "live";
-  const isFree = t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf" 
-    ? (t.entry_fee || 0) === 0
-    : t.entry === 0;
+  const isFree =
+    t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf"
+      ? (t.entry_fee || 0) === 0
+      : t.entry === 0;
   const mc = getModeColors(t.mode);
+
+  // Format date/time for display on the card
+  const rawDate = t.startsAt || t.startsat || "";
+  let dateLabel = "";
+  let timeLabel = "";
+  if (rawDate) {
+    try {
+      const d = new Date(rawDate);
+      if (!isNaN(d.getTime())) {
+        dateLabel = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+        timeLabel = d.toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+      }
+    } catch {}
+  }
 
   const card = (
     <div
@@ -103,7 +122,7 @@ export function TournamentCard({
 
           {/* Tournament Code Badge */}
           {t.tournament_code && (
-            <div className={`absolute ${isFree ? 'top-10' : 'top-3'} right-3`}>
+            <div className={`absolute ${isFree ? "top-10" : "top-3"} right-3`}>
               <span
                 className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold"
                 style={{
@@ -119,16 +138,46 @@ export function TournamentCard({
           )}
 
           <div className="absolute bottom-0 left-0 right-0 px-4 pb-4">
-            <div className="text-label mb-1 flex items-center gap-1" style={{ color: mc.color }}>
-              <Star className="w-3 h-3" />
-              Free Fire
+            <div className="flex items-end justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <div
+                  className="text-label mb-1 flex items-center gap-1"
+                  style={{ color: mc.color }}
+                >
+                  <Star className="w-3 h-3" />
+                  Free Fire
+                </div>
+                <h3
+                  className={`font-display font-black leading-tight line-clamp-1 drop-shadow-lg ${compact ? "text-base" : "text-xl"}`}
+                  style={{ color: "#fff" }}
+                >
+                  {t.title}
+                </h3>
+              </div>
+              {dateLabel && (
+                <div
+                  className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl"
+                  style={{
+                    background: "rgba(0,0,0,0.6)",
+                    backdropFilter: "blur(10px)",
+                    border: `1px solid ${mc.color}40`,
+                  }}
+                >
+                  <Calendar className="w-3 h-3" style={{ color: mc.color }} />
+                  <div className="flex flex-col items-end">
+                    <span className="text-[9px] font-black text-white leading-tight">
+                      {dateLabel}
+                    </span>
+                    <span
+                      className="text-[8px] font-bold leading-tight"
+                      style={{ color: mc.color }}
+                    >
+                      {timeLabel}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
-            <h3
-              className={`font-display font-black leading-tight line-clamp-1 drop-shadow-lg ${compact ? "text-base" : "text-xl"}`}
-              style={{ color: "#fff" }}
-            >
-              {t.title}
-            </h3>
           </div>
         </div>
 
@@ -141,7 +190,9 @@ export function TournamentCard({
               ) : (
                 <>
                   <GodCoin className="w-3.5 h-3.5 text-amber-400" />
-                  {t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf" ? (t.entry_fee || 0) : t.entry}
+                  {t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf"
+                    ? t.entry_fee || 0
+                    : t.entry}
                 </>
               )}
             </span>
@@ -152,15 +203,21 @@ export function TournamentCard({
             </span>
             <span className="font-display font-black text-sm text-foreground flex items-center gap-1">
               <GodCoin className="w-3.5 h-3.5 text-amber-400" />
-              {t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf" 
-                ? (t.prize_pool || 0)
-                : (t.mode === "Solo" ? `${t.per_kill_coin}/kill` : t.prize)}
+              {t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf"
+                ? t.prize_pool || 0
+                : t.mode === "Solo"
+                  ? `${t.per_kill_coin}/kill`
+                  : t.prize}
             </span>
           </div>
           <div className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5">
             <span className="text-label">Starts</span>
             <div className="flex items-center justify-center">
-              <CountdownTimer targetDate={t.startsAt || t.startsat || ""} status={t.status} compact />
+              <CountdownTimer
+                targetDate={t.startsAt || t.startsat || ""}
+                status={t.status}
+                compact
+              />
             </div>
           </div>
         </div>

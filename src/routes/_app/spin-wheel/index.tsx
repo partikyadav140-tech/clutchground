@@ -10,12 +10,7 @@ import { GodCoin } from "@/components/GodCoin";
 import { SpinWheel } from "@/components/spin-wheel/SpinWheel";
 import { RewardCelebration } from "@/components/spin-wheel/RewardCelebration";
 import { useAuth } from "@/lib/auth-client";
-import {
-  getProfile,
-  getSpinWheelConfig,
-  getSpinWheelStatus,
-  performSpin,
-} from "@/api";
+import { getProfile, getSpinWheelConfig, getSpinWheelStatus, performSpin } from "@/api";
 import { type SpinSegment } from "@/lib/spin-wheel";
 
 export const Route = createFileRoute("/_app/spin-wheel/")({
@@ -32,6 +27,7 @@ type SpinStatus = {
   winningBalance: number;
   totalBalance: number;
   minDeposit: number;
+  joinedTournamentCount: number;
   lastSpin: { prizeLabel: string; prizeAmount: number } | null;
 };
 
@@ -59,23 +55,26 @@ function SpinWheelPage() {
     [user, setUser],
   );
 
-  const refresh = useCallback(async (silent = false) => {
-    if (!user) return;
-    if (!silent) setLoading(true);
-    try {
-      const [config, spinStatus] = await Promise.all([
-        getSpinWheelConfig(),
-        (getSpinWheelStatus as any)({ data: user.id }),
-      ]);
-      setSegments(config.segments);
-      setActivePrizeIds(config.activePrizeIds || []);
-      setStatus(spinStatus);
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to load spin wheel");
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, [user]);
+  const refresh = useCallback(
+    async (silent = false) => {
+      if (!user) return;
+      if (!silent) setLoading(true);
+      try {
+        const [config, spinStatus] = await Promise.all([
+          getSpinWheelConfig(),
+          (getSpinWheelStatus as any)({ data: user.id }),
+        ]);
+        setSegments(config.segments);
+        setActivePrizeIds(config.activePrizeIds || []);
+        setStatus(spinStatus);
+      } catch (e: any) {
+        toast.error(e?.message || "Failed to load spin wheel");
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [user],
+  );
 
   useEffect(() => {
     if (user) refresh();
@@ -97,15 +96,18 @@ function SpinWheelPage() {
     }
   };
 
-  const handleSpinFinished = useCallback((winningSegment: SpinSegment) => {
-    setSpinning(false);
-    setTargetSliceIndex(null);
-    setCelebrationOpen(true);
-    refresh(true); // silent refresh
-    if (user) {
-      (getProfile as any)({ data: user.id }).then((p: any) => syncUserBalances(p));
-    }
-  }, [user, refresh, syncUserBalances]);
+  const handleSpinFinished = useCallback(
+    (winningSegment: SpinSegment) => {
+      setSpinning(false);
+      setTargetSliceIndex(null);
+      setCelebrationOpen(true);
+      refresh(true); // silent refresh
+      if (user) {
+        (getProfile as any)({ data: user.id }).then((p: any) => syncUserBalances(p));
+      }
+    },
+    [user, refresh, syncUserBalances],
+  );
 
   const spinCredits = status?.spinCredits ?? 0;
   const freeAvailable = status?.freeSpinAvailable ?? false;
@@ -128,7 +130,8 @@ function SpinWheelPage() {
     <div className="page-content min-h-[60vh] pb-24">
       <PageHeader eyebrow="Rewards" eyebrowIcon={Sparkles} title="Daily spin wheel" />
       <p className="text-sm text-muted-foreground -mt-1 mb-4">
-        Spin once per day with {">="} {status?.minDeposit || 100} CG deposit coins. Winnings go to deposit balance.
+        Spin once per day for free if you have joined at least one tournament. Winnings go to
+        deposit balance.
       </p>
 
       {loading ? (
@@ -137,6 +140,25 @@ function SpinWheelPage() {
         </div>
       ) : (
         <div className="space-y-4">
+          {status?.joinedTournamentCount === 0 && (
+            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300 space-y-2">
+              <p className="font-bold flex items-center gap-1.5">
+                <Gift className="w-4 h-4 text-amber-400" /> Unlock Daily Free Spin
+              </p>
+              <p className="text-xs text-amber-200/90 leading-relaxed">
+                You have not joined any tournaments yet. Join at least 1 tournament to unlock your
+                daily free spin!
+              </p>
+              <Button
+                asChild
+                size="sm"
+                className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg mt-1 w-full"
+              >
+                <Link to="/tournaments">View Tournaments</Link>
+              </Button>
+            </div>
+          )}
+
           {/* Credits strip */}
           <div className="flex items-center justify-center gap-2 flex-wrap">
             {freeAvailable && (
@@ -200,7 +222,9 @@ function SpinWheelPage() {
               </div>
               <div>
                 <p className="font-display font-black text-sm text-foreground">Buy more spins</p>
-                <p className="text-[10px] text-muted-foreground font-semibold mt-0.5">Get bonus spins & exclusive offers</p>
+                <p className="text-[10px] text-muted-foreground font-semibold mt-0.5">
+                  Get bonus spins & exclusive offers
+                </p>
               </div>
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />

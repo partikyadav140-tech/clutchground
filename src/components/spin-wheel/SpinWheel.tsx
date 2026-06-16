@@ -130,7 +130,8 @@ export function SpinWheel({
           const elapsed = now - startTime;
           if (elapsed < duration) {
             // Constant friction deceleration equation (strictly monotonic decay of velocity from V_IDLE to 0)
-            angleRef.current = startAngle + V_IDLE * elapsed - (V_IDLE / (2 * duration)) * Math.pow(elapsed, 2);
+            angleRef.current =
+              startAngle + V_IDLE * elapsed - (V_IDLE / (2 * duration)) * Math.pow(elapsed, 2);
           } else {
             // Wheel fully stopped
             angleRef.current = targetAngle!;
@@ -252,17 +253,25 @@ export function SpinWheel({
                 const labelPos = polarToCartesian(cx, cy, innerR * 0.68, mid);
                 const isActive = activeSet.has(slice.segmentId);
                 const isWinner = winningSliceIndex === i;
-                const textColor = slice.segment.amount >= 100 || slice.segment.amount === 0 ? "#fff" : "#0f172a";
+                const textColor =
+                  slice.segment.amount >= 100 || slice.segment.amount === 0 ? "#fff" : "#0f172a";
 
                 return (
                   <g key={`${slice.segmentId}-${i}`}>
                     <path
                       d={path}
                       fill={slice.segment.color}
-                      stroke={isWinner ? "#FFD700" : isActive ? "rgba(255,215,0,0.45)" : "rgba(255,255,255,0.18)"}
+                      stroke={
+                        isWinner
+                          ? "#FFD700"
+                          : isActive
+                            ? "rgba(255,215,0,0.45)"
+                            : "rgba(255,255,255,0.18)"
+                      }
                       strokeWidth={isWinner ? 3.5 : isActive ? 1.5 : 0.8}
                       style={{
-                        transition: "opacity 0.45s ease-out, stroke 0.45s ease-out, stroke-width 0.45s ease-out",
+                        transition:
+                          "opacity 0.45s ease-out, stroke 0.45s ease-out, stroke-width 0.45s ease-out",
                         opacity: winningSliceIndex === null ? 1 : isWinner ? 1 : 0.35,
                       }}
                     />
@@ -338,4 +347,3 @@ export function SpinWheel({
     </div>
   );
 }
-

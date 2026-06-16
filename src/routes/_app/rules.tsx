@@ -7,11 +7,7 @@ export const Route = createFileRoute("/_app/rules")({
   head: () => ({ meta: [{ title: "Rules — ClutchGround" }] }),
   component: () => (
     <div className="min-h-screen bg-background pb-8 page-content">
-      <PageHeader
-        eyebrow="Legal"
-        eyebrowIcon={ScrollText}
-        title="Arena rules"
-      />
+      <PageHeader eyebrow="Legal" eyebrowIcon={ScrollText} title="Arena rules" />
       <p className="text-sm text-muted-foreground -mt-1 mb-6">
         Code of conduct for every player on ClutchGround.
       </p>

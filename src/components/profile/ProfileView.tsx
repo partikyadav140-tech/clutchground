@@ -2,8 +2,22 @@ import { Link } from "@tanstack/react-router";
 import Cropper from "react-easy-crop";
 import { useState, useEffect, useRef } from "react";
 import {
-  Camera, Edit3, Gamepad2, Share2, Sparkles, Trophy, Users, Upload,
-  Target, Flame, ChevronRight, Check, Swords, Award, Shield, Crown,
+  Camera,
+  Edit3,
+  Gamepad2,
+  Share2,
+  Sparkles,
+  Trophy,
+  Users,
+  Upload,
+  Target,
+  Flame,
+  ChevronRight,
+  Check,
+  Swords,
+  Award,
+  Shield,
+  Crown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -11,7 +25,6 @@ import { GodCoin } from "@/components/GodCoin";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  ACHIEVEMENT_DEFS,
   ANIMATION_CLASS,
   BANNER_GRADIENTS,
   FRAME_CLASS,
@@ -34,7 +47,10 @@ function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: 
   useEffect(() => {
     const start = ref.current;
     const diff = value - start;
-    if (diff === 0) { setDisplay(value); return; }
+    if (diff === 0) {
+      setDisplay(value);
+      return;
+    }
     const startTime = performance.now();
 
     const tick = (now: number) => {
@@ -59,15 +75,12 @@ const staggerContainer = {
 };
 const staggerItem = {
   hidden: { opacity: 0, y: 20, scale: 0.9 },
-  show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 300, damping: 24 } },
-};
-const achievementContainer = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.1, delayChildren: 0.9 } },
-};
-const achievementItem = {
-  hidden: { opacity: 0, scale: 0.5, rotate: -8 },
-  show: { opacity: 1, scale: 1, rotate: 0, transition: { type: "spring" as const, stiffness: 400, damping: 20 } },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: "spring" as const, stiffness: 300, damping: 24 },
+  },
 };
 
 export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
@@ -80,7 +93,6 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
     avatar_url: profile?.avatar_url || "",
     banner_url: profile?.banner_url || "",
   });
-  const [showcase, setShowcase] = useState<string[]>(profile?.showcase_achievements || []);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -102,12 +114,11 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
       data: {
         userId: profile.id,
         ...form,
-        showcase_achievements: showcase,
       },
     });
     toast.success("Profile saved");
     setEditOpen(false);
-    onUpdated?.({ ...profile, ...form, showcase_achievements: showcase });
+    onUpdated?.({ ...profile, ...form });
   };
 
   const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>, target: "avatar" | "banner") => {
@@ -134,17 +145,19 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
       const canvas = document.createElement("canvas");
       canvas.width = size;
       canvas.height = h;
-      canvas.getContext("2d")?.drawImage(
-        image,
-        croppedAreaPixels.x,
-        croppedAreaPixels.y,
-        croppedAreaPixels.width,
-        croppedAreaPixels.height,
-        0,
-        0,
-        size,
-        h,
-      );
+      canvas
+        .getContext("2d")
+        ?.drawImage(
+          image,
+          croppedAreaPixels.x,
+          croppedAreaPixels.y,
+          croppedAreaPixels.width,
+          croppedAreaPixels.height,
+          0,
+          0,
+          size,
+          h,
+        );
       const base64 = canvas.toDataURL("image/jpeg", 0.82);
       const folder = cropTarget === "avatar" ? "clutchground/avatars" : "clutchground/banners";
       const result = await (uploadImage as any)({ data: { base64, folder } });
@@ -165,7 +178,15 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
       }
 
       // Auto-save to server immediately
-      await (updateProfile as any)({ data: { ...updatePayload, ign: profile.ign, uid: profile.uid, email: profile.email, phone: profile.phone } });
+      await (updateProfile as any)({
+        data: {
+          ...updatePayload,
+          ign: profile.ign,
+          uid: profile.uid,
+          email: profile.email,
+          phone: profile.phone,
+        },
+      });
 
       // Update parent profile state so the banner/avatar shows right away
       onUpdated?.({ ...profile, ...profilePatch });
@@ -179,19 +200,6 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
     }
   };
 
-
-
-  const toggleShowcase = (id: string) => {
-    setShowcase((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id);
-      if (prev.length >= 4) {
-        toast.error("Max 4 achievements on profile");
-        return prev;
-      }
-      return [...prev, id];
-    });
-  };
-
   const shareProfile = () => {
     const url = `${window.location.origin}/users/${profile.id}`;
     navigator.clipboard?.writeText(url);
@@ -199,10 +207,31 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
   };
 
   const statItems = [
-    { label: "Matches", value: profile?.stats?.matchesPlayed ?? 0, icon: Gamepad2, color: "text-sky-400" },
-    { label: "Kills", value: profile?.stats?.totalKills ?? 0, icon: Swords, color: "text-amber-500" },
-    { label: "Wins", value: profile?.stats?.firstPlaces ?? 0, icon: Trophy, color: "text-emerald-400" },
-    { label: "Earned", value: profile?.stats?.totalEarnings ?? 0, icon: Award, color: "text-primary", coin: true },
+    {
+      label: "Matches",
+      value: profile?.stats?.matchesPlayed ?? 0,
+      icon: Gamepad2,
+      color: "text-sky-400",
+    },
+    {
+      label: "Kills",
+      value: profile?.stats?.totalKills ?? 0,
+      icon: Swords,
+      color: "text-amber-500",
+    },
+    {
+      label: "Wins",
+      value: profile?.stats?.firstPlaces ?? 0,
+      icon: Trophy,
+      color: "text-emerald-400",
+    },
+    {
+      label: "Earned",
+      value: profile?.stats?.totalEarnings ?? 0,
+      icon: Award,
+      color: "text-primary",
+      coin: true,
+    },
   ];
 
   return (
@@ -216,9 +245,7 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
       >
         <ProfileEffectRenderer value={profile?.profile_effect} />
         {/* Banner image/gradient */}
-        <div
-          className={`h-48 sm:h-56 w-full relative overflow-hidden ${bannerClass}`}
-        >
+        <div className={`h-48 sm:h-56 w-full relative overflow-hidden ${bannerClass}`}>
           {/* Custom banner image layer: slightly semi-transparent so preset animation in background shows through */}
           {profile?.banner_url && (
             <div
@@ -248,7 +275,12 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
           {isOwner && (
             <label className="absolute top-4 right-4 w-10 h-10 rounded-2xl bg-black/50 backdrop-blur-md flex items-center justify-center cursor-pointer border border-white/15 hover:bg-black/70 transition-all hover:scale-105 active:scale-95 z-10">
               <Camera className="w-4.5 h-4.5 text-white" />
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImagePick(e, "banner")} />
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleImagePick(e, "banner")}
+              />
             </label>
           )}
         </div>
@@ -269,15 +301,26 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
                 {profile?.avatar_url ? (
                   <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center font-display font-black text-4xl text-white" style={{ background: "var(--gradient-primary)" }}>
+                  <div
+                    className="w-full h-full flex items-center justify-center font-display font-black text-4xl text-white"
+                    style={{ background: "var(--gradient-primary)" }}
+                  >
                     {initials}
                   </div>
                 )}
               </div>
               {isOwner && (
-                <label className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-primary flex items-center justify-center cursor-pointer border-[3px] shadow-lg hover:scale-110 transition-transform active:scale-95" style={{ borderColor: "var(--background)" }}>
+                <label
+                  className="absolute -bottom-1 -right-1 w-9 h-9 rounded-full bg-primary flex items-center justify-center cursor-pointer border-[3px] shadow-lg hover:scale-110 transition-transform active:scale-95"
+                  style={{ borderColor: "var(--background)" }}
+                >
                   <Camera className="w-4 h-4 text-primary-foreground" />
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImagePick(e, "avatar")} />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleImagePick(e, "avatar")}
+                  />
                 </label>
               )}
             </div>
@@ -293,7 +336,9 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
             <h1 className="font-display font-black text-2xl text-foreground profile-name-glow tracking-wide">
               {profile?.ign || profile?.username}
             </h1>
-            <p className="text-xs text-muted-foreground font-mono mt-1 tracking-wider">@{profile?.username}</p>
+            <p className="text-xs text-muted-foreground font-mono mt-1 tracking-wider">
+              @{profile?.username}
+            </p>
             {profile?.uid && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -302,7 +347,9 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
                 className="inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20"
               >
                 <Gamepad2 className="w-3 h-3 text-primary" />
-                <span className="text-[10px] font-black text-primary tracking-wider">UID {profile.uid}</span>
+                <span className="text-[10px] font-black text-primary tracking-wider">
+                  UID {profile.uid}
+                </span>
               </motion.div>
             )}
           </motion.div>
@@ -348,10 +395,16 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
                   <Sparkles className="w-4 h-4 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0 text-left">
-                  <p className="font-display font-black text-xs text-foreground uppercase tracking-wider">Animation Shop</p>
-                  <p className="text-[10px] text-muted-foreground font-semibold line-clamp-1">Equip epic profile animations</p>
+                  <p className="font-display font-black text-xs text-foreground uppercase tracking-wider">
+                    Animation Shop
+                  </p>
+                  <p className="text-[10px] text-muted-foreground font-semibold line-clamp-1">
+                    Equip epic profile animations
+                  </p>
                 </div>
-                <span className="text-[10px] font-bold text-primary uppercase tracking-widest group-hover:translate-x-0.5 transition-transform shrink-0">Shop ›</span>
+                <span className="text-[10px] font-bold text-primary uppercase tracking-widest group-hover:translate-x-0.5 transition-transform shrink-0">
+                  Shop ›
+                </span>
               </Link>
             </motion.div>
           )}
@@ -371,8 +424,12 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
             variants={staggerItem}
             className="profile-stat-glass rounded-2xl p-3 text-center group cursor-default"
           >
-            <s.icon className={`w-4 h-4 mx-auto mb-1.5 ${s.color} opacity-70 group-hover:opacity-100 transition-opacity`} />
-            <p className="text-[8px] uppercase font-black tracking-[0.15em] text-muted-foreground">{s.label}</p>
+            <s.icon
+              className={`w-4 h-4 mx-auto mb-1.5 ${s.color} opacity-70 group-hover:opacity-100 transition-opacity`}
+            />
+            <p className="text-[8px] uppercase font-black tracking-[0.15em] text-muted-foreground">
+              {s.label}
+            </p>
             <p className="font-display font-black text-base mt-0.5 flex items-center justify-center gap-0.5 text-foreground">
               {s.coin && <GodCoin className="w-3 h-3" />}
               <AnimatedNumber value={s.value} duration={1000 + idx * 200} />
@@ -395,7 +452,13 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
               className="flex items-center gap-4 p-4 rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm press-effect group hover:border-primary/20 transition-all duration-300 relative overflow-hidden"
             >
               {/* Subtle gradient accent */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: "linear-gradient(135deg, rgba(0,200,255,0.03), rgba(124,58,237,0.03))" }} />
+              <div
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(0,200,255,0.03), rgba(124,58,237,0.03))",
+                }}
+              />
 
               <div className="w-14 h-14 rounded-xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center font-display font-black text-xl text-primary shrink-0 relative">
                 {profile.team.logo ? (
@@ -407,9 +470,13 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <Shield className="w-3 h-3 text-primary" />
-                  <p className="text-[9px] uppercase font-black tracking-[0.2em] text-muted-foreground">Squad</p>
+                  <p className="text-[9px] uppercase font-black tracking-[0.2em] text-muted-foreground">
+                    Squad
+                  </p>
                 </div>
-                <p className="font-display font-black text-lg text-foreground truncate mt-0.5">{profile.team.name}</p>
+                <p className="font-display font-black text-lg text-foreground truncate mt-0.5">
+                  {profile.team.name}
+                </p>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
             </Link>
@@ -425,92 +492,18 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <Shield className="w-3 h-3 text-primary" />
-                  <p className="text-[9px] uppercase font-black tracking-[0.2em] text-muted-foreground">Squad</p>
+                  <p className="text-[9px] uppercase font-black tracking-[0.2em] text-muted-foreground">
+                    Squad
+                  </p>
                 </div>
-                <p className="font-display font-black text-lg text-foreground truncate mt-0.5">{profile.team.name}</p>
+                <p className="font-display font-black text-lg text-foreground truncate mt-0.5">
+                  {profile.team.name}
+                </p>
               </div>
             </div>
           )}
         </motion.div>
       )}
-
-      {/* ════════════ ACHIEVEMENTS — Staggered pop-in ════════════ */}
-      <div className="px-4 mt-6">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.85 }}
-          className="flex items-center justify-between mb-3"
-        >
-          <div className="flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-primary" />
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Achievements</p>
-          </div>
-          {isOwner && <span className="text-[10px] text-muted-foreground font-semibold">Tap to showcase (max 4)</span>}
-        </motion.div>
-        <motion.div
-          variants={achievementContainer}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-2 gap-2.5"
-        >
-          {(isOwner ? (profile?.achievements || []) : (profile?.showcase || [])).map((a: any, idx: number) => {
-            const selected = showcase.includes(a.id);
-            return (
-              <motion.button
-                key={a.id}
-                variants={achievementItem}
-                type="button"
-                disabled={!isOwner}
-                onClick={() => isOwner && toggleShowcase(a.id)}
-                className={`text-left p-3.5 rounded-2xl border transition-all duration-300 relative overflow-hidden group ${
-                  selected
-                    ? "border-primary/40 bg-primary/8 shadow-[0_0_16px_rgba(0,200,255,0.08)]"
-                    : "border-border/50 bg-card/60 backdrop-blur-sm hover:border-primary/20"
-                } ${!isOwner ? "cursor-default" : "active:scale-[0.97]"}`}
-              >
-                {/* Subtle selected glow */}
-                {selected && (
-                  <div className="absolute inset-0 opacity-20" style={{ background: "radial-gradient(circle at 30% 30%, rgba(0,200,255,0.15), transparent 70%)" }} />
-                )}
-                <span className="text-2xl block profile-emoji-pop">{a.emoji}</span>
-                <p className="font-bold text-xs text-foreground mt-1.5 leading-tight">{a.label}</p>
-                <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">{a.description}</p>
-                {isOwner && selected && (
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
-                  >
-                    <Check className="w-3 h-3 text-primary-foreground" />
-                  </motion.div>
-                )}
-              </motion.button>
-            );
-          })}
-          {!(isOwner ? profile?.achievements : profile?.showcase)?.length && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-              className="col-span-2 text-sm text-muted-foreground text-center py-8 font-semibold"
-            >
-              {isOwner ? "No achievements yet — play tournaments!" : "No showcased achievements"}
-            </motion.p>
-          )}
-        </motion.div>
-        {isOwner && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.1 }}
-          >
-            <Button className="w-full mt-4 rounded-xl h-11 font-bold" variant="outline" onClick={handleSaveInfo}>
-              <Check className="w-4 h-4 mr-2" /> Save showcased achievements
-            </Button>
-          </motion.div>
-        )}
-      </div>
 
       {/* ════════════ EDIT DIALOG ════════════ */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
@@ -526,7 +519,9 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
               { label: "Phone", key: "phone" },
             ].map(({ label, key }) => (
               <div key={key}>
-                <label className="text-[10px] font-bold uppercase text-muted-foreground">{label}</label>
+                <label className="text-[10px] font-bold uppercase text-muted-foreground">
+                  {label}
+                </label>
                 <input
                   className="w-full h-11 mt-1 rounded-xl border border-border bg-secondary/40 px-3 text-sm font-semibold"
                   value={(form as any)[key]}
@@ -560,7 +555,15 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
               />
             )}
           </div>
-          <input type="range" min={1} max={3} step={0.1} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} className="w-full mt-3" />
+          <input
+            type="range"
+            min={1}
+            max={3}
+            step={0.1}
+            value={zoom}
+            onChange={(e) => setZoom(Number(e.target.value))}
+            className="w-full mt-3"
+          />
           <Button className="w-full mt-3 rounded-xl" disabled={uploading} onClick={applyCrop}>
             {uploading ? "Uploading..." : "Apply"}
           </Button>

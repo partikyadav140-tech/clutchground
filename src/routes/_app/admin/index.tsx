@@ -1,9 +1,28 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
-  Users, Trophy, ClipboardList, Banknote, Mail, ShieldAlert,
-  RefreshCw, Bell, LifeBuoy, IndianRupee, Settings, TrendingUp,
-  AlertCircle, Activity, Zap, Crown, Coins, RotateCcw,
-  ChevronRight, Clock, Eye, Sparkles, Store,
+  Users,
+  Trophy,
+  ClipboardList,
+  Banknote,
+  Mail,
+  ShieldAlert,
+  RefreshCw,
+  Bell,
+  LifeBuoy,
+  IndianRupee,
+  Settings,
+  TrendingUp,
+  AlertCircle,
+  Activity,
+  Zap,
+  Crown,
+  Coins,
+  RotateCcw,
+  ChevronRight,
+  Clock,
+  Eye,
+  Sparkles,
+  Store,
 } from "lucide-react";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -28,25 +47,42 @@ export const Route = createFileRoute("/_app/admin/")({
 
 /* ── Stat Strip ── */
 function StatStrip({
-  icon: Icon, label, value, color, bg, urgent = false, to,
+  icon: Icon,
+  label,
+  value,
+  color,
+  bg,
+  urgent = false,
+  to,
 }: {
-  icon: any; label: string; value: number | string; color: string; bg: string;
-  urgent?: boolean; to?: string;
+  icon: any;
+  label: string;
+  value: number | string;
+  color: string;
+  bg: string;
+  urgent?: boolean;
+  to?: string;
 }) {
   const inner = (
-    <div className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl border transition-all active:scale-[0.98] ${
-      urgent && Number(value) > 0
-        ? "border-amber-400/40 bg-amber-500/5 shadow-sm"
-        : "border-border/40 bg-card shadow-sm"
-    }`}>
+    <div
+      className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl border transition-all active:scale-[0.98] ${
+        urgent && Number(value) > 0
+          ? "border-amber-400/40 bg-amber-500/5 shadow-sm"
+          : "border-border/40 bg-card shadow-sm"
+      }`}
+    >
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${bg}`}>
         <Icon className={`w-4 h-4 ${color}`} />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground leading-none">{label}</p>
-        <p className={`font-display font-black text-lg leading-tight mt-0.5 ${
-          urgent && Number(value) > 0 ? "text-amber-500" : "text-foreground"
-        }`}>
+        <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground leading-none">
+          {label}
+        </p>
+        <p
+          className={`font-display font-black text-lg leading-tight mt-0.5 ${
+            urgent && Number(value) > 0 ? "text-amber-500" : "text-foreground"
+          }`}
+        >
           {value}
         </p>
       </div>
@@ -56,7 +92,12 @@ function StatStrip({
       {to && <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
     </div>
   );
-  if (to) return <Link to={to} className="block">{inner}</Link>;
+  if (to)
+    return (
+      <Link to={to} className="block">
+        {inner}
+      </Link>
+    );
   return inner;
 }
 
@@ -65,15 +106,31 @@ function SectionHeader({ label, icon: Icon, color }: { label: string; icon: any;
   return (
     <div className="flex items-center gap-2 mb-2.5 mt-5">
       <Icon className={`w-3.5 h-3.5 ${color}`} />
-      <span className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">{label}</span>
+      <span className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">
+        {label}
+      </span>
       <div className="flex-1 h-px bg-border/40" />
     </div>
   );
 }
 
 /* ── Quick Action Link ── */
-function QuickAction({ to, icon: Icon, title, desc, color, bg, badge }: {
-  to: string; icon: any; title: string; desc: string; color: string; bg: string; badge?: number;
+function QuickAction({
+  to,
+  icon: Icon,
+  title,
+  desc,
+  color,
+  bg,
+  badge,
+}: {
+  to: string;
+  icon: any;
+  title: string;
+  desc: string;
+  color: string;
+  bg: string;
+  badge?: number;
 }) {
   return (
     <Link to={to} className="block">
@@ -82,11 +139,17 @@ function QuickAction({ to, icon: Icon, title, desc, color, bg, badge }: {
           <Icon className={`w-5 h-5 ${color}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-display font-black text-[13px] text-foreground leading-tight">{title}</h3>
-          <p className="text-[10px] font-semibold text-muted-foreground mt-0.5 leading-snug">{desc}</p>
+          <h3 className="font-display font-black text-[13px] text-foreground leading-tight">
+            {title}
+          </h3>
+          <p className="text-[10px] font-semibold text-muted-foreground mt-0.5 leading-snug">
+            {desc}
+          </p>
         </div>
         {badge !== undefined && badge > 0 && (
-          <span className="bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full min-w-[22px] text-center">{badge}</span>
+          <span className="bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full min-w-[22px] text-center">
+            {badge}
+          </span>
         )}
         <ChevronRight className="w-4 h-4 text-muted-foreground/50 shrink-0" />
       </div>
@@ -100,7 +163,9 @@ function AdminDashboard() {
   const router = useRouter();
 
   const handleResetFinance = async (type: "revenue" | "payouts" | "withdrawable") => {
-    const ok = window.confirm(`Are you sure you want to reset this calculation to zero? This won't affect any user's real balance.`);
+    const ok = window.confirm(
+      `Are you sure you want to reset this calculation to zero? This won't affect any user's real balance.`,
+    );
     if (!ok) return;
     try {
       await (resetFinanceStat as any)({ data: { type } });
@@ -137,7 +202,8 @@ function AdminDashboard() {
     );
   }
 
-  const pendingTotal = (stats?.pendingDeposits || 0) + (stats?.pendingPayouts || 0) + (stats?.openTickets || 0);
+  const pendingTotal =
+    (stats?.pendingDeposits || 0) + (stats?.pendingPayouts || 0) + (stats?.openTickets || 0);
   const latestTournaments = (stats?.latestTournaments || []).slice(0, 3);
 
   return (
@@ -145,7 +211,10 @@ function AdminDashboard() {
       {/* ─── Hero Header ─── */}
       <div className="relative overflow-hidden bg-card border-b border-border/50 pt-5 pb-5 px-4">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl opacity-15" style={{ background: "var(--neon)" }} />
+          <div
+            className="absolute top-0 right-0 w-40 h-40 rounded-full blur-3xl opacity-15"
+            style={{ background: "var(--neon)" }}
+          />
         </div>
 
         <div className="relative z-10">
@@ -154,7 +223,9 @@ function AdminDashboard() {
               <div className="flex items-center gap-1.5 text-primary font-black text-[10px] uppercase tracking-[0.2em] mb-1">
                 <Crown className="w-3.5 h-3.5" /> Admin Panel
               </div>
-              <h1 className="text-2xl font-display font-black text-foreground leading-tight">Command Center</h1>
+              <h1 className="text-2xl font-display font-black text-foreground leading-tight">
+                Command Center
+              </h1>
             </div>
             <div className="text-right">
               <p className="text-[10px] text-muted-foreground font-bold">Welcome</p>
@@ -172,10 +243,16 @@ function AdminDashboard() {
               <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
               <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 flex-1">
                 {[
-                  stats?.pendingDeposits > 0 && `${stats.pendingDeposits} deposit${stats.pendingDeposits > 1 ? "s" : ""}`,
-                  stats?.pendingPayouts > 0 && `${stats.pendingPayouts} payout${stats.pendingPayouts > 1 ? "s" : ""}`,
-                  stats?.openTickets > 0 && `${stats.openTickets} ticket${stats.openTickets > 1 ? "s" : ""}`,
-                ].filter(Boolean).join(" · ")} pending
+                  stats?.pendingDeposits > 0 &&
+                    `${stats.pendingDeposits} deposit${stats.pendingDeposits > 1 ? "s" : ""}`,
+                  stats?.pendingPayouts > 0 &&
+                    `${stats.pendingPayouts} payout${stats.pendingPayouts > 1 ? "s" : ""}`,
+                  stats?.openTickets > 0 &&
+                    `${stats.openTickets} ticket${stats.openTickets > 1 ? "s" : ""}`,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}{" "}
+                pending
               </span>
             </motion.div>
           )}
@@ -186,9 +263,33 @@ function AdminDashboard() {
         {/* ─── Urgent Actions ─── */}
         <SectionHeader label="Needs Attention" icon={AlertCircle} color="text-amber-500" />
         <div className="space-y-2">
-          <StatStrip icon={IndianRupee} label="Pending Deposits" value={stats?.pendingDeposits ?? 0} color="text-blue-500" bg="bg-blue-500/10" urgent to="/admin/deposits" />
-          <StatStrip icon={Banknote} label="Pending Payouts" value={stats?.pendingPayouts ?? 0} color="text-emerald-500" bg="bg-emerald-500/10" urgent to="/admin/payouts" />
-          <StatStrip icon={LifeBuoy} label="Open Tickets" value={stats?.openTickets ?? 0} color="text-teal-500" bg="bg-teal-500/10" urgent to="/admin/tickets" />
+          <StatStrip
+            icon={IndianRupee}
+            label="Pending Deposits"
+            value={stats?.pendingDeposits ?? 0}
+            color="text-blue-500"
+            bg="bg-blue-500/10"
+            urgent
+            to="/admin/deposits"
+          />
+          <StatStrip
+            icon={Banknote}
+            label="Pending Payouts"
+            value={stats?.pendingPayouts ?? 0}
+            color="text-emerald-500"
+            bg="bg-emerald-500/10"
+            urgent
+            to="/admin/payouts"
+          />
+          <StatStrip
+            icon={LifeBuoy}
+            label="Open Tickets"
+            value={stats?.openTickets ?? 0}
+            color="text-teal-500"
+            bg="bg-teal-500/10"
+            urgent
+            to="/admin/tickets"
+          />
         </div>
 
         {/* ─── Latest Tournaments ─── */}
@@ -204,7 +305,9 @@ function AdminDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-display font-black text-[13px] text-foreground truncate">{t.title}</h4>
+                        <h4 className="font-display font-black text-[13px] text-foreground truncate">
+                          {t.title}
+                        </h4>
                         {t.tournament_code && (
                           <span className="text-[9px] font-mono font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded shrink-0">
                             {t.tournament_code}
@@ -212,15 +315,22 @@ function AdminDashboard() {
                         )}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
-                          t.status === "open" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : t.status === "live" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                          : t.status === "upcoming" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                          : "bg-secondary text-muted-foreground"
-                        }`}>
+                        <span
+                          className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                            t.status === "open"
+                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                              : t.status === "live"
+                                ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                : t.status === "upcoming"
+                                  ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                  : "bg-secondary text-muted-foreground"
+                          }`}
+                        >
                           {t.status}
                         </span>
-                        <span className="text-[10px] text-muted-foreground font-semibold">{t.mode} · {t.filled}/{t.slots}</span>
+                        <span className="text-[10px] text-muted-foreground font-semibold">
+                          {t.mode} · {t.filled}/{t.slots}
+                        </span>
                       </div>
                     </div>
                     {t.startsat && (
@@ -243,24 +353,87 @@ function AdminDashboard() {
         {/* ─── Platform Overview ─── */}
         <SectionHeader label="Platform" icon={Activity} color="text-primary" />
         <div className="grid grid-cols-2 gap-2">
-          <StatStrip icon={Users} label="Users" value={stats?.totalUsers ?? 0} color="text-purple-500" bg="bg-purple-500/10" to="/admin/users" />
-          <StatStrip icon={ShieldAlert} label="Banned" value={stats?.bannedUsers ?? 0} color="text-red-500" bg="bg-red-500/10" to="/admin/users" />
-          <StatStrip icon={Trophy} label="Live" value={stats?.liveTournaments ?? 0} color="text-amber-500" bg="bg-amber-500/10" to="/admin/tournaments" />
-          <StatStrip icon={Zap} label="Open" value={stats?.openTournaments ?? 0} color="text-sky-500" bg="bg-sky-500/10" to="/admin/tournaments" />
+          <StatStrip
+            icon={Users}
+            label="Users"
+            value={stats?.totalUsers ?? 0}
+            color="text-purple-500"
+            bg="bg-purple-500/10"
+            to="/admin/users"
+          />
+          <StatStrip
+            icon={ShieldAlert}
+            label="Banned"
+            value={stats?.bannedUsers ?? 0}
+            color="text-red-500"
+            bg="bg-red-500/10"
+            to="/admin/users"
+          />
+          <StatStrip
+            icon={Trophy}
+            label="Live"
+            value={stats?.liveTournaments ?? 0}
+            color="text-amber-500"
+            bg="bg-amber-500/10"
+            to="/admin/tournaments"
+          />
+          <StatStrip
+            icon={Zap}
+            label="Open"
+            value={stats?.openTournaments ?? 0}
+            color="text-sky-500"
+            bg="bg-sky-500/10"
+            to="/admin/tournaments"
+          />
         </div>
 
         {/* ─── Finance ─── */}
         <SectionHeader label="Finance" icon={TrendingUp} color="text-emerald-500" />
         <div className="space-y-2">
           {[
-            { icon: IndianRupee, label: "Total Deposited", value: `₹${stats?.totalRevenue ?? 0}`, color: "text-emerald-500", bg: "bg-emerald-500/10", type: "revenue" as const, to: "/admin/deposits" },
-            { icon: Banknote, label: "Total Paid Out", value: `₹${stats?.totalPayouts ?? 0}`, color: "text-rose-500", bg: "bg-rose-500/10", type: "payouts" as const, to: "/admin/payouts" },
-            { icon: Coins, label: "Total Withdrawable", value: `₹${stats?.totalWithdrawable ?? 0}`, color: "text-amber-500", bg: "bg-amber-500/10", type: "withdrawable" as const, to: "/admin/users" },
+            {
+              icon: IndianRupee,
+              label: "Total Deposited",
+              value: `₹${stats?.totalRevenue ?? 0}`,
+              color: "text-emerald-500",
+              bg: "bg-emerald-500/10",
+              type: "revenue" as const,
+              to: "/admin/deposits",
+            },
+            {
+              icon: Banknote,
+              label: "Total Paid Out",
+              value: `₹${stats?.totalPayouts ?? 0}`,
+              color: "text-rose-500",
+              bg: "bg-rose-500/10",
+              type: "payouts" as const,
+              to: "/admin/payouts",
+            },
+            {
+              icon: Coins,
+              label: "Total Withdrawable",
+              value: `₹${stats?.totalWithdrawable ?? 0}`,
+              color: "text-amber-500",
+              bg: "bg-amber-500/10",
+              type: "withdrawable" as const,
+              to: "/admin/users",
+            },
           ].map((item) => (
             <div key={item.type} className="relative">
-              <StatStrip icon={item.icon} label={item.label} value={item.value} color={item.color} bg={item.bg} to={item.to} />
+              <StatStrip
+                icon={item.icon}
+                label={item.label}
+                value={item.value}
+                color={item.color}
+                bg={item.bg}
+                to={item.to}
+              />
               <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleResetFinance(item.type); }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleResetFinance(item.type);
+                }}
                 className="absolute top-3 right-10 p-1.5 rounded-lg bg-secondary/80 hover:bg-muted-foreground/15 text-muted-foreground transition-colors cursor-pointer z-10"
                 title="Reset calculation to zero"
               >
@@ -273,14 +446,70 @@ function AdminDashboard() {
         {/* ─── Quick Actions ─── */}
         <SectionHeader label="Quick Actions" icon={Zap} color="text-violet-500" />
         <div className="space-y-2 mb-4">
-          <QuickAction to="/admin/tournaments" icon={Trophy} title="Manage Tournaments" desc="Create, edit & delete events" color="text-amber-500" bg="bg-amber-500/10" />
-          <QuickAction to="/admin/registrations" icon={ClipboardList} title="Registrations" desc="View player rosters" color="text-blue-500" bg="bg-blue-500/10" />
-          <QuickAction to="/admin/leaderboard" icon={RefreshCw} title="Leaderboard" desc="Adjust weekly standings" color="text-violet-500" bg="bg-violet-500/10" />
-          <QuickAction to="/admin/notifications" icon={Bell} title="Broadcast" desc="Push alerts to users" color="text-pink-500" bg="bg-pink-500/10" />
-          <QuickAction to="/admin/messages" icon={Mail} title="Messages" desc="User contact inbox" color="text-sky-500" bg="bg-sky-500/10" />
-          <QuickAction to="/admin/spin-wheel" icon={Sparkles} title="Spin Wheel" desc="Manage wheel & prizes" color="text-primary" bg="bg-primary/10" />
-          <QuickAction to="/admin/profile-shop" icon={Store} title="Profile Shop" desc="Cosmetics & banners" color="text-orange-500" bg="bg-orange-500/10" />
-          <QuickAction to="/admin/site-settings" icon={Settings} title="Site Settings" desc="UPI, announcements, etc." color="text-orange-500" bg="bg-orange-500/10" />
+          <QuickAction
+            to="/admin/tournaments"
+            icon={Trophy}
+            title="Manage Tournaments"
+            desc="Create, edit & delete events"
+            color="text-amber-500"
+            bg="bg-amber-500/10"
+          />
+          <QuickAction
+            to="/admin/registrations"
+            icon={ClipboardList}
+            title="Registrations"
+            desc="View player rosters"
+            color="text-blue-500"
+            bg="bg-blue-500/10"
+          />
+          <QuickAction
+            to="/admin/leaderboard"
+            icon={RefreshCw}
+            title="Leaderboard"
+            desc="Adjust weekly standings"
+            color="text-violet-500"
+            bg="bg-violet-500/10"
+          />
+          <QuickAction
+            to="/admin/notifications"
+            icon={Bell}
+            title="Broadcast"
+            desc="Push alerts to users"
+            color="text-pink-500"
+            bg="bg-pink-500/10"
+          />
+          <QuickAction
+            to="/admin/messages"
+            icon={Mail}
+            title="Messages"
+            desc="User contact inbox"
+            color="text-sky-500"
+            bg="bg-sky-500/10"
+          />
+          <QuickAction
+            to="/admin/spin-wheel"
+            icon={Sparkles}
+            title="Spin Wheel"
+            desc="Manage wheel & prizes"
+            color="text-primary"
+            bg="bg-primary/10"
+          />
+          <QuickAction
+            to="/admin/profile-shop"
+            icon={Store}
+            title="Profile Shop"
+            desc="Cosmetics & banners"
+            color="text-orange-500"
+            bg="bg-orange-500/10"
+          />
+          <QuickAction
+            to="/admin/site-settings"
+            icon={Settings}
+            title="Site Settings"
+            desc="UPI, announcements, etc."
+            color="text-orange-500"
+            bg="bg-orange-500/10"
+          />
         </div>
       </div>
 

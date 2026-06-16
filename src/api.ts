@@ -3,7 +3,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getEnvVar } from "./lib/env";
 export { getWalletBalance, getTransactionHistory } from "./lib/razorpay";
-export { createUpiDeposit, submitUpiUtr, getPendingUpiDeposits, approveUpiDeposit, rejectUpiDeposit, getUserUpiDeposits, getActiveUpiConfig } from "./lib/upi";
+export {
+  createUpiDeposit,
+  submitUpiUtr,
+  getPendingUpiDeposits,
+  approveUpiDeposit,
+  rejectUpiDeposit,
+  getUserUpiDeposits,
+  getActiveUpiConfig,
+} from "./lib/upi";
 
 export async function getCurrentUser(requiredRole?: "admin" | "user", dataSessionId?: string) {
   const { getCurrentUser: get } = await import("./lib/auth-server");
@@ -29,47 +37,63 @@ export const deleteImage = createServerFn({ method: "POST" }).handler(async ({ d
 
 export const loginUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { phone, password } = data as unknown as { phone: string; password: string };
-  const normalizedPhone = typeof phone === "string" ? phone.trim() : phone;
+  const { email, password } = data as unknown as { email: string; password: string };
+  const normalizedEmail = (email || "").trim().toLowerCase();
 
-  console.log("Login attempt - Raw phone:", phone, "Normalized phone:", normalizedPhone);
+  console.log("Login attempt - Email/Username:", normalizedEmail);
 
-  if (!normalizedPhone || !/^\d{10}$/.test(normalizedPhone)) {
-    console.log("Phone validation failed:", { normalizedPhone, isValid: /^\d{10}$/.test(normalizedPhone) });
-    throw new Error("Phone number must be exactly 10 digits");
+  if (!normalizedEmail) {
+    throw new Error("Email address or username is required");
   }
 
-  const userStmt = db.prepare("SELECT * FROM users WHERE phone = ?");
-  const user = (await userStmt.get(normalizedPhone)) as any;
-  console.log("User lookup result:", user ? { id: user.id, username: user.username, role: user.role, phone: user.phone } : null);
+  let user;
+  if (normalizedEmail.includes("@")) {
+    user = (await db
+      .prepare("SELECT * FROM users WHERE LOWER(email) = ?")
+      .get(normalizedEmail)) as any;
+  } else {
+    user = (await db
+      .prepare("SELECT * FROM users WHERE LOWER(username) = ? OR phone = ?")
+      .get(normalizedEmail, normalizedEmail)) as any;
+  }
+
+  console.log(
+    "User lookup result:",
+    user ? { id: user.id, username: user.username, role: user.role, email: user.email } : null,
+  );
 
   if (!user) {
-    console.log("No user found with phone:", normalizedPhone);
-    throw new Error("Invalid phone number or password");
+    console.log("No user found with email/username/phone:", normalizedEmail);
+    throw new Error("Invalid email, username, phone or password");
   }
 
   // Use scrypt verification and handle legacy plaintext auto-upgrading
-  const { verifyPassword, hashPassword } = await import("./lib/auth-crypto");
+  const { verifyPassword, hashPassword, encryptPassword } = await import("./lib/auth-crypto");
   if (!user.password.includes(":")) {
     if (user.password === password) {
       // Auto-upgrade plaintext to secure hash
       const hashedPassword = hashPassword(password);
-      await db.prepare("UPDATE users SET password = ? WHERE id = ?").run(hashedPassword, user.id);
+      const encryptedPassword = encryptPassword(password);
+      await db
+        .prepare("UPDATE users SET password = ?, password_encrypted = ? WHERE id = ?")
+        .run(hashedPassword, encryptedPassword, user.id);
       user.password = hashedPassword;
       console.log(`[Auth] Auto-upgraded password hash for user: ${user.username}`);
     } else {
       console.log("Plaintext password mismatch for user:", user.username);
-      throw new Error("Invalid phone number or password");
+      throw new Error("Invalid email, username, phone or password");
     }
   } else {
     if (!verifyPassword(password, user.password)) {
       console.log("Hashed password verification failed for user:", user.username);
-      throw new Error("Invalid phone number or password");
+      throw new Error("Invalid email, username, phone or password");
     }
   }
 
   if (user.banned) {
-    throw new Error("This account has been banned by the administrator due to violation of terms of service and illegal activities. Please contact support for assistance.");
+    throw new Error(
+      "This account has been banned by the administrator due to violation of terms of service and illegal activities. Please contact support for assistance.",
+    );
   }
 
   const sessionId = crypto.randomUUID();
@@ -79,56 +103,50 @@ export const loginUser = createServerFn({ method: "POST" }).handler(async ({ dat
     .prepare("INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)")
     .run(sessionId, user.id, expiresAt);
 
-  return { sessionId, user: { 
-    id: user.id, 
-    username: user.username, 
-    role: user.role,
-    ign: user.ign,
-    uid: user.uid,
-    email: user.email,
-    phone: user.phone,
-    avatar_url: user.avatar_url,
-    deposit_balance: user.deposit_balance,
-    winning_balance: user.winning_balance,
-    upi_id: user.upi_id
-  } };
+  return {
+    sessionId,
+    user: {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      ign: user.ign,
+      uid: user.uid,
+      email: user.email,
+      phone: user.phone,
+      avatar_url: user.avatar_url,
+      deposit_balance: user.deposit_balance,
+      winning_balance: user.winning_balance,
+      upi_id: user.upi_id,
+    },
+  };
 });
 
 export const signupUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { username, password, ign, uid, email, phone, security_question, security_answer, otpToken } = data as any;
-  const normalizedPhone = typeof phone === "string" ? phone.trim() : phone;
-
-  if (!normalizedPhone) {
-    throw new Error("Phone number is required");
-  }
-
-  if (!/^\d{10}$/.test(normalizedPhone)) {
-    throw new Error("Phone number must be exactly 10 digits");
-  }
+  const { username, password, ign, uid, email, security_question, security_answer, otpToken } =
+    data as any;
 
   // Verify email OTP before creating account
   if (!otpToken) {
     throw new Error("Email verification is required");
   }
-  const otpRecord = await db
-    .prepare("SELECT id, used, verified, expires_at FROM email_otps WHERE id = ? AND email = ? AND purpose = 'signup'")
-    .get(otpToken, email?.trim().toLowerCase()) as any;
+  const otpRecord = (await db
+    .prepare(
+      "SELECT id, used, verified, expires_at FROM email_otps WHERE id = ? AND email = ? AND purpose = 'signup'",
+    )
+    .get(otpToken, email?.trim().toLowerCase())) as any;
   if (!otpRecord) throw new Error("Invalid verification token. Please re-verify your email.");
-  if (!otpRecord.verified) throw new Error("Email has not been verified yet. Please complete verification.");
-  if (otpRecord.used) throw new Error("Verification token already used. Please re-verify your email.");
-  if (new Date(otpRecord.expires_at) < new Date()) throw new Error("Verification token expired. Please re-verify your email.");
+  if (!otpRecord.verified)
+    throw new Error("Email has not been verified yet. Please complete verification.");
+  if (otpRecord.used)
+    throw new Error("Verification token already used. Please re-verify your email.");
+  if (new Date(otpRecord.expires_at) < new Date())
+    throw new Error("Verification token expired. Please re-verify your email.");
 
   const checkStmt = db.prepare("SELECT id FROM users WHERE username = ?");
   const exists = await checkStmt.get(username);
   if (exists) {
     throw new Error("Username already taken");
-  }
-
-  const phoneCheckStmt = db.prepare("SELECT id FROM users WHERE phone = ?");
-  const phoneExists = await phoneCheckStmt.get(normalizedPhone);
-  if (phoneExists) {
-    throw new Error("Phone number already registered");
   }
 
   if (email) {
@@ -153,7 +171,7 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
     ign || null,
     uid || null,
     email?.trim().toLowerCase() || null,
-    normalizedPhone,
+    null, // phone removed from signup
     security_question || null,
     security_answer || null,
   );
@@ -180,44 +198,86 @@ export const resetPassword = createServerFn({ method: "POST" }).handler(async ({
   if (!normalizedEmail) throw new Error("Email address is required");
 
   // Find user by email
-  const user = await db.prepare("SELECT id FROM users WHERE email = ?").get(normalizedEmail) as any;
+  const user = (await db
+    .prepare("SELECT id FROM users WHERE email = ?")
+    .get(normalizedEmail)) as any;
   if (!user) {
     throw new Error("No account found with this email address");
   }
 
   // Verify OTP
   if (!otpToken) throw new Error("OTP verification is required");
-  const otpRecord = await db
-    .prepare("SELECT id, used, verified, expires_at FROM email_otps WHERE id = ? AND email = ? AND purpose = 'forgot_password'")
-    .get(otpToken, normalizedEmail) as any;
+  const otpRecord = (await db
+    .prepare(
+      "SELECT id, used, verified, expires_at FROM email_otps WHERE id = ? AND email = ? AND purpose = 'forgot_password'",
+    )
+    .get(otpToken, normalizedEmail)) as any;
   if (!otpRecord) throw new Error("Invalid or expired OTP. Please request a new one.");
-  if (!otpRecord.verified) throw new Error("Email has not been verified yet. Please complete verification.");
+  if (!otpRecord.verified)
+    throw new Error("Email has not been verified yet. Please complete verification.");
   if (otpRecord.used) throw new Error("OTP already used. Please request a new one.");
-  if (new Date(otpRecord.expires_at) < new Date()) throw new Error("OTP has expired. Please request a new one.");
+  if (new Date(otpRecord.expires_at) < new Date())
+    throw new Error("OTP has expired. Please request a new one.");
 
   const { hashPassword, encryptPassword } = await import("./lib/auth-crypto");
   const hashedPassword = hashPassword(new_password);
   const encryptedPassword = encryptPassword(new_password);
 
-  await db.prepare("UPDATE users SET password = ?, password_encrypted = ? WHERE id = ?").run(hashedPassword, encryptedPassword, user.id);
+  await db
+    .prepare("UPDATE users SET password = ?, password_encrypted = ? WHERE id = ?")
+    .run(hashedPassword, encryptedPassword, user.id);
   // Mark OTP as used
   await db.prepare("UPDATE email_otps SET used = true WHERE id = ?").run(otpRecord.id);
   return { success: true };
+});
+
+export const checkEmailExists = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { email } = data as { email: string };
+  const targetEmail = (email || "").trim().toLowerCase();
+  if (!targetEmail) return { exists: false };
+  const user = (await db.prepare("SELECT id FROM users WHERE email = ?").get(targetEmail)) as any;
+  return { exists: !!user };
 });
 
 // ─── Email OTP ─────────────────────────────────────────────────────────────
 
 export const sendEmailOtp = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { email, purpose } = data as unknown as { email?: string; purpose: "signup" | "forgot_password" };
+  const { email, purpose } = data as unknown as {
+    email?: string;
+    purpose: "signup" | "forgot_password";
+  };
 
   let targetEmail = (email || "").trim().toLowerCase();
 
-  // For forgot_password, verify the email exists in DB
+  // For forgot_password, verify the email exists in DB and check 30-day rate limit
   if (purpose === "forgot_password") {
     if (!targetEmail) throw new Error("Email address is required");
-    const user = await db.prepare("SELECT id FROM users WHERE email = ?").get(targetEmail) as any;
+    const user = (await db.prepare("SELECT id FROM users WHERE email = ?").get(targetEmail)) as any;
     if (!user) throw new Error("No account found with this email address");
+
+    // Limit to once a month (30 days)
+    const recentReset = (await db
+      .prepare(
+        `
+      SELECT created_at 
+      FROM email_otps 
+      WHERE email = ? AND purpose = 'forgot_password' AND used = true AND created_at > NOW() - INTERVAL '30 days'
+      ORDER BY created_at DESC 
+      LIMIT 1
+    `,
+      )
+      .get(targetEmail)) as any;
+
+    if (recentReset) {
+      const resetDate = new Date(recentReset.created_at);
+      const nextAllowedDate = new Date(resetDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const diffDays = Math.ceil((nextAllowedDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      throw new Error(
+        `You can only reset your password once a month. Please try again in ${diffDays} day(s) or contact support.`,
+      );
+    }
   }
 
   if (!targetEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
@@ -225,9 +285,11 @@ export const sendEmailOtp = createServerFn({ method: "POST" }).handler(async ({ 
   }
 
   // Rate-limit: max 3 OTPs per email per 10 minutes
-  const recentCount = await db
-    .prepare("SELECT COUNT(*) as cnt FROM email_otps WHERE email = ? AND purpose = ? AND created_at > NOW() - INTERVAL '10 minutes'")
-    .get(targetEmail, purpose) as any;
+  const recentCount = (await db
+    .prepare(
+      "SELECT COUNT(*) as cnt FROM email_otps WHERE email = ? AND purpose = ? AND created_at > NOW() - INTERVAL '10 minutes'",
+    )
+    .get(targetEmail, purpose)) as any;
   if (Number(recentCount?.cnt ?? 0) >= 3) {
     throw new Error("Too many OTP requests. Please wait a few minutes before trying again.");
   }
@@ -244,13 +306,17 @@ export const sendEmailOtp = createServerFn({ method: "POST" }).handler(async ({ 
   try {
     await sendOtpEmail(targetEmail, otp, purpose);
   } catch (emailErr: any) {
-    console.error("[sendEmailOtp] Email delivery failed, OTP still valid in DB:", emailErr?.message);
+    console.error(
+      "[sendEmailOtp] Email delivery failed, OTP still valid in DB:",
+      emailErr?.message,
+    );
     emailError = true;
   }
 
   // Return masked email and otp record id (used as token)
-  const masked = targetEmail.replace(/^(.)(.*)(@.*)$/, (_, first, mid, domain) =>
-    first + "*".repeat(Math.min(mid.length, 4)) + domain
+  const masked = targetEmail.replace(
+    /^(.)(.*)(@.*)$/,
+    (_, first, mid, domain) => first + "*".repeat(Math.min(mid.length, 4)) + domain,
   );
 
   return { masked, otpId: result.lastInsertRowid, emailError };
@@ -258,15 +324,20 @@ export const sendEmailOtp = createServerFn({ method: "POST" }).handler(async ({ 
 
 export const verifyEmailOtp = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { otpId, otp, purpose } = data as unknown as { otpId: number | string; otp: string; purpose: "signup" | "forgot_password" };
+  const { otpId, otp, purpose } = data as unknown as {
+    otpId: number | string;
+    otp: string;
+    purpose: "signup" | "forgot_password";
+  };
 
-  const record = await db
+  const record = (await db
     .prepare("SELECT id, otp, used, expires_at FROM email_otps WHERE id = ? AND purpose = ?")
-    .get(otpId, purpose) as any;
+    .get(otpId, purpose)) as any;
 
   if (!record) throw new Error("Invalid verification code. Please try again.");
   if (record.used) throw new Error("This code has already been used. Please request a new one.");
-  if (new Date(record.expires_at) < new Date()) throw new Error("Code has expired. Please request a new one.");
+  if (new Date(record.expires_at) < new Date())
+    throw new Error("Code has expired. Please request a new one.");
   if (record.otp !== otp.trim()) throw new Error("Incorrect code. Please check and try again.");
 
   // Mark verification token as verified
@@ -276,7 +347,6 @@ export const verifyEmailOtp = createServerFn({ method: "POST" }).handler(async (
   // to allow retry if form submission fails
   return { success: true, otpToken: record.id };
 });
-
 
 export const getUserFromSession = createServerFn({ method: "GET" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
@@ -307,7 +377,7 @@ export const getUsers = createServerFn({ method: "GET" }).handler(async () => {
   await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const { decryptPassword } = await import("./lib/auth-crypto");
-  
+
   const list = (await db
     .prepare(
       "SELECT id, username, password_encrypted, role, created_at, deposit_balance, winning_balance, ign, phone, banned FROM users",
@@ -328,7 +398,7 @@ export const getTournaments = createServerFn({ method: "GET" }).handler(async ()
   const { db } = await import("./lib/db");
   const { apiCache } = await import("./lib/cache");
 
-  const cacheKey = 'tournaments';
+  const cacheKey = "tournaments";
   const cached = apiCache.get(cacheKey);
 
   if (cached) {
@@ -365,6 +435,7 @@ export const addTournament = createServerFn({ method: "POST" }).handler(async ({
     entry_fee,
     prize_pool,
     open_slots,
+    map,
   } = data as unknown as any;
 
   // Generate unique tournament code (CG-XXXXXX)
@@ -373,14 +444,19 @@ export const addTournament = createServerFn({ method: "POST" }).handler(async ({
   for (let attempt = 0; attempt < 10; attempt++) {
     let code = "CG-";
     for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
-    const existing = await db.prepare("SELECT id FROM tournaments WHERE tournament_code = ?").get(code);
-    if (!existing) { tournament_code = code; break; }
+    const existing = await db
+      .prepare("SELECT id FROM tournaments WHERE tournament_code = ?")
+      .get(code);
+    if (!existing) {
+      tournament_code = code;
+      break;
+    }
   }
   if (!tournament_code) tournament_code = "CG-" + Date.now().toString(36).toUpperCase().slice(-6);
 
   const stmt = db.prepare(`
-      INSERT INTO tournaments (title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id, room_pass, hosted_by, per_kill_coin, first_place_coin, tournament_type, entry_fee, prize_pool, open_slots, tournament_code)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO tournaments (title, game, mode, format, entry, prize, slots, filled, startsAt, status, banner, room_id, room_pass, hosted_by, per_kill_coin, first_place_coin, tournament_type, entry_fee, prize_pool, open_slots, tournament_code, map)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
   await stmt.run(
     title,
@@ -404,11 +480,14 @@ export const addTournament = createServerFn({ method: "POST" }).handler(async ({
     prize_pool || 0,
     open_slots || 0,
     tournament_code,
+    map || null,
   );
 
   if (status === "upcoming") {
     const users = await db.prepare("SELECT id FROM users WHERE role = 'user'").all();
-    const insertNotif = db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)");
+    const insertNotif = db.prepare(
+      "INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)",
+    );
     for (const user of users as any[]) {
       await insertNotif.run(
         user.id,
@@ -426,16 +505,16 @@ export const addTournament = createServerFn({ method: "POST" }).handler(async ({
             user.id,
             "📣 New Tournament Announced!",
             `📣 New tournament: ${title} (${mode} / ${format}) is open for registration!`,
-            "/tournaments"
+            "/tournaments",
           ).catch(() => {});
         }
-      } catch(e) {}
+      } catch (e) {}
     })();
   }
 
   // Clear tournaments cache to ensure new tournament appears
   const { apiCache } = await import("./lib/cache");
-  apiCache.delete('tournaments');
+  apiCache.delete("tournaments");
 
   return { success: true };
 });
@@ -465,6 +544,7 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
     entry_fee,
     prize_pool,
     open_slots,
+    map,
   } = data as unknown as any;
 
   const old = (await db
@@ -472,15 +552,11 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
     .get(id)) as any;
 
   const finalStatus =
-    status === "completed"
-      ? "completed"
-      : room_id && room_pass
-      ? "locked"
-      : status;
+    status === "completed" ? "completed" : room_id && room_pass ? "locked" : status;
 
   const stmt = db.prepare(`
       UPDATE tournaments 
-      SET title=?, game=?, mode=?, format=?, entry=?, prize=?, slots=?, filled=?, startsAt=?, status=?, banner=?, room_id=?, room_pass=?, hosted_by=?, per_kill_coin=?, first_place_coin=?, tournament_type=?, entry_fee=?, prize_pool=?, open_slots=?
+      SET title=?, game=?, mode=?, format=?, entry=?, prize=?, slots=?, filled=?, startsAt=?, status=?, banner=?, room_id=?, room_pass=?, hosted_by=?, per_kill_coin=?, first_place_coin=?, tournament_type=?, entry_fee=?, prize_pool=?, open_slots=?, map=?
       WHERE id=?
     `);
   await stmt.run(
@@ -504,6 +580,7 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
     entry_fee || 0,
     prize_pool || 0,
     open_slots || 0,
+    map || null,
     id,
   );
 
@@ -516,7 +593,7 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
       `🔑 Room details for ${title} updated! ` +
       (room_id ? `ID: ${room_id} ` : "") +
       (room_pass ? `Pass: ${room_pass}` : "");
-    
+
     const notifiedUsers = new Set<number>();
     for (const r of registrations) {
       if (!notifiedUsers.has(r.user_id)) {
@@ -528,21 +605,21 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
           const players = JSON.parse(r.players_json);
           for (const p of players) {
             if (p.uid) {
-              const u = await db.prepare("SELECT id FROM users WHERE uid = ?").get(p.uid) as any;
+              const u = (await db.prepare("SELECT id FROM users WHERE uid = ?").get(p.uid)) as any;
               if (u && !notifiedUsers.has(u.id)) {
                 await sendNotificationHelper(u.id, notifMsg.trim(), `/tournaments/${id}`);
                 notifiedUsers.add(u.id);
               }
             }
           }
-        } catch(e) {}
+        } catch (e) {}
       }
     }
   }
 
   // Clear tournaments cache to ensure updated data is fetched
   const { apiCache } = await import("./lib/cache");
-  apiCache.delete('tournaments');
+  apiCache.delete("tournaments");
 
   return { success: true };
 });
@@ -558,7 +635,7 @@ export const deleteTournament = createServerFn({ method: "POST" }).handler(async
 
   // Clear tournaments cache to ensure deleted tournament is removed
   const { apiCache } = await import("./lib/cache");
-  apiCache.delete('tournaments');
+  apiCache.delete("tournaments");
 
   return { success: true };
 });
@@ -572,7 +649,7 @@ export const toggleHeroTournament = createServerFn({ method: "POST" }).handler(a
 
   // Clear tournaments cache to ensure hero status update is reflected
   const { apiCache } = await import("./lib/cache");
-  apiCache.delete('tournaments');
+  apiCache.delete("tournaments");
 
   return { success: true };
 });
@@ -581,8 +658,15 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
   async ({ data }) => {
     const caller = await getCurrentUser();
     const { db } = await import("./lib/db");
-    const { userId: clientUserId, tournamentId, teamName, players, contactEmail, contactPhone } = data as any;
-    const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+    const {
+      userId: clientUserId,
+      tournamentId,
+      teamName,
+      players,
+      contactEmail,
+      contactPhone,
+    } = data as any;
+    const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
 
     // Check if user is banned
     const userCheck = (await db
@@ -593,16 +677,20 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
 
     // Check if tournament exists and has slots
     const t = (await db
-      .prepare("SELECT title, startsAt, mode, format, entry, entry_fee, filled, slots, status, tournament_type FROM tournaments WHERE id = ?")
+      .prepare(
+        "SELECT title, startsAt, mode, format, entry, entry_fee, filled, slots, status, tournament_type FROM tournaments WHERE id = ?",
+      )
       .get(tournamentId)) as any;
     if (!t) throw new Error("Tournament not found");
-    if (t.status === "locked") throw new Error("Tournament is locked and no longer accepting registrations");
+    if (t.status === "locked")
+      throw new Error("Tournament is locked and no longer accepting registrations");
     if (t.filled >= t.slots) throw new Error("Tournament is full");
 
     // Determine entry fee based on tournament type
-    const entryFee = t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf" 
-      ? (t.entry_fee || 0) 
-      : (t.entry || 0);
+    const entryFee =
+      t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf"
+        ? t.entry_fee || 0
+        : t.entry || 0;
 
     // Validate tournament_type and mode match
     if (t.tournament_type === "clash_squad" && t.mode !== "Squad") {
@@ -635,7 +723,9 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
           const regPlayers = JSON.parse(reg.players_json);
           for (const rp of regPlayers) {
             if (rp.uid && incomingUids.includes(rp.uid)) {
-              throw new Error(`Player with UID ${rp.uid} (${rp.ign}) is already registered in this tournament in another team.`);
+              throw new Error(
+                `Player with UID ${rp.uid} (${rp.ign}) is already registered in this tournament in another team.`,
+              );
             }
           }
         } catch (e: any) {
@@ -644,7 +734,9 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
       }
 
       const existingReqs = (await db
-        .prepare("SELECT players_json FROM tournament_requests WHERE tournament_id = ? AND status = 'pending'")
+        .prepare(
+          "SELECT players_json FROM tournament_requests WHERE tournament_id = ? AND status = 'pending'",
+        )
         .all(tournamentId)) as any[];
 
       for (const req of existingReqs) {
@@ -653,7 +745,9 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
           const reqPlayers = JSON.parse(req.players_json);
           for (const rp of reqPlayers) {
             if (rp.uid && incomingUids.includes(rp.uid)) {
-              throw new Error(`Player with UID ${rp.uid} (${rp.ign}) has a pending registration request for this tournament.`);
+              throw new Error(
+                `Player with UID ${rp.uid} (${rp.ign}) has a pending registration request for this tournament.`,
+              );
             }
           }
         } catch (e: any) {
@@ -802,8 +896,8 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
           .prepare("SELECT id FROM teams WHERE leader_id = ?")
           .get(userId)) as any;
         if (team) {
-          requester = requester ||
-            (await tx.prepare("SELECT username FROM users WHERE id = ?").get(userId));
+          requester =
+            requester || (await tx.prepare("SELECT username FROM users WHERE id = ?").get(userId));
           const members = (await tx
             .prepare("SELECT user_id FROM team_members WHERE team_id = ? AND user_id IS NOT NULL")
             .all(team.id)) as any[];
@@ -844,7 +938,7 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
 
     // Clear tournaments cache to ensure filled count is updated
     const { apiCache } = await import("./lib/cache");
-    apiCache.delete('tournaments');
+    apiCache.delete("tournaments");
 
     return { success: true };
   },
@@ -870,19 +964,19 @@ export const checkUserRegistration = createServerFn({ method: "POST" }).handler(
     const caller = await getCurrentUser();
     const { db } = await import("./lib/db");
     const { userId: clientUserId, tournamentId } = data as any;
-    const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
-    
+    const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
+
     const existing = await db
       .prepare("SELECT id FROM registrations WHERE user_id = ? AND tournament_id = ?")
       .get(userId, tournamentId);
     if (existing) return { isRegistered: true };
-    
-    const userProfile = await db.prepare("SELECT uid FROM users WHERE id = ?").get(userId) as any;
+
+    const userProfile = (await db.prepare("SELECT uid FROM users WHERE id = ?").get(userId)) as any;
     if (userProfile && userProfile.uid) {
       const existingRegs = (await db
         .prepare("SELECT players_json FROM registrations WHERE tournament_id = ?")
         .all(tournamentId)) as any[];
-        
+
       for (const reg of existingRegs) {
         if (!reg.players_json) continue;
         try {
@@ -894,9 +988,11 @@ export const checkUserRegistration = createServerFn({ method: "POST" }).handler(
       }
 
       const existingReqs = (await db
-        .prepare("SELECT players_json FROM tournament_requests WHERE tournament_id = ? AND status = 'pending'")
+        .prepare(
+          "SELECT players_json FROM tournament_requests WHERE tournament_id = ? AND status = 'pending'",
+        )
         .all(tournamentId)) as any[];
-        
+
       for (const req of existingReqs) {
         if (!req.players_json) continue;
         try {
@@ -907,7 +1003,7 @@ export const checkUserRegistration = createServerFn({ method: "POST" }).handler(
         } catch (e) {}
       }
     }
-    
+
     return { isRegistered: false };
   },
 );
@@ -925,7 +1021,9 @@ async function enrichProfile(db: any, profile: any, includePrivate = true) {
   let team = (await db.prepare("SELECT * FROM teams WHERE leader_id = ?").get(profile.id)) as any;
   if (!team) {
     const member = (await db
-      .prepare("SELECT t.* FROM team_members tm JOIN teams t ON t.id = tm.team_id WHERE tm.user_id = ? LIMIT 1")
+      .prepare(
+        "SELECT t.* FROM team_members tm JOIN teams t ON t.id = tm.team_id WHERE tm.user_id = ? LIMIT 1",
+      )
       .get(profile.id)) as any;
     team = member || null;
   }
@@ -940,7 +1038,9 @@ async function enrichProfile(db: any, profile: any, includePrivate = true) {
     ...profile,
     owned_cosmetics: owned,
     showcase_achievements: showcase,
-    team: team ? { id: team.id, name: team.name, logo: team.logo, leader_id: team.leader_id } : null,
+    team: team
+      ? { id: team.id, name: team.name, logo: team.logo, leader_id: team.leader_id }
+      : null,
     stats,
     achievements,
     showcase: achievements.filter((a) => showcase.includes(a.id)),
@@ -1018,6 +1118,38 @@ export const updateProfile = createServerFn({ method: "POST" }).handler(async ({
     showcase_achievements,
   } = data as any;
 
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
+
+  // Cloudinary cleanup: delete old avatar/banner when changed or removed
+  if (avatar_url !== undefined || banner_url !== undefined) {
+    try {
+      const oldUser = (await db
+        .prepare("SELECT avatar_url, banner_url FROM users WHERE id = ?")
+        .get(userId)) as any;
+      if (oldUser) {
+        const { deleteFromCloudinary } = await import("./lib/cloudinary");
+        if (
+          avatar_url !== undefined &&
+          oldUser.avatar_url &&
+          oldUser.avatar_url !== avatar_url &&
+          oldUser.avatar_url.includes("res.cloudinary.com")
+        ) {
+          deleteFromCloudinary(oldUser.avatar_url).catch(() => {});
+        }
+        if (
+          banner_url !== undefined &&
+          oldUser.banner_url &&
+          oldUser.banner_url !== banner_url &&
+          oldUser.banner_url.includes("res.cloudinary.com")
+        ) {
+          deleteFromCloudinary(oldUser.banner_url).catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.error("[updateProfile] Cloudinary cleanup error:", e);
+    }
+  }
+
   const fields: string[] = [];
   const values: any[] = [];
 
@@ -1067,7 +1199,6 @@ export const updateProfile = createServerFn({ method: "POST" }).handler(async ({
     values.push(JSON.stringify(showcase_achievements));
   }
 
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
   if (fields.length > 0) {
     values.push(userId);
     await db.prepare(`UPDATE users SET ${fields.join(", ")} WHERE id = ?`).run(...values);
@@ -1079,8 +1210,10 @@ export const getProfile = createServerFn({ method: "POST" }).handler(async ({ da
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const clientUserId = data as unknown as number;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
-  const profile = (await db.prepare(`SELECT ${PROFILE_SELECT} FROM users WHERE id = ?`).get(userId)) as any;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
+  const profile = (await db
+    .prepare(`SELECT ${PROFILE_SELECT} FROM users WHERE id = ?`)
+    .get(userId)) as any;
   return enrichProfile(db, profile, true);
 });
 
@@ -1088,7 +1221,11 @@ export const getPublicProfile = createServerFn({ method: "POST" }).handler(async
   const { db } = await import("./lib/db");
   const userId = data as unknown as number;
   try {
-    const profile = (await db.prepare(`SELECT ${PROFILE_SELECT} FROM users WHERE id = ? AND COALESCE(banned, false) = false`).get(userId)) as any;
+    const profile = (await db
+      .prepare(
+        `SELECT ${PROFILE_SELECT} FROM users WHERE id = ? AND COALESCE(banned, false) = false`,
+      )
+      .get(userId)) as any;
     if (!profile || profile.role === "admin") return null;
     return enrichProfile(db, profile, false);
   } catch (e) {
@@ -1104,71 +1241,83 @@ export const getPlayerStats = createServerFn({ method: "POST" }).handler(async (
   try {
     const stats = await db.transaction(async (tx) => {
       // 1. Matches played
-      const matchesPlayedRes = await tx
-        .prepare(`
+      const matchesPlayedRes = (await tx
+        .prepare(
+          `
           SELECT COUNT(*) as count 
           FROM registrations r
           JOIN tournaments t ON r.tournament_id = t.id
           WHERE r.user_id = ? AND t.results_announced = true
-        `)
-        .get(userId) as any;
+        `,
+        )
+        .get(userId)) as any;
       const matchesPlayed = Number(matchesPlayedRes?.count || 0);
 
       // 2. Total Kills
-      const totalKillsRes = await tx
-        .prepare(`
+      const totalKillsRes = (await tx
+        .prepare(
+          `
           SELECT SUM(r.kills) as sum 
           FROM registrations r
           JOIN tournaments t ON r.tournament_id = t.id
           WHERE r.user_id = ? AND t.results_announced = true
-        `)
-        .get(userId) as any;
+        `,
+        )
+        .get(userId)) as any;
       const totalKills = Number(totalKillsRes?.sum || 0);
 
       // 3. Total Earnings
-      const totalEarningsRes = await tx
-        .prepare(`
+      const totalEarningsRes = (await tx
+        .prepare(
+          `
           SELECT SUM(r.awarded_prize) as sum 
           FROM registrations r
           JOIN tournaments t ON r.tournament_id = t.id
           WHERE r.user_id = ? AND t.results_announced = true
-        `)
-        .get(userId) as any;
+        `,
+        )
+        .get(userId)) as any;
       const totalEarnings = Number(totalEarningsRes?.sum || 0);
 
       // 4. First place count
-      const firstPlacesRes = await tx
-        .prepare(`
+      const firstPlacesRes = (await tx
+        .prepare(
+          `
           SELECT COUNT(*) as count 
           FROM registrations r
           JOIN tournaments t ON r.tournament_id = t.id
           WHERE r.user_id = ? AND r.position = 1 AND t.results_announced = true
-        `)
-        .get(userId) as any;
+        `,
+        )
+        .get(userId)) as any;
       const firstPlaces = Number(firstPlacesRes?.count || 0);
 
       // 5. Top 3 count
-      const top3Res = await tx
-        .prepare(`
+      const top3Res = (await tx
+        .prepare(
+          `
           SELECT COUNT(*) as count 
           FROM registrations r
           JOIN tournaments t ON r.tournament_id = t.id
           WHERE r.user_id = ? AND r.position > 0 AND r.position <= 3 AND t.results_announced = true
-        `)
-        .get(userId) as any;
+        `,
+        )
+        .get(userId)) as any;
       const top3 = Number(top3Res?.count || 0);
 
       // 6. Win history (recent matches) for dynamic chart
-      const history = await tx
-        .prepare(`
+      const history = (await tx
+        .prepare(
+          `
           SELECT r.created_at, r.kills, r.position, r.awarded_prize, t.title as tournament_title 
           FROM registrations r
           JOIN tournaments t ON r.tournament_id = t.id
           WHERE r.user_id = ? AND t.results_announced = true
           ORDER BY r.created_at DESC 
           LIMIT 10
-        `)
-        .all(userId) as any[];
+        `,
+        )
+        .all(userId)) as any[];
 
       return {
         matchesPlayed,
@@ -1239,7 +1388,7 @@ export const getMyTeam = createServerFn({ method: "POST" }).handler(async ({ dat
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const clientUserId = data as unknown as number;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
   let team = (await db.prepare("SELECT * FROM teams WHERE leader_id = ?").get(userId)) as any;
 
   if (!team) {
@@ -1272,9 +1421,27 @@ export const saveMyTeam = createServerFn({ method: "POST" }).handler(async ({ da
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { userId: clientUserId, teamName, logo, members } = data as any;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
   const removedMembers: number[] = [];
   const rosterMembers = Array.isArray(members) ? members : null;
+
+  // Cloudinary cleanup: delete old team logo when changed or removed
+  try {
+    const oldTeam = (await db
+      .prepare("SELECT id, logo FROM teams WHERE leader_id = ?")
+      .get(userId)) as any;
+    if (
+      oldTeam &&
+      oldTeam.logo &&
+      oldTeam.logo !== (logo || "") &&
+      oldTeam.logo.includes("res.cloudinary.com")
+    ) {
+      const { deleteFromCloudinary } = await import("./lib/cloudinary");
+      deleteFromCloudinary(oldTeam.logo).catch(() => {});
+    }
+  } catch (e) {
+    console.error("[saveMyTeam] Cloudinary cleanup error:", e);
+  }
 
   await db.transaction(async (tx) => {
     let team = (await tx.prepare("SELECT id FROM teams WHERE leader_id = ?").get(userId)) as any;
@@ -1289,7 +1456,9 @@ export const saveMyTeam = createServerFn({ method: "POST" }).handler(async ({ da
 
       if (rosterMembers) {
         existingMembers = (await tx
-          .prepare("SELECT uid, user_id FROM team_members WHERE team_id = ? AND user_id IS NOT NULL")
+          .prepare(
+            "SELECT uid, user_id FROM team_members WHERE team_id = ? AND user_id IS NOT NULL",
+          )
           .all(teamId)) as any[];
         await tx.prepare("DELETE FROM team_members WHERE team_id = ?").run(teamId);
       }
@@ -1305,7 +1474,9 @@ export const saveMyTeam = createServerFn({ method: "POST" }).handler(async ({ da
     const insertMember = tx.prepare(
       "INSERT INTO team_members (team_id, user_id, ign, uid, role) VALUES (?, ?, ?, ?, ?)",
     );
-    const newUids = new Set(rosterMembers.filter((m: any) => m.ign && m.uid).map((m: any) => m.uid));
+    const newUids = new Set(
+      rosterMembers.filter((m: any) => m.ign && m.uid).map((m: any) => m.uid),
+    );
 
     for (const m of rosterMembers) {
       if (m.ign && m.uid) {
@@ -1325,10 +1496,16 @@ export const saveMyTeam = createServerFn({ method: "POST" }).handler(async ({ da
     }
 
     if (existingMembers.length > 0) {
-      const insertNotif = tx.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)");
+      const insertNotif = tx.prepare(
+        "INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)",
+      );
       for (const ex of existingMembers) {
         if (!newUids.has(ex.uid)) {
-          await insertNotif.run(ex.user_id, `❌ You have been removed from the team ${teamName}.`, "/my-team");
+          await insertNotif.run(
+            ex.user_id,
+            `❌ You have been removed from the team ${teamName}.`,
+            "/my-team",
+          );
           if (ex.user_id) {
             removedMembers.push(ex.user_id);
           }
@@ -1344,10 +1521,10 @@ export const saveMyTeam = createServerFn({ method: "POST" }).handler(async ({ da
         memberId,
         "❌ Team Update",
         `❌ You have been removed from the team ${teamName}.`,
-        "/teams"
-      ).catch(e => console.error("Remove member push failed:", e));
+        "/teams",
+      ).catch((e) => console.error("Remove member push failed:", e));
     }
-  } catch(e) {}
+  } catch (e) {}
 
   return { success: true };
 });
@@ -1356,7 +1533,7 @@ export const leaveTeam = createServerFn({ method: "POST" }).handler(async ({ dat
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { userId: clientUserId, teamId } = data as any;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
   let leaderId: number | null = null;
   let notifMsg = "";
 
@@ -1373,7 +1550,7 @@ export const leaveTeam = createServerFn({ method: "POST" }).handler(async ({ dat
     await tx
       .prepare("DELETE FROM team_members WHERE team_id = ? AND user_id = ?")
       .run(teamId, userId);
-    
+
     notifMsg = `⚠️ ${user.ign || user.username} has left your team ${team.name}.`;
     leaderId = team.leader_id;
 
@@ -1385,9 +1562,10 @@ export const leaveTeam = createServerFn({ method: "POST" }).handler(async ({ dat
   if (leaderId) {
     try {
       const { triggerPushNotification } = await import("./lib/push-server");
-      triggerPushNotification(leaderId, "⚠️ Team Update", notifMsg, "/teams")
-        .catch(e => console.error("Leave team push failed:", e));
-    } catch(e) {}
+      triggerPushNotification(leaderId, "⚠️ Team Update", notifMsg, "/teams").catch((e) =>
+        console.error("Leave team push failed:", e),
+      );
+    } catch (e) {}
   }
 
   return { success: true };
@@ -1397,7 +1575,7 @@ export const deleteTeam = createServerFn({ method: "POST" }).handler(async ({ da
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { userId: clientUserId, teamId } = data as any;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
   const notifiedMembers: number[] = [];
   let teamName = "";
 
@@ -1418,7 +1596,9 @@ export const deleteTeam = createServerFn({ method: "POST" }).handler(async ({ da
     await tx.prepare("DELETE FROM team_members WHERE team_id = ?").run(teamId);
     await tx.prepare("DELETE FROM teams WHERE id = ?").run(teamId);
 
-    const insertNotif = tx.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)");
+    const insertNotif = tx.prepare(
+      "INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)",
+    );
     for (const m of members) {
       if (m.user_id !== userId) {
         await insertNotif.run(
@@ -1438,10 +1618,10 @@ export const deleteTeam = createServerFn({ method: "POST" }).handler(async ({ da
         mId,
         "⚠️ Team Deleted",
         `⚠️ The team ${teamName} has been deleted by the captain.`,
-        "/teams"
-      ).catch(e => console.error("Delete team push failed:", e));
+        "/teams",
+      ).catch((e) => console.error("Delete team push failed:", e));
     }
-  } catch(e) {}
+  } catch (e) {}
 
   return { success: true };
 });
@@ -1503,7 +1683,7 @@ export const requestJoinTeam = createServerFn({ method: "POST" }).handler(async 
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { teamId, userId: clientUserId, ign, uid } = data as any;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
   if (!ign || !uid) throw new Error("Please set your IGN and UID in your profile first.");
 
   const existing = await db
@@ -1514,9 +1694,12 @@ export const requestJoinTeam = createServerFn({ method: "POST" }).handler(async 
   if (existing) throw new Error("You already have a pending request to this team.");
 
   const isCaptain = await db.prepare("SELECT id FROM teams WHERE leader_id = ?").get(userId);
-  if (isCaptain) throw new Error("You are already the captain of a team. Leave or delete your team first.");
+  if (isCaptain)
+    throw new Error("You are already the captain of a team. Leave or delete your team first.");
 
-  const isMember = await db.prepare("SELECT team_id FROM team_members WHERE user_id = ?").get(userId);
+  const isMember = await db
+    .prepare("SELECT team_id FROM team_members WHERE user_id = ?")
+    .get(userId);
   if (isMember) throw new Error("You are already in a team. Leave your current team first.");
 
   const team = (await db
@@ -1542,9 +1725,9 @@ export const requestJoinTeam = createServerFn({ method: "POST" }).handler(async 
         team.leader_id,
         "📩 Team Join Request",
         `📩 ${ign} requested to join your team ${team.name}.`,
-        "/teams"
-      ).catch(e => console.error("Join request push failed:", e));
-    } catch(e) {}
+        "/teams",
+      ).catch((e) => console.error("Join request push failed:", e));
+    } catch (e) {}
   }
 
   return { success: true };
@@ -1554,7 +1737,7 @@ export const getTeamRequests = createServerFn({ method: "POST" }).handler(async 
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const clientLeaderId = data as unknown as number;
-  const leaderId = caller.role === 'admin' ? (clientLeaderId || caller.id) : caller.id;
+  const leaderId = caller.role === "admin" ? clientLeaderId || caller.id : caller.id;
   const team = (await db.prepare("SELECT id FROM teams WHERE leader_id = ?").get(leaderId)) as any;
   if (!team) return [];
 
@@ -1575,7 +1758,7 @@ export const getMyTeamRequest = createServerFn({ method: "POST" }).handler(async
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const clientUserId = data as unknown as number;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
 
   return db
     .prepare(
@@ -1595,13 +1778,15 @@ export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(asy
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { requestId, status, userId: clientUserId } = data as any;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
 
   const req = (await db.prepare("SELECT * FROM team_requests WHERE id = ?").get(requestId)) as any;
   if (!req || req.status !== "pending") throw new Error("Request not found or already handled.");
 
   if (userId) {
-    const team = (await db.prepare("SELECT leader_id FROM teams WHERE id = ?").get(req.team_id)) as any;
+    const team = (await db
+      .prepare("SELECT leader_id FROM teams WHERE id = ?")
+      .get(req.team_id)) as any;
     if (!team) throw new Error("Team not found.");
     const initiatedBy = req.initiated_by || "player";
     if (initiatedBy === "team") {
@@ -1615,10 +1800,14 @@ export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(asy
     await tx.prepare("UPDATE team_requests SET status = ? WHERE id = ?").run(status, requestId);
 
     if (status === "approved") {
-      const isCaptain = await tx.prepare("SELECT id FROM teams WHERE leader_id = ?").get(req.user_id);
+      const isCaptain = await tx
+        .prepare("SELECT id FROM teams WHERE leader_id = ?")
+        .get(req.user_id);
       if (isCaptain) throw new Error("User is already a captain of another team.");
 
-      const isMember = await tx.prepare("SELECT team_id FROM team_members WHERE user_id = ?").get(req.user_id);
+      const isMember = await tx
+        .prepare("SELECT team_id FROM team_members WHERE user_id = ?")
+        .get(req.user_id);
       if (isMember) throw new Error("User has already joined another team.");
 
       const roster = (await tx
@@ -1628,7 +1817,9 @@ export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(asy
         throw new Error("Team is full. Captain must remove a member before approving.");
       }
 
-      const playerProfile = (await tx.prepare("SELECT username, ign, uid FROM users WHERE id = ?").get(req.user_id)) as any;
+      const playerProfile = (await tx
+        .prepare("SELECT username, ign, uid FROM users WHERE id = ?")
+        .get(req.user_id)) as any;
       if (!playerProfile?.ign || !playerProfile?.uid) {
         throw new Error("Please set your IGN and UID in your profile first.");
       }
@@ -1648,14 +1839,22 @@ export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(asy
         .run(req.team_id, req.user_id, playerProfile.ign, playerProfile.uid, nextRole);
 
       await tx
-        .prepare("UPDATE team_requests SET status = 'rejected' WHERE user_id = ? AND status = 'pending' AND id != ?")
+        .prepare(
+          "UPDATE team_requests SET status = 'rejected' WHERE user_id = ? AND status = 'pending' AND id != ?",
+        )
         .run(req.user_id, requestId);
 
       await tx
         .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
-        .run(req.user_id, "🎉 Your request/invitation to join the team has been approved! All other pending requests were cancelled.", "/teams");
+        .run(
+          req.user_id,
+          "🎉 Your request/invitation to join the team has been approved! All other pending requests were cancelled.",
+          "/teams",
+        );
 
-      const team = (await tx.prepare("SELECT leader_id, name FROM teams WHERE id = ?").get(req.team_id)) as any;
+      const team = (await tx
+        .prepare("SELECT leader_id, name FROM teams WHERE id = ?")
+        .get(req.team_id)) as any;
       if (team) {
         await tx
           .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
@@ -1666,13 +1865,21 @@ export const resolveTeamRequest = createServerFn({ method: "POST" }).handler(asy
         .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
         .run(req.user_id, "❌ The request to join the team was declined.", "/teams");
 
-      const team = (await tx.prepare("SELECT leader_id, name FROM teams WHERE id = ?").get(req.team_id)) as any;
+      const team = (await tx
+        .prepare("SELECT leader_id, name FROM teams WHERE id = ?")
+        .get(req.team_id)) as any;
       if (team) {
-        const playerProfile = (await tx.prepare("SELECT ign, username FROM users WHERE id = ?").get(req.user_id)) as any;
+        const playerProfile = (await tx
+          .prepare("SELECT ign, username FROM users WHERE id = ?")
+          .get(req.user_id)) as any;
         const nameToShow = playerProfile?.ign || playerProfile?.username || "A player";
         await tx
           .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
-          .run(team.leader_id, `❌ ${nameToShow} has declined the team invitation/request.`, "/teams");
+          .run(
+            team.leader_id,
+            `❌ ${nameToShow} has declined the team invitation/request.`,
+            "/teams",
+          );
       }
     }
   });
@@ -1706,7 +1913,7 @@ export const cancelTeamRequest = createServerFn({ method: "POST" }).handler(asyn
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { userId: clientUserId, requestId } = data as any;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
 
   const req = (await db.prepare("SELECT * FROM team_requests WHERE id = ?").get(requestId)) as any;
   if (!req || req.status !== "pending") throw new Error("Request not found.");
@@ -1720,9 +1927,11 @@ export const removeTeamMember = createServerFn({ method: "POST" }).handler(async
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { captainId: clientCaptainId, memberUserId } = data as any;
-  const captainId = caller.role === 'admin' ? (clientCaptainId || caller.id) : caller.id;
+  const captainId = caller.role === "admin" ? clientCaptainId || caller.id : caller.id;
 
-  const team = (await db.prepare("SELECT id, name, leader_id FROM teams WHERE leader_id = ?").get(captainId)) as any;
+  const team = (await db
+    .prepare("SELECT id, name, leader_id FROM teams WHERE leader_id = ?")
+    .get(captainId)) as any;
   if (!team) throw new Error("You do not captain a team.");
 
   const member = (await db
@@ -1741,11 +1950,7 @@ export const removeTeamMember = createServerFn({ method: "POST" }).handler(async
       try {
         await tx
           .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
-          .run(
-            memberUserId,
-            `❌ You were removed from ${team.name} by the captain.`,
-            "/teams",
-          );
+          .run(memberUserId, `❌ You were removed from ${team.name} by the captain.`, "/teams");
       } catch (e) {
         // Silently fail if notification insert fails due to user not found
         console.error("Failed to insert notification:", e);
@@ -1770,7 +1975,7 @@ export const getNotifications = createServerFn({ method: "POST" }).handler(async
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const clientUserId = data as unknown as number;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
   return await db
     .prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 20")
     .all(userId);
@@ -1781,7 +1986,7 @@ export const markNotificationsRead = createServerFn({ method: "POST" }).handler(
     const caller = await getCurrentUser();
     const { db } = await import("./lib/db");
     const clientUserId = data as unknown as number;
-    const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+    const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
     await db.prepare("UPDATE notifications SET is_read = true WHERE user_id = ?").run(userId);
     return { success: true };
   },
@@ -1795,23 +2000,30 @@ export const sendPushNotification = createServerFn({ method: "POST" }).handler(a
   const { sendNotificationHelper } = await import("./lib/push-server");
 
   if (targetType === "all") {
-    const users = await db.prepare("SELECT id FROM users").all() as any[];
+    const users = (await db.prepare("SELECT id FROM users").all()) as any[];
     for (const u of users) {
       await sendNotificationHelper(u.id, message, notifyUrl);
     }
   } else if (targetType === "users") {
-    const usernames = targetData.split(",").map((s: string) => s.trim()).filter(Boolean);
+    const usernames = targetData
+      .split(",")
+      .map((s: string) => s.trim())
+      .filter(Boolean);
     for (const username of usernames) {
-      const user = await db.prepare("SELECT id FROM users WHERE username = ? OR uid = ?").get(username, username) as any;
+      const user = (await db
+        .prepare("SELECT id FROM users WHERE username = ? OR uid = ?")
+        .get(username, username)) as any;
       if (user) {
         await sendNotificationHelper(user.id, message, notifyUrl);
       }
     }
   } else if (targetType === "tournament") {
     // Notify all users registered in this tournament
-    const regs = await db.prepare("SELECT user_id, players_json FROM registrations WHERE tournament_id = ?").all(targetData) as any[];
+    const regs = (await db
+      .prepare("SELECT user_id, players_json FROM registrations WHERE tournament_id = ?")
+      .all(targetData)) as any[];
     const notifiedUsers = new Set<number>();
-    
+
     // Notify the user who registered
     for (const reg of regs) {
       if (!notifiedUsers.has(reg.user_id)) {
@@ -1824,14 +2036,14 @@ export const sendPushNotification = createServerFn({ method: "POST" }).handler(a
           const players = JSON.parse(reg.players_json);
           for (const p of players) {
             if (p.uid) {
-              const u = await db.prepare("SELECT id FROM users WHERE uid = ?").get(p.uid) as any;
+              const u = (await db.prepare("SELECT id FROM users WHERE uid = ?").get(p.uid)) as any;
               if (u && !notifiedUsers.has(u.id)) {
                 await sendNotificationHelper(u.id, message, notifyUrl);
                 notifiedUsers.add(u.id);
               }
             }
           }
-        } catch(e) {}
+        } catch (e) {}
       }
     }
   }
@@ -1843,7 +2055,7 @@ export const getMyMatches = createServerFn({ method: "POST" }).handler(async ({ 
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const clientUserId = data as unknown as number;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
 
   const userProfile = (await db.prepare("SELECT uid FROM users WHERE id = ?").get(userId)) as any;
   const uidPattern = userProfile?.uid ? `%"uid":"${userProfile.uid}"%` : "NON_EXISTENT_UID_PATTERN";
@@ -1852,7 +2064,7 @@ export const getMyMatches = createServerFn({ method: "POST" }).handler(async ({ 
     .prepare(
       `
       SELECT t.id, t.title as name, t.startsAt as date, t.status as match_status, t.prize, t.mode, t.format, t.room_id, t.room_pass, t.per_kill_coin, t.first_place_coin,
-             t.slots, t.filled, t.entry, t.banner, t.tournament_type, t.entry_fee, t.prize_pool, r.kills, r.position, r.points, 'approved' as reg_status
+             t.slots, t.filled, t.entry, t.banner, t.tournament_type, t.entry_fee, t.prize_pool, t.map, r.kills, r.position, r.points, 'approved' as reg_status
       FROM registrations r
       JOIN tournaments t ON r.tournament_id = t.id
       WHERE r.user_id = ? OR r.players_json LIKE ?
@@ -1860,7 +2072,7 @@ export const getMyMatches = createServerFn({ method: "POST" }).handler(async ({ 
       UNION ALL
 
       SELECT t.id, t.title as name, t.startsAt as date, t.status as match_status, t.prize, t.mode, t.format, null as room_id, null as room_pass, t.per_kill_coin, t.first_place_coin,
-             t.slots, t.filled, t.entry, t.banner, t.tournament_type, t.entry_fee, t.prize_pool, 0 as kills, 0 as position, 0 as points, req.status as reg_status
+             t.slots, t.filled, t.entry, t.banner, t.tournament_type, t.entry_fee, t.prize_pool, t.map, 0 as kills, 0 as position, 0 as points, req.status as reg_status
       FROM tournament_requests req
       JOIN tournaments t ON req.tournament_id = t.id
       WHERE req.status = 'pending' AND (req.requested_by = ? OR req.players_json LIKE ?)
@@ -1890,9 +2102,9 @@ export const getTournamentResults = createServerFn({ method: "POST" }).handler(a
     `,
     )
     .all(id)) as any[];
-  
+
   return results.map((r: any) => {
-    if (r.tourney_mode === 'Duo' || r.tourney_mode === 'Solo') {
+    if (r.tourney_mode === "Duo" || r.tourney_mode === "Solo") {
       r.points = 0;
     }
     return r;
@@ -1915,10 +2127,12 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
       if (!tourney) throw new Error("Tournament not found");
 
       // Determine prize pool and tournament type
-      const prizePool = tourney.tournament_type === "clash_squad" || tourney.tournament_type === "lone_wolf" 
-        ? (tourney.prize_pool || 0) 
-        : (tourney.prize || 0);
-      const isClashOrLone = tourney.tournament_type === "clash_squad" || tourney.tournament_type === "lone_wolf";
+      const prizePool =
+        tourney.tournament_type === "clash_squad" || tourney.tournament_type === "lone_wolf"
+          ? tourney.prize_pool || 0
+          : tourney.prize || 0;
+      const isClashOrLone =
+        tourney.tournament_type === "clash_squad" || tourney.tournament_type === "lone_wolf";
 
       const stmt = tx.prepare(
         "UPDATE registrations SET kills = ?, position = ?, points = ?, awarded_prize = ? WHERE id = ? AND tournament_id = ?",
@@ -1951,7 +2165,10 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
           else if (pos === 10) posPoints = 1;
         }
 
-        const manualPoints = typeof r.manualPoints !== "undefined" && r.manualPoints !== null ? Number(r.manualPoints) : undefined;
+        const manualPoints =
+          typeof r.manualPoints !== "undefined" && r.manualPoints !== null
+            ? Number(r.manualPoints)
+            : undefined;
         const useManualPoints = manualPoints !== undefined && !Number.isNaN(manualPoints);
 
         if (!isClashOrLone && tourney.mode === "Squad") {
@@ -2004,10 +2221,10 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
         // For Battle Royale Solo: use match position from the match
         // For Battle Royale Duo: use match position (position-based only, no kills)
         // For Battle Royale Squad: use overall rank from sorting (based on points+kills)
-        let rankForPrize = isClashOrLone 
-          ? r.matchPosition 
-          : (tourney.mode === "Solo" || tourney.mode === "Duo") && !isClashOrLone 
-            ? r.matchPosition 
+        let rankForPrize = isClashOrLone
+          ? r.matchPosition
+          : (tourney.mode === "Solo" || tourney.mode === "Duo") && !isClashOrLone
+            ? r.matchPosition
             : overallRank;
 
         if (isClashOrLone) {
@@ -2050,13 +2267,16 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
               prizeDiff > 0 ? `Prize Won: ${tourney.title}` : `Prize Adjusted: ${tourney.title}`,
             );
           if (oldPrize === 0 && awardedPrize > 0) {
-            const positionMsg = tourney.mode === "Solo"
-              ? `Position: ${r.matchPosition}`
-              : tourney.mode === "Duo"
-                ? `Match Position: ${r.matchPosition}`
-                : `Points: ${r.calculatedPoints} (${r.killsNum} kills, position ${r.matchPosition})`;
+            const positionMsg =
+              tourney.mode === "Solo"
+                ? `Position: ${r.matchPosition}`
+                : tourney.mode === "Duo"
+                  ? `Match Position: ${r.matchPosition}`
+                  : `Points: ${r.calculatedPoints} (${r.killsNum} kills, position ${r.matchPosition})`;
             await tx
-              .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+              .prepare(
+                "INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)",
+              )
               .run(
                 r.user_id,
                 `💰 Prize earned for ${tourney.title}: ${awardedPrize} CG Coins awarded for finishing #${rankForPrize}. ${positionMsg}.`,
@@ -2069,13 +2289,16 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
               url: "/wallet",
             });
           } else if (prizeDiff > 0) {
-            const msg = tourney.mode === "Duo"
-              ? `your new prize is ${awardedPrize}.`
-              : tourney.mode === "Solo"
-                ? `your rank is ${r.matchPosition}.`
-                : `your points remain ${r.calculatedPoints}.`;
+            const msg =
+              tourney.mode === "Duo"
+                ? `your new prize is ${awardedPrize}.`
+                : tourney.mode === "Solo"
+                  ? `your rank is ${r.matchPosition}.`
+                  : `your points remain ${r.calculatedPoints}.`;
             await tx
-              .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+              .prepare(
+                "INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)",
+              )
               .run(
                 r.user_id,
                 `💰 Prize updated for ${tourney.title}: your prize increased by ${prizeDiff} CG Coins to ${awardedPrize}. ${msg}`,
@@ -2088,13 +2311,16 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
               url: "/wallet",
             });
           } else if (prizeDiff < 0) {
-            const msg = tourney.mode === "Duo"
-              ? `your new prize is ${awardedPrize}.`
-              : tourney.mode === "Solo"
-                ? `your rank is ${r.matchPosition}.`
-                : `your points remain ${r.calculatedPoints}.`;
+            const msg =
+              tourney.mode === "Duo"
+                ? `your new prize is ${awardedPrize}.`
+                : tourney.mode === "Solo"
+                  ? `your rank is ${r.matchPosition}.`
+                  : `your points remain ${r.calculatedPoints}.`;
             await tx
-              .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+              .prepare(
+                "INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)",
+              )
               .run(
                 r.user_id,
                 `📉 Prize updated for ${tourney.title}: your prize decreased by ${Math.abs(prizeDiff)} CG Coins to ${awardedPrize}. ${msg}`,
@@ -2146,7 +2372,7 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
       const allParticipants = (await tx
         .prepare("SELECT DISTINCT user_id FROM registrations WHERE tournament_id = ?")
         .all(tournamentId)) as any[];
-      
+
       const notifMsg = `📋 Results announced for ${tourney.title}! Check the tournament page to view rankings and prizes.`;
       for (const p of allParticipants) {
         await tx
@@ -2162,20 +2388,24 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
 
       // Optionally mark tournament as finished here if you want
       await tx
-        .prepare("UPDATE tournaments SET status = 'completed', results_announced = true WHERE id = ?")
+        .prepare(
+          "UPDATE tournaments SET status = 'completed', results_announced = true WHERE id = ?",
+        )
         .run(tournamentId);
     });
 
     try {
       const { triggerPushNotification } = await import("./lib/push-server");
       for (const t of pushTargets) {
-        triggerPushNotification(t.userId, t.title, t.body, t.url).catch(e => console.error("Results push failed:", e));
+        triggerPushNotification(t.userId, t.title, t.body, t.url).catch((e) =>
+          console.error("Results push failed:", e),
+        );
       }
-    } catch(e) {}
+    } catch (e) {}
 
     // Clear tournaments cache to ensure updated data is fetched
     const { apiCache } = await import("./lib/cache");
-    apiCache.delete('tournaments');
+    apiCache.delete("tournaments");
 
     return { success: true };
   },
@@ -2228,7 +2458,9 @@ export const rescheduleTournament = createServerFn({ method: "POST" }).handler(a
       )
       .run(id);
 
-    const insertNotif = tx.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)");
+    const insertNotif = tx.prepare(
+      "INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)",
+    );
     const notifMsg = `⚠️ The match ${tourney.title} has been RESCHEDULED. Please check your Upcoming Matches.`;
 
     for (const r of registrations) {
@@ -2244,14 +2476,14 @@ export const rescheduleTournament = createServerFn({ method: "POST" }).handler(a
         uId,
         "⚠️ Match Rescheduled",
         `⚠️ The match ${tourneyTitle} has been RESCHEDULED.`,
-        "/matches"
-      ).catch(e => console.error("Reschedule push failed:", e));
+        "/matches",
+      ).catch((e) => console.error("Reschedule push failed:", e));
     }
-  } catch(e) {}
+  } catch (e) {}
 
   // Clear tournaments cache to ensure updated data is fetched
   const { apiCache } = await import("./lib/cache");
-  apiCache.delete('tournaments');
+  apiCache.delete("tournaments");
 
   return { success: true };
 });
@@ -2260,15 +2492,16 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
   const { db } = await import("./lib/db");
   const { apiCache } = await import("./lib/cache");
 
-  const cacheKey = 'global-leaderboard';
+  const cacheKey = "global-leaderboard";
   const cached = apiCache.get(cacheKey);
 
   if (cached) {
     return cached;
   }
 
-  await db.prepare(
-    `
+  await db
+    .prepare(
+      `
       CREATE TABLE IF NOT EXISTS leaderboard_overrides (
         id SERIAL PRIMARY KEY,
         user_id INTEGER NOT NULL,
@@ -2278,21 +2511,31 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
         UNIQUE(user_id, week_start)
       )
     `,
-  ).run();
+    )
+    .run();
 
   // Migration: Fix existing table if it has wrong id column type
   try {
-    const tableInfo = await db.prepare(`
+    const tableInfo = await db
+      .prepare(
+        `
       SELECT column_name, data_type, is_nullable, column_default
       FROM information_schema.columns
       WHERE table_name = 'leaderboard_overrides' AND column_name = 'id'
-    `).get();
+    `,
+      )
+      .get();
 
-    if (tableInfo && tableInfo.data_type === 'integer' && !tableInfo.column_default?.includes('nextval')) {
+    if (
+      tableInfo &&
+      tableInfo.data_type === "integer" &&
+      !tableInfo.column_default?.includes("nextval")
+    ) {
       // Table exists with wrong schema, recreate it
       await db.prepare(`DROP TABLE leaderboard_overrides`).run();
-      await db.prepare(
-        `
+      await db
+        .prepare(
+          `
           CREATE TABLE leaderboard_overrides (
             id SERIAL PRIMARY KEY,
             user_id INTEGER NOT NULL,
@@ -2302,7 +2545,8 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
             UNIQUE(user_id, week_start)
           )
         `,
-      ).run();
+        )
+        .run();
     }
   } catch (e) {
     // Ignore migration errors, table might not exist yet
@@ -2343,16 +2587,20 @@ export const getGlobalLeaderboard = createServerFn({ method: "GET" }).handler(as
 
   for (let i = 0; i < rows.length; i++) {
     // Get all user_ids belonging to this team so any team member can see their rank highlighted
-    const members = (await db.prepare(`
+    const members = (await db
+      .prepare(
+        `
       SELECT tm.user_id
       FROM team_members tm
       JOIN teams t ON t.id = tm.team_id
       WHERE t.name = ?
-    `).all(rows[i].team)) as any[];
+    `,
+      )
+      .all(rows[i].team)) as any[];
 
     const memberIds = new Set<number>();
     if (rows[i].user_id) memberIds.add(rows[i].user_id);
-    members.forEach(m => {
+    members.forEach((m) => {
       if (m.user_id) memberIds.add(m.user_id);
     });
 
@@ -2379,8 +2627,9 @@ export const updateLeaderboardPoints = createServerFn({ method: "POST" }).handle
       throw new Error("Points must be a valid non-negative number.");
     }
 
-    await db.prepare(
-      `
+    await db
+      .prepare(
+        `
         CREATE TABLE IF NOT EXISTS leaderboard_overrides (
           id SERIAL PRIMARY KEY,
           user_id INTEGER NOT NULL,
@@ -2390,21 +2639,31 @@ export const updateLeaderboardPoints = createServerFn({ method: "POST" }).handle
           UNIQUE(user_id, week_start)
         )
       `,
-    ).run();
+      )
+      .run();
 
     // Migration: Fix existing table if it has wrong id column type
     try {
-      const tableInfo = await db.prepare(`
+      const tableInfo = await db
+        .prepare(
+          `
         SELECT column_name, data_type, is_nullable, column_default
         FROM information_schema.columns
         WHERE table_name = 'leaderboard_overrides' AND column_name = 'id'
-      `).get();
-      
-      if (tableInfo && tableInfo.data_type === 'integer' && !tableInfo.column_default?.includes('nextval')) {
+      `,
+        )
+        .get();
+
+      if (
+        tableInfo &&
+        tableInfo.data_type === "integer" &&
+        !tableInfo.column_default?.includes("nextval")
+      ) {
         // Table exists with wrong schema, recreate it
         await db.prepare(`DROP TABLE leaderboard_overrides`).run();
-        await db.prepare(
-          `
+        await db
+          .prepare(
+            `
             CREATE TABLE leaderboard_overrides (
               id SERIAL PRIMARY KEY,
               user_id INTEGER NOT NULL,
@@ -2414,7 +2673,8 @@ export const updateLeaderboardPoints = createServerFn({ method: "POST" }).handle
               UNIQUE(user_id, week_start)
             )
           `,
-        ).run();
+          )
+          .run();
       }
     } catch (e) {
       // Ignore migration errors, table might not exist yet
@@ -2429,9 +2689,7 @@ export const updateLeaderboardPoints = createServerFn({ method: "POST" }).handle
     }
 
     const existing = await db
-      .prepare(
-        "SELECT id FROM leaderboard_overrides WHERE user_id = ? AND week_start = ?",
-      )
+      .prepare("SELECT id FROM leaderboard_overrides WHERE user_id = ? AND week_start = ?")
       .get(userId, weekStart);
 
     if (existing) {
@@ -2442,8 +2700,7 @@ export const updateLeaderboardPoints = createServerFn({ method: "POST" }).handle
         .run(targetPoints, existing.id);
     } else {
       await db
-        .prepare(
-          "INSERT INTO leaderboard_overrides (user_id, week_start, points) VALUES (?, ?, ?)")
+        .prepare("INSERT INTO leaderboard_overrides (user_id, week_start, points) VALUES (?, ?, ?)")
         .run(userId, weekStart, targetPoints);
     }
 
@@ -2460,9 +2717,9 @@ export const updateLeaderboardPoints = createServerFn({ method: "POST" }).handle
         userId,
         "📊 Points Adjusted",
         `📊 Admin adjusted your leaderboard display points to ${targetPoints} for this week.`,
-        "/leaderboard"
-      ).catch(e => console.error("Adjust points push failed:", e));
-    } catch(e) {}
+        "/leaderboard",
+      ).catch((e) => console.error("Adjust points push failed:", e));
+    } catch (e) {}
 
     return { success: true };
   },
@@ -2475,7 +2732,9 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" }).handl
     const { requestId, status } = data as any;
 
     // Pre-fetch outside transaction so we can fire push after it commits
-    const req = (await db.prepare("SELECT * FROM tournament_requests WHERE id = ?").get(requestId)) as any;
+    const req = (await db
+      .prepare("SELECT * FROM tournament_requests WHERE id = ?")
+      .get(requestId)) as any;
     if (!req) throw new Error("Request not found");
     if (req.status !== "pending") throw new Error("Request already resolved");
 
@@ -2484,13 +2743,17 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" }).handl
       if (!req.team_id) {
         throw new Error("Unauthorized: Admin privilege required");
       }
-      const team = (await db.prepare("SELECT leader_id FROM teams WHERE id = ?").get(req.team_id)) as any;
+      const team = (await db
+        .prepare("SELECT leader_id FROM teams WHERE id = ?")
+        .get(req.team_id)) as any;
       if (!team || team.leader_id !== caller.id) {
         throw new Error("Unauthorized: Only the team captain can resolve this request");
       }
     }
 
-    const tourney = (await db.prepare("SELECT title, entry FROM tournaments WHERE id = ?").get(req.tournament_id)) as any;
+    const tourney = (await db
+      .prepare("SELECT title, entry FROM tournaments WHERE id = ?")
+      .get(req.tournament_id)) as any;
 
     await db.transaction(async (tx) => {
       await tx
@@ -2577,9 +2840,9 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" }).handl
           `/tournaments/${req.tournament_id}`,
         );
         // Notify all other team members
-        const members = await db
+        const members = (await db
           .prepare("SELECT user_id FROM team_members WHERE team_id = ? AND user_id IS NOT NULL")
-          .all(req.team_id) as any[];
+          .all(req.team_id)) as any[];
         for (const m of members) {
           if (m.user_id !== req.requested_by) {
             triggerPushNotification(
@@ -2613,13 +2876,18 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" }).handl
 export const processWithdrawal = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const { userId: clientUserId, amount, upiId, upiNumber } = data as unknown as {
+  const {
+    userId: clientUserId,
+    amount,
+    upiId,
+    upiNumber,
+  } = data as unknown as {
     userId: number;
     amount: number;
     upiId: string;
     upiNumber: string;
   };
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
 
   await db.transaction(async (tx) => {
     const user = (await tx
@@ -2657,13 +2925,16 @@ export const processWithdrawal = createServerFn({ method: "POST" }).handler(asyn
       userId,
       "💸 Withdrawal Requested",
       `💸 Withdrawal requested: ${amount} CG Coins to UPI ${upiId}. Processing time 2-3 working days.`,
-      "/wallet"
-    ).catch(e => console.error("Withdrawal push error:", e));
+      "/wallet",
+    ).catch((e) => console.error("Withdrawal push error:", e));
 
     // Notify Admins
-    const user = await db.prepare("SELECT username FROM users WHERE id = ?").get(userId) as any;
+    const user = (await db.prepare("SELECT username FROM users WHERE id = ?").get(userId)) as any;
     const username = user?.username || "A user";
-    await notifyAllAdmins(`💸 Withdrawal Requested: ${username} requested ₹${amount} (UPI: ${upiId})`, "/admin/payouts");
+    await notifyAllAdmins(
+      `💸 Withdrawal Requested: ${username} requested ₹${amount} (UPI: ${upiId})`,
+      "/admin/payouts",
+    );
   } catch (e) {
     console.error("Error notifying admins about withdrawal:", e);
   }
@@ -2727,11 +2998,16 @@ export const updatePayoutStatus = createServerFn({ method: "POST" }).handler(asy
 
   try {
     const { triggerPushNotification } = await import("./lib/push-server");
-    const msg = status === "completed"
-      ? `✅ Withdrawal completed: ${amount} CG Coins has been sent to your UPI. Please check your bank statement.`
-      : `❌ Your withdrawal of ${amount} CG Coins was rejected. The coins have been refunded to your wallet.`;
-    triggerPushNotification(userId, status === "completed" ? "✅ Withdrawal Success" : "❌ Withdrawal Rejected", msg, "/wallet")
-      .catch(e => console.error("Payout status push error:", e));
+    const msg =
+      status === "completed"
+        ? `✅ Withdrawal completed: ${amount} CG Coins has been sent to your UPI. Please check your bank statement.`
+        : `❌ Your withdrawal of ${amount} CG Coins was rejected. The coins have been refunded to your wallet.`;
+    triggerPushNotification(
+      userId,
+      status === "completed" ? "✅ Withdrawal Success" : "❌ Withdrawal Rejected",
+      msg,
+      "/wallet",
+    ).catch((e) => console.error("Payout status push error:", e));
   } catch (e) {}
 
   return { success: true };
@@ -2792,17 +3068,38 @@ export const updateUserRole = createServerFn({ method: "POST" }).handler(async (
 export const getAdminStats = createServerFn({ method: "GET" }).handler(async () => {
   await getCurrentUser("admin");
   const { db } = await import("./lib/db");
-  const totalUsers = ((await db.prepare("SELECT COUNT(*) as c FROM users WHERE role != 'admin'").get()) as any)?.c || 0;
-  const bannedUsers = ((await db.prepare("SELECT COUNT(*) as c FROM users WHERE banned = true").get()) as any)?.c || 0;
-  const totalTournaments = ((await db.prepare("SELECT COUNT(*) as c FROM tournaments").get()) as any)?.c || 0;
-  const liveTournaments = ((await db.prepare("SELECT COUNT(*) as c FROM tournaments WHERE status = 'live'").get()) as any)?.c || 0;
-  const openTournaments = ((await db.prepare("SELECT COUNT(*) as c FROM tournaments WHERE status = 'open'").get()) as any)?.c || 0;
-  const pendingDeposits = ((await db.prepare("SELECT COUNT(*) as c FROM upi_deposits WHERE status = 'submitted'").get()) as any)?.c || 0;
-  const pendingPayouts = ((await db.prepare("SELECT COUNT(*) as c FROM withdrawals WHERE status = 'pending'").get()) as any)?.c || 0;
-  const openTickets = ((await db.prepare("SELECT COUNT(*) as c FROM tickets WHERE status = 'open'").get()) as any)?.c || 0;
+  const totalUsers =
+    ((await db.prepare("SELECT COUNT(*) as c FROM users WHERE role != 'admin'").get()) as any)?.c ||
+    0;
+  const bannedUsers =
+    ((await db.prepare("SELECT COUNT(*) as c FROM users WHERE banned = true").get()) as any)?.c ||
+    0;
+  const totalTournaments =
+    ((await db.prepare("SELECT COUNT(*) as c FROM tournaments").get()) as any)?.c || 0;
+  const liveTournaments =
+    ((await db.prepare("SELECT COUNT(*) as c FROM tournaments WHERE status = 'live'").get()) as any)
+      ?.c || 0;
+  const openTournaments =
+    ((await db.prepare("SELECT COUNT(*) as c FROM tournaments WHERE status = 'open'").get()) as any)
+      ?.c || 0;
+  const pendingDeposits =
+    (
+      (await db
+        .prepare("SELECT COUNT(*) as c FROM upi_deposits WHERE status = 'submitted'")
+        .get()) as any
+    )?.c || 0;
+  const pendingPayouts =
+    (
+      (await db
+        .prepare("SELECT COUNT(*) as c FROM withdrawals WHERE status = 'pending'")
+        .get()) as any
+    )?.c || 0;
+  const openTickets =
+    ((await db.prepare("SELECT COUNT(*) as c FROM tickets WHERE status = 'open'").get()) as any)
+      ?.c || 0;
 
   const getOffset = async (key: string) => {
-    const row = await db.prepare("SELECT value FROM site_settings WHERE key = ?").get(key) as any;
+    const row = (await db.prepare("SELECT value FROM site_settings WHERE key = ?").get(key)) as any;
     return row ? Number(row.value) || 0 : 0;
   };
 
@@ -2810,20 +3107,47 @@ export const getAdminStats = createServerFn({ method: "GET" }).handler(async () 
   const payoutsOffset = await getOffset("finance_payouts_offset");
   const withdrawableOffset = await getOffset("finance_withdrawable_offset");
 
-  const rawRevenue = ((await db.prepare("SELECT COALESCE(SUM(amount), 0) as s FROM upi_deposits WHERE status = 'approved'").get()) as any)?.s || 0;
-  const rawPayouts = ((await db.prepare("SELECT COALESCE(SUM(amount), 0) as s FROM withdrawals WHERE status = 'completed'").get()) as any)?.s || 0;
-  const rawWithdrawable = ((await db.prepare("SELECT COALESCE(SUM(winning_balance), 0) as s FROM users").get()) as any)?.s || 0;
+  const rawRevenue =
+    (
+      (await db
+        .prepare("SELECT COALESCE(SUM(amount), 0) as s FROM upi_deposits WHERE status = 'approved'")
+        .get()) as any
+    )?.s || 0;
+  const rawPayouts =
+    (
+      (await db
+        .prepare("SELECT COALESCE(SUM(amount), 0) as s FROM withdrawals WHERE status = 'completed'")
+        .get()) as any
+    )?.s || 0;
+  const rawWithdrawable =
+    ((await db.prepare("SELECT COALESCE(SUM(winning_balance), 0) as s FROM users").get()) as any)
+      ?.s || 0;
 
   const totalRevenue = Math.max(0, rawRevenue - revenueOffset);
   const totalPayouts = Math.max(0, rawPayouts - payoutsOffset);
   const totalWithdrawable = Math.max(0, rawWithdrawable - withdrawableOffset);
 
   // Latest 3 tournaments for dashboard preview
-  const latestTournaments = await db.prepare(
-    "SELECT id, title, status, mode, game, filled, slots, startsat, tournament_code, tournament_type FROM tournaments ORDER BY id DESC LIMIT 3"
-  ).all() as any[];
+  const latestTournaments = (await db
+    .prepare(
+      "SELECT id, title, status, mode, game, filled, slots, startsat, tournament_code, tournament_type FROM tournaments ORDER BY id DESC LIMIT 3",
+    )
+    .all()) as any[];
 
-  return { totalUsers, bannedUsers, totalTournaments, liveTournaments, openTournaments, pendingDeposits, pendingPayouts, openTickets, totalRevenue, totalPayouts, totalWithdrawable, latestTournaments };
+  return {
+    totalUsers,
+    bannedUsers,
+    totalTournaments,
+    liveTournaments,
+    openTournaments,
+    pendingDeposits,
+    pendingPayouts,
+    openTickets,
+    totalRevenue,
+    totalPayouts,
+    totalWithdrawable,
+    latestTournaments,
+  };
 });
 
 export const deleteAllTournaments = createServerFn({ method: "POST" }).handler(async ({ data }) => {
@@ -2847,13 +3171,17 @@ export const saveSiteSetting = createServerFn({ method: "POST" }).handler(async 
   await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const { key, value } = data as unknown as { key: string; value: string };
-  await db.prepare(`
+  await db
+    .prepare(
+      `
     INSERT INTO site_settings (key, value)
     VALUES (?, ?)
     ON CONFLICT (key)
     DO UPDATE SET value = EXCLUDED.value
     RETURNING key
-  `).run(key, value);
+  `,
+    )
+    .run(key, value);
   return { success: true };
 });
 
@@ -2884,31 +3212,34 @@ export const getTransactions = createServerFn({ method: "POST" }).handler(async 
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const clientUserId = data as unknown as number;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
   return await db
     .prepare("SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 10")
     .all(userId);
 });
 
-export const addDepositUpi = createServerFn({ method: "POST" })
-  .handler(async ({ data }) => {
-    const caller = await getCurrentUser();
-    const { db } = await import("./lib/db");
-    const { userId: clientUserId, amount, utr } = data as any;
-    const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
-    
-    await db.transaction(async (tx: any) => {
-      await tx.prepare('UPDATE users SET deposit_balance = deposit_balance + ? WHERE id = ?').run(amount, userId);
-      await tx.prepare('INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)').run(userId, amount, 'deposit_added', `Added Cash via UPI (UTR: ${utr})`);
-    });
-    return { success: true };
+export const addDepositUpi = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const caller = await getCurrentUser();
+  const { db } = await import("./lib/db");
+  const { userId: clientUserId, amount, utr } = data as any;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
+
+  await db.transaction(async (tx: any) => {
+    await tx
+      .prepare("UPDATE users SET deposit_balance = deposit_balance + ? WHERE id = ?")
+      .run(amount, userId);
+    await tx
+      .prepare("INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)")
+      .run(userId, amount, "deposit_added", `Added Cash via UPI (UTR: ${utr})`);
   });
+  return { success: true };
+});
 
 // --- TICKET SYSTEM ---
 
 async function processTicketMessage(message: string): Promise<string> {
   if (!message) return message;
-  
+
   if (message.startsWith("{") && message.endsWith("}")) {
     try {
       const parsed = JSON.parse(message);
@@ -2939,14 +3270,16 @@ async function deleteTicketImagesFromCloudinary(ticketId: number) {
   try {
     const { db } = await import("./lib/db");
     const { deleteFromCloudinary } = await import("./lib/cloudinary");
-    
-    const replies = await db.prepare("SELECT id, message FROM ticket_replies WHERE ticket_id = ?").all(ticketId) as any[];
+
+    const replies = (await db
+      .prepare("SELECT id, message FROM ticket_replies WHERE ticket_id = ?")
+      .all(ticketId)) as any[];
     for (const reply of replies) {
       const msg = reply.message;
       if (!msg) continue;
-      
+
       let imageUrl: string | null = null;
-      
+
       if (msg.startsWith("{") && msg.endsWith("}")) {
         try {
           const parsed = JSON.parse(msg);
@@ -2957,13 +3290,13 @@ async function deleteTicketImagesFromCloudinary(ticketId: number) {
       } else if (msg.startsWith("http")) {
         imageUrl = msg;
       }
-      
+
       if (imageUrl && imageUrl.includes("cloudinary.com")) {
         console.log(`[Cloudinary] Deleting image for resolved ticket: ${imageUrl}`);
         await deleteFromCloudinary(imageUrl);
       }
     }
-    
+
     // Delete all replies for this ticket from Supabase database
     console.log(`[Database] Deleting replies for resolved ticket ${ticketId}`);
     await db.prepare("DELETE FROM ticket_replies WHERE ticket_id = ?").run(ticketId);
@@ -2976,18 +3309,27 @@ export const createTicket = createServerFn({ method: "POST" }).handler(async ({ 
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { userId: clientUserId, subject, message } = data as any;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
   const processedMessage = await processTicketMessage(message);
-  const res = await db.prepare("INSERT INTO tickets (user_id, subject) VALUES (?, ?)").run(userId, subject);
+  const res = await db
+    .prepare("INSERT INTO tickets (user_id, subject) VALUES (?, ?)")
+    .run(userId, subject);
   const ticketId = res.lastInsertRowid;
-  await db.prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)").run(ticketId, userId, processedMessage, false);
+  await db
+    .prepare(
+      "INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)",
+    )
+    .run(ticketId, userId, processedMessage, false);
 
   // Notify Admins
   try {
-    const user = await db.prepare("SELECT username FROM users WHERE id = ?").get(userId) as any;
+    const user = (await db.prepare("SELECT username FROM users WHERE id = ?").get(userId)) as any;
     const username = user?.username || "A user";
     const { notifyAllAdmins } = await import("./lib/push-server");
-    await notifyAllAdmins(`🎫 New Support Ticket created by ${username}: ${subject}`, `/admin/tickets/${ticketId}`);
+    await notifyAllAdmins(
+      `🎫 New Support Ticket created by ${username}: ${subject}`,
+      `/admin/tickets/${ticketId}`,
+    );
   } catch (err) {
     console.error("Error notifying admins about new ticket:", err);
   }
@@ -2999,26 +3341,32 @@ export const getMyTickets = createServerFn({ method: "POST" }).handler(async ({ 
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const clientUserId = data as unknown as number;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
-  return await db.prepare("SELECT * FROM tickets WHERE user_id = ? ORDER BY updated_at DESC").all(userId);
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
+  return await db
+    .prepare("SELECT * FROM tickets WHERE user_id = ? ORDER BY updated_at DESC")
+    .all(userId);
 });
 
 export const getTicket = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { ticketId } = data as any;
-  const ticket = await db.prepare("SELECT * FROM tickets WHERE id = ?").get(ticketId) as any;
+  const ticket = (await db.prepare("SELECT * FROM tickets WHERE id = ?").get(ticketId)) as any;
   if (!ticket) return null;
   if (caller.role !== "admin" && ticket.user_id !== caller.id) {
     throw new Error("Access denied: Not your ticket");
   }
-  const replies = await db.prepare(`
+  const replies = await db
+    .prepare(
+      `
     SELECT r.*, u.username, u.ign, u.role
     FROM ticket_replies r
     JOIN users u ON r.user_id = u.id
     WHERE r.ticket_id = ?
     ORDER BY r.created_at ASC
-  `).all(ticketId);
+  `,
+    )
+    .all(ticketId);
   return { ...ticket, replies };
 });
 
@@ -3026,32 +3374,42 @@ export const replyTicket = createServerFn({ method: "POST" }).handler(async ({ d
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { ticketId, userId: clientUserId, message, isAdmin } = data as any;
-  
+
   if (isAdmin && caller.role !== "admin") {
     throw new Error("Unauthorized: Admin privilege required");
   }
-  
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
-  
+
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
+
   // Verify ticket ownership for regular user
   if (caller.role !== "admin") {
-    const ticket = await db.prepare("SELECT user_id FROM tickets WHERE id = ?").get(ticketId) as any;
+    const ticket = (await db
+      .prepare("SELECT user_id FROM tickets WHERE id = ?")
+      .get(ticketId)) as any;
     if (!ticket || ticket.user_id !== caller.id) {
       throw new Error("Access denied: Not your ticket");
     }
   }
   const tId = Number(ticketId);
   const processedMessage = await processTicketMessage(message);
-  
+
   await db.transaction(async (tx: any) => {
-    await tx.prepare("INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)").run(tId, userId, processedMessage, !!isAdmin);
+    await tx
+      .prepare(
+        "INSERT INTO ticket_replies (ticket_id, user_id, message, is_admin) VALUES (?, ?, ?, ?)",
+      )
+      .run(tId, userId, processedMessage, !!isAdmin);
     await tx.prepare("UPDATE tickets SET updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(tId);
-    
+
     if (isAdmin) {
       const ticket = await tx.prepare("SELECT user_id, subject FROM tickets WHERE id = ?").get(tId);
       if (ticket) {
         const { sendNotificationHelper } = await import("./lib/push-server");
-        await sendNotificationHelper(ticket.user_id, `📩 Support Agent replied to your ticket: ${ticket.subject}`, `/support/${tId}`);
+        await sendNotificationHelper(
+          ticket.user_id,
+          `📩 Support Agent replied to your ticket: ${ticket.subject}`,
+          `/support/${tId}`,
+        );
       }
     }
   });
@@ -3061,12 +3419,16 @@ export const replyTicket = createServerFn({ method: "POST" }).handler(async ({ d
 export const getAllTickets = createServerFn({ method: "GET" }).handler(async () => {
   await getCurrentUser("admin");
   const { db } = await import("./lib/db");
-  return await db.prepare(`
+  return await db
+    .prepare(
+      `
     SELECT t.*, u.username, u.ign 
     FROM tickets t
     JOIN users u ON t.user_id = u.id
     ORDER BY t.updated_at DESC
-  `).all();
+  `,
+    )
+    .all();
 });
 
 export const updateTicketStatus = createServerFn({ method: "POST" }).handler(async ({ data }) => {
@@ -3074,14 +3436,16 @@ export const updateTicketStatus = createServerFn({ method: "POST" }).handler(asy
   const { db } = await import("./lib/db");
   const { ticketId, status } = data as any;
   const tId = Number(ticketId);
-  await db.prepare("UPDATE tickets SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(status, tId);
-  
+  await db
+    .prepare("UPDATE tickets SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+    .run(status, tId);
+
   if (status === "resolved") {
     deleteTicketImagesFromCloudinary(tId).catch((err) => {
       console.error("Failed to delete ticket images asynchronously:", err);
     });
   }
-  
+
   return { success: true };
 });
 
@@ -3091,35 +3455,52 @@ export const searchUsers = createServerFn({ method: "POST" }).handler(async ({ d
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { query, userId: clientUserId } = data as any;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
   const searchTerm = `%${query}%`;
-  return await db.prepare(`
+  return await db
+    .prepare(
+      `
     SELECT id, username, ign, uid, avatar_url 
     FROM users 
     WHERE id != ? AND (username ILIKE ? OR ign ILIKE ? OR uid ILIKE ?)
     LIMIT 10
-  `).all(userId, searchTerm, searchTerm, searchTerm);
+  `,
+    )
+    .all(userId, searchTerm, searchTerm, searchTerm);
 });
 
 export const sendFriendRequest = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { fromUserId: clientFromUserId, toUserId } = data as any;
-  const fromUserId = caller.role === 'admin' ? (clientFromUserId || caller.id) : caller.id;
-  const existing = await db.prepare("SELECT * FROM friendships WHERE (user_id1 = ? AND user_id2 = ?) OR (user_id1 = ? AND user_id2 = ?)").get(fromUserId, toUserId, toUserId, fromUserId);
+  const fromUserId = caller.role === "admin" ? clientFromUserId || caller.id : caller.id;
+  const existing = await db
+    .prepare(
+      "SELECT * FROM friendships WHERE (user_id1 = ? AND user_id2 = ?) OR (user_id1 = ? AND user_id2 = ?)",
+    )
+    .get(fromUserId, toUserId, toUserId, fromUserId);
   if (existing) throw new Error("Friendship or request already exists.");
-  await db.prepare("INSERT INTO friendships (user_id1, user_id2) VALUES (?, ?)").run(fromUserId, toUserId);
-  
+  await db
+    .prepare("INSERT INTO friendships (user_id1, user_id2) VALUES (?, ?)")
+    .run(fromUserId, toUserId);
+
   // Insert friend request notification
   try {
-    const sender = await db.prepare("SELECT ign, username FROM users WHERE id = ?").get(fromUserId) as any;
-    const senderName = sender ? (sender.ign || sender.username) : "A player";
-    await db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+    const sender = (await db
+      .prepare("SELECT ign, username FROM users WHERE id = ?")
+      .get(fromUserId)) as any;
+    const senderName = sender ? sender.ign || sender.username : "A player";
+    await db
+      .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
       .run(toUserId, `👥 ${senderName} sent you a friend request!`, "/chat");
 
     const { triggerPushNotification } = await import("./lib/push-server");
-    triggerPushNotification(toUserId, "👥 Friend Request", `👥 ${senderName} sent you a friend request!`, "/chat")
-      .catch(e => console.error("Friend request push failed:", e));
+    triggerPushNotification(
+      toUserId,
+      "👥 Friend Request",
+      `👥 ${senderName} sent you a friend request!`,
+      "/chat",
+    ).catch((e) => console.error("Friend request push failed:", e));
   } catch (err) {
     console.error("Failed to notify user of friend request:", err);
   }
@@ -3131,42 +3512,57 @@ export const getFriendRequests = createServerFn({ method: "POST" }).handler(asyn
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const clientUserId = data as unknown as number;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
-  return await db.prepare(`
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
+  return await db
+    .prepare(
+      `
     SELECT f.id, u.id as user_id, u.username, u.ign, u.uid, u.avatar_url 
     FROM friendships f 
     JOIN users u ON f.user_id1 = u.id 
     WHERE f.user_id2 = ? AND f.status = 'pending'
-  `).all(userId);
+  `,
+    )
+    .all(userId);
 });
 
 export const resolveFriendRequest = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { requestId, status } = data as any; // status can be 'accepted' or 'rejected'
-  
+
   // Verify that the caller is indeed the receiver of this request (user_id2)
-  const req = await db.prepare("SELECT user_id2 FROM friendships WHERE id = ?").get(requestId) as any;
+  const req = (await db
+    .prepare("SELECT user_id2 FROM friendships WHERE id = ?")
+    .get(requestId)) as any;
   if (!req) throw new Error("Friend request not found.");
   if (caller.role !== "admin" && req.user_id2 !== caller.id) {
     throw new Error("Access denied: Not authorized to resolve this request.");
   }
 
-  if (status === 'accepted') {
-    const f = await db.prepare("SELECT user_id1, user_id2 FROM friendships WHERE id = ?").get(requestId) as any;
+  if (status === "accepted") {
+    const f = (await db
+      .prepare("SELECT user_id1, user_id2 FROM friendships WHERE id = ?")
+      .get(requestId)) as any;
     await db.prepare("UPDATE friendships SET status = 'accepted' WHERE id = ?").run(requestId);
-    
+
     // Insert accept notification
     if (f) {
       try {
-        const accepter = await db.prepare("SELECT ign, username FROM users WHERE id = ?").get(f.user_id2) as any;
-        const accepterName = accepter ? (accepter.ign || accepter.username) : "A player";
-        await db.prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+        const accepter = (await db
+          .prepare("SELECT ign, username FROM users WHERE id = ?")
+          .get(f.user_id2)) as any;
+        const accepterName = accepter ? accepter.ign || accepter.username : "A player";
+        await db
+          .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
           .run(f.user_id1, `🤝 ${accepterName} accepted your friend request!`, "/chat");
 
         const { triggerPushNotification } = await import("./lib/push-server");
-        triggerPushNotification(f.user_id1, "🤝 Friend Request Accepted", `🤝 ${accepterName} accepted your friend request!`, "/chat")
-          .catch(e => console.error("Friend request accepted push failed:", e));
+        triggerPushNotification(
+          f.user_id1,
+          "🤝 Friend Request Accepted",
+          `🤝 ${accepterName} accepted your friend request!`,
+          "/chat",
+        ).catch((e) => console.error("Friend request accepted push failed:", e));
       } catch (err) {
         console.error("Failed to notify user of accepted friend request:", err);
       }
@@ -3181,8 +3577,10 @@ export const getFriends = createServerFn({ method: "POST" }).handler(async ({ da
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const clientUserId = data as unknown as number;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
-  return await db.prepare(`
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
+  return await db
+    .prepare(
+      `
     SELECT 
       f.id as friendship_id,
       u.id as user_id, 
@@ -3191,18 +3589,22 @@ export const getFriends = createServerFn({ method: "POST" }).handler(async ({ da
     FROM friendships f
     JOIN users u ON (u.id = f.user_id1 OR u.id = f.user_id2) AND u.id != ?
     WHERE (f.user_id1 = ? OR f.user_id2 = ?) AND f.status = 'accepted'
-  `).all(userId, userId, userId, userId);
+  `,
+    )
+    .all(userId, userId, userId, userId);
 });
 
 export const getChatMessages = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { userId: clientUserId, otherUserId, teamId, lastMessageId } = data as any;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
-  
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
+
   // Verify team membership or friend chat participation
   if (teamId) {
-    const member = await db.prepare("SELECT id FROM team_members WHERE team_id = ? AND user_id = ? LIMIT 1").get(teamId, userId);
+    const member = await db
+      .prepare("SELECT id FROM team_members WHERE team_id = ? AND user_id = ? LIMIT 1")
+      .get(teamId, userId);
     if (!member && caller.role !== "admin") {
       throw new Error("Access denied: Not a team member.");
     }
@@ -3211,16 +3613,16 @@ export const getChatMessages = createServerFn({ method: "POST" }).handler(async 
       throw new Error("Access denied: Cannot query other users' DMs.");
     }
   }
-  
+
   let query = "";
   let params: any[] = [];
-  
+
   if (teamId) {
     query = `
       SELECT m.*, u.username, u.ign, u.avatar_url 
       FROM chat_messages m
       JOIN users u ON m.sender_id = u.id
-      WHERE m.team_id = ? ${lastMessageId ? 'AND m.id > ?' : ''}
+      WHERE m.team_id = ? ${lastMessageId ? "AND m.id > ?" : ""}
       ORDER BY m.created_at ASC
     `;
     params = lastMessageId ? [teamId, lastMessageId] : [teamId];
@@ -3230,12 +3632,14 @@ export const getChatMessages = createServerFn({ method: "POST" }).handler(async 
       FROM chat_messages m
       JOIN users u ON m.sender_id = u.id
       WHERE ((m.sender_id = ? AND m.receiver_id = ?) OR (m.sender_id = ? AND m.receiver_id = ?)) 
-      ${lastMessageId ? 'AND m.id > ?' : ''}
+      ${lastMessageId ? "AND m.id > ?" : ""}
       ORDER BY m.created_at ASC
     `;
-    params = lastMessageId ? [userId, otherUserId, otherUserId, userId, lastMessageId] : [userId, otherUserId, otherUserId, userId];
+    params = lastMessageId
+      ? [userId, otherUserId, otherUserId, userId, lastMessageId]
+      : [userId, otherUserId, otherUserId, userId];
   }
-  
+
   return await db.prepare(query).all(...params);
 });
 
@@ -3243,20 +3647,26 @@ export const sendMessage = createServerFn({ method: "POST" }).handler(async ({ d
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { senderId: clientSenderId, receiverId, teamId, message } = data as any;
-  const senderId = caller.role === 'admin' ? (clientSenderId || caller.id) : caller.id;
-  
+  const senderId = caller.role === "admin" ? clientSenderId || caller.id : caller.id;
+
   if (teamId) {
-    const member = await db.prepare("SELECT id FROM team_members WHERE team_id = ? AND user_id = ? LIMIT 1").get(teamId, senderId);
+    const member = await db
+      .prepare("SELECT id FROM team_members WHERE team_id = ? AND user_id = ? LIMIT 1")
+      .get(teamId, senderId);
     if (!member && caller.role !== "admin") {
       throw new Error("Access denied: Not a team member.");
     }
   }
-  
-  const res = await db.prepare(`
+
+  const res = await db
+    .prepare(
+      `
     INSERT INTO chat_messages (sender_id, receiver_id, team_id, message) 
     VALUES (?, ?, ?, ?)
-  `).run(senderId, receiverId || null, teamId || null, message);
-  
+  `,
+    )
+    .run(senderId, receiverId || null, teamId || null, message);
+
   return { success: true, messageId: res.lastInsertRowid };
 });
 
@@ -3264,33 +3674,72 @@ export const getUnreadChatCount = createServerFn({ method: "POST" }).handler(asy
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const clientUserId = data as unknown as number;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
-  const res = (await db.prepare(`
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
+  const res = (await db
+    .prepare(
+      `
     SELECT COUNT(*) as count 
     FROM chat_messages 
     WHERE receiver_id = ? AND is_read = false
-  `).get(userId)) as any;
+  `,
+    )
+    .get(userId)) as any;
   return res ? Number(res.count) : 0;
 });
 
-export const markChatMessagesAsRead = createServerFn({ method: "POST" }).handler(async ({ data }) => {
-  const caller = await getCurrentUser();
-  const { db } = await import("./lib/db");
-  const { userId: clientUserId, otherUserId } = data as any;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
-  await db.prepare(`
+export const getTeamChatUnreadCount = createServerFn({ method: "POST" }).handler(
+  async ({ data }) => {
+    const caller = await getCurrentUser();
+    const { db } = await import("./lib/db");
+    const { teamId, lastReadMessageId } = data as any;
+    const userId = caller.id;
+
+    // Verify membership
+    const member = await db
+      .prepare("SELECT id FROM team_members WHERE team_id = ? AND user_id = ? LIMIT 1")
+      .get(teamId, userId);
+    if (!member && caller.role !== "admin") {
+      return 0;
+    }
+
+    const res = (await db
+      .prepare(
+        `
+    SELECT COUNT(*) as count 
+    FROM chat_messages 
+    WHERE team_id = ? AND sender_id != ? AND id > ?
+  `,
+      )
+      .get(teamId, userId, lastReadMessageId || 0)) as any;
+
+    return res ? Number(res.count) : 0;
+  },
+);
+
+export const markChatMessagesAsRead = createServerFn({ method: "POST" }).handler(
+  async ({ data }) => {
+    const caller = await getCurrentUser();
+    const { db } = await import("./lib/db");
+    const { userId: clientUserId, otherUserId } = data as any;
+    const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
+    await db
+      .prepare(
+        `
     UPDATE chat_messages 
     SET is_read = true 
     WHERE receiver_id = ? AND sender_id = ? AND is_read = false
-  `).run(userId, otherUserId);
-  return { success: true };
-});
+  `,
+      )
+      .run(userId, otherUserId);
+    return { success: true };
+  },
+);
 
 export const saveUpiId = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { userId: clientUserId, upiId } = data as any;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
   await db.prepare("UPDATE users SET upi_id = ? WHERE id = ?").run(upiId, userId);
   return { success: true };
 });
@@ -3303,7 +3752,9 @@ export const getHeroBanners = createServerFn({ method: "POST" }).handler(async (
       return JSON.parse((row as any).value) as string[];
     } catch {}
   }
-  return ["https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319414/clutchground/placeholders/zvdpuk7j7e4dgxax5h2b.png"];
+  return [
+    "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319414/clutchground/placeholders/zvdpuk7j7e4dgxax5h2b.png",
+  ];
 });
 
 export const getSocialLinks = createServerFn({ method: "POST" }).handler(async () => {
@@ -3314,7 +3765,7 @@ export const getSocialLinks = createServerFn({ method: "POST" }).handler(async (
     discord: "https://discord.gg/uYXFJswHdg",
     telegram: "https://t.me/clutchground",
     email: "clutchgroundofficial@gmail.com",
-    instagram: "https://instagram.com/clutchground"
+    instagram: "https://instagram.com/clutchground",
   };
   if (row) {
     try {
@@ -3331,26 +3782,30 @@ export const savePushSubscription = createServerFn({ method: "POST" }).handler(a
     userId: number;
     subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
   };
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
 
   await db
-    .prepare(`
+    .prepare(
+      `
       INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
       VALUES (?, ?, ?, ?)
       ON CONFLICT (endpoint) DO UPDATE SET user_id = EXCLUDED.user_id
-    `)
+    `,
+    )
     .run(userId, subscription.endpoint, subscription.keys.p256dh, subscription.keys.auth);
 
   return { success: true };
 });
 
-export const removePushSubscription = createServerFn({ method: "POST" }).handler(async ({ data }) => {
-  await getCurrentUser();
-  const { db } = await import("./lib/db");
-  const { endpoint } = data as unknown as { endpoint: string };
-  await db.prepare("DELETE FROM push_subscriptions WHERE endpoint = ?").run(endpoint);
-  return { success: true };
-});
+export const removePushSubscription = createServerFn({ method: "POST" }).handler(
+  async ({ data }) => {
+    await getCurrentUser();
+    const { db } = await import("./lib/db");
+    const { endpoint } = data as unknown as { endpoint: string };
+    await db.prepare("DELETE FROM push_subscriptions WHERE endpoint = ?").run(endpoint);
+    return { success: true };
+  },
+);
 
 export const getVapidPublicKey = createServerFn({ method: "GET" }).handler(async () => {
   let key = getEnvVar("VITE_VAPID_PUBLIC_KEY");
@@ -3366,14 +3821,42 @@ export const resetFinanceStat = createServerFn({ method: "POST" }).handler(async
   const { type } = data as unknown as { type: "revenue" | "payouts" | "withdrawable" };
 
   if (type === "revenue") {
-    const rawRevenue = ((await db.prepare("SELECT COALESCE(SUM(amount), 0) as s FROM upi_deposits WHERE status = 'approved'").get()) as any)?.s || 0;
-    await db.prepare("INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value RETURNING key").run("finance_revenue_offset", rawRevenue.toString());
+    const rawRevenue =
+      (
+        (await db
+          .prepare(
+            "SELECT COALESCE(SUM(amount), 0) as s FROM upi_deposits WHERE status = 'approved'",
+          )
+          .get()) as any
+      )?.s || 0;
+    await db
+      .prepare(
+        "INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value RETURNING key",
+      )
+      .run("finance_revenue_offset", rawRevenue.toString());
   } else if (type === "payouts") {
-    const rawPayouts = ((await db.prepare("SELECT COALESCE(SUM(amount), 0) as s FROM withdrawals WHERE status = 'completed'").get()) as any)?.s || 0;
-    await db.prepare("INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value RETURNING key").run("finance_payouts_offset", rawPayouts.toString());
+    const rawPayouts =
+      (
+        (await db
+          .prepare(
+            "SELECT COALESCE(SUM(amount), 0) as s FROM withdrawals WHERE status = 'completed'",
+          )
+          .get()) as any
+      )?.s || 0;
+    await db
+      .prepare(
+        "INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value RETURNING key",
+      )
+      .run("finance_payouts_offset", rawPayouts.toString());
   } else if (type === "withdrawable") {
-    const rawWithdrawable = ((await db.prepare("SELECT COALESCE(SUM(winning_balance), 0) as s FROM users").get()) as any)?.s || 0;
-    await db.prepare("INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value RETURNING key").run("finance_withdrawable_offset", rawWithdrawable.toString());
+    const rawWithdrawable =
+      ((await db.prepare("SELECT COALESCE(SUM(winning_balance), 0) as s FROM users").get()) as any)
+        ?.s || 0;
+    await db
+      .prepare(
+        "INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value RETURNING key",
+      )
+      .run("finance_withdrawable_offset", rawWithdrawable.toString());
   }
 
   return { success: true };
@@ -3383,7 +3866,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" }).handler(async
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { captainId: clientCaptainId, inviteKey } = data as any;
-  const captainId = caller.role === 'admin' ? (clientCaptainId || caller.id) : caller.id;
+  const captainId = caller.role === "admin" ? clientCaptainId || caller.id : caller.id;
 
   if (!inviteKey || !inviteKey.trim()) {
     throw new Error("Invitation key (username, IGN, or UID) is required.");
@@ -3399,7 +3882,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" }).handler(async
       FROM users 
       WHERE LOWER(username) = LOWER(?) OR LOWER(ign) = LOWER(?) OR uid = ?
       LIMIT 1
-    `
+    `,
     )
     .get(cleanKey, cleanKey, cleanKey)) as any;
 
@@ -3412,18 +3895,24 @@ export const inviteTeamMember = createServerFn({ method: "POST" }).handler(async
   }
 
   // 2. Find captain's team
-  const team = (await db.prepare("SELECT id, name FROM teams WHERE leader_id = ?").get(captainId)) as any;
+  const team = (await db
+    .prepare("SELECT id, name FROM teams WHERE leader_id = ?")
+    .get(captainId)) as any;
   if (!team) {
     throw new Error("You do not have a team. Please create one first.");
   }
 
   await db.transaction(async (tx) => {
     // 3. Check if target user is captain of another team
-    const isCaptain = await tx.prepare("SELECT id FROM teams WHERE leader_id = ?").get(targetUser.id);
+    const isCaptain = await tx
+      .prepare("SELECT id FROM teams WHERE leader_id = ?")
+      .get(targetUser.id);
     if (isCaptain) throw new Error("This player is already the captain of another team.");
 
     // 4. Check if target user is member of another team
-    const isMember = await tx.prepare("SELECT team_id FROM team_members WHERE user_id = ?").get(targetUser.id);
+    const isMember = await tx
+      .prepare("SELECT team_id FROM team_members WHERE user_id = ?")
+      .get(targetUser.id);
     if (isMember) throw new Error("This player is already in a team.");
 
     // 5. Check if team is full
@@ -3436,7 +3925,9 @@ export const inviteTeamMember = createServerFn({ method: "POST" }).handler(async
 
     // 6. Check if a pending request/invite already exists
     const existing = await tx
-      .prepare("SELECT id FROM team_requests WHERE team_id = ? AND user_id = ? AND status = 'pending'")
+      .prepare(
+        "SELECT id FROM team_requests WHERE team_id = ? AND user_id = ? AND status = 'pending'",
+      )
       .get(team.id, targetUser.id);
     if (existing) {
       throw new Error("A pending request or invitation already exists for this player.");
@@ -3445,7 +3936,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" }).handler(async
     // 7. Insert the invitation
     await tx
       .prepare(
-        "INSERT INTO team_requests (team_id, user_id, ign, uid, initiated_by) VALUES (?, ?, ?, ?, 'team')"
+        "INSERT INTO team_requests (team_id, user_id, ign, uid, initiated_by) VALUES (?, ?, ?, ?, 'team')",
       )
       .run(team.id, targetUser.id, targetUser.ign || "", targetUser.uid || "");
 
@@ -3455,7 +3946,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" }).handler(async
       .run(
         targetUser.id,
         `📣 Team ${team.name} has invited you to join their roster. Accept or decline on your Squad page.`,
-        "/teams"
+        "/teams",
       );
   });
 
@@ -3466,7 +3957,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" }).handler(async
       targetUser.id,
       "📣 Team Invitation",
       `📣 Team ${team.name} has invited you to join their roster!`,
-      "/teams"
+      "/teams",
     ).catch(() => {});
   } catch (e) {}
 
@@ -3477,7 +3968,7 @@ export const searchPlayers = createServerFn({ method: "POST" }).handler(async ({
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { query, captainId: clientCaptainId } = data as any;
-  const captainId = caller.role === 'admin' ? (clientCaptainId || caller.id) : caller.id;
+  const captainId = caller.role === "admin" ? clientCaptainId || caller.id : caller.id;
 
   try {
     // Get all users except the captain themselves
@@ -3490,7 +3981,7 @@ export const searchPlayers = createServerFn({ method: "POST" }).handler(async ({
           WHERE u.id != ?
           ORDER BY u.username ASC
           LIMIT 100
-        `
+        `,
         )
         .all(captainId)) as any[];
 
@@ -3510,7 +4001,7 @@ export const searchPlayers = createServerFn({ method: "POST" }).handler(async ({
         AND u.id != ?
         ORDER BY u.username ASC
         LIMIT 100
-      `
+      `,
       )
       .all(searchTerm, searchTerm, searchTerm, captainId)) as any[];
 
@@ -3526,7 +4017,7 @@ export const getMyTeamInvitations = createServerFn({ method: "POST" }).handler(a
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const clientUserId = data as unknown as number;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
 
   return db
     .prepare(
@@ -3536,7 +4027,7 @@ export const getMyTeamInvitations = createServerFn({ method: "POST" }).handler(a
       JOIN teams t ON r.team_id = t.id
       WHERE r.user_id = ? AND r.status = 'pending' AND r.initiated_by = 'team'
       ORDER BY r.created_at DESC
-    `
+    `,
     )
     .all(userId);
 });
@@ -3544,13 +4035,12 @@ export const getMyTeamInvitations = createServerFn({ method: "POST" }).handler(a
 // ─── Spin Wheel ─────────────────────────────────────────────────────────────
 
 async function loadSpinWheelConfig(db: any) {
-  const {
-    parseSpinWheelConfig,
-    SPIN_WHEEL_SETTINGS_KEY,
-    DEFAULT_SPIN_WHEEL_CONFIG,
-  } = await import("./lib/spin-wheel");
+  const { parseSpinWheelConfig, SPIN_WHEEL_SETTINGS_KEY, DEFAULT_SPIN_WHEEL_CONFIG } =
+    await import("./lib/spin-wheel");
 
-  const row = (await db.prepare("SELECT value FROM site_settings WHERE key = ?").get(SPIN_WHEEL_SETTINGS_KEY)) as any;
+  const row = (await db
+    .prepare("SELECT value FROM site_settings WHERE key = ?")
+    .get(SPIN_WHEEL_SETTINGS_KEY)) as any;
   if (!row?.value) {
     const defaultJson = JSON.stringify(DEFAULT_SPIN_WHEEL_CONFIG);
     await db
@@ -3627,7 +4117,7 @@ export const getSpinWheelStatus = createServerFn({ method: "POST" }).handler(asy
   const { db } = await import("./lib/db");
   const { getTodayStartIST } = await import("./lib/spin-wheel");
   const clientUserId = data as unknown as number;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
 
   const config = await loadSpinWheelConfig(db);
   const user = (await db
@@ -3645,7 +4135,24 @@ export const getSpinWheelStatus = createServerFn({ method: "POST" }).handler(asy
   const depositBalance = user.deposit_balance || 0;
   const winningBalance = user.winning_balance || 0;
   const spinCredits = user.spin_credits || 0;
-  const freeSpinAvailable = !freeSpinToday && depositBalance >= config.minDeposit;
+
+  const userProfile = (await db.prepare("SELECT uid FROM users WHERE id = ?").get(userId)) as any;
+  const uidPattern = userProfile?.uid ? `%"uid":"${userProfile.uid}"%` : "NON_EXISTENT_UID_PATTERN";
+
+  const regCountRow = (await db
+    .prepare(
+      `
+    SELECT COUNT(*) as cnt FROM (
+      SELECT id FROM registrations WHERE user_id = ? OR players_json LIKE ?
+      UNION ALL
+      SELECT id FROM tournament_requests WHERE requested_by = ? OR players_json LIKE ?
+    )
+  `,
+    )
+    .get(userId, uidPattern, userId, uidPattern)) as any;
+  const joinedTournamentCount = regCountRow?.cnt || 0;
+
+  const freeSpinAvailable = !freeSpinToday && joinedTournamentCount >= 1;
   const canSpin = freeSpinAvailable || spinCredits > 0;
 
   const lastSpin = (await db
@@ -3661,6 +4168,7 @@ export const getSpinWheelStatus = createServerFn({ method: "POST" }).handler(asy
     winningBalance,
     totalBalance: depositBalance + winningBalance,
     minDeposit: config.minDeposit,
+    joinedTournamentCount,
     lastSpin: lastSpin
       ? {
           segmentId: lastSpin.segment_id,
@@ -3677,7 +4185,7 @@ export const purchaseSpinPack = createServerFn({ method: "POST" }).handler(async
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
   const { userId: clientUserId, packId } = data as any;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
   if (!userId || !packId) throw new Error("Invalid request");
 
   const config = await loadSpinWheelConfig(db);
@@ -3714,14 +4222,11 @@ export const purchaseSpinPack = createServerFn({ method: "POST" }).handler(async
 export const performSpin = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const caller = await getCurrentUser();
   const { db } = await import("./lib/db");
-  const {
-    buildWheelSlices,
-    getTodayStartIST,
-    pickRandomSliceIndexForSegment,
-  } = await import("./lib/spin-wheel");
+  const { buildWheelSlices, getTodayStartIST, pickRandomSliceIndexForSegment } =
+    await import("./lib/spin-wheel");
 
   const clientUserId = data as unknown as number;
-  const userId = caller.role === 'admin' ? (clientUserId || caller.id) : caller.id;
+  const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
 
   const config = await loadSpinWheelConfig(db);
   const activeIds = config.activePrizeIds.filter((id) => config.segments.some((s) => s.id === id));
@@ -3740,20 +4245,42 @@ export const performSpin = createServerFn({ method: "POST" }).handler(async ({ d
       )
       .get(userId, todayStart);
 
+    const userProfile = (await tx.prepare("SELECT uid FROM users WHERE id = ?").get(userId)) as any;
+    const uidPattern = userProfile?.uid
+      ? `%"uid":"${userProfile.uid}"%`
+      : "NON_EXISTENT_UID_PATTERN";
+
+    const regCountRow = (await tx
+      .prepare(
+        `
+      SELECT COUNT(*) as cnt FROM (
+        SELECT id FROM registrations WHERE user_id = ? OR players_json LIKE ?
+        UNION ALL
+        SELECT id FROM tournament_requests WHERE requested_by = ? OR players_json LIKE ?
+      )
+    `,
+      )
+      .get(userId, uidPattern, userId, uidPattern)) as any;
+    const joinedTournamentCount = regCountRow?.cnt || 0;
+
     const depositBalance = user.deposit_balance || 0;
     const spinCredits = user.spin_credits || 0;
-    const freeAvailable = !freeSpinToday && depositBalance >= config.minDeposit;
+    const freeAvailable = !freeSpinToday && joinedTournamentCount >= 1;
 
     let isFree = false;
     if (freeAvailable) {
       isFree = true;
     } else if (spinCredits > 0) {
-      await tx
-        .prepare("UPDATE users SET spin_credits = spin_credits - 1 WHERE id = ?")
-        .run(userId);
+      await tx.prepare("UPDATE users SET spin_credits = spin_credits - 1 WHERE id = ?").run(userId);
       isFree = false;
     } else {
-      throw new Error("No spins left. Buy a spin pack below!");
+      if (joinedTournamentCount === 0) {
+        throw new Error(
+          "No spins left. Join at least 1 tournament to unlock daily free spins, or buy a spin pack below!",
+        );
+      } else {
+        throw new Error("No spins left. Buy a spin pack below!");
+      }
     }
 
     const winningId = activeIds[Math.floor(Math.random() * activeIds.length)];
@@ -3766,7 +4293,9 @@ export const performSpin = createServerFn({ method: "POST" }).handler(async ({ d
         .prepare("UPDATE users SET deposit_balance = deposit_balance + ? WHERE id = ?")
         .run(winningSegment.amount, userId);
       await tx
-        .prepare("INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)")
+        .prepare(
+          "INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)",
+        )
         .run(
           userId,
           winningSegment.amount,
@@ -3807,71 +4336,80 @@ export const getSpinWheelAdminConfig = createServerFn({ method: "POST" }).handle
   return loadSpinWheelConfig(db);
 });
 
-export const saveSpinWheelAdminConfig = createServerFn({ method: "POST" }).handler(async ({ data }) => {
-  await getCurrentUser("admin");
-  const { db } = await import("./lib/db");
-  const { SPIN_WHEEL_SETTINGS_KEY, SPIN_MAX_ACTIVE_PRIZES } = await import("./lib/spin-wheel");
+export const saveSpinWheelAdminConfig = createServerFn({ method: "POST" }).handler(
+  async ({ data }) => {
+    await getCurrentUser("admin");
+    const { db } = await import("./lib/db");
+    const { SPIN_WHEEL_SETTINGS_KEY, SPIN_MAX_ACTIVE_PRIZES } = await import("./lib/spin-wheel");
 
-  const { config } = data as unknown as {
-    config: {
-      segments: Array<{ id: string; label: string; amount: number; quantity: number; color: string }>;
-      activePrizeIds: string[];
-      minDeposit: number;
-      spinPacks: Array<{ id: string; spins: number; cost: number; label?: string }>;
+    const { config } = data as unknown as {
+      config: {
+        segments: Array<{
+          id: string;
+          label: string;
+          amount: number;
+          quantity: number;
+          color: string;
+        }>;
+        activePrizeIds: string[];
+        minDeposit: number;
+        spinPacks: Array<{ id: string; spins: number; cost: number; label?: string }>;
+      };
     };
-  };
 
-  if (!config?.segments?.length) throw new Error("At least one wheel segment is required");
+    if (!config?.segments?.length) throw new Error("At least one wheel segment is required");
 
-  const segments = config.segments.map((s, i) => ({
-    id: s.id || `seg-${i}`,
-    label: (s.label || `${s.amount} CG`).trim(),
-    amount: Math.max(0, Number(s.amount) || 0),
-    quantity: Math.max(1, Math.min(20, Number(s.quantity) || 1)),
-    color: s.color || "#FF6B00",
-  }));
+    const segments = config.segments.map((s, i) => ({
+      id: s.id || `seg-${i}`,
+      label: (s.label || `${s.amount} CG`).trim(),
+      amount: Math.max(0, Number(s.amount) || 0),
+      quantity: Math.max(1, Math.min(20, Number(s.quantity) || 1)),
+      color: s.color || "#FF6B00",
+    }));
 
-  const activePrizeIds = (config.activePrizeIds || [])
-    .filter((id) => segments.some((s) => s.id === id))
-    .slice(0, SPIN_MAX_ACTIVE_PRIZES);
+    const activePrizeIds = (config.activePrizeIds || [])
+      .filter((id) => segments.some((s) => s.id === id))
+      .slice(0, SPIN_MAX_ACTIVE_PRIZES);
 
-  if (activePrizeIds.length === 0) {
-    throw new Error("Select at least one active prize");
-  }
+    if (activePrizeIds.length === 0) {
+      throw new Error("Select at least one active prize");
+    }
 
-  const spinPacks = (config.spinPacks || []).map((p, i) => ({
-    id: p.id || `pack-${i}`,
-    spins: Math.max(1, Number(p.spins) || 1),
-    cost: Math.max(1, Number(p.cost) || 9),
-    label: p.label || `${p.spins || 1} Spin${(p.spins || 1) > 1 ? "s" : ""}`,
-  }));
+    const spinPacks = (config.spinPacks || []).map((p, i) => ({
+      id: p.id || `pack-${i}`,
+      spins: Math.max(1, Number(p.spins) || 1),
+      cost: Math.max(1, Number(p.cost) || 9),
+      label: p.label || `${p.spins || 1} Spin${(p.spins || 1) > 1 ? "s" : ""}`,
+    }));
 
-  if (spinPacks.length === 0) throw new Error("At least one spin pack is required");
+    if (spinPacks.length === 0) throw new Error("At least one spin pack is required");
 
-  const payload = {
-    segments,
-    activePrizeIds,
-    minDeposit: Math.max(0, Number(config.minDeposit) || 100),
-    spinPacks,
-  };
+    const payload = {
+      segments,
+      activePrizeIds,
+      minDeposit: Math.max(0, Number(config.minDeposit) || 100),
+      spinPacks,
+    };
 
-  await db
-    .prepare(
-      `INSERT INTO site_settings (key, value) VALUES (?, ?)
+    await db
+      .prepare(
+        `INSERT INTO site_settings (key, value) VALUES (?, ?)
        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value RETURNING key`,
-    )
-    .run(SPIN_WHEEL_SETTINGS_KEY, JSON.stringify(payload));
+      )
+      .run(SPIN_WHEEL_SETTINGS_KEY, JSON.stringify(payload));
 
-  return { success: true, config: payload };
-});
+    return { success: true, config: payload };
+  },
+);
 
 // ─── Profile customization shop ─────────────────────────────────────────────
 
 async function loadProfileShopConfig(db: any) {
-  const { parseProfileShopConfig, PROFILE_SHOP_SETTINGS_KEY, DEFAULT_PROFILE_SHOP } = await import(
-    "./lib/profile-customization"
-  );
-  const row = (await db.prepare("SELECT value FROM site_settings WHERE key = ?").get(PROFILE_SHOP_SETTINGS_KEY)) as any;
+  const { parseProfileShopConfig, PROFILE_SHOP_SETTINGS_KEY, DEFAULT_PROFILE_SHOP } =
+    await import("./lib/profile-customization");
+  const row = (await db
+    .prepare("SELECT value FROM site_settings WHERE key = ?")
+    .get(PROFILE_SHOP_SETTINGS_KEY)) as any;
   if (!row?.value) return DEFAULT_PROFILE_SHOP;
   return parseProfileShopConfig(row.value);
 }
@@ -3882,60 +4420,64 @@ export const getProfileShop = createServerFn({ method: "POST" }).handler(async (
   return loadProfileShopConfig(db);
 });
 
-export const purchaseProfileCosmetic = createServerFn({ method: "POST" }).handler(async ({ data }) => {
-  const currentUser = await getCurrentUser();
-  const userId = currentUser.id;
+export const purchaseProfileCosmetic = createServerFn({ method: "POST" }).handler(
+  async ({ data }) => {
+    const currentUser = await getCurrentUser();
+    const userId = currentUser.id;
 
-  const { db } = await import("./lib/db");
-  const { parseJsonArray } = await import("./lib/profile-customization");
-  const { itemId } = data as unknown as { itemId: string };
-  if (!itemId) throw new Error("Invalid request");
+    const { db } = await import("./lib/db");
+    const { parseJsonArray } = await import("./lib/profile-customization");
+    const { itemId } = data as unknown as { itemId: string };
+    if (!itemId) throw new Error("Invalid request");
 
-  const shop = await loadProfileShopConfig(db);
-  const allItems = [...(shop.frames || []), ...(shop.banners || []), ...(shop.effects || [])];
-  const item = allItems.find((i) => i.id === itemId);
-  if (!item) throw new Error("Item not found");
+    const shop = await loadProfileShopConfig(db);
+    const allItems = [...(shop.frames || []), ...(shop.banners || []), ...(shop.effects || [])];
+    const item = allItems.find((i) => i.id === itemId);
+    if (!item) throw new Error("Item not found");
 
-  const result = await db.transaction(async (tx) => {
-    const user = (await tx
-      .prepare(
-        `SELECT deposit_balance, winning_balance, owned_cosmetics, profile_animation, profile_frame, profile_effect, banner_preset FROM users WHERE id = ?`,
-      )
-      .get(userId)) as any;
-    if (!user) throw new Error("User not found");
+    const result = await db.transaction(async (tx) => {
+      const user = (await tx
+        .prepare(
+          `SELECT deposit_balance, winning_balance, owned_cosmetics, profile_animation, profile_frame, profile_effect, banner_preset FROM users WHERE id = ?`,
+        )
+        .get(userId)) as any;
+      if (!user) throw new Error("User not found");
 
-    const owned = parseJsonArray(user.owned_cosmetics);
-    if (!owned.includes(itemId)) {
-      if (item.cost > 0) {
-        await deductCgCoins(tx, userId, item.cost, `Profile cosmetic: ${item.label}`);
+      const owned = parseJsonArray(user.owned_cosmetics);
+      if (!owned.includes(itemId)) {
+        if (item.cost > 0) {
+          await deductCgCoins(tx, userId, item.cost, `Profile cosmetic: ${item.label}`);
+        }
+        owned.push(itemId);
+        await tx
+          .prepare("UPDATE users SET owned_cosmetics = ? WHERE id = ?")
+          .run(JSON.stringify(owned), userId);
       }
-      owned.push(itemId);
-      await tx.prepare("UPDATE users SET owned_cosmetics = ? WHERE id = ?").run(JSON.stringify(owned), userId);
-    }
 
-    const patch: Record<string, string | null> = {};
-    if (item.type === "animation") patch.profile_animation = item.value;
-    if (item.type === "frame") patch.profile_frame = item.value;
-    if (item.type === "effect") patch.profile_effect = item.value;
-    if (item.type === "banner") {
-      patch.banner_preset = item.value;
-    }
+      const patch: Record<string, string | null> = {};
+      if (item.type === "animation") patch.profile_animation = item.value;
+      if (item.type === "frame") patch.profile_frame = item.value;
+      if (item.type === "effect") patch.profile_effect = item.value;
+      if (item.type === "banner") {
+        patch.banner_preset = item.value;
+      }
 
-    const sets = Object.entries(patch).map(([k]) => `${k} = ?`);
-    if (sets.length) {
-      await tx
-        .prepare(`UPDATE users SET ${sets.join(", ")} WHERE id = ?`)
-        .run(...Object.values(patch), userId);
-    }
+      const sets = Object.entries(patch).map(([k]) => `${k} = ?`);
+      if (sets.length) {
+        await tx
+          .prepare(`UPDATE users SET ${sets.join(", ")} WHERE id = ?`)
+          .run(...Object.values(patch), userId);
+      }
 
-    const updated = (await tx
-      .prepare(`SELECT ${PROFILE_SELECT} FROM users WHERE id = ?`)
-      .get(userId)) as any;
-    return { profile: await enrichProfile(db, updated, true), item };
-  });
+      const updated = (await tx
+        .prepare(`SELECT ${PROFILE_SELECT} FROM users WHERE id = ?`)
+        .get(userId)) as any;
+      return { profile: await enrichProfile(db, updated, true), item };
+    });
 
-  return result;
-});
+    return result;
+  },
+);
 
 export const getProfileShopAdminConfig = createServerFn({ method: "POST" }).handler(async () => {
   await getCurrentUser("admin");
@@ -3943,19 +4485,21 @@ export const getProfileShopAdminConfig = createServerFn({ method: "POST" }).hand
   return loadProfileShopConfig(db);
 });
 
-export const saveProfileShopAdminConfig = createServerFn({ method: "POST" }).handler(async ({ data }) => {
-  await getCurrentUser("admin");
-  const { db } = await import("./lib/db");
-  const { PROFILE_SHOP_SETTINGS_KEY } = await import("./lib/profile-customization");
-  const { config } = data as unknown as { config: any };
-  await db
-    .prepare(
-      `INSERT INTO site_settings (key, value) VALUES (?, ?)
+export const saveProfileShopAdminConfig = createServerFn({ method: "POST" }).handler(
+  async ({ data }) => {
+    await getCurrentUser("admin");
+    const { db } = await import("./lib/db");
+    const { PROFILE_SHOP_SETTINGS_KEY } = await import("./lib/profile-customization");
+    const { config } = data as unknown as { config: any };
+    await db
+      .prepare(
+        `INSERT INTO site_settings (key, value) VALUES (?, ?)
        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value RETURNING key`,
-    )
-    .run(PROFILE_SHOP_SETTINGS_KEY, JSON.stringify(config));
-  return { success: true };
-});
+      )
+      .run(PROFILE_SHOP_SETTINGS_KEY, JSON.stringify(config));
+    return { success: true };
+  },
+);
 
 export const getRegistrationSquad = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   await getCurrentUser();
@@ -4047,7 +4591,10 @@ export const announceTournamentResult = createServerFn({ method: "POST" }).handl
         let winnerUserId: number | null = null;
 
         // Determine winner user ID based on tournament type
-        if (tournament.tournament_type === "battle_royale" || tournament.tournament_type === "lone_wolf") {
+        if (
+          tournament.tournament_type === "battle_royale" ||
+          tournament.tournament_type === "lone_wolf"
+        ) {
           // For solo modes, winnerId is the direct user ID
           winnerUserId = result.winnerId || null;
         } else if (tournament.tournament_type === "clash_squad") {
@@ -4060,7 +4607,9 @@ export const announceTournamentResult = createServerFn({ method: "POST" }).handl
         if (!winnerUserId) continue;
 
         // Verify user exists
-        const user = (await tx.prepare("SELECT id, winning_balance FROM users WHERE id = ?").get(winnerUserId)) as any;
+        const user = (await tx
+          .prepare("SELECT id, winning_balance FROM users WHERE id = ?")
+          .get(winnerUserId)) as any;
         if (!user) continue;
 
         // Update winning balance

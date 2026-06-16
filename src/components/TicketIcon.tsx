@@ -15,15 +15,17 @@ export function TicketIcon({ className = "w-5 h-5" }: { className?: string }) {
         stroke="#FEF08A"
         strokeWidth="0.5"
       />
-      <path
-        d="M9 5v14"
-        stroke="#451a03"
-        strokeWidth="1.2"
-        strokeDasharray="2 2"
-      />
+      <path d="M9 5v14" stroke="#451a03" strokeWidth="1.2" strokeDasharray="2 2" />
       <circle cx="15" cy="12" r="1.5" fill="#451a03" />
       <defs>
-        <linearGradient id="ticketGrad" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id="ticketGrad"
+          x1="0"
+          y1="0"
+          x2="24"
+          y2="24"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop stopColor="#FDE047" />
           <stop offset="0.5" stopColor="#EAB308" />
           <stop offset="1" stopColor="#854D0E" />

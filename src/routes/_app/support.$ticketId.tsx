@@ -4,7 +4,15 @@ import { useAuth } from "../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Send, ShieldCheck, CheckCheck, Clock, Lock, RefreshCw, ImagePlus, X
+  ArrowLeft,
+  Send,
+  ShieldCheck,
+  CheckCheck,
+  Clock,
+  Lock,
+  RefreshCw,
+  ImagePlus,
+  X,
 } from "lucide-react";
 import { getTicket, replyTicket } from "../../api";
 import { motion, AnimatePresence } from "framer-motion";
@@ -92,7 +100,6 @@ const parseMessage = (msgContent: string) => {
   return { text, image };
 };
 
-
 function TicketChatPage() {
   const { ticketId } = Route.useParams();
   const { user, loading } = useAuth();
@@ -110,28 +117,35 @@ function TicketChatPage() {
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     setTimeout(() => endRef.current?.scrollIntoView({ behavior }), 60);
   }, []);
 
-  const loadTicket = useCallback(async (silent = true) => {
-    if (!silent) setIsRefreshing(true);
-    try {
-      const data = await (getTicket as any)({ data: { ticketId } });
-      if (!data) return router.navigate({ to: "/support" });
-      setTicket((prev: any) => {
-        if (!prev || prev.replies?.length !== data.replies?.length) {
-          scrollToBottom(prev ? "smooth" : "instant");
-        }
-        return data;
-      });
-    } catch {}
-    finally { setIsRefreshing(false); }
-  }, [ticketId, scrollToBottom]);
+  const loadTicket = useCallback(
+    async (silent = true) => {
+      if (!silent) setIsRefreshing(true);
+      try {
+        const data = await (getTicket as any)({ data: { ticketId } });
+        if (!data) return router.navigate({ to: "/support" });
+        setTicket((prev: any) => {
+          if (!prev || prev.replies?.length !== data.replies?.length) {
+            scrollToBottom(prev ? "smooth" : "instant");
+          }
+          return data;
+        });
+      } catch {
+      } finally {
+        setIsRefreshing(false);
+      }
+    },
+    [ticketId, scrollToBottom],
+  );
 
   useEffect(() => {
-    if (!loading && !user) { router.navigate({ to: "/login" }); return; }
+    if (!loading && !user) {
+      router.navigate({ to: "/login" });
+      return;
+    }
     if (user) {
       loadTicket(false);
       const id = setInterval(() => loadTicket(true), 4000);
@@ -231,7 +245,6 @@ function TicketChatPage() {
     }
   };
 
-
   if (!ticket || loading) {
     return (
       <div className="h-full flex items-center justify-center bg-background">
@@ -270,9 +283,11 @@ function TicketChatPage() {
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="text-[10px] text-muted-foreground font-mono">#{ticket.id}</span>
               <span className="text-muted-foreground text-[10px]">·</span>
-              <span className={`text-[10px] font-black uppercase tracking-wider ${
-                isResolved ? "text-emerald-500" : "text-amber-500"
-              }`}>
+              <span
+                className={`text-[10px] font-black uppercase tracking-wider ${
+                  isResolved ? "text-emerald-500" : "text-amber-500"
+                }`}
+              >
                 {ticket.status}
               </span>
             </div>
@@ -301,7 +316,9 @@ function TicketChatPage() {
             </div>
             <div>
               <p className="text-sm font-black text-foreground">No messages yet</p>
-              <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">Send a message or screenshot to start the conversation.</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">
+                Send a message or screenshot to start the conversation.
+              </p>
             </div>
           </div>
         )}
@@ -319,7 +336,8 @@ function TicketChatPage() {
               {group.items.map((r: any, idx: number) => {
                 const isMe = r.user_id === user?.id;
                 const isAdmin = r.is_admin === 1 || r.is_admin === true || r.is_admin === "true";
-                const showAvatar = !isMe && (idx === 0 || group.items[idx - 1]?.is_admin !== r.is_admin);
+                const showAvatar =
+                  !isMe && (idx === 0 || group.items[idx - 1]?.is_admin !== r.is_admin);
 
                 const parsed = parseMessage(r.message);
 
@@ -342,7 +360,9 @@ function TicketChatPage() {
                       </div>
                     )}
 
-                    <div className={`max-w-[78%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+                    <div
+                      className={`max-w-[78%] flex flex-col ${isMe ? "items-end" : "items-start"}`}
+                    >
                       {/* Sender label */}
                       {showAvatar && !isMe && (
                         <span className="text-[10px] font-black text-primary uppercase tracking-wider mb-1 ml-1">
@@ -351,11 +371,13 @@ function TicketChatPage() {
                       )}
 
                       {/* Bubble */}
-                      <div className={`relative overflow-hidden text-sm leading-relaxed font-medium whitespace-pre-wrap break-words ${
-                        isMe
-                          ? "bg-gradient-to-r from-sky-500 to-primary text-white rounded-2xl rounded-tr-none shadow-[0_4px_16px_rgba(0,200,255,0.1)]"
-                          : "glass-card border border-border/80 text-foreground rounded-2xl rounded-tl-none shadow-md"
-                      } ${parsed.image && !parsed.text ? "p-1" : parsed.image ? "p-1 pb-2" : "px-4 py-2.5"}`}>
+                      <div
+                        className={`relative overflow-hidden text-sm leading-relaxed font-medium whitespace-pre-wrap break-words ${
+                          isMe
+                            ? "bg-gradient-to-r from-sky-500 to-primary text-white rounded-2xl rounded-tr-none shadow-[0_4px_16px_rgba(0,200,255,0.1)]"
+                            : "glass-card border border-border/80 text-foreground rounded-2xl rounded-tl-none shadow-md"
+                        } ${parsed.image && !parsed.text ? "p-1" : parsed.image ? "p-1 pb-2" : "px-4 py-2.5"}`}
+                      >
                         {parsed.image && (
                           <div
                             className={`relative max-w-full rounded-xl overflow-hidden cursor-pointer border border-white/10 hover:scale-[1.005] transition-transform duration-200 ${
@@ -363,8 +385,12 @@ function TicketChatPage() {
                             }`}
                             onClick={() => setZoomedImage(parsed.image)}
                           >
-                            <img src={parsed.image} alt="Attached screenshot" className="max-h-72 w-full object-contain rounded-xl bg-black/5" />
-                            
+                            <img
+                              src={parsed.image}
+                              alt="Attached screenshot"
+                              className="max-h-72 w-full object-contain rounded-xl bg-black/5"
+                            />
+
                             {/* Overlay timestamp if image-only */}
                             {!parsed.text && (
                               <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full text-[9px] text-white/90 flex items-center gap-1 select-none pointer-events-none">
@@ -374,17 +400,23 @@ function TicketChatPage() {
                             )}
                           </div>
                         )}
-                        
+
                         {parsed.text && (
                           <div className={parsed.image ? "px-3 pt-1 pb-1" : ""}>
                             <span>{parsed.text}</span>
-                            
+
                             {/* Inline timestamp at bottom right of text */}
-                            <div className={`flex items-center justify-end gap-1 mt-1.5 text-[9px] select-none ${
-                              isMe ? "text-white/70" : "text-muted-foreground font-semibold"
-                            }`}>
+                            <div
+                              className={`flex items-center justify-end gap-1 mt-1.5 text-[9px] select-none ${
+                                isMe ? "text-white/70" : "text-muted-foreground font-semibold"
+                              }`}
+                            >
                               <span>{formatTime(r.created_at)}</span>
-                              {isMe && <CheckCheck className={`w-3 h-3 ${isMe ? "text-white/85" : "text-primary"}`} />}
+                              {isMe && (
+                                <CheckCheck
+                                  className={`w-3 h-3 ${isMe ? "text-white/85" : "text-primary"}`}
+                                />
+                              )}
                             </div>
                           </div>
                         )}
@@ -400,13 +432,14 @@ function TicketChatPage() {
         <div ref={endRef} className="h-1" />
       </div>
 
-
       {/* ── Input Area ── */}
       <div className="shrink-0 bg-card/80 backdrop-blur-xl border-t border-border/60 px-4 py-3.5 pb-safe">
         {isResolved ? (
           <div className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
             <Lock className="w-4 h-4 text-emerald-500" />
-            <span className="text-sm font-bold text-emerald-600">This ticket has been resolved</span>
+            <span className="text-sm font-bold text-emerald-600">
+              This ticket has been resolved
+            </span>
           </div>
         ) : (
           <div className="space-y-3">
@@ -414,7 +447,9 @@ function TicketChatPage() {
             {selectedImage && (
               <div className="relative inline-flex items-center rounded-2xl bg-secondary/80 border border-border/80 p-2 pr-8 animate-scale-in">
                 <img src={selectedImage} className="w-12 h-12 rounded-xl object-cover" />
-                <span className="text-[10px] text-muted-foreground ml-2 max-w-[120px] truncate">photo_attached.jpg</span>
+                <span className="text-[10px] text-muted-foreground ml-2 max-w-[120px] truncate">
+                  photo_attached.jpg
+                </span>
                 <button
                   type="button"
                   onClick={() => setSelectedImage(null)}
@@ -486,11 +521,14 @@ function TicketChatPage() {
         <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden bg-black/95 border border-white/10 flex items-center justify-center rounded-3xl">
           <DialogTitle className="sr-only">Attached Screenshot</DialogTitle>
           {zoomedImage && (
-            <img src={zoomedImage} alt="Zoomed screenshot" className="w-full h-full max-h-[90vh] object-contain" />
+            <img
+              src={zoomedImage}
+              alt="Zoomed screenshot"
+              className="w-full h-full max-h-[90vh] object-contain"
+            />
           )}
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }

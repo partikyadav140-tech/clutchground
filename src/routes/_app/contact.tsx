@@ -1,5 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Mail, MessageCircle, Send, HeadphonesIcon, Hash, ArrowRight, MapPin, Clock, Building2, Instagram } from "lucide-react";
+import {
+  Mail,
+  MessageCircle,
+  Send,
+  HeadphonesIcon,
+  Hash,
+  ArrowRight,
+  MapPin,
+  Clock,
+  Building2,
+  Instagram,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { saveContactMessage, getSocialLinks } from "../../api";
@@ -16,17 +27,18 @@ function ContactPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [activeTab, setActiveTab] = useState<"direct" | "message">("direct");
 
   const [socialLinks, setSocialLinks] = useState({
     whatsapp: "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s",
     discord: "https://discord.gg/uYXFJswHdg",
     telegram: "https://t.me/clutchground",
     email: "clutchgroundofficial@gmail.com",
-    instagram: "https://instagram.com/clutchground"
+    instagram: "https://instagram.com/clutchground",
   });
 
   useEffect(() => {
-    getSocialLinks().then(links => {
+    getSocialLinks().then((links) => {
       if (links) {
         setSocialLinks(links);
       }
@@ -34,56 +46,69 @@ function ContactPage() {
   }, []);
 
   const safeEmail = socialLinks.email || "clutchgroundofficial@gmail.com";
-  const safeWhatsapp = socialLinks.whatsapp || "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s";
+  const safeWhatsapp =
+    socialLinks.whatsapp || "https://whatsapp.com/channel/0029Vb8GIynDp2Q21617we1s";
   const safeTelegram = socialLinks.telegram || "https://t.me/clutchground";
   const safeDiscord = socialLinks.discord || "https://discord.gg/uYXFJswHdg";
   const safeInstagram = socialLinks.instagram || "https://instagram.com/clutchground";
 
   const channels = [
-    { 
-      icon: Mail, 
-      label: "Email Support", 
-      value: safeEmail, 
-      href: safeEmail.startsWith("mailto:") ? safeEmail : `mailto:${safeEmail}`, 
-      color: "#60a5fa", 
-      bg: "rgba(96,165,250,0.1)", 
-      bd: "rgba(96,165,250,0.2)" 
+    {
+      icon: Mail,
+      label: "Email Support",
+      value: safeEmail,
+      href: safeEmail.startsWith("mailto:") ? safeEmail : `mailto:${safeEmail}`,
+      color: "#60a5fa",
+      bg: "rgba(96,165,250,0.1)",
+      bd: "rgba(96,165,250,0.2)",
     },
-    { 
-      icon: MessageCircle, 
-      label: "WhatsApp Channel", 
-      value: "ClutchGround Updates", 
-      href: safeWhatsapp, 
-      color: "#34d399", 
-      bg: "rgba(52,211,153,0.1)", 
-      bd: "rgba(52,211,153,0.2)" 
+    {
+      icon: MessageCircle,
+      label: "WhatsApp Channel",
+      value: "ClutchGround Updates",
+      href: safeWhatsapp,
+      color: "#34d399",
+      bg: "rgba(52,211,153,0.1)",
+      bd: "rgba(52,211,153,0.2)",
     },
-    { 
-      icon: Send, 
-      label: "Telegram Group", 
-      value: safeTelegram.startsWith("http") ? safeTelegram.split("/").pop() || "@clutchground" : (safeTelegram.startsWith("@") ? safeTelegram : `@${safeTelegram}`), 
-      href: safeTelegram.startsWith("http") ? safeTelegram : `https://t.me/${safeTelegram.replace("@", "")}`, 
-      color: "#38bdf8", 
-      bg: "rgba(56,189,248,0.1)", 
-      bd: "rgba(56,189,248,0.2)" 
+    {
+      icon: Send,
+      label: "Telegram Group",
+      value: safeTelegram.startsWith("http")
+        ? safeTelegram.split("/").pop() || "@clutchground"
+        : safeTelegram.startsWith("@")
+          ? safeTelegram
+          : `@${safeTelegram}`,
+      href: safeTelegram.startsWith("http")
+        ? safeTelegram
+        : `https://t.me/${safeTelegram.replace("@", "")}`,
+      color: "#38bdf8",
+      bg: "rgba(56,189,248,0.1)",
+      bd: "rgba(56,189,248,0.2)",
     },
-    { 
-      icon: Hash, 
-      label: "Discord Server", 
-      value: "ClutchGround Community", 
-      href: safeDiscord, 
-      color: "#818cf8", 
-      bg: "rgba(129,140,248,0.1)", 
-      bd: "rgba(129,140,248,0.2)" 
+    {
+      icon: Hash,
+      label: "Discord Server",
+      value: "ClutchGround Community",
+      href: safeDiscord,
+      color: "#818cf8",
+      bg: "rgba(129,140,248,0.1)",
+      bd: "rgba(129,140,248,0.2)",
     },
-    { 
-      icon: Instagram, 
-      label: "Instagram Page", 
-      value: safeInstagram.startsWith("http") ? safeInstagram.split("/").filter(Boolean).pop() || "@clutchground" : (safeInstagram.startsWith("@") ? safeInstagram : `@${safeInstagram}`), 
-      href: safeInstagram.startsWith("http") ? safeInstagram : `https://instagram.com/${safeInstagram.replace("@", "")}`, 
-      color: "#ec4899", 
-      bg: "rgba(236,72,153,0.1)", 
-      bd: "rgba(236,72,153,0.2)" 
+    {
+      icon: Instagram,
+      label: "Instagram Page",
+      value: safeInstagram.startsWith("http")
+        ? safeInstagram.split("/").filter(Boolean).pop() || "@clutchground"
+        : safeInstagram.startsWith("@")
+          ? safeInstagram
+          : `@${safeInstagram}`,
+      href: safeInstagram.startsWith("http")
+        ? safeInstagram
+        : `https://instagram.com/${safeInstagram.replace("@", "")}`,
+      color: "#ec4899",
+      bg: "rgba(236,72,153,0.1)",
+      bd: "rgba(236,72,153,0.2)",
     },
   ];
 
@@ -95,8 +120,12 @@ function ContactPage() {
       await (saveContactMessage as any)({ data: { name, email, message } });
       toast.success("Message sent! We'll respond within 24h.");
       setSent(true);
-      setName(""); setEmail(""); setMessage("");
-    } catch { toast.error("Failed to send message."); }
+      setName("");
+      setEmail("");
+      setMessage("");
+    } catch {
+      toast.error("Failed to send message.");
+    }
     setLoading(false);
   };
 
@@ -110,21 +139,54 @@ function ContactPage() {
         <h1 className="font-display font-black text-2xl text-foreground">Get in Touch</h1>
       </div>
 
+      {/* Mobile view Tab Selectors (hidden on desktop lg) */}
+      <div className="flex bg-secondary/30 p-1.5 rounded-2xl border border-border/50 mb-5 mx-4 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setActiveTab("direct")}
+          className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all press-effect ${
+            activeTab === "direct"
+              ? "bg-primary text-white shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Direct Support
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("message")}
+          className={`flex-1 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all press-effect ${
+            activeTab === "message"
+              ? "bg-primary text-white shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Send Message
+        </button>
+      </div>
+
       <div className="px-4 grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-5xl mx-auto">
         {/* ── Left Column: Get in Touch & Direct Channels ── */}
-        <div className="space-y-6">
+        <div className={`space-y-6 ${activeTab === "direct" ? "block" : "hidden lg:block"}`}>
           {/* ── Business Info (UPI compliance) ── */}
           <motion.div
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
             className="bg-card rounded-2xl border border-border shadow-card p-4 space-y-3"
           >
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Business Information</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+              Business Information
+            </p>
             <div className="space-y-2.5">
               {[
                 { icon: Building2, title: "CLUTCHGROUND", sub: "Skill-Based Esports Platform" },
-                { icon: MapPin,    title: "Registered Address", sub: "Haryana, India — 124103" },
-                { icon: Mail,      title: socialLinks.email, sub: "Official contact for disputes & refunds" },
-                { icon: Clock,     title: "Support Hours", sub: "Mon – Sat, 10:00 AM – 8:00 PM IST" },
+                { icon: MapPin, title: "Registered Address", sub: "Haryana, India — 124103" },
+                {
+                  icon: Mail,
+                  title: socialLinks.email,
+                  sub: "Official contact for disputes & refunds",
+                },
+                { icon: Clock, title: "Support Hours", sub: "Mon – Sat, 10:00 AM – 8:00 PM IST" },
               ].map(({ icon: Icon, title, sub }) => (
                 <div key={title} className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 text-primary mt-0.5">
@@ -141,7 +203,9 @@ function ContactPage() {
 
           {/* ── Quick channels ── */}
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 ml-1">Direct Channels</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 ml-1">
+              Direct Channels
+            </p>
             <div className="flex flex-col gap-3">
               {channels.map((c, i) => (
                 <motion.a
@@ -154,12 +218,16 @@ function ContactPage() {
                   transition={{ delay: i * 0.07 }}
                   className="flex items-center gap-4 p-4 bg-card rounded-2xl border border-border shadow-card press-effect active:scale-[0.98] transition-transform"
                 >
-                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border"
-                    style={{ background: c.bg, borderColor: c.bd, color: c.color }}>
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border"
+                    style={{ background: c.bg, borderColor: c.bd, color: c.color }}
+                  >
                     <c.icon className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">{c.label}</p>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">
+                      {c.label}
+                    </p>
                     <p className="font-bold text-sm text-foreground truncate">{c.value}</p>
                   </div>
                   <ArrowRight className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -170,35 +238,59 @@ function ContactPage() {
         </div>
 
         {/* ── Right Column: Send a Message ── */}
-        <div className="space-y-6">
+        <div className={`space-y-6 ${activeTab === "message" ? "block" : "hidden lg:block"}`}>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 ml-1">Send a Message</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 ml-1">
+              Send a Message
+            </p>
             <div className="bg-card rounded-2xl border border-border shadow-card overflow-hidden">
               {sent ? (
                 <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
-                    style={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}>
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+                    style={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}
+                  >
                     <Send className="w-6 h-6" />
                   </div>
-                  <p className="font-display font-black text-lg text-foreground mb-1">Message Sent!</p>
-                  <p className="text-sm text-muted-foreground mb-5">We'll respond within 24 hours.</p>
-                  <button onClick={() => setSent(false)}
-                    className="h-10 px-6 rounded-xl text-xs font-black border border-border text-foreground bg-secondary press-effect active:scale-95">
+                  <p className="font-display font-black text-lg text-foreground mb-1">
+                    Message Sent!
+                  </p>
+                  <p className="text-sm text-muted-foreground mb-5">
+                    We'll respond within 24 hours.
+                  </p>
+                  <button
+                    onClick={() => setSent(false)}
+                    className="h-10 px-6 rounded-xl text-xs font-black border border-border text-foreground bg-secondary press-effect active:scale-95"
+                  >
                     Send Another
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="p-4 space-y-3">
                   {[
-                    { label: "Your Name",     type: "text",  value: name,    set: setName,    ph: "John Warrior" },
-                    { label: "Email Address", type: "email", value: email,   set: setEmail,   ph: "you@example.com" },
+                    {
+                      label: "Your Name",
+                      type: "text",
+                      value: name,
+                      set: setName,
+                      ph: "John Warrior",
+                    },
+                    {
+                      label: "Email Address",
+                      type: "email",
+                      value: email,
+                      set: setEmail,
+                      ph: "you@example.com",
+                    },
                   ].map(({ label, type, value, set, ph }) => (
                     <div key={label}>
-                      <label className="block text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1.5 ml-1">{label}</label>
+                      <label className="block text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1.5 ml-1">
+                        {label}
+                      </label>
                       <input
                         type={type}
                         value={value}
-                        onChange={e => set(e.target.value)}
+                        onChange={(e) => set(e.target.value)}
                         placeholder={ph}
                         required
                         className="w-full h-12 bg-secondary border border-border focus:border-primary/60 rounded-2xl px-4 text-sm font-semibold text-foreground outline-none transition-all"
@@ -206,10 +298,12 @@ function ContactPage() {
                     </div>
                   ))}
                   <div>
-                    <label className="block text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1.5 ml-1">Message</label>
+                    <label className="block text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1.5 ml-1">
+                      Message
+                    </label>
                     <textarea
                       value={message}
-                      onChange={e => setMessage(e.target.value)}
+                      onChange={(e) => setMessage(e.target.value)}
                       rows={4}
                       required
                       placeholder="How can we help you today?"
@@ -223,9 +317,14 @@ function ContactPage() {
                     style={{ background: loading ? "var(--secondary)" : "var(--gradient-cta)" }}
                   >
                     {loading ? (
-                      <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sending...</>
+                      <>
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{" "}
+                        Sending...
+                      </>
                     ) : (
-                      <><Send className="w-4 h-4" /> Send Message</>
+                      <>
+                        <Send className="w-4 h-4" /> Send Message
+                      </>
                     )}
                   </button>
                 </form>

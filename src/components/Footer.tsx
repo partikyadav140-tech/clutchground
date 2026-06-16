@@ -43,7 +43,8 @@ export function Footer() {
               </div>
             </div>
             <p className="text-sm text-muted-foreground/80 leading-relaxed">
-              India&apos;s Free Fire esports platform. Compete in tournaments, win prizes, and climb the ranks.
+              India&apos;s Free Fire esports platform. Compete in tournaments, win prizes, and climb
+              the ranks.
             </p>
           </div>
 
@@ -65,19 +66,34 @@ export function Footer() {
           <div className="lg:col-span-1">
             <h4 className="font-display font-bold text-foreground mb-4 text-sm">Support</h4>
             <div className="space-y-3">
-              <Link to="/rules" className="block text-sm text-muted-foreground hover:text-cta transition-colors">
+              <Link
+                to="/rules"
+                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
+              >
                 Rules &amp; regulations
               </Link>
-              <Link to="/anti-cheat" className="block text-sm text-muted-foreground hover:text-cta transition-colors">
+              <Link
+                to="/anti-cheat"
+                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
+              >
                 Anti-cheat policy
               </Link>
-              <Link to="/support" className="block text-sm text-muted-foreground hover:text-cta transition-colors">
+              <Link
+                to="/support"
+                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
+              >
                 Support tickets
               </Link>
-              <Link to="/privacy" className="block text-sm text-muted-foreground hover:text-cta transition-colors">
+              <Link
+                to="/privacy"
+                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
+              >
                 Privacy policy
               </Link>
-              <Link to="/terms" className="block text-sm text-muted-foreground hover:text-cta transition-colors">
+              <Link
+                to="/terms"
+                className="block text-sm text-muted-foreground hover:text-cta transition-colors"
+              >
                 Terms of service
               </Link>
             </div>

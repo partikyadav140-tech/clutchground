@@ -33,15 +33,15 @@ interface Props {
 }
 
 /* ─── palette ─── */
-const DARK_BG  = "#080c14";
-const W        = 900;
-const SCALE    = 2;
+const DARK_BG = "#080c14";
+const W = 900;
+const SCALE = 2;
 
 /* ─── Medal colours ─── */
 const MEDAL = [
   { border: "#f59e0b", bg: "rgba(245,158,11,0.12)", text: "#fbbf24", label: "🥇" },
   { border: "#94a3b8", bg: "rgba(148,163,184,0.10)", text: "#cbd5e1", label: "🥈" },
-  { border: "#cd7c2f", bg: "rgba(205,124,47,0.10)",  text: "#f97316", label: "🥉" },
+  { border: "#cd7c2f", bg: "rgba(205,124,47,0.10)", text: "#f97316", label: "🥉" },
 ];
 
 /* ─── Canvas draw (kept for download only) ─── */
@@ -50,11 +50,12 @@ function drawCanvas(
   tournamentName: string,
   mode: string,
   results: ResultRow[],
-  showPoints: boolean
+  showPoints: boolean,
 ) {
   const sorted = [...results].sort((a, b) => {
     if (!showPoints) {
-      const pa = a.position ?? 999, pb = b.position ?? 999;
+      const pa = a.position ?? 999,
+        pb = b.position ?? 999;
       if (pa !== pb) return pa - pb;
       return (b.kills ?? 0) - (a.kills ?? 0);
     }
@@ -62,13 +63,13 @@ function drawCanvas(
     return (b.kills ?? 0) - (a.kills ?? 0);
   });
 
-  const ROW_H    = 56;
+  const ROW_H = 56;
   const HEADER_H = 160;
   const FOOTER_H = 60;
-  const PAD      = 32;
-  const H        = HEADER_H + sorted.length * ROW_H + FOOTER_H + PAD;
+  const PAD = 32;
+  const H = HEADER_H + sorted.length * ROW_H + FOOTER_H + PAD;
 
-  canvas.width  = W * SCALE;
+  canvas.width = W * SCALE;
   canvas.height = H * SCALE;
   const ctx = canvas.getContext("2d")!;
   ctx.scale(SCALE, SCALE);
@@ -81,114 +82,158 @@ function drawCanvas(
   ctx.fillRect(0, 0, W, H);
 
   ctx.strokeStyle = "rgba(255,255,255,0.03)";
-  ctx.lineWidth   = 1;
-  for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-  for (let y = 0; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 60) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, H);
+    ctx.stroke();
+  }
+  for (let y = 0; y < H; y += 60) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+    ctx.stroke();
+  }
 
   const hg = ctx.createLinearGradient(0, 0, W, 0);
-  hg.addColorStop(0, "#ff6b00"); hg.addColorStop(0.5, "#ff4d6d"); hg.addColorStop(1, "#7c3aed");
-  ctx.fillStyle = hg; ctx.fillRect(0, 0, W, 6);
+  hg.addColorStop(0, "#ff6b00");
+  hg.addColorStop(0.5, "#ff4d6d");
+  hg.addColorStop(1, "#7c3aed");
+  ctx.fillStyle = hg;
+  ctx.fillRect(0, 0, W, 6);
 
-  ctx.font = "bold 13px Arial"; ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.textAlign = "left";
+  ctx.font = "bold 13px Arial";
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.textAlign = "left";
   ctx.fillText("CLUTCHGROUND", PAD, 36);
-  ctx.font = "bold 28px Arial Black"; ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 28px Arial Black";
+  ctx.fillStyle = "#ffffff";
   ctx.fillText(tournamentName || "Tournament Results", PAD, 76);
-  ctx.font = "14px Arial"; ctx.fillStyle = "rgba(255,255,255,0.5)";
+  ctx.font = "14px Arial";
+  ctx.fillStyle = "rgba(255,255,255,0.5)";
   ctx.fillText(`${mode} • Free Fire • Final Standings`, PAD, 100);
-  ctx.fillStyle = "rgba(255,255,255,0.08)"; ctx.fillRect(PAD, 114, W - PAD * 2, 1);
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  ctx.fillRect(PAD, 114, W - PAD * 2, 1);
 
   const cols = showPoints
     ? [
-        { label: "RANK",          x: PAD,         w: 60,  align: "center" as CanvasTextAlign },
-        { label: "SQUAD",         x: PAD + 70,    w: 340, align: "left"   as CanvasTextAlign },
-        { label: "KILLS",         x: PAD + 430,   w: 100, align: "center" as CanvasTextAlign },
-        { label: "POSITION",      x: PAD + 550,   w: 110, align: "center" as CanvasTextAlign },
-        { label: "POINTS",        x: W-PAD-90,    w: 90,  align: "right"  as CanvasTextAlign },
+        { label: "RANK", x: PAD, w: 60, align: "center" as CanvasTextAlign },
+        { label: "SQUAD", x: PAD + 70, w: 340, align: "left" as CanvasTextAlign },
+        { label: "KILLS", x: PAD + 430, w: 100, align: "center" as CanvasTextAlign },
+        { label: "POSITION", x: PAD + 550, w: 110, align: "center" as CanvasTextAlign },
+        { label: "POINTS", x: W - PAD - 90, w: 90, align: "right" as CanvasTextAlign },
       ]
     : [
-        { label: "RANK",          x: PAD,         w: 60,  align: "center" as CanvasTextAlign },
-        { label: "PLAYER / TEAM", x: PAD + 70,    w: 430, align: "left"   as CanvasTextAlign },
-        { label: "KILLS",         x: PAD + 530,   w: 140, align: "center" as CanvasTextAlign },
-        { label: "POSITION",      x: W-PAD-120,   w: 120, align: "center" as CanvasTextAlign },
+        { label: "RANK", x: PAD, w: 60, align: "center" as CanvasTextAlign },
+        { label: "PLAYER / TEAM", x: PAD + 70, w: 430, align: "left" as CanvasTextAlign },
+        { label: "KILLS", x: PAD + 530, w: 140, align: "center" as CanvasTextAlign },
+        { label: "POSITION", x: W - PAD - 120, w: 120, align: "center" as CanvasTextAlign },
       ];
 
   const tableTop = 126;
-  ctx.font = "bold 10px Arial"; ctx.fillStyle = "rgba(255,255,255,0.35)"; ctx.letterSpacing = "2px";
-  cols.forEach(c => {
+  ctx.font = "bold 10px Arial";
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.letterSpacing = "2px";
+  cols.forEach((c) => {
     ctx.textAlign = c.align;
-    const tx = c.align === "right" ? c.x+c.w : c.align === "center" ? c.x+c.w/2 : c.x;
+    const tx = c.align === "right" ? c.x + c.w : c.align === "center" ? c.x + c.w / 2 : c.x;
     ctx.fillText(c.label, tx, tableTop);
   });
   ctx.letterSpacing = "0px";
 
   const rowStart = tableTop + 16;
-  const RANK_CLR = ["#FFD700","#C0C0C0","#CD7F32"];
+  const RANK_CLR = ["#FFD700", "#C0C0C0", "#CD7F32"];
   sorted.forEach((r: any, i: number) => {
     const ry = rowStart + i * ROW_H;
     const top3 = i < 3;
     if (i % 2 === 0) {
       ctx.fillStyle = "rgba(255,255,255,0.03)";
-      ctx.beginPath(); ctx.roundRect(PAD-8, ry-2, W-PAD*2+16, ROW_H-4, 10); ctx.fill();
+      ctx.beginPath();
+      ctx.roundRect(PAD - 8, ry - 2, W - PAD * 2 + 16, ROW_H - 4, 10);
+      ctx.fill();
     }
     if (top3) {
       ctx.fillStyle = RANK_CLR[i];
-      ctx.beginPath(); ctx.roundRect(PAD-8, ry-2, 3, ROW_H-4, 2); ctx.fill();
+      ctx.beginPath();
+      ctx.roundRect(PAD - 8, ry - 2, 3, ROW_H - 4, 2);
+      ctx.fill();
     }
-    const cy = ry + ROW_H/2 - 4;
+    const cy = ry + ROW_H / 2 - 4;
     ctx.textAlign = "center";
     if (top3) {
-      ctx.font = "bold 18px Arial"; ctx.fillStyle = RANK_CLR[i];
-      ctx.fillText(["🥇","🥈","🥉"][i], PAD+30, cy+8);
+      ctx.font = "bold 18px Arial";
+      ctx.fillStyle = RANK_CLR[i];
+      ctx.fillText(["🥇", "🥈", "🥉"][i], PAD + 30, cy + 8);
     } else {
-      ctx.font = "bold 15px Arial"; ctx.fillStyle = "rgba(255,255,255,0.35)";
-      ctx.fillText(`#${i+1}`, PAD+30, cy+6);
+      ctx.font = "bold 15px Arial";
+      ctx.fillStyle = "rgba(255,255,255,0.35)";
+      ctx.fillText(`#${i + 1}`, PAD + 30, cy + 6);
     }
     const name = r.team_name || r.username || "Unknown";
-    ctx.textAlign = "left"; ctx.font = top3 ? "bold 15px Arial" : "600 14px Arial";
+    ctx.textAlign = "left";
+    ctx.font = top3 ? "bold 15px Arial" : "600 14px Arial";
     ctx.fillStyle = top3 ? "#ffffff" : "rgba(255,255,255,0.8)";
     let dn = name;
-    while (ctx.measureText(dn).width > cols[1].w-10 && dn.length > 4) dn = dn.slice(0,-4)+"...";
-    ctx.fillText(dn, cols[1].x, cy+6);
+    while (ctx.measureText(dn).width > cols[1].w - 10 && dn.length > 4)
+      dn = dn.slice(0, -4) + "...";
+    ctx.fillText(dn, cols[1].x, cy + 6);
     const kc = cols[2];
-    ctx.textAlign = "center"; ctx.font = "bold 14px 'Courier New', monospace";
-    ctx.fillStyle = "#f97316"; ctx.fillText(String(r.kills || 0), kc.x+kc.w/2, cy+6);
+    ctx.textAlign = "center";
+    ctx.font = "bold 14px 'Courier New', monospace";
+    ctx.fillStyle = "#f97316";
+    ctx.fillText(String(r.kills || 0), kc.x + kc.w / 2, cy + 6);
     const pc = cols[3];
-    ctx.font = "14px Arial"; ctx.fillStyle = "rgba(255,255,255,0.55)";
-    ctx.fillText(r.position ? `#${r.position}` : "—", pc.x+pc.w/2, cy+6);
+    ctx.font = "14px Arial";
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.fillText(r.position ? `#${r.position}` : "—", pc.x + pc.w / 2, cy + 6);
     if (showPoints && cols[4]) {
       const ptc = cols[4];
-      ctx.textAlign = "right"; ctx.font = "bold 16px Arial"; ctx.fillStyle = "#a78bfa";
-      ctx.fillText(String(r.points || 0), ptc.x+ptc.w, cy+6);
+      ctx.textAlign = "right";
+      ctx.font = "bold 16px Arial";
+      ctx.fillStyle = "#a78bfa";
+      ctx.fillText(String(r.points || 0), ptc.x + ptc.w, cy + 6);
     }
-    if (i < sorted.length-1) {
+    if (i < sorted.length - 1) {
       ctx.fillStyle = "rgba(255,255,255,0.05)";
-      ctx.fillRect(PAD, ry+ROW_H-6, W-PAD*2, 1);
+      ctx.fillRect(PAD, ry + ROW_H - 6, W - PAD * 2, 1);
     }
   });
 
-  const fy = rowStart + sorted.length*ROW_H + 16;
-  ctx.fillStyle = "rgba(255,255,255,0.06)"; ctx.fillRect(PAD, fy, W-PAD*2, 1);
-  ctx.font = "12px Arial"; ctx.textAlign = "center"; ctx.fillStyle = "rgba(255,255,255,0.25)";
-  ctx.fillText(`clutchground.games  •  ${new Date().toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"})}`, W/2, fy+28);
-  const bg2 = ctx.createLinearGradient(0,0,W,0);
-  bg2.addColorStop(0,"#7c3aed"); bg2.addColorStop(0.5,"#ff4d6d"); bg2.addColorStop(1,"#ff6b00");
-  ctx.fillStyle = bg2; ctx.fillRect(0, H-4, W, 4);
+  const fy = rowStart + sorted.length * ROW_H + 16;
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  ctx.fillRect(PAD, fy, W - PAD * 2, 1);
+  ctx.font = "12px Arial";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(255,255,255,0.25)";
+  ctx.fillText(
+    `clutchground.games  •  ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`,
+    W / 2,
+    fy + 28,
+  );
+  const bg2 = ctx.createLinearGradient(0, 0, W, 0);
+  bg2.addColorStop(0, "#7c3aed");
+  bg2.addColorStop(0.5, "#ff4d6d");
+  bg2.addColorStop(1, "#ff6b00");
+  ctx.fillStyle = bg2;
+  ctx.fillRect(0, H - 4, W, 4);
 }
 
 /* ─── React component ─── */
 export function StandingsCard({ tournamentName, mode, results, tournamentType }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const modeL       = mode?.toLowerCase() ?? "";
-  const typeL       = tournamentType?.toLowerCase() ?? "";
-  const showPoints  = modeL === "squad" && typeL !== "clash_squad" && typeL !== "lone_wolf";
+  const modeL = mode?.toLowerCase() ?? "";
+  const typeL = tournamentType?.toLowerCase() ?? "";
+  const showPoints = modeL === "squad" && typeL !== "clash_squad" && typeL !== "lone_wolf";
 
   const sorted = [...results].sort((a, b) => {
     if (showPoints) {
       if (b.points !== a.points) return (b.points ?? 0) - (a.points ?? 0);
       return (b.kills ?? 0) - (a.kills ?? 0);
     }
-    const pa = a.position ?? 999, pb = b.position ?? 999;
+    const pa = a.position ?? 999,
+      pb = b.position ?? 999;
     if (pa !== pb) return pa - pb;
     return (b.kills ?? 0) - (a.kills ?? 0);
   });
@@ -203,7 +248,7 @@ export function StandingsCard({ tournamentName, mode, results, tournamentType }:
     if (!canvasRef.current) return;
     const link = document.createElement("a");
     link.download = `${tournamentName.replace(/\s+/g, "_")}_Standings.png`;
-    link.href     = canvasRef.current.toDataURL("image/png");
+    link.href = canvasRef.current.toDataURL("image/png");
     link.click();
   };
 
@@ -218,9 +263,7 @@ export function StandingsCard({ tournamentName, mode, results, tournamentType }:
 
   /* mode label for header badge */
   const modeLabel =
-    typeL === "clash_squad" ? "Clash Squad" :
-    typeL === "lone_wolf"   ? "Lone Wolf"   :
-    mode;
+    typeL === "clash_squad" ? "Clash Squad" : typeL === "lone_wolf" ? "Lone Wolf" : mode;
 
   return (
     <div className="flex flex-col gap-3">
@@ -263,7 +306,9 @@ export function StandingsCard({ tournamentName, mode, results, tournamentType }:
             <h2 className="font-black text-base text-white leading-tight line-clamp-2">
               {tournamentName}
             </h2>
-            <p className="text-[10px] text-white/40 mt-0.5 font-medium">Free Fire • clutchground.games</p>
+            <p className="text-[10px] text-white/40 mt-0.5 font-medium">
+              Free Fire • clutchground.games
+            </p>
           </div>
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-lg"
@@ -317,15 +362,16 @@ export function StandingsCard({ tournamentName, mode, results, tournamentType }:
             </thead>
             <tbody>
               {sorted.map((row: any, i: number) => {
-                const isTop3   = i < 3;
-                const medal    = isTop3 ? MEDAL[i] : null;
-                const name     = row.team_name || row.username || "Unknown";
+                const isTop3 = i < 3;
+                const medal = isTop3 ? MEDAL[i] : null;
+                const name = row.team_name || row.username || "Unknown";
 
                 return (
                   <tr
                     key={row.id ?? i}
                     style={{
-                      background: medal?.bg ?? (i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent"),
+                      background:
+                        medal?.bg ?? (i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent"),
                       borderLeft: isTop3 ? `3px solid ${medal!.border}` : "3px solid transparent",
                       borderBottom: "1px solid rgba(255,255,255,0.05)",
                       transition: "background 0.15s",
@@ -334,10 +380,7 @@ export function StandingsCard({ tournamentName, mode, results, tournamentType }:
                     {/* Rank */}
                     <td className="pl-3 pr-2 py-3 text-center align-middle" style={{ width: 48 }}>
                       {isTop3 ? (
-                        <span
-                          className="text-base leading-none select-none"
-                          title={`#${i + 1}`}
-                        >
+                        <span className="text-base leading-none select-none" title={`#${i + 1}`}>
                           {medal!.label}
                         </span>
                       ) : (
@@ -379,13 +422,15 @@ export function StandingsCard({ tournamentName, mode, results, tournamentType }:
                         <span
                           className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-black tabular-nums"
                           style={{
-                            background: row.position === 1
-                              ? "rgba(245,158,11,0.18)"
-                              : "rgba(255,255,255,0.07)",
+                            background:
+                              row.position === 1
+                                ? "rgba(245,158,11,0.18)"
+                                : "rgba(255,255,255,0.07)",
                             color: row.position === 1 ? "#fbbf24" : "rgba(255,255,255,0.5)",
-                            border: row.position === 1
-                              ? "1px solid rgba(245,158,11,0.4)"
-                              : "1px solid rgba(255,255,255,0.1)",
+                            border:
+                              row.position === 1
+                                ? "1px solid rgba(245,158,11,0.4)"
+                                : "1px solid rgba(255,255,255,0.1)",
                             minWidth: 32,
                           }}
                         >
@@ -421,11 +466,18 @@ export function StandingsCard({ tournamentName, mode, results, tournamentType }:
           className="mx-4 my-3 flex items-center justify-between"
           style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 10 }}
         >
-          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.2)" }}>
+          <span
+            className="text-[9px] font-black uppercase tracking-widest"
+            style={{ color: "rgba(255,255,255,0.2)" }}
+          >
             CLUTCHGROUND
           </span>
           <span className="text-[9px]" style={{ color: "rgba(255,255,255,0.2)" }}>
-            {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+            {new Date().toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
           </span>
         </div>
 

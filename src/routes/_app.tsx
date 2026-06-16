@@ -29,7 +29,10 @@ export const Route = createFileRoute("/_app")({
 
     const isAuthRoute = ["/login", "/signup"].includes(cleanPath);
 
-    const isChatPage  = cleanPath.startsWith("/support/") || cleanPath.startsWith("/admin/tickets/") || cleanPath === "/chat";
+    const isChatPage =
+      cleanPath.startsWith("/support/") ||
+      cleanPath.startsWith("/admin/tickets/") ||
+      cleanPath === "/chat";
 
     const announcement = settings?.announcement;
     const isMaintenance = settings?.maintenance_mode === "true";
@@ -60,8 +63,6 @@ export const Route = createFileRoute("/_app")({
 
     return (
       <div className="h-[100dvh] flex flex-col bg-background text-foreground overflow-hidden">
-
-
         {announcement && !isAuthRoute && (
           <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-500 px-4 py-2 text-xs font-semibold flex items-center justify-center gap-2 relative z-50">
             <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-ping shrink-0" />
@@ -72,7 +73,9 @@ export const Route = createFileRoute("/_app")({
         {isMaintenance && !isAuthRoute && (
           <div className="bg-red-500/10 border-b border-red-500/20 text-red-500 px-4 py-2 text-xs font-bold flex items-center justify-center gap-2 relative z-50 animate-pulse">
             <span>⚠️</span>
-            <span className="text-center">System Maintenance: Some features may be temporarily offline.</span>
+            <span className="text-center">
+              System Maintenance: Some features may be temporarily offline.
+            </span>
           </div>
         )}
 
@@ -85,12 +88,16 @@ export const Route = createFileRoute("/_app")({
             /* Mobile: pt-20 on ALL non-auth & non-chat pages | Desktop: pt-16 on ALL non-auth pages */
             !isAuthRoute
               ? isChatPage
-                ? "lg:pt-16"            /* chat pages: header hidden on mobile, shown on desktop */
-                : "pt-[60px]"           /* standard pages: compact mobile header */
+                ? "lg:pt-16" /* chat pages: header hidden on mobile, shown on desktop */
+                : "pt-[60px]" /* standard pages: compact mobile header */
               : "",
             /* Mobile: bottom-nav padding | Desktop: no bottom nav */
-            !isAuthRoute && !isChatPage ? "pb-[calc(80px+env(safe-area-inset-bottom,0px))] lg:pb-0" : "",
-          ].filter(Boolean).join(" ")}
+            !isAuthRoute && !isChatPage
+              ? "pb-[calc(80px+env(safe-area-inset-bottom,0px))] lg:pb-0"
+              : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
         >
           {!isAuthRoute && <Navbar />}
 
@@ -99,11 +106,15 @@ export const Route = createFileRoute("/_app")({
             • Mobile  → max-w-[480px] (unchanged — keeps the native app feel)
             • Desktop → max-w-5xl (gives room to breathe on wide screens)
           */}
-          <div className={[
-            "mx-auto w-full",
-            !isAuthRoute ? "max-w-[480px] lg:max-w-5xl" : "",
-            isChatPage ? "h-full flex flex-col overflow-hidden" : "",
-          ].filter(Boolean).join(" ")}>
+          <div
+            className={[
+              "mx-auto w-full",
+              !isAuthRoute ? "max-w-[480px] lg:max-w-5xl" : "",
+              isChatPage ? "h-full flex flex-col overflow-hidden" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+          >
             <Suspense fallback={<PageSpinner />}>
               <div className={isChatPage ? "h-full flex flex-col" : "min-h-full flex flex-col"}>
                 <Outlet />

@@ -22,10 +22,14 @@ export function TeamInvitesPanel({ userId, invites, onUpdated }: TeamInvitesPane
 
   const handleRespond = async (requestId: number, status: "approved" | "rejected") => {
     setActingId(requestId);
-    const toastId = toast.loading(status === "approved" ? "Joining team..." : "Declining invite...");
+    const toastId = toast.loading(
+      status === "approved" ? "Joining team..." : "Declining invite...",
+    );
     try {
       await (resolveTeamRequest as any)({ data: { requestId, status, userId } });
-      toast.success(status === "approved" ? "You joined the team!" : "Invitation declined", { id: toastId });
+      toast.success(status === "approved" ? "You joined the team!" : "Invitation declined", {
+        id: toastId,
+      });
       onUpdated();
     } catch (err: any) {
       toast.error(err.message || "Action failed", { id: toastId });
@@ -61,7 +65,11 @@ export function TeamInvitesPanel({ userId, invites, onUpdated }: TeamInvitesPane
               onClick={() => handleRespond(invite.id, "approved")}
               className="flex-1 h-10 rounded-xl bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-1.5"
             >
-              {actingId === invite.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              {actingId === invite.id ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Check className="w-4 h-4" />
+              )}
               Accept
             </button>
           </div>

@@ -48,7 +48,7 @@ export function ProfileEffectRenderer({ value }: ProfileEffectRendererProps) {
               key={i}
               className="absolute text-pink-500 select-none"
               style={{
-                left: `${10 + (i * 8) % 80}%`,
+                left: `${10 + ((i * 8) % 80)}%`,
                 bottom: `${-10 - Math.random() * 20}%`,
                 fontSize: `${14 + (i % 3) * 6}px`,
                 filter: "drop-shadow(0 0 6px rgba(236, 72, 153, 0.5))",
@@ -99,14 +99,14 @@ export function ProfileEffectRenderer({ value }: ProfileEffectRendererProps) {
               key={`spark-${i}`}
               className="absolute text-purple-400 font-bold select-none text-base"
               style={{
-                left: `${15 + (i * 12) % 70}%`,
-                top: `${15 + (i * 11) % 60}%`,
+                left: `${15 + ((i * 12) % 70)}%`,
+                top: `${15 + ((i * 11) % 60)}%`,
                 filter: "drop-shadow(0 0 8px rgba(168, 85, 247, 0.8))",
               }}
               animate={{
                 scale: [0, 1.5, 0, 1.2, 0],
                 opacity: [0, 1, 0, 0.8, 0],
-                rotate: [0, (i % 2 === 0 ? 15 : -15)],
+                rotate: [0, i % 2 === 0 ? 15 : -15],
               }}
               transition={{
                 duration: 0.4,
@@ -133,9 +133,10 @@ export function ProfileEffectRenderer({ value }: ProfileEffectRendererProps) {
                 left: `${(i * 4.6) % 100}%`,
                 width: `${14 + (i % 4) * 6}px`,
                 height: `${14 + (i % 4) * 6}px`,
-                background: i % 2 === 0 
-                  ? "linear-gradient(to top, rgba(239, 68, 68, 0.9), rgba(249, 115, 22, 0.3))" 
-                  : "linear-gradient(to top, rgba(249, 115, 22, 0.9), rgba(234, 179, 8, 0.3))",
+                background:
+                  i % 2 === 0
+                    ? "linear-gradient(to top, rgba(239, 68, 68, 0.9), rgba(249, 115, 22, 0.3))"
+                    : "linear-gradient(to top, rgba(249, 115, 22, 0.9), rgba(234, 179, 8, 0.3))",
                 filter: "blur(5px)",
               }}
               animate={{

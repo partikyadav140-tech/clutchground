@@ -1,10 +1,28 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import {
-  Users, CheckCircle, ArrowLeft, Edit2, ShieldAlert, Trash2,
-  Search, X, Shield, UserX, UserCheck, ChevronDown,
+  Users,
+  CheckCircle,
+  ArrowLeft,
+  Edit2,
+  ShieldAlert,
+  Trash2,
+  Search,
+  X,
+  Shield,
+  UserX,
+  UserCheck,
+  ChevronDown,
 } from "lucide-react";
-import { getUsers, updateCoinBalance, banUser, unbanUser, deleteUser, deleteAllUsers, updateUserRole } from "../../../api";
+import {
+  getUsers,
+  updateCoinBalance,
+  banUser,
+  unbanUser,
+  deleteUser,
+  deleteAllUsers,
+  updateUserRole,
+} from "../../../api";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { GodCoin } from "@/components/GodCoin";
@@ -51,7 +69,9 @@ function AdminUsersPage() {
         </div>
         <h1 className="text-3xl font-display font-black text-foreground mb-2">Access Denied</h1>
         <Link to="/login">
-          <Button className="h-12 px-8 rounded-xl font-bold bg-primary text-white">Return to Login</Button>
+          <Button className="h-12 px-8 rounded-xl font-bold bg-primary text-white">
+            Return to Login
+          </Button>
         </Link>
       </div>
     );
@@ -65,23 +85,32 @@ function AdminUsersPage() {
 
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter((u: any) =>
-        u.username?.toLowerCase().includes(q) ||
-        u.ign?.toLowerCase().includes(q) ||
-        u.phone?.toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q)
+      list = list.filter(
+        (u: any) =>
+          u.username?.toLowerCase().includes(q) ||
+          u.ign?.toLowerCase().includes(q) ||
+          u.phone?.toLowerCase().includes(q) ||
+          u.email?.toLowerCase().includes(q),
       );
     }
     return list;
   }, [users, search, filter]);
 
-  const stats = useMemo(() => ({
-    total: users.filter((u: any) => u.role !== "admin").length,
-    banned: users.filter((u: any) => u.banned).length,
-    admins: users.filter((u: any) => u.role === "admin").length,
-  }), [users]);
+  const stats = useMemo(
+    () => ({
+      total: users.filter((u: any) => u.role !== "admin").length,
+      banned: users.filter((u: any) => u.banned).length,
+      admins: users.filter((u: any) => u.role === "admin").length,
+    }),
+    [users],
+  );
 
-  const handleEditBalance = async (userId: number, username: string, type: "deposit_balance" | "winning_balance", current: number) => {
+  const handleEditBalance = async (
+    userId: number,
+    username: string,
+    type: "deposit_balance" | "winning_balance",
+    current: number,
+  ) => {
     const val = await promptDialog({
       title: "Edit Balance",
       description: `Edit ${type === "deposit_balance" ? "Deposit Coins" : "Earned Coins"} for ${username}:`,
@@ -94,7 +123,9 @@ function AdminUsersPage() {
       await (updateCoinBalance as any)({ data: { userId, type, amount: num } });
       toast.success(`${username}'s balance updated!`);
       router.invalidate();
-    } catch (e: any) { toast.error(e.message || "Failed"); }
+    } catch (e: any) {
+      toast.error(e.message || "Failed");
+    }
   };
 
   const handleBan = async (userId: number, username: string) => {
@@ -109,7 +140,9 @@ function AdminUsersPage() {
       await (banUser as any)({ data: { id: userId } });
       toast.success(`${username} banned.`);
       router.invalidate();
-    } catch (e: any) { toast.error(e.message || "Failed"); }
+    } catch (e: any) {
+      toast.error(e.message || "Failed");
+    }
   };
 
   const handleUnban = async (userId: number, username: string) => {
@@ -124,7 +157,9 @@ function AdminUsersPage() {
       await (unbanUser as any)({ data: { id: userId } });
       toast.success(`${username} unbanned.`);
       router.invalidate();
-    } catch (e: any) { toast.error(e.message || "Failed"); }
+    } catch (e: any) {
+      toast.error(e.message || "Failed");
+    }
   };
 
   const handleDelete = async (userId: number, username: string) => {
@@ -139,7 +174,9 @@ function AdminUsersPage() {
       await (deleteUser as any)({ data: { id: userId } });
       toast.success(`${username} deleted.`);
       router.invalidate();
-    } catch (e: any) { toast.error(e.message || "Failed"); }
+    } catch (e: any) {
+      toast.error(e.message || "Failed");
+    }
   };
 
   const handleRoleToggle = async (userId: number, username: string, currentRole: string) => {
@@ -155,13 +192,16 @@ function AdminUsersPage() {
       await (updateUserRole as any)({ data: { id: userId, role: newRole } });
       toast.success(`${username} is now a ${newRole}.`);
       router.invalidate();
-    } catch (e: any) { toast.error(e.message || "Failed"); }
+    } catch (e: any) {
+      toast.error(e.message || "Failed");
+    }
   };
 
   const handleDeleteAll = async () => {
     const yes = await confirmDialog({
       title: "Delete ALL Users?",
-      description: "CRITICAL: This permanently deletes ALL non-admin users including teams, registrations and wallets. Cannot be undone!",
+      description:
+        "CRITICAL: This permanently deletes ALL non-admin users including teams, registrations and wallets. Cannot be undone!",
       confirmText: "PURGE USERS",
       isDestructive: true,
     });
@@ -170,7 +210,9 @@ function AdminUsersPage() {
       await (deleteAllUsers as any)({});
       toast.success("All non-admin users purged.");
       router.invalidate();
-    } catch (e: any) { toast.error(e.message || "Failed"); }
+    } catch (e: any) {
+      toast.error(e.message || "Failed");
+    }
   };
 
   const FILTER_TABS: { key: FilterType; label: string; count: number }[] = [
@@ -185,7 +227,10 @@ function AdminUsersPage() {
       {/* Header */}
       <div className="bg-card border-b border-border pt-6 pb-5 px-4 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 bg-purple-500/5 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/3" />
-        <Link to="/admin" className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground mb-4 bg-secondary/50 px-3 py-1.5 rounded-full transition-colors">
+        <Link
+          to="/admin"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground hover:text-foreground mb-4 bg-secondary/50 px-3 py-1.5 rounded-full transition-colors"
+        >
           <ArrowLeft className="w-3.5 h-3.5" /> Back
         </Link>
         <div className="flex items-center justify-between">
@@ -196,7 +241,9 @@ function AdminUsersPage() {
               </div>
               <h1 className="font-display text-2xl font-black text-foreground">Users</h1>
             </div>
-            <p className="text-xs text-muted-foreground font-semibold">{stats.total} registered · {stats.banned} banned · {stats.admins} admins</p>
+            <p className="text-xs text-muted-foreground font-semibold">
+              {stats.total} registered · {stats.banned} banned · {stats.admins} admins
+            </p>
           </div>
           <Button
             variant="outline"
@@ -214,10 +261,12 @@ function AdminUsersPage() {
             { label: "Users", val: stats.total, color: "text-foreground" },
             { label: "Banned", val: stats.banned, color: "text-red-500" },
             { label: "Admins", val: stats.admins, color: "text-cta" },
-          ].map(s => (
+          ].map((s) => (
             <div key={s.label} className="flex-1 bg-secondary/40 rounded-xl p-2.5 text-center">
               <div className={`font-display font-black text-lg ${s.color}`}>{s.val}</div>
-              <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{s.label}</div>
+              <div className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
+                {s.label}
+              </div>
             </div>
           ))}
         </div>
@@ -229,12 +278,15 @@ function AdminUsersPage() {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search username, IGN, phone, email..."
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search username, IGN, email..."
             className="w-full h-11 bg-card border border-border focus:border-primary outline-none pl-10 pr-10 text-sm rounded-xl transition-all font-semibold shadow-sm"
           />
           {search && (
-            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
               <X className="w-4 h-4" />
             </button>
           )}
@@ -242,7 +294,7 @@ function AdminUsersPage() {
 
         {/* Filter tabs */}
         <div className="flex gap-1.5 mb-4 overflow-x-auto hide-scrollbar pb-1">
-          {FILTER_TABS.map(tab => (
+          {FILTER_TABS.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key)}
@@ -253,7 +305,9 @@ function AdminUsersPage() {
               }`}
             >
               {tab.label}
-              <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black ${filter === tab.key ? "bg-white/20" : "bg-secondary"}`}>
+              <span
+                className={`px-1.5 py-0.5 rounded-full text-[9px] font-black ${filter === tab.key ? "bg-white/20" : "bg-secondary"}`}
+              >
                 {tab.count}
               </span>
             </button>
@@ -284,7 +338,11 @@ function AdminUsersPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.15, delay: Math.min(i * 0.03, 0.3) }}
                     className={`bg-card rounded-2xl border overflow-hidden transition-all ${
-                      u.banned ? "border-red-500/20" : u.role === "admin" ? "border-cta/20" : "border-border/50"
+                      u.banned
+                        ? "border-red-500/20"
+                        : u.role === "admin"
+                          ? "border-cta/20"
+                          : "border-border/50"
                     }`}
                   >
                     {/* Collapsed row */}
@@ -292,19 +350,33 @@ function AdminUsersPage() {
                       onClick={() => setExpandedId(isExpanded ? null : u.id)}
                       className="w-full flex items-center gap-3 p-3.5 text-left"
                     >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-display font-black text-lg ${
-                        u.role === "admin" ? "bg-cta/10 text-cta" : u.banned ? "bg-red-500/10 text-red-500" : "bg-primary/10 text-primary"
-                      }`}>
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-display font-black text-lg ${
+                          u.role === "admin"
+                            ? "bg-cta/10 text-cta"
+                            : u.banned
+                              ? "bg-red-500/10 text-red-500"
+                              : "bg-primary/10 text-primary"
+                        }`}
+                      >
                         {u.username?.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-display font-black text-foreground truncate">{u.username}</span>
-                          {u.role === "admin" && <CheckCircle className="w-3.5 h-3.5 text-cta shrink-0" />}
-                          {u.banned && <span className="text-[9px] font-black text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded-full shrink-0">BANNED</span>}
+                          <span className="font-display font-black text-foreground truncate">
+                            {u.username}
+                          </span>
+                          {u.role === "admin" && (
+                            <CheckCircle className="w-3.5 h-3.5 text-cta shrink-0" />
+                          )}
+                          {u.banned && (
+                            <span className="text-[9px] font-black text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded-full shrink-0">
+                              BANNED
+                            </span>
+                          )}
                         </div>
                         <div className="text-[10px] text-muted-foreground font-semibold truncate">
-                          {u.ign ? `IGN: ${u.ign}` : u.phone || `ID: #${u.id}`}
+                          {u.ign ? `IGN: ${u.ign}` : u.email || `ID: #${u.id}`}
                         </div>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
@@ -312,7 +384,9 @@ function AdminUsersPage() {
                           <GodCoin className="w-3.5 h-3.5" />
                           <span>{(u.deposit_balance || 0) + (u.winning_balance || 0)}</span>
                         </div>
-                        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                        <ChevronDown
+                          className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                        />
                       </div>
                     </button>
 
@@ -332,12 +406,19 @@ function AdminUsersPage() {
                               {[
                                 { label: "User ID", val: `#${u.id}` },
                                 { label: "Role", val: u.role },
-                                { label: "Joined", val: new Date(u.created_at).toLocaleDateString("en-IN") },
-                                { label: "Phone", val: u.phone || "—" },
+                                {
+                                  label: "Joined",
+                                  val: new Date(u.created_at).toLocaleDateString("en-IN"),
+                                },
+                                { label: "Email", val: u.email || "—" },
                               ].map(({ label, val }) => (
                                 <div key={label} className="bg-secondary/30 rounded-xl p-2.5">
-                                  <div className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-0.5">{label}</div>
-                                  <div className="font-semibold text-foreground truncate">{val}</div>
+                                  <div className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-0.5">
+                                    {label}
+                                  </div>
+                                  <div className="font-semibold text-foreground truncate">
+                                    {val}
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -345,14 +426,18 @@ function AdminUsersPage() {
                             {/* Password (Show/Hide toggle for Admin only) */}
                             <div className="bg-secondary/30 rounded-xl p-2.5 flex items-center justify-between">
                               <div className="min-w-0 flex-1">
-                                <div className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-0.5">Password</div>
+                                <div className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-0.5">
+                                  Password
+                                </div>
                                 <div className="font-mono text-sm font-bold text-foreground truncate">
-                                  {showPasswords[u.id] ? (u.password_plain || "—") : "••••••••"}
+                                  {showPasswords[u.id] ? u.password_plain || "—" : "••••••••"}
                                 </div>
                               </div>
                               <button
                                 type="button"
-                                onClick={() => setShowPasswords(prev => ({ ...prev, [u.id]: !prev[u.id] }))}
+                                onClick={() =>
+                                  setShowPasswords((prev) => ({ ...prev, [u.id]: !prev[u.id] }))
+                                }
                                 className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary/80 press-effect shrink-0 ml-2"
                               >
                                 {showPasswords[u.id] ? "Hide" : "Show"}
@@ -361,20 +446,38 @@ function AdminUsersPage() {
 
                             {/* Wallet management */}
                             <div>
-                              <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">Wallet</div>
+                              <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-2">
+                                Wallet
+                              </div>
                               <div className="space-y-1.5">
                                 {[
-                                  { type: "deposit_balance" as const, label: "Deposit", val: u.deposit_balance || 0 },
-                                  { type: "winning_balance" as const, label: "Earned", val: u.winning_balance || 0 },
+                                  {
+                                    type: "deposit_balance" as const,
+                                    label: "Deposit",
+                                    val: u.deposit_balance || 0,
+                                  },
+                                  {
+                                    type: "winning_balance" as const,
+                                    label: "Earned",
+                                    val: u.winning_balance || 0,
+                                  },
                                 ].map(({ type, label, val }) => (
-                                  <div key={type} className="flex items-center justify-between bg-card border border-border/60 rounded-xl px-3 py-2">
+                                  <div
+                                    key={type}
+                                    className="flex items-center justify-between bg-card border border-border/60 rounded-xl px-3 py-2"
+                                  >
                                     <div className="flex items-center gap-1.5">
-                                      <span className="text-[10px] font-bold text-muted-foreground w-14">{label}</span>
+                                      <span className="text-[10px] font-bold text-muted-foreground w-14">
+                                        {label}
+                                      </span>
                                       <GodCoin className="w-3.5 h-3.5" />
-                                      <span className="font-display font-black text-sm text-foreground">{val}</span>
+                                      <span className="font-display font-black text-sm text-foreground">
+                                        {val}
+                                      </span>
                                     </div>
                                     <Button
-                                      variant="outline" size="sm"
+                                      variant="outline"
+                                      size="sm"
                                       className="h-7 rounded-lg text-[10px] font-bold px-2"
                                       onClick={() => handleEditBalance(u.id, u.username, type, val)}
                                     >

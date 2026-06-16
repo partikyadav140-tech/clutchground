@@ -25,10 +25,7 @@ import { AdminNavBar } from "@/components/AdminNavBar";
 import { Button } from "@/components/ui/button";
 import { SpinWheel } from "@/components/spin-wheel/SpinWheel";
 import { useAuth } from "@/lib/auth-client";
-import {
-  getSpinWheelAdminConfig,
-  saveSpinWheelAdminConfig,
-} from "@/api";
+import { getSpinWheelAdminConfig, saveSpinWheelAdminConfig } from "@/api";
 import {
   SPIN_MAX_ACTIVE_PRIZES,
   type SpinPack,
@@ -74,7 +71,9 @@ function Section({
           <h2 className="font-display font-black text-[13px] text-foreground">{title}</h2>
         </div>
         {badge && (
-          <span className="text-[9px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{badge}</span>
+          <span className="text-[9px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+            {badge}
+          </span>
         )}
         {open ? (
           <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -103,7 +102,9 @@ function Section({
 function FieldLabel({ children, hint }: { children: React.ReactNode; hint?: string }) {
   return (
     <div className="mb-1.5">
-      <label className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">{children}</label>
+      <label className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
+        {children}
+      </label>
       {hint && <p className="text-[10px] text-muted-foreground/70 mt-0.5">{hint}</p>}
     </div>
   );
@@ -159,9 +160,7 @@ function AdminSpinWheelPage() {
     setConfig((prev) => {
       if (!prev) return prev;
       const has = prev.activePrizeIds.includes(id);
-      let next = has
-        ? prev.activePrizeIds.filter((x) => x !== id)
-        : [...prev.activePrizeIds, id];
+      let next = has ? prev.activePrizeIds.filter((x) => x !== id) : [...prev.activePrizeIds, id];
       if (next.length > SPIN_MAX_ACTIVE_PRIZES) {
         next = [...next.slice(1)];
       }
@@ -230,7 +229,10 @@ function AdminSpinWheelPage() {
       {/* ── Header ── */}
       <div className="relative bg-card border-b border-border/50 px-4 pt-5 pb-4">
         <div className="flex items-center gap-3">
-          <Link to="/admin" className="w-9 h-9 rounded-xl border border-border flex items-center justify-center shrink-0 active:scale-95 transition-transform">
+          <Link
+            to="/admin"
+            className="w-9 h-9 rounded-xl border border-border flex items-center justify-center shrink-0 active:scale-95 transition-transform"
+          >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div className="flex-1 min-w-0">
@@ -254,11 +256,17 @@ function AdminSpinWheelPage() {
           {[
             { label: "Segments", value: config.segments.length, color: "text-blue-500" },
             { label: "On Wheel", value: totalSegments, color: "text-purple-500" },
-            { label: "Active", value: `${activeCount}/${SPIN_MAX_ACTIVE_PRIZES}`, color: "text-emerald-500" },
+            {
+              label: "Active",
+              value: `${activeCount}/${SPIN_MAX_ACTIVE_PRIZES}`,
+              color: "text-emerald-500",
+            },
             { label: "Min Dep", value: config.minDeposit, color: "text-amber-500" },
           ].map((s) => (
             <div key={s.label} className="flex-1 bg-secondary/50 rounded-xl py-2 text-center">
-              <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">{s.label}</p>
+              <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">
+                {s.label}
+              </p>
               <p className={`font-display font-black text-sm ${s.color}`}>{s.value}</p>
             </div>
           ))}
@@ -266,7 +274,6 @@ function AdminSpinWheelPage() {
       </div>
 
       <div className="px-4 space-y-3 mt-4">
-
         {/* ── Live Preview (collapsible) ── */}
         <AnimatePresence>
           {showPreview && (
@@ -305,7 +312,9 @@ function AdminSpinWheelPage() {
           <div className="flex items-start gap-2 bg-blue-500/5 border border-blue-500/15 rounded-xl p-3">
             <Info className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
             <p className="text-[11px] text-muted-foreground leading-snug">
-              Users with at least this many <strong className="text-foreground">deposit coins</strong> get 1 free spin per day (resets at IST midnight).
+              Users with at least this many{" "}
+              <strong className="text-foreground">deposit coins</strong> get 1 free spin per day
+              (resets at IST midnight).
             </p>
           </div>
         </Section>
@@ -320,7 +329,8 @@ function AdminSpinWheelPage() {
           <div className="flex items-start gap-2 bg-amber-500/5 border border-amber-500/15 rounded-xl p-3 -mt-1">
             <Info className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
             <p className="text-[11px] text-muted-foreground leading-snug">
-              Only <strong className="text-foreground">active prizes</strong> can be won. The wheel still shows all segments visually, but users can only land on these.
+              Only <strong className="text-foreground">active prizes</strong> can be won. The wheel
+              still shows all segments visually, but users can only land on these.
             </p>
           </div>
           <div className="space-y-2">
@@ -337,7 +347,13 @@ function AdminSpinWheelPage() {
                       : "border-border bg-secondary/20"
                   }`}
                 >
-                  <span className="w-4 h-4 rounded-full shrink-0 border-2" style={{ background: seg.color, borderColor: active ? "var(--primary)" : "transparent" }} />
+                  <span
+                    className="w-4 h-4 rounded-full shrink-0 border-2"
+                    style={{
+                      background: seg.color,
+                      borderColor: active ? "var(--primary)" : "transparent",
+                    }}
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-foreground truncate">{seg.label}</p>
                     <p className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
@@ -347,7 +363,9 @@ function AdminSpinWheelPage() {
                   </div>
                   {active ? (
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span className="text-[9px] font-bold text-emerald-500 uppercase">Active</span>
+                      <span className="text-[9px] font-bold text-emerald-500 uppercase">
+                        Active
+                      </span>
                       <ToggleRight className="w-6 h-6 text-emerald-500" />
                     </div>
                   ) : (
@@ -360,18 +378,30 @@ function AdminSpinWheelPage() {
         </Section>
 
         {/* ── Spin Packs ── */}
-        <Section title="Spin Packs" icon={ShoppingBag} color="bg-violet-500/10 text-violet-500" badge={`${config.spinPacks?.length || 0} packs`}>
+        <Section
+          title="Spin Packs"
+          icon={ShoppingBag}
+          color="bg-violet-500/10 text-violet-500"
+          badge={`${config.spinPacks?.length || 0} packs`}
+        >
           <div className="flex items-start gap-2 bg-blue-500/5 border border-blue-500/15 rounded-xl p-3 -mt-1">
             <Info className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
             <p className="text-[11px] text-muted-foreground leading-snug">
-              Users buy these packs for extra spins. <strong className="text-foreground">Deposit coins</strong> are used first, then winning balance.
+              Users buy these packs for extra spins.{" "}
+              <strong className="text-foreground">Deposit coins</strong> are used first, then
+              winning balance.
             </p>
           </div>
           <div className="space-y-2">
             {(config.spinPacks || []).map((pack, i) => (
-              <div key={pack.id} className="bg-secondary/20 rounded-xl border border-border p-3 space-y-2">
+              <div
+                key={pack.id}
+                className="bg-secondary/20 rounded-xl border border-border p-3 space-y-2"
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Pack {i + 1}</span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    Pack {i + 1}
+                  </span>
                   <button
                     type="button"
                     onClick={() =>
@@ -388,7 +418,9 @@ function AdminSpinWheelPage() {
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">Name</label>
+                    <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">
+                      Name
+                    </label>
                     <input
                       placeholder="Label"
                       value={pack.label || ""}
@@ -404,7 +436,9 @@ function AdminSpinWheelPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">Spins</label>
+                    <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">
+                      Spins
+                    </label>
                     <input
                       type="number"
                       min={1}
@@ -476,7 +510,9 @@ function AdminSpinWheelPage() {
           <div className="flex items-start gap-2 bg-blue-500/5 border border-blue-500/15 rounded-xl p-3 -mt-1">
             <Info className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
             <p className="text-[11px] text-muted-foreground leading-snug">
-              Define the visual segments of the wheel. <strong className="text-foreground">Quantity</strong> = how many times this segment appears on the wheel.
+              Define the visual segments of the wheel.{" "}
+              <strong className="text-foreground">Quantity</strong> = how many times this segment
+              appears on the wheel.
             </p>
           </div>
           <div className="space-y-3">
@@ -484,10 +520,16 @@ function AdminSpinWheelPage() {
               <div key={seg.id} className="rounded-xl border border-border overflow-hidden">
                 {/* Segment header with color indicator */}
                 <div className="flex items-center gap-3 px-3.5 py-2.5 bg-secondary/30">
-                  <span className="w-5 h-5 rounded-lg shrink-0 border border-border" style={{ background: seg.color }} />
-                  <span className="text-xs font-bold text-foreground flex-1 truncate">{seg.label || `Segment ${i + 1}`}</span>
+                  <span
+                    className="w-5 h-5 rounded-lg shrink-0 border border-border"
+                    style={{ background: seg.color }}
+                  />
+                  <span className="text-xs font-bold text-foreground flex-1 truncate">
+                    {seg.label || `Segment ${i + 1}`}
+                  </span>
                   <span className="text-[10px] text-muted-foreground font-semibold flex items-center gap-1">
-                    <GodCoin className="w-2.5 h-2.5 text-amber-400" />{seg.amount}
+                    <GodCoin className="w-2.5 h-2.5 text-amber-400" />
+                    {seg.amount}
                   </span>
                   <button
                     type="button"
@@ -501,7 +543,9 @@ function AdminSpinWheelPage() {
                 {/* Segment fields */}
                 <div className="grid grid-cols-2 gap-2 p-3">
                   <div className="col-span-2">
-                    <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">Label</label>
+                    <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">
+                      Label
+                    </label>
                     <input
                       value={seg.label}
                       onChange={(e) => updateSegment(i, { label: e.target.value })}
@@ -509,7 +553,9 @@ function AdminSpinWheelPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">Amount (CG)</label>
+                    <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">
+                      Amount (CG)
+                    </label>
                     <input
                       type="number"
                       min={0}
@@ -519,7 +565,9 @@ function AdminSpinWheelPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">Qty on Wheel</label>
+                    <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">
+                      Qty on Wheel
+                    </label>
                     <input
                       type="number"
                       min={1}
@@ -530,7 +578,9 @@ function AdminSpinWheelPage() {
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">Color</label>
+                    <label className="text-[9px] font-bold text-muted-foreground uppercase mb-1 block">
+                      Color
+                    </label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color"
@@ -550,7 +600,12 @@ function AdminSpinWheelPage() {
               </div>
             ))}
           </div>
-          <Button type="button" variant="outline" className="w-full h-11 rounded-xl text-xs font-bold" onClick={addSegment}>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-11 rounded-xl text-xs font-bold"
+            onClick={addSegment}
+          >
             <Plus className="w-4 h-4 mr-2" /> Add Segment
           </Button>
         </Section>

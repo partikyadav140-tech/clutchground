@@ -75,15 +75,6 @@ export function SkeletonProfile() {
           </div>
         ))}
       </div>
-      {/* Achievements */}
-      <div className="px-4 space-y-2">
-        <Shimmer className="w-24 h-3 rounded-full" />
-        <div className="flex gap-2">
-          {[1, 2, 3].map((i) => (
-            <Shimmer key={i} className="w-20 h-8 rounded-lg" />
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -100,7 +91,10 @@ export function SkeletonLeaderboard() {
       </div>
       {/* Rows */}
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 bg-card border border-border rounded-xl px-3 py-2.5">
+        <div
+          key={i}
+          className="flex items-center gap-3 bg-card border border-border rounded-xl px-3 py-2.5"
+        >
           <Shimmer className="w-6 h-6 rounded-full" />
           <Shimmer className="w-8 h-8 rounded-full" />
           <div className="flex-1 space-y-1">
@@ -129,7 +123,10 @@ export function SkeletonWallet() {
       <div className="space-y-2">
         <Shimmer className="w-24 h-3 rounded-full" />
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 bg-card border border-border rounded-xl px-3 py-3">
+          <div
+            key={i}
+            className="flex items-center gap-3 bg-card border border-border rounded-xl px-3 py-3"
+          >
             <Shimmer className="w-9 h-9 rounded-xl" />
             <div className="flex-1 space-y-1">
               <Shimmer className="w-28 h-3 rounded-full" />
@@ -178,7 +175,7 @@ export function SkeletonTeam() {
           <Shimmer className="w-40 h-6 rounded-full mb-2" />
           <Shimmer className="w-48 h-3 rounded-full mb-1" />
           <Shimmer className="w-36 h-2.5 rounded-full mb-4" />
-          
+
           {/* Action buttons shimmers */}
           <div className="flex gap-5 mt-2">
             {[1, 2, 3].map((i) => (
@@ -194,7 +191,10 @@ export function SkeletonTeam() {
         <div className="px-5 pb-6 pt-2 space-y-3.5">
           <Shimmer className="w-24 h-4 rounded-full mb-4" />
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex items-center gap-3 py-2 border-b border-border/40 last:border-0">
+            <div
+              key={i}
+              className="flex items-center gap-3 py-2 border-b border-border/40 last:border-0"
+            >
               <Shimmer className="w-10 h-10 rounded-xl shrink-0" />
               <div className="flex-1 space-y-1.5">
                 <Shimmer className="w-32 h-3 rounded-full" />
@@ -208,4 +208,3 @@ export function SkeletonTeam() {
     </div>
   );
 }
-

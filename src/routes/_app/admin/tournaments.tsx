@@ -17,6 +17,7 @@ import {
   Filter,
 } from "lucide-react";
 import { CountdownTimer } from "@/components/CountdownTimer";
+import { MAP_IMAGES, BR_MAP_OPTIONS } from "@/lib/mode-colors";
 import {
   getTournaments,
   addTournament,
@@ -113,7 +114,9 @@ function AdminTournamentsPage() {
   };
 
   // Get unique hosts for filter dropdown
-  const uniqueHosts = [...new Set(tournaments.map((t: any) => t.hosted_by).filter(Boolean))] as string[];
+  const uniqueHosts = [
+    ...new Set(tournaments.map((t: any) => t.hosted_by).filter(Boolean)),
+  ] as string[];
 
   // Sort latest first (by id DESC)
   const sortedTournaments = [...tournaments].sort((a: any, b: any) => b.id - a.id);
@@ -122,7 +125,7 @@ function AdminTournamentsPage() {
     const matchesMainTab =
       activeTab === "all" ||
       (activeTab === "open"
-        ? (t.status === "open" || t.status === "locked")
+        ? t.status === "open" || t.status === "locked"
         : t.status === activeTab);
 
     if (!matchesMainTab) return false;
@@ -232,8 +235,18 @@ function AdminTournamentsPage() {
     // Subtle grid lines
     ctx.strokeStyle = "rgba(255,255,255,0.03)";
     ctx.lineWidth = 1;
-    for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-    for (let y = 0; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+    for (let x = 0; x < W; x += 60) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.stroke();
+    }
+    for (let y = 0; y < H; y += 60) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
 
     // Header gradient bar
     const headerGrad = ctx.createLinearGradient(0, 0, W, 0);
@@ -288,14 +301,14 @@ function AdminTournamentsPage() {
     // Column config
     const cols = showPoints
       ? [
-          { label: "RANK",  x: PADDING,       w: 60,  align: "center" as CanvasTextAlign },
+          { label: "RANK", x: PADDING, w: 60, align: "center" as CanvasTextAlign },
           { label: "SQUAD / PLAYER", x: PADDING + 70, w: 340, align: "left" as CanvasTextAlign },
           { label: "KILLS", x: PADDING + 430, w: 100, align: "center" as CanvasTextAlign },
           { label: "POSITION", x: PADDING + 550, w: 110, align: "center" as CanvasTextAlign },
           { label: "POINTS", x: W - PADDING - 90, w: 90, align: "right" as CanvasTextAlign },
         ]
       : [
-          { label: "RANK",  x: PADDING,       w: 60,  align: "center" as CanvasTextAlign },
+          { label: "RANK", x: PADDING, w: 60, align: "center" as CanvasTextAlign },
           { label: "SQUAD / PLAYER", x: PADDING + 70, w: 430, align: "left" as CanvasTextAlign },
           { label: "KILLS", x: PADDING + 530, w: 140, align: "center" as CanvasTextAlign },
           { label: "POSITION", x: W - PADDING - 120, w: 120, align: "center" as CanvasTextAlign },
@@ -308,7 +321,8 @@ function AdminTournamentsPage() {
     ctx.letterSpacing = "2px";
     cols.forEach((col) => {
       ctx.textAlign = col.align;
-      const tx = col.align === "right" ? col.x + col.w : col.align === "center" ? col.x + col.w / 2 : col.x;
+      const tx =
+        col.align === "right" ? col.x + col.w : col.align === "center" ? col.x + col.w / 2 : col.x;
       ctx.fillText(col.label, tx, tableTop);
     });
     ctx.letterSpacing = "0px";
@@ -446,6 +460,7 @@ function AdminTournamentsPage() {
     entry_fee: 0,
     prize_pool: 0,
     open_slots: 2,
+    map: "bermuda",
   });
 
   if (loading)
@@ -491,9 +506,7 @@ function AdminTournamentsPage() {
           }
           return fresh.some(
             (t: any) =>
-              t.title === formData.title &&
-              t.game === formData.game &&
-              t.mode === formData.mode,
+              t.title === formData.title && t.game === formData.game && t.mode === formData.mode,
           );
         },
       );
@@ -606,6 +619,13 @@ function AdminTournamentsPage() {
       hosted_by: t.hosted_by || "",
       per_kill_coin: t.per_kill_coin || 0,
       first_place_coin: t.first_place_coin || 0,
+      map:
+        t.map ||
+        (t.tournament_type === "clash_squad"
+          ? "clash_squad"
+          : t.tournament_type === "lone_wolf"
+            ? "lone_wolf"
+            : "bermuda"),
     });
     setShowForm(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -659,6 +679,7 @@ function AdminTournamentsPage() {
                   entry_fee: 0,
                   prize_pool: 0,
                   open_slots: 2,
+                  map: "bermuda",
                 });
                 setShowForm(true);
               }}
@@ -732,15 +753,24 @@ function AdminTournamentsPage() {
                       const type = e.target.value;
                       let newMode = "Squad";
                       let newFormat = "Battle Royale";
+                      let newMap = "bermuda";
                       if (type === "clash_squad") {
                         newMode = "Squad";
                         newFormat = "Clash Squad";
+                        newMap = "clash_squad";
                       }
                       if (type === "lone_wolf") {
                         newMode = "Solo";
                         newFormat = "Lone Wolf";
+                        newMap = "lone_wolf";
                       }
-                      setFormData({ ...formData, tournament_type: type, mode: newMode, format: newFormat });
+                      setFormData({
+                        ...formData,
+                        tournament_type: type,
+                        mode: newMode,
+                        format: newFormat,
+                        map: newMap,
+                      });
                     }}
                     className="w-full bg-secondary/50 border border-border focus:border-primary focus:bg-card outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold"
                   >
@@ -774,6 +804,48 @@ function AdminTournamentsPage() {
                     )}
                   </select>
                 </div>
+                {/* ── Map Selector ── */}
+                <div>
+                  <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">
+                    Map
+                  </label>
+                  {formData.tournament_type === "battle_royale" ? (
+                    <div className="flex gap-3 items-center">
+                      <select
+                        value={formData.map}
+                        onChange={(e) => setFormData({ ...formData, map: e.target.value })}
+                        className="flex-1 bg-secondary/50 border border-border focus:border-primary focus:bg-card outline-none px-4 h-12 text-sm rounded-xl transition-all font-bold"
+                      >
+                        {BR_MAP_OPTIONS.map((m) => (
+                          <option key={m.value} value={m.value}>
+                            {m.label}
+                          </option>
+                        ))}
+                      </select>
+                      {MAP_IMAGES[formData.map] && (
+                        <img
+                          src={MAP_IMAGES[formData.map]}
+                          alt={formData.map}
+                          className="w-20 h-12 object-cover rounded-xl border border-border shrink-0"
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex gap-3 items-center">
+                      <div className="flex-1 bg-secondary/50 border border-border px-4 h-12 text-sm rounded-xl flex items-center font-bold text-muted-foreground">
+                        {formData.tournament_type === "clash_squad" ? "Clash Squad" : "Lone Wolf"}{" "}
+                        (auto)
+                      </div>
+                      {MAP_IMAGES[formData.map] && (
+                        <img
+                          src={MAP_IMAGES[formData.map]}
+                          alt={formData.map}
+                          className="w-20 h-12 object-cover rounded-xl border border-border shrink-0"
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
                 {formData.tournament_type === "battle_royale" && (
                   <>
                     <Input
@@ -796,19 +868,25 @@ function AdminTournamentsPage() {
                       label="Entry Fees (Clash Squad)"
                       type="number"
                       value={formData.entry_fee}
-                      onChange={(e) => setFormData({ ...formData, entry_fee: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, entry_fee: Number(e.target.value) })
+                      }
                     />
                     <Input
                       label="Prize Pool (Clash Squad)"
                       type="number"
                       value={formData.prize_pool}
-                      onChange={(e) => setFormData({ ...formData, prize_pool: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, prize_pool: Number(e.target.value) })
+                      }
                     />
                     <Input
                       label="Total Slots"
                       type="number"
                       value={formData.open_slots}
-                      onChange={(e) => setFormData({ ...formData, open_slots: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, open_slots: Number(e.target.value) })
+                      }
                     />
                   </>
                 )}
@@ -818,19 +896,25 @@ function AdminTournamentsPage() {
                       label="Entry Fees (Lone Wolf)"
                       type="number"
                       value={formData.entry_fee}
-                      onChange={(e) => setFormData({ ...formData, entry_fee: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, entry_fee: Number(e.target.value) })
+                      }
                     />
                     <Input
                       label="Prize Pool (Lone Wolf)"
                       type="number"
                       value={formData.prize_pool}
-                      onChange={(e) => setFormData({ ...formData, prize_pool: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, prize_pool: Number(e.target.value) })
+                      }
                     />
                     <Input
                       label="Total Slots"
                       type="number"
                       value={formData.open_slots}
-                      onChange={(e) => setFormData({ ...formData, open_slots: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, open_slots: Number(e.target.value) })
+                      }
                     />
                   </>
                 )}
@@ -929,7 +1013,7 @@ function AdminTournamentsPage() {
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          
+
                           const toastId = toast.loading("Processing image...");
                           try {
                             const reader = new FileReader();
@@ -947,18 +1031,27 @@ function AdminTournamentsPage() {
                                 }
                                 canvas.width = width;
                                 canvas.height = height;
-                                
+
                                 const context = canvas.getContext("2d");
                                 context?.drawImage(img, 0, 0, width, height);
                                 const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.75);
-                                
-                                (uploadImage as any)({ data: { base64: compressedDataUrl, folder: "clutchground/events" } })
+
+                                (uploadImage as any)({
+                                  data: {
+                                    base64: compressedDataUrl,
+                                    folder: "clutchground/events",
+                                  },
+                                })
                                   .then((res: any) => {
                                     setFormData((prev) => ({ ...prev, banner: res.url }));
-                                    toast.success("Event banner uploaded to Cloudinary!", { id: toastId });
+                                    toast.success("Event banner uploaded to Cloudinary!", {
+                                      id: toastId,
+                                    });
                                   })
                                   .catch((err: any) => {
-                                    toast.error(err.message || "Failed to upload to Cloudinary", { id: toastId });
+                                    toast.error(err.message || "Failed to upload to Cloudinary", {
+                                      id: toastId,
+                                    });
                                   });
                               };
                             };
@@ -972,7 +1065,10 @@ function AdminTournamentsPage() {
                     </label>
                     {formData.banner && formData.banner.startsWith("http") ? (
                       <div className="flex items-center gap-2">
-                        <img src={formData.banner} className="w-16 h-10 object-cover rounded-xl border border-border" />
+                        <img
+                          src={formData.banner}
+                          className="w-16 h-10 object-cover rounded-xl border border-border"
+                        />
                         <button
                           type="button"
                           onClick={async () => {
@@ -994,7 +1090,9 @@ function AdminTournamentsPage() {
                     ) : (
                       <div className="flex items-center gap-2">
                         <ImageOff className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-xs font-semibold text-muted-foreground">No banner — will use default poster</span>
+                        <span className="text-xs font-semibold text-muted-foreground">
+                          No banner — will use default poster
+                        </span>
                       </div>
                     )}
                   </div>
@@ -1013,7 +1111,7 @@ function AdminTournamentsPage() {
           </motion.div>
         ) : (
           <>
-             {/* Tabs */}
+            {/* Tabs */}
             <div className="flex overflow-x-auto gap-2 mb-6 pb-2 hide-scrollbar">
               {["all", "open", "upcoming", "live", "rescheduled", "completed"].map((tab) => (
                 <button
@@ -1038,7 +1136,7 @@ function AdminTournamentsPage() {
                 {[
                   { id: "all", label: "All Completed" },
                   { id: "pending", label: "Pending Results ⏳" },
-                  { id: "announced", label: "Results Announced 🏆" }
+                  { id: "announced", label: "Results Announced 🏆" },
                 ].map((subTab) => (
                   <button
                     key={subTab.id}
@@ -1075,7 +1173,11 @@ function AdminTournamentsPage() {
                     className="shrink-0 bg-card border border-border rounded-xl px-3 h-9 text-xs font-bold text-foreground outline-none"
                   >
                     <option value="">All Hosts</option>
-                    {uniqueHosts.map((h) => <option key={h} value={h}>{h}</option>)}
+                    {uniqueHosts.map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
                   </select>
                 )}
                 {/* Date filter */}
@@ -1089,7 +1191,13 @@ function AdminTournamentsPage() {
                         : "bg-card text-muted-foreground border-border"
                     }`}
                   >
-                    {d === "all" ? "All dates" : d === "today" ? "Today" : d === "week" ? "This week" : "This month"}
+                    {d === "all"
+                      ? "All dates"
+                      : d === "today"
+                        ? "Today"
+                        : d === "week"
+                          ? "This week"
+                          : "This month"}
                   </button>
                 ))}
               </div>
@@ -1128,7 +1236,10 @@ function AdminTournamentsPage() {
                               {t.tournament_code && (
                                 <button
                                   type="button"
-                                  onClick={() => { navigator.clipboard.writeText(t.tournament_code); toast.success("Code copied!"); }}
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(t.tournament_code);
+                                    toast.success("Code copied!");
+                                  }}
                                   className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md hover:bg-primary/20 transition-colors"
                                 >
                                   {t.tournament_code}
@@ -1138,7 +1249,11 @@ function AdminTournamentsPage() {
                             </div>
                             {/* Countdown */}
                             <div className="shrink-0">
-                              <CountdownTimer targetDate={t.startsAt || t.startsat || ""} status={t.status} compact />
+                              <CountdownTimer
+                                targetDate={t.startsAt || t.startsat || ""}
+                                status={t.status}
+                                compact
+                              />
                             </div>
                           </div>
 
@@ -1156,15 +1271,23 @@ function AdminTournamentsPage() {
                                     : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
                               }`}
                             >
-                              {t.tournament_type === "clash_squad" ? "CS" : t.tournament_type === "lone_wolf" ? "LW" : "BR"}
+                              {t.tournament_type === "clash_squad"
+                                ? "CS"
+                                : t.tournament_type === "lone_wolf"
+                                  ? "LW"
+                                  : "BR"}
                             </span>
                             <span
                               className={`px-2 py-0.5 rounded-md uppercase tracking-wider ${
-                                t.status === "open" ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                : t.status === "upcoming" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                                : t.status === "live" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                                : t.status === "rescheduled" ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
-                                : "bg-secondary text-muted-foreground"
+                                t.status === "open"
+                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                  : t.status === "upcoming"
+                                    ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                                    : t.status === "live"
+                                      ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                      : t.status === "rescheduled"
+                                        ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                                        : "bg-secondary text-muted-foreground"
                               }`}
                             >
                               {t.status}
@@ -1185,14 +1308,16 @@ function AdminTournamentsPage() {
                                 Prize Pool
                               </div>
                               <div className="font-display font-black text-cta text-base flex items-center gap-1 flex-wrap">
-                                {t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf" ? (
+                                {t.tournament_type === "clash_squad" ||
+                                t.tournament_type === "lone_wolf" ? (
                                   <>
                                     <GodCoin className="w-4 h-4" /> {t.prize_pool || 0}
                                   </>
                                 ) : t.mode === "Solo" ? (
                                   <>
                                     <GodCoin className="w-4 h-4" /> {t.per_kill_coin}/Kill |{" "}
-                                    <GodCoin className="w-4 h-4" /> {t.first_place_coin} Booyah Points
+                                    <GodCoin className="w-4 h-4" /> {t.first_place_coin} Booyah
+                                    Points
                                   </>
                                 ) : (
                                   <>
@@ -1285,14 +1410,14 @@ function AdminTournamentsPage() {
                 </span>
               </DialogTitle>
               <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={downloadResultsImage}
-                  className="h-9 rounded-xl font-bold bg-card shadow-sm"
-                  disabled={resultsData.length === 0}
-                >
-                  <Download className="w-4 h-4 mr-2" /> Download Image
-                </Button>
+                variant="outline"
+                size="sm"
+                onClick={downloadResultsImage}
+                className="h-9 rounded-xl font-bold bg-card shadow-sm"
+                disabled={resultsData.length === 0}
+              >
+                <Download className="w-4 h-4 mr-2" /> Download Image
+              </Button>
             </div>
           </DialogHeader>
 
@@ -1396,7 +1521,11 @@ function AdminTournamentsPage() {
                         type="number"
                         min="0"
                         className="w-full bg-secondary/50 border border-border rounded-lg text-center px-2 py-1.5 text-sm outline-none focus:border-primary font-bold"
-                        value={typeof r.manualPoints !== "undefined" && r.manualPoints !== null ? r.manualPoints : ""}
+                        value={
+                          typeof r.manualPoints !== "undefined" && r.manualPoints !== null
+                            ? r.manualPoints
+                            : ""
+                        }
                         placeholder="Auto"
                         onChange={(e) =>
                           setResultsData((prev) =>
@@ -1439,15 +1568,9 @@ function AdminTournamentsPage() {
                 </div>
                 {/* Results Display based on Tournament Type */}
                 {resultsTId?.tournament_type === "clash_squad" ? (
-                  <ClashSquadResults
-                    tournamentName={resultsTId?.title}
-                    results={resultsData}
-                  />
+                  <ClashSquadResults tournamentName={resultsTId?.title} results={resultsData} />
                 ) : resultsTId?.tournament_type === "lone_wolf" ? (
-                  <LoneWolfResults
-                    tournamentName={resultsTId?.title}
-                    results={resultsData}
-                  />
+                  <LoneWolfResults tournamentName={resultsTId?.title} results={resultsData} />
                 ) : (
                   <StandingsCard
                     tournamentName={resultsTId?.title}

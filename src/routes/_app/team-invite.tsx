@@ -58,22 +58,15 @@ function TeamInvitePage() {
         <ArrowLeft className="w-4 h-4" /> Back to squad
       </Link>
 
-      <PageHeader
-        eyebrow={team.name}
-        eyebrowIcon={UserPlus}
-        title="Invite players"
-      />
+      <PageHeader eyebrow={team.name} eyebrowIcon={UserPlus} title="Invite players" />
 
       <p className="text-sm text-muted-foreground -mt-1 mb-5">
-        Search by username, IGN, or UID. {slots.open} open {slots.open === 1 ? "slot" : "slots"} left on your roster.
+        Search by username, IGN, or UID. {slots.open} open {slots.open === 1 ? "slot" : "slots"}{" "}
+        left on your roster.
       </p>
 
       <div className="rounded-2xl border border-border bg-card p-5">
-        <PlayerSearchInvite
-          captainId={user.id}
-          disabled={slots.isFull}
-          onInvited={refresh}
-        />
+        <PlayerSearchInvite captainId={user.id} disabled={slots.isFull} onInvited={refresh} />
         {slots.isFull && (
           <p className="text-xs text-amber-600 mt-4 text-center">
             Roster is full. Remove a member from My Squad to invite someone new.

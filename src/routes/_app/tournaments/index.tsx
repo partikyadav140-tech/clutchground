@@ -19,14 +19,14 @@ function TournamentsPage() {
   const tournaments = Route.useLoaderData();
   const { user } = useAuth();
   const [filter, setFilter] = React.useState<(typeof FILTERS)[number]>("All");
-  const [q, setQ]           = React.useState("");
+  const [q, setQ] = React.useState("");
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [joinedMatches, setJoinedMatches] = React.useState<number[]>([]);
 
   React.useEffect(() => {
     if (user) {
       (getMyMatches as any)({ data: user.id })
-        .then((matches: any[]) => setJoinedMatches(matches.map(m => m.id)))
+        .then((matches: any[]) => setJoinedMatches(matches.map((m) => m.id)))
         .catch(console.error);
     }
   }, [user]);
@@ -34,13 +34,14 @@ function TournamentsPage() {
   const filtered = (tournaments as any[]).filter((t) => {
     if (t.status === "completed" || t.status === "locked") return false;
     if (q && !t.title.toLowerCase().includes(q.toLowerCase())) return false;
-    if (filter === "Solo")  return t.mode === "Solo";
-    if (filter === "Duo")   return t.mode === "Duo";
+    if (filter === "Solo") return t.mode === "Solo";
+    if (filter === "Duo") return t.mode === "Duo";
     if (filter === "Squad") return t.mode === "Squad";
-    if (filter === "Free")  {
-      const entryAmount = t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf" 
-        ? (t.entry_fee || 0) 
-        : t.entry;
+    if (filter === "Free") {
+      const entryAmount =
+        t.tournament_type === "clash_squad" || t.tournament_type === "lone_wolf"
+          ? t.entry_fee || 0
+          : t.entry;
       return entryAmount === 0;
     }
     return true;
@@ -48,7 +49,6 @@ function TournamentsPage() {
 
   return (
     <div className="min-h-screen bg-background pb-4 page-content">
-
       <PageHeader
         eyebrow="The Arena"
         eyebrowIcon={Swords}
@@ -57,7 +57,9 @@ function TournamentsPage() {
           <button
             onClick={() => setSearchOpen((p) => !p)}
             className={`w-10 h-10 rounded-2xl border flex items-center justify-center transition-all press-effect active:scale-90 ${
-              searchOpen ? "border-primary/60 text-primary bg-primary/10" : "bg-card border-border text-muted-foreground"
+              searchOpen
+                ? "border-primary/60 text-primary bg-primary/10"
+                : "bg-card border-border text-muted-foreground"
             }`}
           >
             <Search className="w-4 h-4" />
@@ -66,7 +68,6 @@ function TournamentsPage() {
       />
 
       <div className="pb-3">
-
         {/* Search bar */}
         <AnimatePresence>
           {searchOpen && (
@@ -82,7 +83,7 @@ function TournamentsPage() {
                 <input
                   autoFocus
                   value={q}
-                  onChange={e => setQ(e.target.value)}
+                  onChange={(e) => setQ(e.target.value)}
                   placeholder="Search tournaments..."
                   className="w-full h-11 bg-card border border-border focus:border-primary/60 rounded-2xl pl-11 pr-4 text-sm font-semibold text-foreground outline-none transition-all"
                 />
@@ -94,14 +95,24 @@ function TournamentsPage() {
 
       {/* ── Filter Chips ── */}
       <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-4">
-        {FILTERS.map(f => (
+        {FILTERS.map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
             className="shrink-0 px-5 h-9 rounded-full text-xs font-bold transition-all press-effect active:scale-95 border"
-            style={filter === f
-              ? { background: "var(--gradient-primary)", color: "white", borderColor: "transparent", boxShadow: "0 4px 16px rgba(0,200,255,0.25)" }
-              : { background: "var(--card)", borderColor: "var(--border)", color: "var(--muted-foreground)" }
+            style={
+              filter === f
+                ? {
+                    background: "var(--gradient-primary)",
+                    color: "white",
+                    borderColor: "transparent",
+                    boxShadow: "0 4px 16px rgba(0,200,255,0.25)",
+                  }
+                : {
+                    background: "var(--card)",
+                    borderColor: "var(--border)",
+                    color: "var(--muted-foreground)",
+                  }
             }
           >
             {f}
@@ -130,10 +141,18 @@ function TournamentsPage() {
               <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center mb-4">
                 <Filter className="w-6 h-6 text-muted-foreground opacity-30" />
               </div>
-              <p className="font-display font-black text-base text-foreground mb-1">No Active Battles</p>
-              <p className="text-sm text-muted-foreground mb-5 text-center max-w-[200px]">Try adjusting filters or check back soon.</p>
+              <p className="font-display font-black text-base text-foreground mb-1">
+                No Active Battles
+              </p>
+              <p className="text-sm text-muted-foreground mb-5 text-center max-w-[200px]">
+                Try adjusting filters or check back soon.
+              </p>
               <button
-                onClick={() => { setFilter("All"); setQ(""); setSearchOpen(false); }}
+                onClick={() => {
+                  setFilter("All");
+                  setQ("");
+                  setSearchOpen(false);
+                }}
                 className="h-10 px-8 rounded-full text-xs font-black uppercase tracking-widest border border-border text-foreground bg-secondary press-effect active:scale-95"
               >
                 Clear Filters
@@ -141,7 +160,13 @@ function TournamentsPage() {
             </motion.div>
           ) : (
             filtered.map((t: any, i: number) => (
-              <TournamentCard key={t.id} t={t} index={i} isJoined={joinedMatches.includes(t.id)} animated />
+              <TournamentCard
+                key={t.id}
+                t={t}
+                index={i}
+                isJoined={joinedMatches.includes(t.id)}
+                animated
+              />
             ))
           )}
         </AnimatePresence>

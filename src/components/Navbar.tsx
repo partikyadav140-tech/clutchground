@@ -72,7 +72,9 @@ export function Navbar() {
           toast.success("Notifications enabled successfully! 🔔");
         }
       } else {
-        toast.error("Notifications are blocked or denied. Please enable them manually in your browser/app settings.");
+        toast.error(
+          "Notifications are blocked or denied. Please enable them manually in your browser/app settings.",
+        );
       }
     } catch (err) {
       toast.error("Failed to enable notifications.");
@@ -85,7 +87,11 @@ export function Navbar() {
 
     if (prevActiveRef.current && !isTutorialActive && isTutorialCompleted) {
       const timer = setTimeout(() => {
-        if (typeof window !== "undefined" && "Notification" in window && Notification.permission !== "granted") {
+        if (
+          typeof window !== "undefined" &&
+          "Notification" in window &&
+          Notification.permission !== "granted"
+        ) {
           const sessionPrompt = sessionStorage.getItem("notif_prompt_shown_session");
           if (!sessionPrompt) {
             setShowPromo(true);
@@ -104,11 +110,16 @@ export function Navbar() {
     if (!user) return;
     if (isTutorialActive) return;
 
-    const isCompletedNow = localStorage.getItem("clutchground_live_tutorial_completed") === "true" ||
-                           localStorage.getItem("god_esports_tutorial_driver_seen") === "true";
+    const isCompletedNow =
+      localStorage.getItem("clutchground_live_tutorial_completed") === "true" ||
+      localStorage.getItem("god_esports_tutorial_driver_seen") === "true";
 
     if (isCompletedNow) {
-      if (typeof window !== "undefined" && "Notification" in window && Notification.permission !== "granted") {
+      if (
+        typeof window !== "undefined" &&
+        "Notification" in window &&
+        Notification.permission !== "granted"
+      ) {
         const sessionPrompt = sessionStorage.getItem("notif_prompt_shown_session");
         if (!sessionPrompt) {
           const timer = setTimeout(() => {
@@ -187,8 +198,12 @@ export function Navbar() {
   const cleanPath = path === "/" ? "/" : path.replace(/\/$/, "");
   const isAuth = ["/login", "/signup"].includes(cleanPath);
   // Hide bottom nav on ticket/chat detail pages (like WhatsApp)
-  const isTicketChat = /^\/support\/[^/]+/.test(cleanPath) || /^\/admin\/tickets\/[^/]+/.test(cleanPath);
-  const isChatPage = cleanPath.startsWith("/support/") || cleanPath.startsWith("/admin/tickets/") || cleanPath === "/chat";
+  const isTicketChat =
+    /^\/support\/[^/]+/.test(cleanPath) || /^\/admin\/tickets\/[^/]+/.test(cleanPath);
+  const isChatPage =
+    cleanPath.startsWith("/support/") ||
+    cleanPath.startsWith("/admin/tickets/") ||
+    cleanPath === "/chat";
 
   if (isAuth) return null;
 
@@ -207,7 +222,10 @@ export function Navbar() {
         {/* Inner content — constrained to max-w-5xl on desktop */}
         <div className="flex items-center justify-between px-3 h-[60px] max-w-[480px] lg:max-w-5xl mx-auto w-full border-none shadow-none box-border">
           {/* Logo — larger mark in compact header */}
-          <Link to="/" className="flex items-center active:opacity-80 transition-opacity -ml-1 shrink-0">
+          <Link
+            to="/"
+            className="flex items-center active:opacity-80 transition-opacity -ml-1 shrink-0"
+          >
             <Logo withText={false} className="w-[72px] h-[72px] lg:w-[52px] lg:h-[52px] -my-2" />
           </Link>
 
@@ -234,19 +252,6 @@ export function Navbar() {
 
           {/* Right actions */}
           <div className="flex items-center gap-2">
-            {/* Wallet pill shown only on other pages */}
-            {user && cleanPath !== "/" && (
-              <motion.div layoutId="shared-wallet-pill" className="shrink-0 mr-1">
-                <Link
-                  to="/wallet"
-                  className="relative w-10 h-10 lg:w-8 lg:h-8 flex items-center justify-center rounded-full bg-card border border-border hover:border-primary/50 text-muted-foreground hover:text-primary transition-all active:scale-95 press-effect"
-                  title="Wallet"
-                >
-                  <Wallet className="w-[22px] h-[22px] lg:w-4 lg:h-4" />
-                </Link>
-              </motion.div>
-            )}
-
             {/* Support Tickets button with premium ticket icon */}
             {user && (
               <Link
@@ -257,6 +262,19 @@ export function Navbar() {
               >
                 <TicketIcon className="w-[22px] h-[22px] lg:w-4 lg:h-4" />
               </Link>
+            )}
+
+            {/* Wallet pill shown only on other pages */}
+            {user && cleanPath !== "/" && (
+              <motion.div layoutId="shared-wallet-pill" className="shrink-0">
+                <Link
+                  to="/wallet"
+                  className="relative w-10 h-10 lg:w-8 lg:h-8 flex items-center justify-center rounded-full border border-blue-500/25 bg-blue-500/15 hover:bg-blue-500/20 text-blue-500 transition-all active:scale-95 press-effect shadow-sm shrink-0"
+                  title="Wallet"
+                >
+                  <Wallet className="w-[20px] h-[20px] lg:w-4 lg:h-4 shrink-0" />
+                </Link>
+              </motion.div>
             )}
 
             {/* Notifications */}
@@ -302,7 +320,6 @@ export function Navbar() {
                 </span>
               )}
             </Link>
-
           </div>
         </div>
       </header>
@@ -370,7 +387,8 @@ export function Navbar() {
                 Enable Notifications
               </h3>
               <p className="text-[11px] text-muted-foreground leading-relaxed font-semibold mb-6 px-1">
-                Stay updated with real-time tournament alerts, match starting times, prize payouts, and chat messages in the arena.
+                Stay updated with real-time tournament alerts, match starting times, prize payouts,
+                and chat messages in the arena.
               </p>
 
               {/* Actions */}

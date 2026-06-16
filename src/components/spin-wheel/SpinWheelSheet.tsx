@@ -14,12 +14,7 @@ import { Button } from "@/components/ui/button";
 import { GodCoin } from "@/components/GodCoin";
 import { SpinWheel } from "./SpinWheel";
 import { RewardCelebration } from "./RewardCelebration";
-import {
-  getProfile,
-  getSpinWheelConfig,
-  getSpinWheelStatus,
-  performSpin,
-} from "@/api";
+import { getProfile, getSpinWheelConfig, getSpinWheelStatus, performSpin } from "@/api";
 import { type SpinSegment } from "@/lib/spin-wheel";
 import { useAuth } from "@/lib/auth-client";
 
@@ -37,6 +32,7 @@ type SpinStatus = {
   winningBalance: number;
   totalBalance: number;
   minDeposit: number;
+  joinedTournamentCount: number;
   lastSpin: { prizeLabel: string; prizeAmount: number } | null;
 };
 
@@ -64,23 +60,26 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
     [user, setUser],
   );
 
-  const refresh = useCallback(async (silent = false) => {
-    if (!user) return;
-    if (!silent) setLoading(true);
-    try {
-      const [config, spinStatus] = await Promise.all([
-        getSpinWheelConfig(),
-        (getSpinWheelStatus as any)({ data: user.id }),
-      ]);
-      setSegments(config.segments);
-      setActivePrizeIds(config.activePrizeIds || []);
-      setStatus(spinStatus);
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to load spin wheel");
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, [user]);
+  const refresh = useCallback(
+    async (silent = false) => {
+      if (!user) return;
+      if (!silent) setLoading(true);
+      try {
+        const [config, spinStatus] = await Promise.all([
+          getSpinWheelConfig(),
+          (getSpinWheelStatus as any)({ data: user.id }),
+        ]);
+        setSegments(config.segments);
+        setActivePrizeIds(config.activePrizeIds || []);
+        setStatus(spinStatus);
+      } catch (e: any) {
+        toast.error(e?.message || "Failed to load spin wheel");
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [user],
+  );
 
   useEffect(() => {
     if (open && user) refresh();
@@ -104,16 +103,18 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
     }
   };
 
-  const handleSpinFinished = useCallback((winningSegment: SpinSegment) => {
-    setSpinning(false);
-    setTargetSliceIndex(null);
-    setCelebrationOpen(true);
-    refresh(true); // silent refresh
-    if (user) {
-      (getProfile as any)({ data: user.id }).then((p: any) => syncUserBalances(p));
-    }
-  }, [user, refresh, syncUserBalances]);
-
+  const handleSpinFinished = useCallback(
+    (winningSegment: SpinSegment) => {
+      setSpinning(false);
+      setTargetSliceIndex(null);
+      setCelebrationOpen(true);
+      refresh(true); // silent refresh
+      if (user) {
+        (getProfile as any)({ data: user.id }).then((p: any) => syncUserBalances(p));
+      }
+    },
+    [user, refresh, syncUserBalances],
+  );
 
   const spinCredits = status?.spinCredits ?? 0;
   const freeAvailable = status?.freeSpinAvailable ?? false;
@@ -137,6 +138,26 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
           </div>
         ) : (
           <div className="space-y-4">
+            {status?.joinedTournamentCount === 0 && (
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300 space-y-2">
+                <p className="font-bold flex items-center gap-1.5">
+                  <Gift className="w-4 h-4 text-amber-400" /> Unlock Daily Free Spin
+                </p>
+                <p className="text-xs text-amber-200/90 leading-relaxed">
+                  You have not joined any tournaments yet. Join at least 1 tournament to unlock your
+                  daily free spin!
+                </p>
+                <Button
+                  asChild
+                  size="sm"
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg mt-1 w-full"
+                  onClick={() => onOpenChange(false)}
+                >
+                  <Link to="/tournaments">View Tournaments</Link>
+                </Button>
+              </div>
+            )}
+
             {/* Credits strip */}
             <div className="flex items-center justify-center gap-2 flex-wrap">
               {freeAvailable && (
@@ -199,7 +220,9 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
                 </div>
                 <div>
                   <p className="font-display font-black text-sm text-foreground">Buy more spins</p>
-                  <p className="text-[10px] text-muted-foreground font-semibold mt-0.5">Get bonus spins & exclusive offers</p>
+                  <p className="text-[10px] text-muted-foreground font-semibold mt-0.5">
+                    Get bonus spins & exclusive offers
+                  </p>
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />

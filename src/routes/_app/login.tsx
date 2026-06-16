@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { loginUser } from "../../api";
 import { setSessionId } from "../../lib/auth-client";
-import { Eye, EyeOff, Phone, Lock, ArrowRight, Gamepad2 } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowRight, Gamepad2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Logo } from "@/components/Logo";
 
@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_app/login")({
 });
 
 function LoginPage() {
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -22,7 +22,7 @@ function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await (loginUser as any)({ data: { phone, password } });
+      const res = await (loginUser as any)({ data: { email: email.trim(), password } });
       setSessionId(res.sessionId);
       toast.success("Welcome back! 🔥");
       window.location.href = res.user.role === "admin" ? "/admin" : "/";
@@ -36,10 +36,14 @@ function LoginPage() {
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-background relative overflow-y-auto pb-[20px] pt-[20px]">
       {/* Ambient glows */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[350px] h-[350px] rounded-full blur-[120px] pointer-events-none opacity-20"
-        style={{ background: "var(--primary)" }} />
-      <div className="absolute bottom-10 right-10 w-72 h-72 rounded-full blur-[100px] pointer-events-none opacity-15"
-        style={{ background: "var(--neon)" }} />
+      <div
+        className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[350px] h-[350px] rounded-full blur-[120px] pointer-events-none opacity-20"
+        style={{ background: "var(--primary)" }}
+      />
+      <div
+        className="absolute bottom-10 right-10 w-72 h-72 rounded-full blur-[100px] pointer-events-none opacity-15"
+        style={{ background: "var(--neon)" }}
+      />
       <div className="absolute inset-0 grid-bg opacity-[0.04] pointer-events-none" />
 
       {/* Card container */}
@@ -55,33 +59,36 @@ function LoginPage() {
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-primary border border-primary/20 bg-secondary/30">
               <Logo size={38} withText={false} />
             </div>
-            <div className="absolute -bottom-1 -right-1 w-5.5 h-5.5 rounded-full flex items-center justify-center shadow-md"
-              style={{ background: "var(--gradient-cta)" }}>
+            <div
+              className="absolute -bottom-1 -right-1 w-5.5 h-5.5 rounded-full flex items-center justify-center shadow-md"
+              style={{ background: "var(--gradient-cta)" }}
+            >
               <Gamepad2 className="w-2.5 h-2.5 text-white" />
             </div>
           </div>
 
-          <h1 className="font-display font-black text-2xl text-foreground mb-1 tracking-wide text-glow">Welcome Back</h1>
-          <p className="text-sm text-muted-foreground font-medium">Sign in to your ClutchGround account</p>
+          <h1 className="font-display font-black text-2xl text-foreground mb-1 tracking-wide text-glow">
+            Welcome Back
+          </h1>
+          <p className="text-sm text-muted-foreground font-medium">
+            Sign in to your ClutchGround account
+          </p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleLogin} className="space-y-4">
-          {/* Phone */}
+          {/* Email */}
           <div>
-            <label className="block text-label mb-1.5 ml-1">
-              Phone Number
-            </label>
+            <label className="block text-label mb-1.5 ml-1">Email Address</label>
             <div className="relative">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/75 pointer-events-none" />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/75 pointer-events-none" />
               <input
-                type="tel"
-                inputMode="numeric"
-                placeholder="10-digit phone number"
-                value={phone}
-                onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                type="text"
+                placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                autoComplete="tel"
+                autoComplete="email"
                 className="w-full h-13 bg-secondary/50 border border-border focus:border-primary/60 rounded-2xl pl-12 pr-4 text-sm font-semibold text-foreground outline-none transition-all focus:ring-1 focus:ring-primary/20 focus:bg-secondary/80"
               />
             </div>
@@ -89,16 +96,14 @@ function LoginPage() {
 
           {/* Password */}
           <div>
-            <label className="block text-label mb-1.5 ml-1">
-              Password
-            </label>
+            <label className="block text-label mb-1.5 ml-1">Password</label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/75 pointer-events-none" />
               <input
                 type={showPass ? "text" : "password"}
                 placeholder="Your password"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
                 className="w-full h-13 bg-secondary/50 border border-border focus:border-primary/60 rounded-2xl pl-12 pr-12 text-sm font-semibold text-foreground outline-none transition-all focus:ring-1 focus:ring-primary/20 focus:bg-secondary/80"
@@ -112,7 +117,10 @@ function LoginPage() {
               </button>
             </div>
             <div className="flex justify-end mt-2">
-              <Link to="/forgot-password" className="text-[11px] font-black text-primary hover:text-primary/80 transition-colors uppercase tracking-wider">
+              <Link
+                to="/forgot-password"
+                className="text-[11px] font-black text-primary hover:text-primary/80 transition-colors uppercase tracking-wider"
+              >
                 Forgot Password?
               </Link>
             </div>
@@ -131,7 +139,9 @@ function LoginPage() {
                 Signing in...
               </>
             ) : (
-              <>Sign In <ArrowRight className="w-3.5 h-3.5" /></>
+              <>
+                Sign In <ArrowRight className="w-3.5 h-3.5" />
+              </>
             )}
           </button>
         </form>
@@ -152,11 +162,17 @@ function LoginPage() {
 
         {/* Footer links */}
         <div className="flex items-center justify-center gap-4 mt-6 text-xs font-semibold text-muted-foreground">
-          <Link to={"/rules" as any} className="hover:text-foreground transition-colors">Rules</Link>
+          <Link to={"/rules" as any} className="hover:text-foreground transition-colors">
+            Rules
+          </Link>
           <span className="w-1.5 h-1.5 rounded-full bg-border/60" />
-          <Link to={"/privacy" as any} className="hover:text-foreground transition-colors">Privacy</Link>
+          <Link to={"/privacy" as any} className="hover:text-foreground transition-colors">
+            Privacy
+          </Link>
           <span className="w-1.5 h-1.5 rounded-full bg-border/60" />
-          <Link to={"/contact" as any} className="hover:text-foreground transition-colors">Support</Link>
+          <Link to={"/contact" as any} className="hover:text-foreground transition-colors">
+            Support
+          </Link>
         </div>
       </motion.div>
     </div>

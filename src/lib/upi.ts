@@ -25,7 +25,7 @@ export const getActiveUpiConfig = createServerFn({ method: "GET" }).handler(asyn
         upiId: parsed.upiId || "clutchground@nyes",
         upiName: parsed.upiName || "CLUTCHGROUND",
         minDeposit: parsed.minDeposit || "50",
-        maxDeposit: parsed.maxDeposit || "10000"
+        maxDeposit: parsed.maxDeposit || "10000",
       };
     } catch {}
   }
@@ -33,230 +33,260 @@ export const getActiveUpiConfig = createServerFn({ method: "GET" }).handler(asyn
     upiId: "clutchground@nyes",
     upiName: "CLUTCHGROUND",
     minDeposit: "50",
-    maxDeposit: "10000"
+    maxDeposit: "10000",
   };
 });
 
 /** Create a pending UPI deposit request */
-export const createUpiDeposit = createServerFn({ method: "POST" }).handler(
-  async ({ data }) => {
-    const user = await getCurrentUser();
-    const db = await getDb();
-    const userId = user.id;
-    const { amount, description } = data as any;
+export const createUpiDeposit = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const user = await getCurrentUser();
+  const db = await getDb();
+  const userId = user.id;
+  const { amount, description } = data as any;
 
-    if (!amount || amount < 1) {
-      throw new Error("Deposit amount must be at least ₹1");
-    }
+  // Validate deposit timings (IST: UTC + 5:30)
+  const startRow = (await db
+    .prepare("SELECT value FROM site_settings WHERE key = 'deposit_start_time'")
+    .get()) as any;
+  const endRow = (await db
+    .prepare("SELECT value FROM site_settings WHERE key = 'deposit_end_time'")
+    .get()) as any;
+  const startTime = startRow ? startRow.value : "09:00";
+  const endTime = endRow ? endRow.value : "22:00";
 
-    // Load active settings from DB
-    const upiCfg = await getActiveUpiConfig();
-    const minVal = parseInt(upiCfg.minDeposit) || 50;
-    const maxVal = parseInt(upiCfg.maxDeposit) || 10000;
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+  const [currentHours, currentMinutes] = formatter.format(new Date()).split(":").map(Number);
+  const currentTotal = currentHours * 60 + currentMinutes;
 
-    if (amount < minVal || amount > maxVal) {
-      throw new Error(`Deposit amount must be between ₹${minVal} and ₹${maxVal}`);
-    }
+  const [startH, startM] = startTime.split(":").map(Number);
+  const [endH, endM] = endTime.split(":").map(Number);
+  const startTotal = startH * 60 + startM;
+  const endTotal = endH * 60 + endM;
 
-    const txnRef = `CG${userId}${Date.now()}`;
+  let allowed = false;
+  if (startTotal <= endTotal) {
+    allowed = currentTotal >= startTotal && currentTotal <= endTotal;
+  } else {
+    allowed = currentTotal >= startTotal || currentTotal <= endTotal;
+  }
 
-    await db
-      .prepare(
-        `INSERT INTO upi_deposits (user_id, amount, txn_ref, status, description, created_at)
-         VALUES (?, ?, ?, 'pending', ?, CURRENT_TIMESTAMP)`,
-      )
-      .run(userId, amount, txnRef, description || "Wallet Deposit");
-
-    const safePlatformName = encodeURIComponent(upiCfg.upiName.trim().replace(/\s+/g, ''));
-    const safeTxnRef = encodeURIComponent(txnRef.trim());
-    const safeNote = encodeURIComponent("Wallet_Deposit");
-    const safeUpiId = encodeURIComponent(upiCfg.upiId.trim());
-
-    // standard UPI intent
-    const upiLink = `upi://pay?pa=${safeUpiId}&pn=${safePlatformName}&am=${amount}&cu=INR&tn=${safeNote}&tr=${safeTxnRef}`;
-
-    return {
-      txnRef,
-      amount,
-      upiId: upiCfg.upiId,
-      platformName: upiCfg.upiName,
-      upiLink,
+  if (!allowed) {
+    const formatTime = (timeStr: string) => {
+      const [h, m] = timeStr.split(":").map(Number);
+      const ampm = h >= 12 ? "PM" : "AM";
+      const displayH = h % 12 || 12;
+      return `${displayH}:${String(m).padStart(2, "0")} ${ampm}`;
     };
-  },
-);
+    throw new Error(
+      `Deposits are closed. Allowed hours: ${formatTime(startTime)} to ${formatTime(endTime)} IST.`,
+    );
+  }
+
+  if (!amount || amount < 1) {
+    throw new Error("Deposit amount must be at least ₹1");
+  }
+
+  // Load active settings from DB
+  const upiCfg = await getActiveUpiConfig();
+  const minVal = parseInt(upiCfg.minDeposit) || 50;
+  const maxVal = parseInt(upiCfg.maxDeposit) || 10000;
+
+  if (amount < minVal || amount > maxVal) {
+    throw new Error(`Deposit amount must be between ₹${minVal} and ₹${maxVal}`);
+  }
+
+  const txnRef = `CG${userId}${Date.now()}`;
+
+  await db
+    .prepare(
+      `INSERT INTO upi_deposits (user_id, amount, txn_ref, status, description, created_at)
+         VALUES (?, ?, ?, 'pending', ?, CURRENT_TIMESTAMP)`,
+    )
+    .run(userId, amount, txnRef, description || "Wallet Deposit");
+
+  const safePlatformName = encodeURIComponent(upiCfg.upiName.trim().replace(/\s+/g, ""));
+  const safeTxnRef = encodeURIComponent(txnRef.trim());
+  const safeNote = encodeURIComponent("Wallet_Deposit");
+  const safeUpiId = encodeURIComponent(upiCfg.upiId.trim());
+
+  // standard UPI intent
+  const upiLink = `upi://pay?pa=${safeUpiId}&pn=${safePlatformName}&am=${amount}&cu=INR&tn=${safeNote}&tr=${safeTxnRef}`;
+
+  return {
+    txnRef,
+    amount,
+    upiId: upiCfg.upiId,
+    platformName: upiCfg.upiName,
+    upiLink,
+  };
+});
 
 /** User submits their sender UPI ID after paying (stored in utr column for backward-compat) */
-export const submitUpiUtr = createServerFn({ method: "POST" }).handler(
-  async ({ data }) => {
-    const user = await getCurrentUser();
-    const db = await getDb();
-    const { txnRef, utr: senderUpiId } = data as any;
+export const submitUpiUtr = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const user = await getCurrentUser();
+  const db = await getDb();
+  const { txnRef, utr: senderUpiId } = data as any;
 
-    const upiIdRegex = /^[a-zA-Z0-9._\-]+@[a-zA-Z0-9]+$/;
-    if (!senderUpiId || !upiIdRegex.test(senderUpiId.trim())) {
-      throw new Error("Please enter a valid UPI ID (e.g. name@upi)");
-    }
+  const upiIdRegex = /^[a-zA-Z0-9._\-]+@[a-zA-Z0-9]+$/;
+  if (!senderUpiId || !upiIdRegex.test(senderUpiId.trim())) {
+    throw new Error("Please enter a valid UPI ID (e.g. name@upi)");
+  }
 
-    const deposit = (await db
-      .prepare("SELECT * FROM upi_deposits WHERE txn_ref = ?")
-      .get(txnRef)) as any;
+  const deposit = (await db
+    .prepare("SELECT * FROM upi_deposits WHERE txn_ref = ?")
+    .get(txnRef)) as any;
 
-    if (!deposit) throw new Error("Deposit request not found");
-    if (deposit.user_id !== user.id) {
-      throw new Error("Unauthorized");
-    }
-    if (deposit.status !== "pending") {
-      throw new Error("This deposit request is no longer pending");
-    }
+  if (!deposit) throw new Error("Deposit request not found");
+  if (deposit.user_id !== user.id) {
+    throw new Error("Unauthorized");
+  }
+  if (deposit.status !== "pending") {
+    throw new Error("This deposit request is no longer pending");
+  }
 
-    await db
-      .prepare(
-        "UPDATE upi_deposits SET utr = ?, status = 'submitted', submitted_at = CURRENT_TIMESTAMP WHERE txn_ref = ?",
-      )
-      .run(senderUpiId.trim(), txnRef);
+  await db
+    .prepare(
+      "UPDATE upi_deposits SET utr = ?, status = 'submitted', submitted_at = CURRENT_TIMESTAMP WHERE txn_ref = ?",
+    )
+    .run(senderUpiId.trim(), txnRef);
 
-    // Notify Admins
-    try {
-      const userObj = await db.prepare("SELECT username FROM users WHERE id = ?").get(deposit.user_id) as any;
-      const username = userObj?.username || "A user";
-      const { notifyAllAdmins } = await import("./push-server");
-      await notifyAllAdmins(`💳 UPI Deposit Submitted: ${username} submitted ₹${deposit.amount} (${senderUpiId.trim()})`, "/admin/deposits");
-    } catch (err) {
-      console.error("Error notifying admins about UPI deposit submission:", err);
-    }
+  // Notify Admins
+  try {
+    const userObj = (await db
+      .prepare("SELECT username FROM users WHERE id = ?")
+      .get(deposit.user_id)) as any;
+    const username = userObj?.username || "A user";
+    const { notifyAllAdmins } = await import("./push-server");
+    await notifyAllAdmins(
+      `💳 UPI Deposit Submitted: ${username} submitted ₹${deposit.amount} (${senderUpiId.trim()})`,
+      "/admin/deposits",
+    );
+  } catch (err) {
+    console.error("Error notifying admins about UPI deposit submission:", err);
+  }
 
-    return { success: true };
-  },
-);
+  return { success: true };
+});
 
 /** Admin: get all UPI deposits */
-export const getPendingUpiDeposits = createServerFn({ method: "GET" }).handler(
-  async () => {
-    await getCurrentUser("admin");
-    const db = await getDb();
-    return (await db
-      .prepare(
-        `SELECT d.*, u.username, u.phone
+export const getPendingUpiDeposits = createServerFn({ method: "GET" }).handler(async () => {
+  await getCurrentUser("admin");
+  const db = await getDb();
+  return (await db
+    .prepare(
+      `SELECT d.*, u.username, u.email
          FROM upi_deposits d
          JOIN users u ON d.user_id = u.id
          ORDER BY d.created_at DESC`,
-      )
-      .all()) as any[];
-  },
-);
+    )
+    .all()) as any[];
+});
 
 /** Admin: approve a UPI deposit → credit wallet */
-export const approveUpiDeposit = createServerFn({ method: "POST" }).handler(
-  async ({ data }) => {
-    await getCurrentUser("admin");
-    const db = await getDb();
-    const { depositId } = data as any;
+export const approveUpiDeposit = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
+  const db = await getDb();
+  const { depositId } = data as any;
 
-    const deposit = (await db
-      .prepare("SELECT * FROM upi_deposits WHERE id = ?")
-      .get(depositId)) as any;
+  const deposit = (await db
+    .prepare("SELECT * FROM upi_deposits WHERE id = ?")
+    .get(depositId)) as any;
 
-    if (!deposit) throw new Error("Deposit not found");
-    if (deposit.status === "approved") throw new Error("Already approved");
+  if (!deposit) throw new Error("Deposit not found");
+  if (deposit.status === "approved") throw new Error("Already approved");
 
-    await db.transaction(async (tx: any) => {
-      await tx
-        .prepare("UPDATE upi_deposits SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE id = ?")
-        .run(depositId);
-
-      await tx
-        .prepare("UPDATE users SET deposit_balance = deposit_balance + ? WHERE id = ?")
-        .run(deposit.amount, deposit.user_id);
-
-      await tx
-        .prepare(
-          "INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)",
-        )
-        .run(
-          deposit.user_id,
-          deposit.amount,
-          "deposit_added",
-          `Wallet deposit via UPI (${deposit.utr || deposit.txn_ref})`,
-        );
-
-      await tx
-        .prepare(
-          "INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)",
-        )
-        .run(
-          deposit.user_id,
-          `💰 ₹${deposit.amount} deposited — ${deposit.amount} CG Coins added to your wallet!`,
-          "/wallet",
-        );
-    });
-
-    try {
-      const { triggerPushNotification } = await import("./push-server");
-      triggerPushNotification(
-        deposit.user_id,
-        "💰 Wallet Deposit",
-        `💰 ₹${deposit.amount} deposited — ${deposit.amount} CG Coins added to your wallet!`,
-        "/wallet"
-      ).catch(e => console.error("UPI deposit approval push error:", e));
-    } catch(e) {}
-
-    return { success: true };
-  },
-);
-
-/** Admin: reject a UPI deposit */
-export const rejectUpiDeposit = createServerFn({ method: "POST" }).handler(
-  async ({ data }) => {
-    await getCurrentUser("admin");
-    const db = await getDb();
-    const { depositId, reason } = data as any;
-
-    const deposit = (await db
-      .prepare("SELECT * FROM upi_deposits WHERE id = ?")
-      .get(depositId)) as any;
-
-    if (!deposit) throw new Error("Deposit not found");
-
-    await db
+  await db.transaction(async (tx: any) => {
+    await tx
       .prepare(
-        "UPDATE upi_deposits SET status = 'rejected', reject_reason = ? WHERE id = ?",
+        "UPDATE upi_deposits SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE id = ?",
       )
-      .run(reason || "Payment could not be verified", depositId);
+      .run(depositId);
 
-    await db
+    await tx
+      .prepare("UPDATE users SET deposit_balance = deposit_balance + ? WHERE id = ?")
+      .run(deposit.amount, deposit.user_id);
+
+    await tx
+      .prepare("INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)")
+      .run(
+        deposit.user_id,
+        deposit.amount,
+        "deposit_added",
+        `Wallet deposit via UPI (${deposit.utr || deposit.txn_ref})`,
+      );
+
+    await tx
       .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
       .run(
         deposit.user_id,
-        `❌ Your deposit of ₹${deposit.amount} was rejected. Reason: ${reason || "Payment not verified"}. Contact support if you believe this is an error.`,
+        `💰 ₹${deposit.amount} deposited — ${deposit.amount} CG Coins added to your wallet!`,
         "/wallet",
       );
+  });
 
-    try {
-      const { triggerPushNotification } = await import("./push-server");
-      triggerPushNotification(
-        deposit.user_id,
-        "❌ Deposit Rejected",
-        `❌ Your deposit of ₹${deposit.amount} was rejected. Reason: ${reason || "Payment not verified"}.`,
-        "/wallet"
-      ).catch(e => console.error("UPI deposit rejection push error:", e));
-    } catch(e) {}
+  try {
+    const { triggerPushNotification } = await import("./push-server");
+    triggerPushNotification(
+      deposit.user_id,
+      "💰 Wallet Deposit",
+      `💰 ₹${deposit.amount} deposited — ${deposit.amount} CG Coins added to your wallet!`,
+      "/wallet",
+    ).catch((e) => console.error("UPI deposit approval push error:", e));
+  } catch (e) {}
 
-    return { success: true };
-  },
-);
+  return { success: true };
+});
+
+/** Admin: reject a UPI deposit */
+export const rejectUpiDeposit = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
+  const db = await getDb();
+  const { depositId, reason } = data as any;
+
+  const deposit = (await db
+    .prepare("SELECT * FROM upi_deposits WHERE id = ?")
+    .get(depositId)) as any;
+
+  if (!deposit) throw new Error("Deposit not found");
+
+  await db
+    .prepare("UPDATE upi_deposits SET status = 'rejected', reject_reason = ? WHERE id = ?")
+    .run(reason || "Payment could not be verified", depositId);
+
+  await db
+    .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+    .run(
+      deposit.user_id,
+      `❌ Your deposit of ₹${deposit.amount} was rejected. Reason: ${reason || "Payment not verified"}. Contact support if you believe this is an error.`,
+      "/wallet",
+    );
+
+  try {
+    const { triggerPushNotification } = await import("./push-server");
+    triggerPushNotification(
+      deposit.user_id,
+      "❌ Deposit Rejected",
+      `❌ Your deposit of ₹${deposit.amount} was rejected. Reason: ${reason || "Payment not verified"}.`,
+      "/wallet",
+    ).catch((e) => console.error("UPI deposit rejection push error:", e));
+  } catch (e) {}
+
+  return { success: true };
+});
 
 /** Get UPI deposit history for a user */
-export const getUserUpiDeposits = createServerFn({ method: "POST" }).handler(
-  async () => {
-    const user = await getCurrentUser();
-    const db = await getDb();
-    const userId = user.id;
-    return (await db
-      .prepare(
-        `SELECT * FROM upi_deposits WHERE user_id = ? ORDER BY created_at DESC LIMIT 20`,
-      )
-      .all(userId)) as any[];
-  },
-);
+export const getUserUpiDeposits = createServerFn({ method: "POST" }).handler(async () => {
+  const user = await getCurrentUser();
+  const db = await getDb();
+  const userId = user.id;
+  return (await db
+    .prepare(`SELECT * FROM upi_deposits WHERE user_id = ? ORDER BY created_at DESC LIMIT 20`)
+    .all(userId)) as any[];
+});
 
 export { getWalletBalance, getTransactionHistory } from "./razorpay";

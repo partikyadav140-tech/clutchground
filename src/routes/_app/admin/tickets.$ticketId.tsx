@@ -3,7 +3,18 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ArrowLeft, Send, User, Check, Lock, Clock, CheckCheck, RefreshCw, ImagePlus, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Send,
+  User,
+  Check,
+  Lock,
+  Clock,
+  CheckCheck,
+  RefreshCw,
+  ImagePlus,
+  X,
+} from "lucide-react";
 import { getTicket, replyTicket, updateTicketStatus } from "../../../api";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -110,24 +121,30 @@ function AdminTicketChatPage() {
     setTimeout(() => endRef.current?.scrollIntoView({ behavior }), 60);
   }, []);
 
-  const loadTicket = useCallback(async (silent = true) => {
-    if (!silent) setIsRefreshing(true);
-    try {
-      const data = await (getTicket as any)({ data: { ticketId } });
-      if (!data) return router.navigate({ to: "/admin/tickets" });
-      setTicket((prev: any) => {
-        if (!prev || prev.replies?.length !== data.replies?.length) {
-          scrollToBottom(prev ? "smooth" : "instant");
-        }
-        return data;
-      });
-    } catch {}
-    finally { setIsRefreshing(false); }
-  }, [ticketId, scrollToBottom]);
+  const loadTicket = useCallback(
+    async (silent = true) => {
+      if (!silent) setIsRefreshing(true);
+      try {
+        const data = await (getTicket as any)({ data: { ticketId } });
+        if (!data) return router.navigate({ to: "/admin/tickets" });
+        setTicket((prev: any) => {
+          if (!prev || prev.replies?.length !== data.replies?.length) {
+            scrollToBottom(prev ? "smooth" : "instant");
+          }
+          return data;
+        });
+      } catch {
+      } finally {
+        setIsRefreshing(false);
+      }
+    },
+    [ticketId, scrollToBottom],
+  );
 
   useEffect(() => {
     if (!loading && (!user || (user as any).role !== "admin")) {
-      router.navigate({ to: "/login" }); return;
+      router.navigate({ to: "/login" });
+      return;
     }
     if (user && (user as any).role === "admin") {
       loadTicket(false);
@@ -255,7 +272,8 @@ function AdminTicketChatPage() {
       <div className="shrink-0 bg-card/95 backdrop-blur-xl border-b border-border z-10">
         <div className="flex items-center gap-3 px-3 py-3">
           <Button
-            variant="ghost" size="icon"
+            variant="ghost"
+            size="icon"
             onClick={() => router.history.back()}
             className="rounded-full w-9 h-9 shrink-0 text-foreground hover:bg-secondary"
           >
@@ -274,7 +292,9 @@ function AdminTicketChatPage() {
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="text-[10px] text-muted-foreground font-mono">#{ticket.id}</span>
               <span className="text-muted-foreground text-[10px]">·</span>
-              <span className={`text-[10px] font-black uppercase tracking-wider ${isResolved ? "text-emerald-500" : "text-amber-500"}`}>
+              <span
+                className={`text-[10px] font-black uppercase tracking-wider ${isResolved ? "text-emerald-500" : "text-amber-500"}`}
+              >
                 {ticket.status}
               </span>
             </div>
@@ -322,7 +342,11 @@ function AdminTicketChatPage() {
             <AnimatePresence initial={false}>
               {group.items.map((r: any, idx: number) => {
                 const isAdmin = r.is_admin === 1 || r.is_admin === true || r.is_admin === "true";
-                const nextIsAdmin = group.items[idx - 1] ? (group.items[idx - 1].is_admin === 1 || group.items[idx - 1].is_admin === true || group.items[idx - 1].is_admin === "true") : null;
+                const nextIsAdmin = group.items[idx - 1]
+                  ? group.items[idx - 1].is_admin === 1 ||
+                    group.items[idx - 1].is_admin === true ||
+                    group.items[idx - 1].is_admin === "true"
+                  : null;
                 const showAvatar = !isAdmin && (idx === 0 || nextIsAdmin !== isAdmin);
 
                 const parsed = parseMessage(r.message);
@@ -346,7 +370,9 @@ function AdminTicketChatPage() {
                       </div>
                     )}
 
-                    <div className={`max-w-[78%] flex flex-col ${isAdmin ? "items-end" : "items-start"}`}>
+                    <div
+                      className={`max-w-[78%] flex flex-col ${isAdmin ? "items-end" : "items-start"}`}
+                    >
                       {/* Sender label */}
                       {showAvatar && !isAdmin && (
                         <span className="text-[10px] font-black text-purple-400 uppercase tracking-wider mb-1 ml-1">
@@ -355,11 +381,13 @@ function AdminTicketChatPage() {
                       )}
 
                       {/* Bubble */}
-                      <div className={`relative overflow-hidden text-sm leading-relaxed font-medium whitespace-pre-wrap break-words ${
-                        isAdmin
-                          ? "bg-gradient-to-r from-sky-500 to-primary text-white rounded-2xl rounded-tr-none shadow-[0_4px_16px_rgba(0,200,255,0.1)]"
-                          : "glass-card border border-border/80 text-foreground rounded-2xl rounded-tl-none shadow-md"
-                      } ${parsed.image && !parsed.text ? "p-1" : parsed.image ? "p-1 pb-2" : "px-4 py-2.5"}`}>
+                      <div
+                        className={`relative overflow-hidden text-sm leading-relaxed font-medium whitespace-pre-wrap break-words ${
+                          isAdmin
+                            ? "bg-gradient-to-r from-sky-500 to-primary text-white rounded-2xl rounded-tr-none shadow-[0_4px_16px_rgba(0,200,255,0.1)]"
+                            : "glass-card border border-border/80 text-foreground rounded-2xl rounded-tl-none shadow-md"
+                        } ${parsed.image && !parsed.text ? "p-1" : parsed.image ? "p-1 pb-2" : "px-4 py-2.5"}`}
+                      >
                         {parsed.image && (
                           <div
                             className={`relative max-w-full rounded-xl overflow-hidden cursor-pointer border border-white/10 hover:scale-[1.005] transition-transform duration-200 ${
@@ -367,8 +395,12 @@ function AdminTicketChatPage() {
                             }`}
                             onClick={() => setZoomedImage(parsed.image)}
                           >
-                            <img src={parsed.image} alt="Attached screenshot" className="max-h-72 w-full object-contain rounded-xl bg-black/5" />
-                            
+                            <img
+                              src={parsed.image}
+                              alt="Attached screenshot"
+                              className="max-h-72 w-full object-contain rounded-xl bg-black/5"
+                            />
+
                             {/* Overlay timestamp if image-only */}
                             {!parsed.text && (
                               <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full text-[9px] text-white/90 flex items-center gap-1 select-none pointer-events-none">
@@ -378,17 +410,23 @@ function AdminTicketChatPage() {
                             )}
                           </div>
                         )}
-                        
+
                         {parsed.text && (
                           <div className={parsed.image ? "px-3 pt-1 pb-1" : ""}>
                             <span>{parsed.text}</span>
-                            
+
                             {/* Inline timestamp at bottom right of text */}
-                            <div className={`flex items-center justify-end gap-1 mt-1.5 text-[9px] select-none ${
-                              isAdmin ? "text-white/70" : "text-muted-foreground font-semibold"
-                            }`}>
+                            <div
+                              className={`flex items-center justify-end gap-1 mt-1.5 text-[9px] select-none ${
+                                isAdmin ? "text-white/70" : "text-muted-foreground font-semibold"
+                              }`}
+                            >
                               <span>{formatTime(r.created_at)}</span>
-                              {isAdmin && <CheckCheck className={`w-3 h-3 ${isAdmin ? "text-white/85" : "text-primary"}`} />}
+                              {isAdmin && (
+                                <CheckCheck
+                                  className={`w-3 h-3 ${isAdmin ? "text-white/85" : "text-primary"}`}
+                                />
+                              )}
                             </div>
                           </div>
                         )}
@@ -408,7 +446,9 @@ function AdminTicketChatPage() {
         {isResolved ? (
           <div className="flex items-center justify-center gap-2 py-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
             <Lock className="w-4 h-4 text-emerald-500" />
-            <span className="text-sm font-bold text-emerald-600">Ticket resolved — reopen to reply</span>
+            <span className="text-sm font-bold text-emerald-600">
+              Ticket resolved — reopen to reply
+            </span>
           </div>
         ) : (
           <div className="space-y-3">
@@ -416,7 +456,9 @@ function AdminTicketChatPage() {
             {selectedImage && (
               <div className="relative inline-flex items-center rounded-2xl bg-secondary/80 border border-border/80 p-2 pr-8 animate-scale-in">
                 <img src={selectedImage} className="w-12 h-12 rounded-xl object-cover" />
-                <span className="text-[10px] text-muted-foreground ml-2 max-w-[120px] truncate">photo_attached.jpg</span>
+                <span className="text-[10px] text-muted-foreground ml-2 max-w-[120px] truncate">
+                  photo_attached.jpg
+                </span>
                 <button
                   type="button"
                   onClick={() => setSelectedImage(null)}
@@ -488,7 +530,11 @@ function AdminTicketChatPage() {
         <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden bg-black/95 border border-white/10 flex items-center justify-center rounded-3xl">
           <DialogTitle className="sr-only">Attached Screenshot</DialogTitle>
           {zoomedImage && (
-            <img src={zoomedImage} alt="Zoomed screenshot" className="w-full h-full max-h-[90vh] object-contain" />
+            <img
+              src={zoomedImage}
+              alt="Zoomed screenshot"
+              className="w-full h-full max-h-[90vh] object-contain"
+            />
           )}
         </DialogContent>
       </Dialog>

@@ -75,14 +75,10 @@ export function CountdownTimer({ targetDate, status, compact = false }: Countdow
   // Full countdown blocks
   return (
     <div className="flex items-center gap-1.5">
-      {countdown.days > 0 && (
-        <TimeBlock value={countdown.days} label="D" />
-      )}
+      {countdown.days > 0 && <TimeBlock value={countdown.days} label="D" />}
       <TimeBlock value={countdown.hours} label="H" />
       <TimeBlock value={countdown.minutes} label="M" />
-      {countdown.days === 0 && (
-        <TimeBlock value={countdown.seconds} label="S" />
-      )}
+      {countdown.days === 0 && <TimeBlock value={countdown.seconds} label="S" />}
     </div>
   );
 }

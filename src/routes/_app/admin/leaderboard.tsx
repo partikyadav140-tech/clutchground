@@ -69,7 +69,9 @@ function AdminLeaderboardPage() {
 
     setSavingId(row.user_id);
     try {
-      await (updateLeaderboardPoints as any)({ data: { userId: row.user_id, points: pointsValue } });
+      await (updateLeaderboardPoints as any)({
+        data: { userId: row.user_id, points: pointsValue },
+      });
       toast.success("Leaderboard points updated successfully.");
       setEditingId(null);
       setEditedPoints("");
@@ -90,12 +92,19 @@ function AdminLeaderboardPage() {
           <div className="w-12 h-12 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mb-3">
             <Trophy className="w-6 h-6" />
           </div>
-          <h1 className="font-display text-3xl font-black text-foreground">Leaderboard Standings</h1>
-          <p className="text-sm text-muted-foreground mt-1 font-semibold">Live point standings and admin adjustments.</p>
+          <h1 className="font-display text-3xl font-black text-foreground">
+            Leaderboard Standings
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1 font-semibold">
+            Live point standings and admin adjustments.
+          </p>
         </div>
 
         <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-          <Link to="/admin" className="inline-flex items-center justify-center h-12 rounded-xl border border-border text-sm font-bold text-foreground bg-secondary/50 px-4 hover:bg-secondary transition-all">
+          <Link
+            to="/admin"
+            className="inline-flex items-center justify-center h-12 rounded-xl border border-border text-sm font-bold text-foreground bg-secondary/50 px-4 hover:bg-secondary transition-all"
+          >
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
           </Link>
           <Button
@@ -113,7 +122,9 @@ function AdminLeaderboardPage() {
         {leaderboard.length === 0 ? (
           <div className="text-center py-12 bg-card rounded-[1.5rem] border border-border shadow-sm">
             <Trophy className="w-12 h-12 mx-auto mb-3 text-muted-foreground/30" />
-            <p className="text-foreground font-semibold">No leaderboard records found for this week.</p>
+            <p className="text-foreground font-semibold">
+              No leaderboard records found for this week.
+            </p>
           </div>
         ) : (
           <div className="grid gap-4">
@@ -127,7 +138,9 @@ function AdminLeaderboardPage() {
               >
                 <div className="p-5 sm:p-6 grid gap-3 sm:grid-cols-[auto_1fr_auto] items-center">
                   <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-3xl flex items-center justify-center ${row.badge === "god" ? "bg-amber-100 text-amber-700" : row.badge === "elite" ? "bg-slate-100 text-slate-700" : "bg-secondary text-muted-foreground"}`}>
+                    <div
+                      className={`w-12 h-12 rounded-3xl flex items-center justify-center ${row.badge === "god" ? "bg-amber-100 text-amber-700" : row.badge === "elite" ? "bg-slate-100 text-slate-700" : "bg-secondary text-muted-foreground"}`}
+                    >
                       <span className="font-display font-black">#{row.rank}</span>
                     </div>
                     <div>

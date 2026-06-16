@@ -1,12 +1,6 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import {
-  AlertCircle,
-  Edit3,
-  LogOut,
-  Trash,
-  Users,
-} from "lucide-react";
+import { AlertCircle, Edit3, LogOut, Trash, Users } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { PageHeader } from "@/components/PageHeader";
@@ -147,7 +141,9 @@ function MyTeamPage() {
         canvas.height = img.height * scale;
         canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-        const result = await (uploadImage as any)({ data: { base64: dataUrl, folder: "team-logos" } });
+        const result = await (uploadImage as any)({
+          data: { base64: dataUrl, folder: "team-logos" },
+        });
         setTeamForm((prev) => ({ ...prev, logo: result.url }));
         toast.success("Logo uploaded", { id: toastId });
       } catch (err: any) {
@@ -238,7 +234,9 @@ function MyTeamPage() {
   const handleCancelRequest = async () => {
     if (!pendingRequest) return;
     try {
-      await (cancelTeamRequest as any)({ data: { userId: user!.id, requestId: pendingRequest.id } });
+      await (cancelTeamRequest as any)({
+        data: { userId: user!.id, requestId: pendingRequest.id },
+      });
       toast.success("Join request cancelled");
       await refresh();
     } catch (err: any) {
@@ -259,7 +257,11 @@ function MyTeamPage() {
 
   return (
     <div className="min-h-screen bg-background pb-4 page-content">
-      <PageHeader eyebrow="Squad HQ" eyebrowIcon={Users} title={myTeam ? myTeam.name : "My squad"} />
+      <PageHeader
+        eyebrow="Squad HQ"
+        eyebrowIcon={Users}
+        title={myTeam ? myTeam.name : "My squad"}
+      />
 
       {!myTeam && !isEditing && (
         <div className="space-y-4">
@@ -272,14 +274,20 @@ function MyTeamPage() {
                 <div className="flex-1">
                   <h3 className="font-bold text-foreground">Join request pending</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Waiting for <span className="font-semibold text-foreground">{pendingRequest.team_name}</span> to accept you.
+                    Waiting for{" "}
+                    <span className="font-semibold text-foreground">
+                      {pendingRequest.team_name}
+                    </span>{" "}
+                    to accept you.
                   </p>
                   <div className="flex gap-2 mt-4">
                     <Button variant="outline" className="rounded-xl" onClick={handleCancelRequest}>
                       Cancel request
                     </Button>
                     <Link to="/teams">
-                      <Button variant="secondary" className="rounded-xl">Browse teams</Button>
+                      <Button variant="secondary" className="rounded-xl">
+                        Browse teams
+                      </Button>
                     </Link>
                   </div>
                 </div>
@@ -290,7 +298,8 @@ function MyTeamPage() {
               <Users className="w-10 h-10 mx-auto text-muted-foreground mb-3 opacity-60" />
               <h3 className="font-display font-bold text-lg mb-1">No squad yet</h3>
               <p className="text-sm text-muted-foreground mb-5">
-                Create your team (captain + 3 players + 1 substitute) or browse squads recruiting players.
+                Create your team (captain + 3 players + 1 substitute) or browse squads recruiting
+                players.
               </p>
               <div className="flex flex-col sm:flex-row gap-2 justify-center">
                 <Button onClick={() => setIsEditing(true)} className="rounded-xl font-bold">
@@ -333,7 +342,12 @@ function MyTeamPage() {
                 </div>
                 <label className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center cursor-pointer shadow-md">
                   <Edit3 className="w-3.5 h-3.5" />
-                  <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleLogoUpload}
+                  />
                 </label>
               </div>
               <div className="flex-1">
@@ -357,7 +371,11 @@ function MyTeamPage() {
               >
                 Cancel
               </Button>
-              <Button className="flex-1 rounded-xl font-bold" disabled={saving} onClick={handleSaveTeam}>
+              <Button
+                className="flex-1 rounded-xl font-bold"
+                disabled={saving}
+                onClick={handleSaveTeam}
+              >
                 {saving ? "Saving..." : myTeam ? "Save changes" : "Create squad"}
               </Button>
             </div>
@@ -402,7 +420,8 @@ function MyTeamPage() {
 
               <h2 className="font-display font-black text-2xl text-foreground">{myTeam.name}</h2>
               <p className="text-sm text-muted-foreground mt-1">
-                {isCaptain ? "Captain" : "Squad member"} · {rosterSlots.squadFilled}/{TEAM_ROSTER.TOTAL_SQUAD} squad
+                {isCaptain ? "Captain" : "Squad member"} · {rosterSlots.squadFilled}/
+                {TEAM_ROSTER.TOTAL_SQUAD} squad
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 1 captain + 3 players + 1 substitute
@@ -434,6 +453,7 @@ function MyTeamPage() {
                 team={myTeam}
                 currentUserId={user.id}
                 onRemoveMember={isCaptain ? handleRemoveMember : undefined}
+                linkProfiles={true}
               />
             </div>
           </div>

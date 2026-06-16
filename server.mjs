@@ -14,23 +14,23 @@ const clientDir = join(__dirname, "dist/client");
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
-  ".js":   "application/javascript; charset=utf-8",
-  ".mjs":  "application/javascript; charset=utf-8",
-  ".css":  "text/css; charset=utf-8",
-  ".png":  "image/png",
-  ".jpg":  "image/jpeg",
+  ".js": "application/javascript; charset=utf-8",
+  ".mjs": "application/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
-  ".gif":  "image/gif",
-  ".svg":  "image/svg+xml",
-  ".ico":  "image/x-icon",
+  ".gif": "image/gif",
+  ".svg": "image/svg+xml",
+  ".ico": "image/x-icon",
   ".webp": "image/webp",
   ".woff": "font/woff",
-  ".woff2":"font/woff2",
-  ".ttf":  "font/ttf",
+  ".woff2": "font/woff2",
+  ".ttf": "font/ttf",
   ".webmanifest": "application/manifest+json",
   ".json": "application/json",
-  ".txt":  "text/plain",
-  ".xml":  "application/xml",
+  ".txt": "text/plain",
+  ".xml": "application/xml",
 };
 
 createServer(async (req, res) => {
@@ -87,9 +87,7 @@ createServer(async (req, res) => {
     response.headers.forEach((value, key) => {
       const existing = responseHeaders[key];
       if (existing) {
-        responseHeaders[key] = Array.isArray(existing)
-          ? [...existing, value]
-          : [existing, value];
+        responseHeaders[key] = Array.isArray(existing) ? [...existing, value] : [existing, value];
       } else {
         responseHeaders[key] = value;
       }

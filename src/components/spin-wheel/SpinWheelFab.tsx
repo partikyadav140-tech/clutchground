@@ -26,7 +26,9 @@ export function SpinWheelFab({ bottomOffset = 152 }: SpinWheelFabProps) {
       requestAnimationFrame(() => {
         const currentY = scrollContainer
           ? scrollContainer.scrollTop
-          : (e.currentTarget === window ? window.scrollY : (e.target as HTMLElement).scrollTop || 0);
+          : e.currentTarget === window
+            ? window.scrollY
+            : (e.target as HTMLElement).scrollTop || 0;
 
         const delta = currentY - lastScrollY.current;
 

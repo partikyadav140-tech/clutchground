@@ -4,7 +4,14 @@ import { useAuth } from "../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
-  LifeBuoy, Plus, MessageCircle, Clock, CheckCircle2, ChevronRight, ArrowLeft, X,
+  LifeBuoy,
+  Plus,
+  MessageCircle,
+  Clock,
+  CheckCircle2,
+  ChevronRight,
+  ArrowLeft,
+  X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getMyTickets, createTicket } from "../../api";
@@ -25,7 +32,10 @@ function SupportPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user) { router.navigate({ to: "/login" }); return; }
+    if (!loading && !user) {
+      router.navigate({ to: "/login" });
+      return;
+    }
     if (user) loadTickets();
   }, [user, loading]);
 
@@ -44,11 +54,14 @@ function SupportPage() {
       const res = await (createTicket as any)({ data: { userId: user?.id, subject, message } });
       toast.success("Ticket created!");
       setIsCreating(false);
-      setSubject(""); setMessage("");
+      setSubject("");
+      setMessage("");
       router.navigate({ to: `/support/${res.ticketId}` });
     } catch (err: any) {
       toast.error(err.message || "Failed to create ticket");
-    } finally { setIsSubmitting(false); }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (loading || !user) return null;
@@ -185,27 +198,34 @@ function SupportPage() {
                     <Link to={`/support/${t.id}` as any} className="block group">
                       <div className="bg-card rounded-2xl border border-border hover:border-primary/40 hover:shadow-card transition-all p-4 flex items-center gap-4">
                         {/* Icon */}
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                          t.status === "open"
-                            ? "bg-amber-500/10 border border-amber-500/25"
-                            : "bg-emerald-500/10 border border-emerald-500/25"
-                        }`}>
-                          {t.status === "open"
-                            ? <MessageCircle className="w-4 h-4 text-amber-500" />
-                            : <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                          }
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                            t.status === "open"
+                              ? "bg-amber-500/10 border border-amber-500/25"
+                              : "bg-emerald-500/10 border border-emerald-500/25"
+                          }`}
+                        >
+                          {t.status === "open" ? (
+                            <MessageCircle className="w-4 h-4 text-amber-500" />
+                          ) : (
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          )}
                         </div>
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
-                            <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                              t.status === "open"
-                                ? "bg-amber-500/10 text-amber-600"
-                                : "bg-emerald-500/10 text-emerald-600"
-                            }`}>
+                            <span
+                              className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                t.status === "open"
+                                  ? "bg-amber-500/10 text-amber-600"
+                                  : "bg-emerald-500/10 text-emerald-600"
+                              }`}
+                            >
                               {t.status}
                             </span>
-                            <span className="text-[10px] text-muted-foreground font-mono">#{t.id}</span>
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              #{t.id}
+                            </span>
                           </div>
                           <h3 className="font-display font-black text-sm text-foreground line-clamp-1">
                             {t.subject}

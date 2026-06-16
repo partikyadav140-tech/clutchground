@@ -17,7 +17,6 @@ import { Route as AppTeamsRouteImport } from './routes/_app/teams'
 import { Route as AppTeamRequestsRouteImport } from './routes/_app/team-requests'
 import { Route as AppTeamInviteRouteImport } from './routes/_app/team-invite'
 import { Route as AppTeamChatRouteImport } from './routes/_app/team-chat'
-import { Route as AppStatsRouteImport } from './routes/_app/stats'
 import { Route as AppSpinWheelRouteImport } from './routes/_app/spin-wheel'
 import { Route as AppSignupRouteImport } from './routes/_app/signup'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
@@ -93,11 +92,6 @@ const AppTeamInviteRoute = AppTeamInviteRouteImport.update({
 const AppTeamChatRoute = AppTeamChatRouteImport.update({
   id: '/team-chat',
   path: '/team-chat',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppStatsRoute = AppStatsRouteImport.update({
-  id: '/stats',
-  path: '/stats',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSpinWheelRoute = AppSpinWheelRouteImport.update({
@@ -304,7 +298,6 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/signup': typeof AppSignupRoute
   '/spin-wheel': typeof AppSpinWheelRouteWithChildren
-  '/stats': typeof AppStatsRoute
   '/team-chat': typeof AppTeamChatRoute
   '/team-invite': typeof AppTeamInviteRoute
   '/team-requests': typeof AppTeamRequestsRoute
@@ -349,7 +342,6 @@ export interface FileRoutesByTo {
   '/rules': typeof AppRulesRoute
   '/settings': typeof AppSettingsRoute
   '/signup': typeof AppSignupRoute
-  '/stats': typeof AppStatsRoute
   '/team-chat': typeof AppTeamChatRoute
   '/team-invite': typeof AppTeamInviteRoute
   '/team-requests': typeof AppTeamRequestsRoute
@@ -398,7 +390,6 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/signup': typeof AppSignupRoute
   '/_app/spin-wheel': typeof AppSpinWheelRouteWithChildren
-  '/_app/stats': typeof AppStatsRoute
   '/_app/team-chat': typeof AppTeamChatRoute
   '/_app/team-invite': typeof AppTeamInviteRoute
   '/_app/team-requests': typeof AppTeamRequestsRoute
@@ -448,7 +439,6 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signup'
     | '/spin-wheel'
-    | '/stats'
     | '/team-chat'
     | '/team-invite'
     | '/team-requests'
@@ -493,7 +483,6 @@ export interface FileRouteTypes {
     | '/rules'
     | '/settings'
     | '/signup'
-    | '/stats'
     | '/team-chat'
     | '/team-invite'
     | '/team-requests'
@@ -541,7 +530,6 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/signup'
     | '/_app/spin-wheel'
-    | '/_app/stats'
     | '/_app/team-chat'
     | '/_app/team-invite'
     | '/_app/team-requests'
@@ -632,13 +620,6 @@ declare module '@tanstack/react-router' {
       path: '/team-chat'
       fullPath: '/team-chat'
       preLoaderRoute: typeof AppTeamChatRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/stats': {
-      id: '/_app/stats'
-      path: '/stats'
-      fullPath: '/stats'
-      preLoaderRoute: typeof AppStatsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/spin-wheel': {
@@ -934,7 +915,6 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppSignupRoute: typeof AppSignupRoute
   AppSpinWheelRoute: typeof AppSpinWheelRouteWithChildren
-  AppStatsRoute: typeof AppStatsRoute
   AppTeamChatRoute: typeof AppTeamChatRoute
   AppTeamInviteRoute: typeof AppTeamInviteRoute
   AppTeamRequestsRoute: typeof AppTeamRequestsRoute
@@ -980,7 +960,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppSignupRoute: AppSignupRoute,
   AppSpinWheelRoute: AppSpinWheelRouteWithChildren,
-  AppStatsRoute: AppStatsRoute,
   AppTeamChatRoute: AppTeamChatRoute,
   AppTeamInviteRoute: AppTeamInviteRoute,
   AppTeamRequestsRoute: AppTeamRequestsRoute,

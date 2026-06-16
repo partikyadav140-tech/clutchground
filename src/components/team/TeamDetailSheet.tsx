@@ -72,7 +72,8 @@ export function TeamDetailSheet({
   };
 
   const hasPendingForThisTeam = pendingTeamId === teamId;
-  const canRequest = user && team && !slots.isFull && !hasPendingForThisTeam && user.id !== team.leader_id;
+  const canRequest =
+    user && team && !slots.isFull && !hasPendingForThisTeam && user.id !== team.leader_id;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -105,10 +106,14 @@ export function TeamDetailSheet({
                 </span>
                 <span
                   className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                    slots.isFull ? "bg-destructive/10 text-destructive" : "bg-emerald-500/10 text-emerald-500"
+                    slots.isFull
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-emerald-500/10 text-emerald-500"
                   }`}
                 >
-                  {slots.isFull ? "Roster full" : `${slots.open} open ${slots.open === 1 ? "slot" : "slots"}`}
+                  {slots.isFull
+                    ? "Roster full"
+                    : `${slots.open} open ${slots.open === 1 ? "slot" : "slots"}`}
                 </span>
               </div>
             </SheetHeader>

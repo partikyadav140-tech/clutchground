@@ -9,7 +9,13 @@ type PageHeaderProps = {
   className?: string;
 };
 
-export function PageHeader({ eyebrow, eyebrowIcon: Icon, title, action, className = "" }: PageHeaderProps) {
+export function PageHeader({
+  eyebrow,
+  eyebrowIcon: Icon,
+  title,
+  action,
+  className = "",
+}: PageHeaderProps) {
   return (
     <div className={`page-header ${className}`}>
       <div className="flex items-center justify-between gap-3">
@@ -20,7 +26,9 @@ export function PageHeader({ eyebrow, eyebrowIcon: Icon, title, action, classNam
               <span>{eyebrow}</span>
             </div>
           )}
-          <h1 className="font-display font-black text-2xl text-foreground leading-tight truncate">{title}</h1>
+          <h1 className="font-display font-black text-2xl text-foreground leading-tight truncate">
+            {title}
+          </h1>
         </div>
         {action}
       </div>

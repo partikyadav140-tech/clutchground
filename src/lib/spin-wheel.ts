@@ -73,12 +73,17 @@ export function parseSpinWheelConfig(raw: string | null | undefined): SpinWheelC
             label: s.label || `${s.amount ?? 0} CG`,
             amount: Math.max(0, Number(s.amount) || 0),
             quantity: Math.max(1, Number(s.quantity) || 1),
-            color: s.color || DEFAULT_SPIN_SEGMENTS[i % DEFAULT_SPIN_SEGMENTS.length]?.color || "#FF6B00",
+            color:
+              s.color ||
+              DEFAULT_SPIN_SEGMENTS[i % DEFAULT_SPIN_SEGMENTS.length]?.color ||
+              "#FF6B00",
           }))
         : [...DEFAULT_SPIN_SEGMENTS];
 
     const activePrizeIds = Array.isArray(parsed.activePrizeIds)
-      ? parsed.activePrizeIds.filter((id) => segments.some((s) => s.id === id)).slice(0, SPIN_MAX_ACTIVE_PRIZES)
+      ? parsed.activePrizeIds
+          .filter((id) => segments.some((s) => s.id === id))
+          .slice(0, SPIN_MAX_ACTIVE_PRIZES)
       : DEFAULT_SPIN_WHEEL_CONFIG.activePrizeIds;
 
     return {

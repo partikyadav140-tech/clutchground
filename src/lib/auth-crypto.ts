@@ -24,7 +24,8 @@ export function verifyPassword(password: string, stored: string): boolean {
   return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(testHash, "hex"));
 }
 
-const ENCRYPTION_KEY = getEnvVar("ENCRYPTION_KEY") || "default_clutchground_secret_32_bytes_key_dev!"; // must be 32 bytes
+const ENCRYPTION_KEY =
+  getEnvVar("ENCRYPTION_KEY") || "default_clutchground_secret_32_bytes_key_dev!"; // must be 32 bytes
 
 /**
  * Encrypt a password using AES-256-GCM.

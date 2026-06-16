@@ -1,12 +1,25 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { createUpiDeposit, submitUpiUtr, getWalletBalance, getActiveUpiConfig } from "../api";
 import { useAuth } from "../lib/auth-client";
 import {
-  CreditCard, Wallet, CheckCircle2, Copy, ExternalLink,
-  Smartphone, ArrowRight, Clock, ShieldCheck,
+  CreditCard,
+  Wallet,
+  CheckCircle2,
+  Copy,
+  ExternalLink,
+  Smartphone,
+  ArrowRight,
+  Clock,
+  ShieldCheck,
 } from "lucide-react";
 
 const predefinedAmounts = [10, 50, 100, 200, 500, 1000];
@@ -17,10 +30,14 @@ export function WalletDepositDialog({
   trigger,
   onSuccess,
   primaryUpi,
+  locked = false,
+  onLockedClick,
 }: {
   trigger: React.ReactNode;
   onSuccess?: () => void;
   primaryUpi?: string;
+  locked?: boolean;
+  onLockedClick?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>("amount");
@@ -97,7 +114,8 @@ export function WalletDepositDialog({
   /* ── Step 2: Submit Sender UPI ID ── */
   const handleSubmitUpiId = async () => {
     if (!payData) return;
-    if (!primaryUpi) return toast.error("Primary UPI ID not found. Please set it in wallet settings.");
+    if (!primaryUpi)
+      return toast.error("Primary UPI ID not found. Please set it in wallet settings.");
     setLoading(true);
     try {
       await (submitUpiUtr as any)({
@@ -130,20 +148,43 @@ export function WalletDepositDialog({
     toast.success(`${label} copied!`);
   };
 
-  return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetDialog(); }}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    if (locked) {
+      e.preventDefault();
+      e.stopPropagation();
+      onLockedClick?.();
+      return;
+    }
+    setOpen(true);
+  };
 
-      <DialogContent id="tutorial-deposit-dialog" className="max-h-[90vh] overflow-y-auto" onOpenAutoFocus={(e) => e.preventDefault()}>
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (v && locked) return;
+        setOpen(v);
+        if (!v) resetDialog();
+      }}
+    >
+      <div onClick={handleTriggerClick} className="w-full">
+        {trigger}
+      </div>
+
+      <DialogContent
+        id="tutorial-deposit-dialog"
+        className="max-h-[90vh] overflow-y-auto"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         {/* accent bar */}
         <div className="absolute inset-x-0 top-0 h-0.5 bg-fire-gradient rounded-t-lg" />
 
         <DialogHeader>
           <DialogTitle className="font-display text-xl font-black">
             {step === "amount" && <span className="text-fire-gradient">ADD FUNDS</span>}
-            {step === "pay"    && <span className="text-fire-gradient">PAY VIA UPI</span>}
-            {step === "upiid"  && <span className="text-fire-gradient">CONFIRM PAYMENT</span>}
-            {step === "done"   && <span style={{ color: "#10b981" }}>PAYMENT SUBMITTED</span>}
+            {step === "pay" && <span className="text-fire-gradient">PAY VIA UPI</span>}
+            {step === "upiid" && <span className="text-fire-gradient">CONFIRM PAYMENT</span>}
+            {step === "done" && <span style={{ color: "#10b981" }}>PAYMENT SUBMITTED</span>}
           </DialogTitle>
         </DialogHeader>
 
@@ -152,14 +193,19 @@ export function WalletDepositDialog({
           <div className="space-y-4 py-2">
             <div className="flex items-center gap-2 text-cta mb-1">
               <CreditCard className="w-4 h-4" />
-              <span className="text-[10px] font-display uppercase tracking-widest font-bold">Quick Amounts</span>
+              <span className="text-[10px] font-display uppercase tracking-widest font-bold">
+                Quick Amounts
+              </span>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
               {predefinedAmounts.map((amt) => (
                 <button
                   key={amt}
-                  onClick={() => { setAmount(amt); setCustomAmount(""); }}
+                  onClick={() => {
+                    setAmount(amt);
+                    setCustomAmount("");
+                  }}
                   className={`h-11 rounded-xl font-display font-bold text-sm border transition-all ${
                     amount === amt && !customAmount
                       ? "bg-primary text-white border-primary shadow-[0_0_12px_var(--primary)/30]"
@@ -189,7 +235,8 @@ export function WalletDepositDialog({
                 className="w-full bg-background border border-border focus:border-primary outline-none px-4 h-11 rounded-xl text-sm"
               />
               <p className="text-[10px] text-muted-foreground font-semibold mt-1.5 pl-1">
-                Limit: ₹{upiConfig?.minDeposit || "50"} to ₹{upiConfig?.maxDeposit || "10000"} per transaction
+                Limit: ₹{upiConfig?.minDeposit || "50"} to ₹{upiConfig?.maxDeposit || "10000"} per
+                transaction
               </p>
             </div>
 
@@ -198,19 +245,24 @@ export function WalletDepositDialog({
               <span className="text-muted-foreground flex items-center gap-1">
                 <Wallet className="w-4 h-4" /> CG Coins credited:
               </span>
-              <span className="font-black text-foreground">
-                {customAmount || amount || "—"}
-              </span>
+              <span className="font-black text-foreground">{customAmount || amount || "—"}</span>
             </div>
 
             {/* Trust badge */}
             <div className="bg-primary/8 border border-primary/20 rounded-xl p-3 text-xs text-foreground/70 flex items-start gap-2">
               <ShieldCheck className="w-4 h-4 text-cta shrink-0 mt-0.5" />
-              <span>Pay securely via <strong className="text-foreground">Bharat UPI</strong>. Coins credited after admin verification (usually within 30 min).</span>
+              <span>
+                Pay securely via <strong className="text-foreground">Bharat UPI</strong>. Coins
+                credited after admin verification (usually within 30 min).
+              </span>
             </div>
 
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setOpen(false)} className="flex-1 rounded-xl">
+              <Button
+                variant="outline"
+                onClick={() => setOpen(false)}
+                className="flex-1 rounded-xl"
+              >
                 Cancel
               </Button>
               <Button
@@ -221,7 +273,9 @@ export function WalletDepositDialog({
                 {loading ? (
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
-                  <>Continue <ArrowRight className="w-4 h-4 ml-1" /></>
+                  <>
+                    Continue <ArrowRight className="w-4 h-4 ml-1" />
+                  </>
                 )}
               </Button>
             </div>
@@ -247,7 +301,9 @@ export function WalletDepositDialog({
                   width={180}
                   height={180}
                   className="rounded-xl"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
                 />
               </div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
@@ -257,7 +313,9 @@ export function WalletDepositDialog({
 
             {/* UPI ID to copy */}
             <div className="bg-secondary/60 border border-border rounded-xl p-3">
-              <p className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-1">Pay to UPI ID</p>
+              <p className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-1">
+                Pay to UPI ID
+              </p>
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono font-bold text-foreground text-sm">{payData.upiId}</span>
                 <button
@@ -271,7 +329,9 @@ export function WalletDepositDialog({
 
             {/* Ref */}
             <div className="bg-secondary/60 border border-border rounded-xl p-3">
-              <p className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-1">Transaction Ref (add as note)</p>
+              <p className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-1">
+                Transaction Ref (add as note)
+              </p>
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono text-xs text-foreground">{payData.txnRef}</span>
                 <button
@@ -286,16 +346,31 @@ export function WalletDepositDialog({
             {/* ⚠️ Professional Warning Note */}
             <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 flex items-start gap-2.5">
               <div className="shrink-0 mt-0.5">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                  <line x1="12" y1="9" x2="12" y2="13"/>
-                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-4 h-4 text-amber-500"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
               </div>
               <div className="text-xs leading-snug">
-                <p className="font-black text-amber-600 uppercase tracking-wide text-[10px] mb-1">Important Notice</p>
+                <p className="font-black text-amber-600 uppercase tracking-wide text-[10px] mb-1">
+                  Important Notice
+                </p>
                 <p className="text-foreground/80 font-semibold">
-                  Click <strong className="text-foreground">"I've Paid"</strong> <em>only after you have successfully completed the payment.</em> Clicking this button without making the actual payment will result in your deposit request being <strong className="text-red-500">automatically rejected</strong> by our admin team.
+                  Click <strong className="text-foreground">"I've Paid"</strong>{" "}
+                  <em>only after you have successfully completed the payment.</em> Clicking this
+                  button without making the actual payment will result in your deposit request being{" "}
+                  <strong className="text-red-500">automatically rejected</strong> by our admin
+                  team.
                 </p>
               </div>
             </div>
@@ -311,7 +386,6 @@ export function WalletDepositDialog({
           </div>
         )}
 
-
         {/* ════════════ STEP 3: Sender UPI ID ════════════ */}
         {step === "upiid" && payData && (
           <div className="space-y-4 py-2">
@@ -319,8 +393,11 @@ export function WalletDepositDialog({
             <div className="bg-blue-500/10 border border-blue-500/25 rounded-xl p-3 text-xs text-foreground/80 flex items-start gap-2">
               <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
               <span>
-                <strong className="text-foreground block mb-0.5">Why do we ask for your UPI ID?</strong>
-                We use your UPI ID to match your payment with your account and prevent fraud. Your UPI ID is never shared with third parties.
+                <strong className="text-foreground block mb-0.5">
+                  Why do we ask for your UPI ID?
+                </strong>
+                We use your UPI ID to match your payment with your account and prevent fraud. Your
+                UPI ID is never shared with third parties.
               </span>
             </div>
 
@@ -351,7 +428,11 @@ export function WalletDepositDialog({
             </div>
 
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setStep("pay")} className="flex-1 rounded-xl">
+              <Button
+                variant="outline"
+                onClick={() => setStep("pay")}
+                className="flex-1 rounded-xl"
+              >
                 ← Back
               </Button>
               <Button
@@ -361,7 +442,9 @@ export function WalletDepositDialog({
               >
                 {loading ? (
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : "Confirm Payment"}
+                ) : (
+                  "Confirm Payment"
+                )}
               </Button>
             </div>
           </div>
@@ -377,9 +460,13 @@ export function WalletDepositDialog({
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <div>
-              <p className="font-display font-black text-lg text-foreground mb-1">Payment Submitted!</p>
+              <p className="font-display font-black text-lg text-foreground mb-1">
+                Payment Submitted!
+              </p>
               <p className="text-sm text-muted-foreground">
-                Your payment is under review. Coins will be credited to your wallet after admin verification — usually within <strong className="text-foreground">30 minutes</strong>.
+                Your payment is under review. Coins will be credited to your wallet after admin
+                verification — usually within{" "}
+                <strong className="text-foreground">30 minutes</strong>.
               </p>
             </div>
             <div className="bg-secondary/50 border border-border rounded-xl p-3 w-full text-left text-xs space-y-1">
@@ -392,7 +479,10 @@ export function WalletDepositDialog({
                 <span className="font-mono font-bold">{primaryUpi}</span>
               </div>
             </div>
-            <Button onClick={resetDialog} className="w-full bg-primary text-white font-display rounded-xl">
+            <Button
+              onClick={resetDialog}
+              className="w-full bg-primary text-white font-display rounded-xl"
+            >
               Done
             </Button>
           </div>

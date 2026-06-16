@@ -1,7 +1,14 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { ChevronRight, Crown, Shield, UserRound } from "lucide-react";
-import { countRosterSlots, getInitials, roleLabel, TEAM_ROSTER, type Team, type TeamMember } from "@/lib/team-utils";
+import {
+  countRosterSlots,
+  getInitials,
+  roleLabel,
+  TEAM_ROSTER,
+  type Team,
+  type TeamMember,
+} from "@/lib/team-utils";
 
 type TeamRosterProps = {
   team: Team;
@@ -82,7 +89,11 @@ function RosterRow({
     );
   }
 
-  return <div className="flex items-center gap-3 p-3 rounded-2xl border border-border bg-card/60">{inner}</div>;
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-2xl border border-border bg-card/60">
+      {inner}
+    </div>
+  );
 }
 
 function EmptySlot({ label }: { label: string }) {
@@ -99,7 +110,13 @@ function EmptySlot({ label }: { label: string }) {
   );
 }
 
-export function TeamRoster({ team, currentUserId, onRemoveMember, showCaptain = true, linkProfiles = false }: TeamRosterProps) {
+export function TeamRoster({
+  team,
+  currentUserId,
+  onRemoveMember,
+  showCaptain = true,
+  linkProfiles = false,
+}: TeamRosterProps) {
   const members = team.members || [];
   const slots = countRosterSlots(members);
   const players = members.filter((m) => m.role !== "substitute");
@@ -159,7 +176,9 @@ export function TeamRoster({ team, currentUserId, onRemoveMember, showCaptain = 
       )}
 
       <div className="space-y-2">
-        <p className="text-label px-1">Players ({players.length}/{TEAM_ROSTER.MAX_PLAYERS})</p>
+        <p className="text-label px-1">
+          Players ({players.length}/{TEAM_ROSTER.MAX_PLAYERS})
+        </p>
         {players.map((m, i) => renderMember(m, `P${i + 1}`))}
         {Array.from({ length: emptyPlayerSlots }).map((_, i) => (
           <EmptySlot key={`player-empty-${i}`} label="Player slot available" />
@@ -167,7 +186,9 @@ export function TeamRoster({ team, currentUserId, onRemoveMember, showCaptain = 
       </div>
 
       <div className="space-y-2">
-        <p className="text-label px-1">Substitute ({substitutes.length}/{TEAM_ROSTER.MAX_SUBSTITUTES})</p>
+        <p className="text-label px-1">
+          Substitute ({substitutes.length}/{TEAM_ROSTER.MAX_SUBSTITUTES})
+        </p>
         {substitutes.map((m) => renderMember(m, "Sub"))}
         {Array.from({ length: emptySubSlots }).map((_, i) => (
           <EmptySlot key={`sub-empty-${i}`} label="Substitute slot available" />
@@ -176,7 +197,8 @@ export function TeamRoster({ team, currentUserId, onRemoveMember, showCaptain = 
 
       {!slots.isFull && (
         <p className="text-xs text-muted-foreground text-center pt-1">
-          {slots.open} open {slots.open === 1 ? "slot" : "slots"} · {roleLabel("player")} or substitute
+          {slots.open} open {slots.open === 1 ? "slot" : "slots"} · {roleLabel("player")} or
+          substitute
         </p>
       )}
     </div>

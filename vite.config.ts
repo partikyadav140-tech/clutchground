@@ -26,7 +26,8 @@ export default defineConfig({
         manualChunks(id) {
           // TanStack Start handles React & router as SSR externals — don't touch them
           if (id.includes("node_modules/framer-motion")) return "vendor-motion";
-          if (id.includes("node_modules/recharts") || id.includes("node_modules/d3-")) return "vendor-charts";
+          if (id.includes("node_modules/recharts") || id.includes("node_modules/d3-"))
+            return "vendor-charts";
           if (id.includes("node_modules/lucide-react")) return "vendor-icons";
           if (id.includes("node_modules/@radix-ui")) return "vendor-radix";
         },

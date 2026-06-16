@@ -1,6 +1,14 @@
 import logo from "@/assets/new-logo.png";
 
-export function Logo({ size = 40, withText = true, className }: { size?: number; withText?: boolean; className?: string }) {
+export function Logo({
+  size = 40,
+  withText = true,
+  className,
+}: {
+  size?: number;
+  withText?: boolean;
+  className?: string;
+}) {
   return (
     <div className="flex items-center gap-3 group">
       <img

@@ -6,12 +6,17 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
   const router = useRouter();
 
   useEffect(() => {
-    if (error && /Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(error.message || '')) {
+    if (
+      error &&
+      /Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError/i.test(
+        error.message || "",
+      )
+    ) {
       try {
-        const lastReload = sessionStorage.getItem('last_chunk_reload');
+        const lastReload = sessionStorage.getItem("last_chunk_reload");
         const now = Date.now();
         if (!lastReload || now - parseInt(lastReload, 10) > 10000) {
-          sessionStorage.setItem('last_chunk_reload', now.toString());
+          sessionStorage.setItem("last_chunk_reload", now.toString());
           window.location.reload();
         }
       } catch (e) {}

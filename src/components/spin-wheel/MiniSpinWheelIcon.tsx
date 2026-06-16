@@ -47,10 +47,31 @@ export function MiniSpinWheelIcon({ className = "" }: { className?: string }) {
             className="w-full h-full animate-[spin_3s_linear_infinite]"
           >
             {SEGMENTS.map((color, i) => (
-              <path key={i} d={arc(i)} fill={color} stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
+              <path
+                key={i}
+                d={arc(i)}
+                fill={color}
+                stroke="rgba(255,255,255,0.2)"
+                strokeWidth="0.5"
+              />
             ))}
-            <circle cx={cx} cy={cy} r={r * 0.22} fill="#141c2b" stroke="#FF6B00" strokeWidth="1.5" />
-            <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fill="#FF6B00" fontSize="7" fontWeight="900">
+            <circle
+              cx={cx}
+              cy={cy}
+              r={r * 0.22}
+              fill="#141c2b"
+              stroke="#FF6B00"
+              strokeWidth="1.5"
+            />
+            <text
+              x={cx}
+              y={cy}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="#FF6B00"
+              fontSize="7"
+              fontWeight="900"
+            >
               CG
             </text>
           </svg>

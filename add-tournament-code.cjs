@@ -4,7 +4,9 @@
 
 const { Pool } = require("pg");
 
-const SUPABASE_URL = process.env.DATABASE_URL || "postgresql://postgres.mvkvdxphxzvviaunqmlb:partikbahi09@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres";
+const SUPABASE_URL =
+  process.env.DATABASE_URL ||
+  "postgresql://postgres.mvkvdxphxzvviaunqmlb:partikbahi09@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres";
 
 function generateCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I,O,0,1 to avoid confusion
@@ -19,7 +21,9 @@ async function main() {
 
   try {
     // Add column
-    await pool.query("ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS tournament_code TEXT UNIQUE");
+    await pool.query(
+      "ALTER TABLE tournaments ADD COLUMN IF NOT EXISTS tournament_code TEXT UNIQUE",
+    );
     console.log("✓ tournament_code column added");
 
     // Backfill existing tournaments that don't have a code
@@ -32,7 +36,10 @@ async function main() {
       while (attempts < 10) {
         code = generateCode();
         try {
-          await pool.query("UPDATE tournaments SET tournament_code = $1 WHERE id = $2", [code, row.id]);
+          await pool.query("UPDATE tournaments SET tournament_code = $1 WHERE id = $2", [
+            code,
+            row.id,
+          ]);
           break;
         } catch (e) {
           attempts++;

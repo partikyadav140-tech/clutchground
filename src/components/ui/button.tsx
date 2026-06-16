@@ -16,32 +16,27 @@ const buttonVariants = cva(
           "border border-border bg-card text-foreground hover:bg-secondary active:scale-95 rounded-2xl",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-accent active:scale-95 rounded-2xl",
-        ghost:
-          "hover:bg-secondary text-foreground active:scale-95 rounded-2xl",
-        link:
-          "text-primary underline-offset-4 hover:underline",
-        hero:
-          "text-white font-black shadow-cta hover:brightness-110 active:scale-95 rounded-2xl",
+        ghost: "hover:bg-secondary text-foreground active:scale-95 rounded-2xl",
+        link: "text-primary underline-offset-4 hover:underline",
+        hero: "text-white font-black shadow-cta hover:brightness-110 active:scale-95 rounded-2xl",
         outlineFire:
           "border border-primary/50 text-primary bg-primary/5 hover:bg-primary/10 active:scale-95 rounded-2xl",
-        blade:
-          "text-white font-black active:scale-95 rounded-2xl",
+        blade: "text-white font-black active:scale-95 rounded-2xl",
       },
       size: {
         default: "h-12 px-6 text-sm",
-        sm:      "h-9 px-4 text-xs rounded-xl",
-        lg:      "h-14 px-8 text-base",
-        xl:      "h-16 px-10 text-lg",
-        icon:    "h-10 w-10 rounded-2xl",
+        sm: "h-9 px-4 text-xs rounded-xl",
+        lg: "h-14 px-8 text-base",
+        xl: "h-16 px-10 text-lg",
+        icon: "h-10 w-10 rounded-2xl",
       },
     },
     defaultVariants: { variant: "default", size: "default" },
-  }
+  },
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   asChild?: boolean;
 }
 
@@ -53,8 +48,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       variant === "hero"
         ? { background: "var(--gradient-cta)", ...style }
         : variant === "blade"
-        ? { background: "var(--gradient-primary)", ...style }
-        : { ...style };
+          ? { background: "var(--gradient-primary)", ...style }
+          : { ...style };
 
     return (
       <Comp
@@ -64,7 +59,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       />
     );
-  }
+  },
 );
 Button.displayName = "Button";
 

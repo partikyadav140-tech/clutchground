@@ -56,7 +56,9 @@ export function TournamentSquadSheet({ registrationId, open, onOpenChange, mode 
               </div>
               <div>
                 <p className="font-display font-black text-lg">{squad.teamName}</p>
-                <p className="text-xs text-muted-foreground">{mode} · {allMembers.length} player{allMembers.length !== 1 ? "s" : ""}</p>
+                <p className="text-xs text-muted-foreground">
+                  {mode} · {allMembers.length} player{allMembers.length !== 1 ? "s" : ""}
+                </p>
               </div>
             </div>
 
@@ -76,7 +78,9 @@ export function TournamentSquadSheet({ registrationId, open, onOpenChange, mode 
                         {m.role === "Captain" && <Crown className="w-3 h-3 text-amber-500" />}
                         {m.ign}
                       </p>
-                      {m.uid && <p className="text-[10px] text-muted-foreground font-mono">UID {m.uid}</p>}
+                      {m.uid && (
+                        <p className="text-[10px] text-muted-foreground font-mono">UID {m.uid}</p>
+                      )}
                     </div>
                     {m.userId && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                   </div>
@@ -84,7 +88,12 @@ export function TournamentSquadSheet({ registrationId, open, onOpenChange, mode 
 
                 if (m.userId) {
                   return (
-                    <Link key={i} to="/users/$userId" params={{ userId: String(m.userId) }} onClick={() => onOpenChange(false)}>
+                    <Link
+                      key={i}
+                      to="/users/$userId"
+                      params={{ userId: String(m.userId) }}
+                      onClick={() => onOpenChange(false)}
+                    >
                       {content}
                     </Link>
                   );

@@ -1,9 +1,10 @@
-const cron = require('node-cron');
-const { Pool } = require('pg');
+const cron = require("node-cron");
+const { Pool } = require("pg");
 
 let connString = process.env.DATABASE_URL;
-if (!connString || connString.includes('arena.db')) {
-  connString = "postgresql://neondb_owner:npg_Z2IiLU7CrfqO@ep-morning-shape-a4x9wieu.us-east-1.aws.neon.tech/neondb?sslmode=require";
+if (!connString || connString.includes("arena.db")) {
+  connString =
+    "postgresql://neondb_owner:npg_Z2IiLU7CrfqO@ep-morning-shape-a4x9wieu.us-east-1.aws.neon.tech/neondb?sslmode=require";
 }
 
 const pool = new Pool({
@@ -11,12 +12,14 @@ const pool = new Pool({
 });
 
 // Run every Sunday at 11:59 PM to award configured points to top team captain
-cron.schedule('59 23 * * 0', async () => {
+cron.schedule("59 23 * * 0", async () => {
   console.log("Running weekly rewards cron job...");
   const client = await pool.connect();
   try {
     // Fetch dynamic prize amount from site_settings (key: 'leaderboard_prize')
-    const settingsRes = await client.query("SELECT value FROM site_settings WHERE key = 'leaderboard_prize'");
+    const settingsRes = await client.query(
+      "SELECT value FROM site_settings WHERE key = 'leaderboard_prize'",
+    );
     let prizeAmount = 500; // default fallback
     if (settingsRes.rows.length > 0) {
       const dbVal = parseInt(settingsRes.rows[0].value, 10);
@@ -44,18 +47,36 @@ cron.schedule('59 23 * * 0', async () => {
 
       // Find the team captain. If they are a leader, it's them. If they are a member, find leader.
       let captainId = topUserId;
-      const teamRes = await client.query('SELECT leader_id FROM teams WHERE leader_id = $1', [topUserId]);
+      const teamRes = await client.query("SELECT leader_id FROM teams WHERE leader_id = $1", [
+        topUserId,
+      ]);
       if (teamRes.rows.length === 0) {
-        const memberRes = await client.query('SELECT t.leader_id FROM team_members tm JOIN teams t ON tm.team_id = t.id WHERE tm.user_id = $1', [topUserId]);
+        const memberRes = await client.query(
+          "SELECT t.leader_id FROM team_members tm JOIN teams t ON tm.team_id = t.id WHERE tm.user_id = $1",
+          [topUserId],
+        );
         if (memberRes.rows.length > 0) {
           captainId = memberRes.rows[0].leader_id;
         }
       }
 
       // Add configured winning coins
-      await client.query('UPDATE users SET winning_balance = winning_balance + $1 WHERE id = $2', [prizeAmount, captainId]);
-      await client.query('INSERT INTO transactions (user_id, amount, type, description) VALUES ($1, $2, $3, $4)', [captainId, prizeAmount, 'winnings_added', 'Weekly Leaderboard Top Captain Reward']);
-      await client.query('INSERT INTO notifications (user_id, message, redirect_url) VALUES ($1, $2, $3)', [captainId, `🎉 You received ${prizeAmount} Coins for your team topping the Weekly Leaderboard!`, '/wallet']);
+      await client.query("UPDATE users SET winning_balance = winning_balance + $1 WHERE id = $2", [
+        prizeAmount,
+        captainId,
+      ]);
+      await client.query(
+        "INSERT INTO transactions (user_id, amount, type, description) VALUES ($1, $2, $3, $4)",
+        [captainId, prizeAmount, "winnings_added", "Weekly Leaderboard Top Captain Reward"],
+      );
+      await client.query(
+        "INSERT INTO notifications (user_id, message, redirect_url) VALUES ($1, $2, $3)",
+        [
+          captainId,
+          `🎉 You received ${prizeAmount} Coins for your team topping the Weekly Leaderboard!`,
+          "/wallet",
+        ],
+      );
       console.log(`Awarded ${prizeAmount} points to user ${captainId}`);
     }
   } catch (err) {
@@ -65,10 +86,10 @@ cron.schedule('59 23 * * 0', async () => {
   }
 });
 
-// To reset leaderboard every Monday at 12 am, we don't actually need to clear data 
+// To reset leaderboard every Monday at 12 am, we don't actually need to clear data
 // if we just change the leaderboard API to filter by the current week!
 // But if they explicitly want to clear the 'points' in registrations:
-cron.schedule('0 0 * * 1', async () => {
+cron.schedule("0 0 * * 1", async () => {
   console.log("Resetting weekly leaderboard data...");
   // Alternatively, if we just want the UI to naturally reset, the API change handles it.
   // If we really need to wipe stats:
@@ -76,7 +97,7 @@ cron.schedule('0 0 * * 1', async () => {
 });
 
 // Run every day at 3:00 AM to clean up old chat messages (older than 7 days) to save free DB space
-cron.schedule('0 3 * * *', async () => {
+cron.schedule("0 3 * * *", async () => {
   console.log("Running chat history cleanup cron job...");
   const client = await pool.connect();
   try {

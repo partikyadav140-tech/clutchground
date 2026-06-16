@@ -117,7 +117,8 @@ function TeamsPage() {
       />
 
       <p className="text-sm text-muted-foreground -mt-1 mb-4">
-        Browse squads recruiting players. Tap a team to view the full roster and send a join request.
+        Browse squads recruiting players. Tap a team to view the full roster and send a join
+        request.
       </p>
 
       {invites.length > 0 && (
@@ -134,9 +135,13 @@ function TeamsPage() {
         >
           <p className="text-label text-amber-600 mb-1">Pending request</p>
           <p className="text-sm text-foreground">
-            Waiting for <span className="font-bold">{pendingRequest.team_name || "a team"}</span> to accept your request.
+            Waiting for <span className="font-bold">{pendingRequest.team_name || "a team"}</span> to
+            accept your request.
           </p>
-          <Link to="/my-team" className="inline-flex items-center gap-1 text-xs font-semibold text-primary mt-2">
+          <Link
+            to="/my-team"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-primary mt-2"
+          >
             View status <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </motion.div>
@@ -204,7 +209,9 @@ function TeamsPage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h2 className="font-display font-bold text-lg text-foreground truncate">{team.name}</h2>
+                    <h2 className="font-display font-bold text-lg text-foreground truncate">
+                      {team.name}
+                    </h2>
                     <p className="text-xs text-muted-foreground truncate">
                       Captain: {team.leader?.ign || team.leader?.username || "—"}
                     </p>
@@ -214,7 +221,9 @@ function TeamsPage() {
                       </span>
                       <span
                         className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-                          slots.isFull ? "bg-destructive/10 text-destructive" : "bg-emerald-500/10 text-emerald-500"
+                          slots.isFull
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-emerald-500/10 text-emerald-500"
                         }`}
                       >
                         {slots.isFull ? "Full" : "Recruiting"}

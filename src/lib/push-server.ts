@@ -19,7 +19,9 @@ function ensureVapidInitialized() {
     try {
       webpush.setVapidDetails(vapidSubject, publicVapidKey, privateVapidKey);
       isVapidInitialized = true;
-      console.log(`[Push Server] VAPID details successfully configured with subject: ${vapidSubject}`);
+      console.log(
+        `[Push Server] VAPID details successfully configured with subject: ${vapidSubject}`,
+      );
       return true;
     } catch (err) {
       console.error("[Push Server] Failed to initialize web-push VAPID details:", err);
@@ -28,7 +30,7 @@ function ensureVapidInitialized() {
   } else {
     console.warn(
       "[Push Server] VAPID keys not configured in environment. Web Push notifications will be disabled.",
-      { publicVapidKeyExists: !!publicVapidKey, privateVapidKeyExists: !!privateVapidKey }
+      { publicVapidKeyExists: !!publicVapidKey, privateVapidKeyExists: !!privateVapidKey },
     );
     return false;
   }
@@ -41,7 +43,7 @@ export async function triggerPushNotification(
   userId: number,
   title: string,
   body: string,
-  url = "/notifications"
+  url = "/notifications",
 ) {
   const { db } = await import("./db");
   try {
@@ -100,7 +102,7 @@ export async function sendNotificationHelper(
   message: string,
   redirectUrl?: string | null,
   actionType?: string | null,
-  actionData?: string | null
+  actionData?: string | null,
 ) {
   const { db } = await import("./db");
   const url = redirectUrl || null;
@@ -111,7 +113,7 @@ export async function sendNotificationHelper(
   try {
     const result = await db
       .prepare(
-        "INSERT INTO notifications (user_id, message, redirect_url, action_type, action_data) VALUES (?, ?, ?, ?, ?)"
+        "INSERT INTO notifications (user_id, message, redirect_url, action_type, action_data) VALUES (?, ?, ?, ?, ?)",
       )
       .run(userId, message, url, actType, actData);
     notifId = result.lastInsertRowid;
@@ -120,9 +122,11 @@ export async function sendNotificationHelper(
   }
 
   // Trigger web push in background
-  triggerPushNotification(userId, "🎮 ClutchGround", message, url || "/notifications").catch((err) => {
-    console.error("Background push trigger failed:", err);
-  });
+  triggerPushNotification(userId, "🎮 ClutchGround", message, url || "/notifications").catch(
+    (err) => {
+      console.error("Background push trigger failed:", err);
+    },
+  );
 
   return notifId;
 }
@@ -136,7 +140,7 @@ export async function notifyAllAdmins(message: string, redirectUrl?: string | nu
     const admins = (await db.prepare("SELECT id FROM users WHERE role = 'admin'").all()) as any[];
     if (admins && admins.length > 0) {
       const promises = admins.map((admin) =>
-        sendNotificationHelper(admin.id, message, redirectUrl)
+        sendNotificationHelper(admin.id, message, redirectUrl),
       );
       await Promise.all(promises);
     }

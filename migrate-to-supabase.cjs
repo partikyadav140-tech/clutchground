@@ -4,7 +4,8 @@
 
 const { Pool } = require("pg");
 
-const SUPABASE_URL = "postgresql://postgres.mvkvdxphxzvviaunqmlb:partikbahi09@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres";
+const SUPABASE_URL =
+  "postgresql://postgres.mvkvdxphxzvviaunqmlb:partikbahi09@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres";
 
 async function main() {
   console.log("🚀 Connecting to Supabase...");
@@ -267,7 +268,7 @@ async function main() {
       WHERE table_schema = 'public' ORDER BY table_name
     `);
     console.log("\n📋 Tables in Supabase:");
-    rows.forEach(r => console.log("  -", r.table_name));
+    rows.forEach((r) => console.log("  -", r.table_name));
 
     console.log("\n🎉 Migration complete! Your site is now fully on Supabase.");
   } catch (e) {

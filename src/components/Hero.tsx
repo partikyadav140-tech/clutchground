@@ -18,7 +18,7 @@ export function Hero() {
   const reduce = useReducedMotion();
   const { user } = useAuth();
 
-  const [banners, setBanners] = useState<string[]>(["https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319414/clutchground/placeholders/zvdpuk7j7e4dgxax5h2b.png"]);
+  const [banners, setBanners] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -48,16 +48,18 @@ export function Hero() {
       {/* Background Image Carousel */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-black">
         <AnimatePresence mode="popLayout">
-          <motion.img
-            key={banners[currentIndex]}
-            src={banners[currentIndex]}
-            alt="Hero Banner"
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 0.6, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
-            className="absolute inset-0 w-full h-full object-cover object-center"
-          />
+          {banners.length > 0 && (
+            <motion.img
+              key={banners[currentIndex]}
+              src={banners[currentIndex]}
+              alt="Hero Banner"
+              initial={{ opacity: 0, scale: 1.05 }}
+              animate={{ opacity: 0.6, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.8, ease: "easeInOut" }}
+              className="absolute inset-0 w-full h-full object-cover object-center"
+            />
+          )}
         </AnimatePresence>
         {/* Gradient overlays for mobile readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/20 to-background z-10" />

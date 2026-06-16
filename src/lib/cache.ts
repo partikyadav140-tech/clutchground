@@ -2,7 +2,8 @@
 class SimpleCache {
   private cache = new Map<string, { data: any; expiry: number }>();
 
-  set(key: string, data: any, ttlMs: number = 5 * 60 * 1000) { // 5 minutes default
+  set(key: string, data: any, ttlMs: number = 5 * 60 * 1000) {
+    // 5 minutes default
     this.cache.set(key, {
       data,
       expiry: Date.now() + ttlMs,

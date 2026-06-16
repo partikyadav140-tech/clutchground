@@ -1,8 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ChevronLeft, ShoppingCart, Sparkles, Zap, Gift, Crown,
-  Ticket, Star, TrendingUp, Flame,
+  ChevronLeft,
+  ShoppingCart,
+  Sparkles,
+  Zap,
+  Gift,
+  Crown,
+  Ticket,
+  Star,
+  TrendingUp,
+  Flame,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -10,12 +18,7 @@ import { Button } from "@/components/ui/button";
 import { GodCoin } from "@/components/GodCoin";
 import { useAuth } from "@/lib/auth-client";
 import { confirmDialog } from "@/components/ConfirmDialog";
-import {
-  getProfile,
-  getSpinWheelConfig,
-  getSpinWheelStatus,
-  purchaseSpinPack,
-} from "@/api";
+import { getProfile, getSpinWheelConfig, getSpinWheelStatus, purchaseSpinPack } from "@/api";
 import type { SpinPack } from "@/lib/spin-wheel";
 
 export const Route = createFileRoute("/_app/spin-wheel/buy")({
@@ -25,12 +28,48 @@ export const Route = createFileRoute("/_app/spin-wheel/buy")({
 
 /* ── Pack tier styling ── */
 const packTiers = [
-  { icon: Ticket,     accent: "text-sky-400",     bg: "bg-sky-400/10",     border: "border-sky-400/20",     badge: null },
-  { icon: Zap,        accent: "text-primary",      bg: "bg-primary/10",     border: "border-primary/20",     badge: null },
-  { icon: Star,       accent: "text-amber-400",    bg: "bg-amber-400/10",   border: "border-amber-400/20",   badge: "Popular" },
-  { icon: TrendingUp, accent: "text-emerald-400",  bg: "bg-emerald-400/10", border: "border-emerald-400/20", badge: "Best Value" },
-  { icon: Crown,      accent: "text-purple-400",   bg: "bg-purple-400/10",  border: "border-purple-400/20",  badge: "Premium" },
-  { icon: Flame,      accent: "text-rose-400",     bg: "bg-rose-400/10",    border: "border-rose-400/20",    badge: "Mega Pack" },
+  {
+    icon: Ticket,
+    accent: "text-sky-400",
+    bg: "bg-sky-400/10",
+    border: "border-sky-400/20",
+    badge: null,
+  },
+  {
+    icon: Zap,
+    accent: "text-primary",
+    bg: "bg-primary/10",
+    border: "border-primary/20",
+    badge: null,
+  },
+  {
+    icon: Star,
+    accent: "text-amber-400",
+    bg: "bg-amber-400/10",
+    border: "border-amber-400/20",
+    badge: "Popular",
+  },
+  {
+    icon: TrendingUp,
+    accent: "text-emerald-400",
+    bg: "bg-emerald-400/10",
+    border: "border-emerald-400/20",
+    badge: "Best Value",
+  },
+  {
+    icon: Crown,
+    accent: "text-purple-400",
+    bg: "bg-purple-400/10",
+    border: "border-purple-400/20",
+    badge: "Premium",
+  },
+  {
+    icon: Flame,
+    accent: "text-rose-400",
+    bg: "bg-rose-400/10",
+    border: "border-rose-400/20",
+    badge: "Mega Pack",
+  },
 ];
 
 const staggerContainer = {
@@ -39,7 +78,12 @@ const staggerContainer = {
 };
 const staggerItem = {
   hidden: { opacity: 0, y: 20, scale: 0.95 },
-  show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring" as const, stiffness: 300, damping: 24 } },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: "spring" as const, stiffness: 300, damping: 24 },
+  },
 };
 
 type SpinStatus = {
@@ -156,8 +200,12 @@ function BuySpinsPage() {
           <ChevronLeft className="w-5 h-5" />
         </Link>
         <div>
-          <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground leading-none">Spin Wheel</span>
-          <h1 className="font-display font-black text-xl text-foreground mt-0.5 leading-tight">Buy Spins</h1>
+          <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground leading-none">
+            Spin Wheel
+          </span>
+          <h1 className="font-display font-black text-xl text-foreground mt-0.5 leading-tight">
+            Buy Spins
+          </h1>
         </div>
       </div>
 
@@ -174,16 +222,21 @@ function BuySpinsPage() {
               <GodCoin className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-[9px] uppercase font-black tracking-wider text-muted-foreground">Your balance</p>
+              <p className="text-[9px] uppercase font-black tracking-wider text-muted-foreground">
+                Your balance
+              </p>
               <p className="font-display font-black text-lg text-foreground flex items-center gap-1">
-                {totalBalance} <span className="text-xs font-semibold text-muted-foreground">CG</span>
+                {totalBalance}{" "}
+                <span className="text-xs font-semibold text-muted-foreground">CG</span>
               </p>
             </div>
           </div>
           {spinCredits > 0 && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/15 border border-primary/25">
               <Ticket className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs font-bold text-primary">{spinCredits} spin{spinCredits > 1 ? "s" : ""}</span>
+              <span className="text-xs font-bold text-primary">
+                {spinCredits} spin{spinCredits > 1 ? "s" : ""}
+              </span>
             </div>
           )}
         </div>
@@ -196,7 +249,12 @@ function BuySpinsPage() {
         transition={{ delay: 0.15 }}
         className="px-4 mt-4"
       >
-        <div className="relative rounded-2xl overflow-hidden p-5 border border-primary/20" style={{ background: "linear-gradient(135deg, rgba(0,200,255,0.08), rgba(124,58,237,0.08))" }}>
+        <div
+          className="relative rounded-2xl overflow-hidden p-5 border border-primary/20"
+          style={{
+            background: "linear-gradient(135deg, rgba(0,200,255,0.08), rgba(124,58,237,0.08))",
+          }}
+        >
           <div className="absolute top-0 right-0 w-40 h-40 bg-primary/10 rounded-full blur-[50px] pointer-events-none" />
           <div className="relative">
             <div className="flex items-center gap-2 mb-2">
@@ -204,7 +262,8 @@ function BuySpinsPage() {
               <p className="font-display font-black text-sm text-foreground">Spin & Win CG Coins</p>
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Buy spin packs to get more chances at winning. Bigger packs = better value per spin. Winnings are instantly added to your deposit balance!
+              Buy spin packs to get more chances at winning. Bigger packs = better value per spin.
+              Winnings are instantly added to your deposit balance!
             </p>
           </div>
         </div>
@@ -227,11 +286,12 @@ function BuySpinsPage() {
             const canAfford = totalBalance >= pack.cost;
             const needsWinning = pack.cost > deposit;
             const perSpin = (pack.cost / pack.spins).toFixed(1);
-            const savingsPercent = idx > 0 && spinPacks[0]?.cost
-              ? Math.round(
-                  (1 - (pack.cost / pack.spins) / (spinPacks[0].cost / spinPacks[0].spins)) * 100
-                )
-              : 0;
+            const savingsPercent =
+              idx > 0 && spinPacks[0]?.cost
+                ? Math.round(
+                    (1 - pack.cost / pack.spins / (spinPacks[0].cost / spinPacks[0].spins)) * 100,
+                  )
+                : 0;
 
             return (
               <motion.div
@@ -245,14 +305,18 @@ function BuySpinsPage() {
               >
                 {/* Badge */}
                 {tier.badge && (
-                  <div className={`absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full text-[9px] font-black ${tier.bg} ${tier.accent} border ${tier.border}`}>
+                  <div
+                    className={`absolute -top-2.5 right-4 px-2.5 py-0.5 rounded-full text-[9px] font-black ${tier.bg} ${tier.accent} border ${tier.border}`}
+                  >
                     {tier.badge}
                   </div>
                 )}
 
                 <div className="flex items-center gap-4">
                   {/* Icon */}
-                  <div className={`w-14 h-14 rounded-2xl ${tier.bg} flex items-center justify-center shrink-0`}>
+                  <div
+                    className={`w-14 h-14 rounded-2xl ${tier.bg} flex items-center justify-center shrink-0`}
+                  >
                     <TierIcon className={`w-7 h-7 ${tier.accent}`} />
                   </div>
 
@@ -313,23 +377,35 @@ function BuySpinsPage() {
         className="px-4 mt-6"
       >
         <div className="rounded-2xl bg-card/50 border border-border/30 p-4 space-y-2">
-          <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">How it works</p>
+          <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
+            How it works
+          </p>
           <ul className="space-y-1.5 text-xs text-muted-foreground leading-relaxed">
             <li className="flex items-start gap-2">
               <Gift className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-              <span>You get <strong className="text-foreground">1 free spin daily</strong> when your deposit balance is ≥ 100 CG</span>
+              <span>
+                You get <strong className="text-foreground">1 free spin daily</strong> when you join
+                at least one tournament
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <ShoppingCart className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
-              <span>Buy spin packs for <strong className="text-foreground">extra spins any time</strong></span>
+              <span>
+                Buy spin packs for <strong className="text-foreground">extra spins any time</strong>
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <TrendingUp className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-              <span>Bigger packs give <strong className="text-foreground">better value per spin</strong></span>
+              <span>
+                Bigger packs give <strong className="text-foreground">better value per spin</strong>
+              </span>
             </li>
             <li className="flex items-start gap-2">
               <Zap className="w-3.5 h-3.5 text-purple-400 shrink-0 mt-0.5" />
-              <span>Winnings are <strong className="text-foreground">instantly credited</strong> to your deposit balance</span>
+              <span>
+                Winnings are <strong className="text-foreground">instantly credited</strong> to your
+                deposit balance
+              </span>
             </li>
           </ul>
         </div>
