@@ -7,17 +7,8 @@ import {
   Gamepad2,
   Share2,
   Sparkles,
-  Trophy,
-  Users,
-  Upload,
-  Target,
-  Flame,
   ChevronRight,
-  Check,
-  Swords,
-  Award,
   Shield,
-  Crown,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -39,49 +30,7 @@ type ProfileViewProps = {
   onUpdated?: (profile: any) => void;
 };
 
-/* ── Animated number counter ── */
-function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
-  const [display, setDisplay] = useState(0);
-  const ref = useRef<number>(0);
 
-  useEffect(() => {
-    const start = ref.current;
-    const diff = value - start;
-    if (diff === 0) {
-      setDisplay(value);
-      return;
-    }
-    const startTime = performance.now();
-
-    const tick = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
-      const current = Math.round(start + diff * eased);
-      setDisplay(current);
-      if (progress < 1) requestAnimationFrame(tick);
-      else ref.current = value;
-    };
-    requestAnimationFrame(tick);
-  }, [value, duration]);
-
-  return <>{display}</>;
-}
-
-/* ── Stagger container variants ── */
-const staggerContainer = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08, delayChildren: 0.6 } },
-};
-const staggerItem = {
-  hidden: { opacity: 0, y: 20, scale: 0.9 },
-  show: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { type: "spring" as const, stiffness: 300, damping: 24 },
-  },
-};
 
 export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
   const [editOpen, setEditOpen] = useState(false);
@@ -206,33 +155,7 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
     toast.success("Profile link copied!");
   };
 
-  const statItems = [
-    {
-      label: "Matches",
-      value: profile?.stats?.matchesPlayed ?? 0,
-      icon: Gamepad2,
-      color: "text-sky-400",
-    },
-    {
-      label: "Kills",
-      value: profile?.stats?.totalKills ?? 0,
-      icon: Swords,
-      color: "text-amber-500",
-    },
-    {
-      label: "Wins",
-      value: profile?.stats?.firstPlaces ?? 0,
-      icon: Trophy,
-      color: "text-emerald-400",
-    },
-    {
-      label: "Earned",
-      value: profile?.stats?.totalEarnings ?? 0,
-      icon: Award,
-      color: "text-primary",
-      coin: true,
-    },
-  ];
+
 
   return (
     <div className="pb-6">
@@ -411,32 +334,8 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
         </div>
       </motion.div>
 
-      {/* ════════════ STATS STRIP — Glassmorphism ════════════ */}
-      <motion.div
-        variants={staggerContainer}
-        initial="hidden"
-        animate="show"
-        className="grid grid-cols-4 gap-2 px-4 mt-6"
-      >
-        {statItems.map((s, idx) => (
-          <motion.div
-            key={s.label}
-            variants={staggerItem}
-            className="profile-stat-glass rounded-2xl p-3 text-center group cursor-default"
-          >
-            <s.icon
-              className={`w-4 h-4 mx-auto mb-1.5 ${s.color} opacity-70 group-hover:opacity-100 transition-opacity`}
-            />
-            <p className="text-[8px] uppercase font-black tracking-[0.15em] text-muted-foreground">
-              {s.label}
-            </p>
-            <p className="font-display font-black text-base mt-0.5 flex items-center justify-center gap-0.5 text-foreground">
-              {s.coin && <GodCoin className="w-3 h-3" />}
-              <AnimatedNumber value={s.value} duration={1000 + idx * 200} />
-            </p>
-          </motion.div>
-        ))}
-      </motion.div>
+
+
 
       {/* ════════════ TEAM CARD ════════════ */}
       {profile?.team && (

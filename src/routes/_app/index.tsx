@@ -168,7 +168,7 @@ function HomePage() {
       <motion.div variants={fadeUp} className="px-4 pt-4 pb-4">
         {user ? (
           /* ── Logged-in: Player Welcome Card ── */
-          <div id="tutorial-player-card" className="hud-card p-4 sm:p-5">
+          <div id="tutorial-player-card" className="hud-card p-5 sm:p-6">
             {/* Ambient glow blobs — adapt to brand colors */}
             <div
               className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-[40px] pointer-events-none"
@@ -186,7 +186,7 @@ function HomePage() {
                 {/* Avatar — circular with custom border styling */}
                 <Link
                   to="/profile"
-                  className="relative w-12 h-12 sm:w-13 sm:h-13 rounded-full overflow-hidden shrink-0 border-2 shadow-[0_0_12px_rgba(0,200,255,0.15)] press-effect active:scale-95 transition-transform"
+                  className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden shrink-0 border-2 shadow-[0_0_12px_rgba(0,200,255,0.15)] press-effect active:scale-95 transition-transform"
                   style={{ borderColor: "var(--primary)" }}
                 >
                   {profile?.avatar_url ? (
@@ -197,7 +197,7 @@ function HomePage() {
                     />
                   ) : (
                     <div
-                      className="w-full h-full flex items-center justify-center font-display font-black text-base sm:text-lg text-white"
+                      className="w-full h-full flex items-center justify-center font-display font-black text-lg sm:text-xl text-white"
                       style={{ background: "var(--gradient-primary)" }}
                     >
                       {(profile?.ign || user.username || "?")[0].toUpperCase()}
@@ -216,7 +216,7 @@ function HomePage() {
                     Welcome back
                   </p>
                   <div className="flex items-center gap-1.5 mt-1 min-w-0">
-                    <h1 className="font-display font-black text-sm sm:text-base md:text-lg text-foreground leading-none truncate">
+                    <h1 className="font-display font-black text-base sm:text-lg md:text-xl text-foreground leading-none truncate">
                       {profile?.ign || user.username}
                     </h1>
                     {user.role === "admin" ? (
@@ -248,14 +248,14 @@ function HomePage() {
                 <Link
                   id="tutorial-wallet-pill"
                   to="/wallet"
-                  className="flex items-center gap-2 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl border border-blue-500/25 bg-blue-500/10 hover:bg-blue-500/15 hover:border-blue-500/40 text-blue-500 press-effect active:scale-95 transition-all shadow-sm"
+                  className="flex items-center gap-2 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl border border-[#00c8ff]/25 bg-[#00c8ff]/10 hover:bg-[#00c8ff]/15 hover:border-[#00c8ff]/40 text-[#00c8ff] press-effect active:scale-95 transition-all shadow-sm"
                 >
                   <Wallet className="w-4 h-4 shrink-0" />
-                  <span className="text-xs font-black uppercase tracking-wider text-blue-500/95 hidden xs:inline shrink-0">
+                  <span className="text-xs font-black uppercase tracking-wider text-[#00c8ff]/95 hidden xs:inline shrink-0">
                     Wallet
                   </span>
-                  <div className="flex items-center gap-1 bg-blue-500/20 px-2.5 py-1 rounded-xl text-foreground font-display font-black text-sm tabular-nums shrink-0">
-                    <GodCoin className="w-3.5 h-3.5 text-blue-400" />
+                  <div className="flex items-center gap-1 bg-[#00c8ff]/20 px-2.5 py-1 rounded-xl text-foreground font-display font-black text-sm tabular-nums shrink-0">
+                    <GodCoin className="w-3.5 h-3.5 text-[#00c8ff]" />
                     {balance}
                   </div>
                 </Link>

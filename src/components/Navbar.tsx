@@ -269,7 +269,7 @@ export function Navbar() {
               <motion.div layoutId="shared-wallet-pill" className="shrink-0">
                 <Link
                   to="/wallet"
-                  className="relative w-10 h-10 lg:w-8 lg:h-8 flex items-center justify-center rounded-full border border-blue-500/25 bg-blue-500/15 hover:bg-blue-500/20 text-blue-500 transition-all active:scale-95 press-effect shadow-sm shrink-0"
+                  className="relative w-10 h-10 lg:w-8 lg:h-8 flex items-center justify-center rounded-full border border-[#00c8ff]/25 bg-[#00c8ff]/15 hover:bg-[#00c8ff]/20 text-[#00c8ff] transition-all active:scale-95 press-effect shadow-sm shrink-0"
                   title="Wallet"
                 >
                   <Wallet className="w-[20px] h-[20px] lg:w-4 lg:h-4 shrink-0" />
