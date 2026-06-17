@@ -3,7 +3,6 @@ import {
   createRootRoute,
   HeadContent,
   Scripts,
-  ScrollRestoration,
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -301,7 +300,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
             }}
           />
         </ThemeProvider>
-        <ScrollRestoration />
         <Scripts />
       </body>
     </html>

@@ -20,6 +20,7 @@ export async function getCurrentUser(requiredRole?: "admin" | "user", dataSessio
 
 // ─── Cloudinary Image Upload ───────────────────────────────────────────────
 export const uploadImage = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser();
   const { uploadToCloudinary } = await import("./lib/cloudinary");
   const { base64, folder } = data as unknown as { base64: string; folder?: string };
   if (!base64) throw new Error("No image data provided");
@@ -28,6 +29,7 @@ export const uploadImage = createServerFn({ method: "POST" }).handler(async ({ d
 });
 
 export const deleteImage = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
   const { deleteFromCloudinary } = await import("./lib/cloudinary");
   const { url } = data as unknown as { url: string };
   if (!url) throw new Error("No image URL provided");
@@ -200,6 +202,9 @@ export const loginUser = createServerFn({ method: "POST" }).handler(async ({ dat
   // Clear failed login attempts on successful login
   await db.prepare("DELETE FROM login_attempts WHERE identifier = ?").run(normalizedEmail);
 
+  // Invalidate old sessions for this user
+  await db.prepare("DELETE FROM sessions WHERE user_id = ?").run(user.id);
+
   const sessionId = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(); // 7 days
 
@@ -324,6 +329,12 @@ export const resetPassword = createServerFn({ method: "POST" }).handler(async ({
 
   if (!normalizedEmail) throw new Error("Email address is required");
 
+  // Validate new password
+  if (!new_password || typeof new_password !== "string" || new_password.length < 6)
+    throw new Error("Password must be at least 6 characters");
+  if (new_password.length > 100)
+    throw new Error("Password is too long");
+
   // Find user by email
   const user = (await db
     .prepare("SELECT id FROM users WHERE email = ?")
@@ -353,6 +364,8 @@ export const resetPassword = createServerFn({ method: "POST" }).handler(async ({
   await db
     .prepare("UPDATE users SET password = ?, password_encrypted = ? WHERE id = ?")
     .run(hashedPassword, encryptedPassword, user.id);
+  // Invalidate all existing sessions for this user
+  await db.prepare("DELETE FROM sessions WHERE user_id = ?").run(user.id);
   // Mark OTP as used
   await db.prepare("UPDATE email_otps SET used = true WHERE id = ?").run(otpRecord.id);
   return { success: true };
@@ -486,7 +499,7 @@ export const getUserFromSession = createServerFn({ method: "GET" }).handler(asyn
   if (!sessionId) return null;
 
   const stmt = db.prepare(`
-      SELECT users.id, users.username, users.role, users.deposit_balance, users.winning_balance, users.banned, users.ign, users.uid, users.email, users.phone, users.avatar_url, users.upi_id, users.security_question
+      SELECT users.id, users.username, users.role, users.deposit_balance, users.winning_balance, users.banned, users.ign, users.uid, users.email, users.phone, users.avatar_url, users.upi_id
       FROM sessions 
       JOIN users ON sessions.user_id = users.id 
       WHERE sessions.id = ? AND sessions.expires_at > ?
@@ -500,7 +513,12 @@ export const logoutUser = createServerFn({ method: "POST" }).handler(async ({ da
   const { db } = await import("./lib/db");
   const sessionId = data as unknown as string;
   if (sessionId) {
-    await db.prepare("DELETE FROM sessions WHERE id = ?").run(sessionId);
+    // Verify the session belongs to the caller before deleting
+    const caller = await getCurrentUser();
+    const session = (await db.prepare("SELECT user_id FROM sessions WHERE id = ?").get(sessionId)) as any;
+    if (session && session.user_id === caller.id) {
+      await db.prepare("DELETE FROM sessions WHERE id = ?").run(sessionId);
+    }
   }
   return { success: true };
 });
@@ -522,12 +540,10 @@ export const getUsers = createServerFn({ method: "GET" }).handler(async () => {
   for (const u of list) {
     let plain: string | null = null;
 
-    // 1. Try decrypting password_encrypted with current ENCRYPTION_KEY
     if (u.password_encrypted) {
-      plain = decryptPassword(u.password_encrypted);
+      try { plain = decryptPassword(u.password_encrypted); } catch {}
     }
 
-    // 2. Try decrypting with old default key (passwords encrypted before ENCRYPTION_KEY was set)
     if (!plain && u.password_encrypted && u.password_encrypted.includes(":")) {
       try {
         const [ivHex, authTagHex, ciphertext] = u.password_encrypted.split(":");
@@ -545,7 +561,6 @@ export const getUsers = createServerFn({ method: "GET" }).handler(async () => {
       } catch {}
     }
 
-    // 3. Fallback: if password column is plaintext (no ":"), it's the real password
     if (!plain && u.password && !u.password.includes(":")) {
       plain = u.password;
     }
@@ -3250,6 +3265,8 @@ export const updateUserRole = createServerFn({ method: "POST" }).handler(async (
   await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const { id, role } = data as unknown as { id: number; role: string };
+  const allowedRoles = ["user", "admin"];
+  if (!allowedRoles.includes(role)) throw new Error("Invalid role");
   await db.prepare("UPDATE users SET role = ? WHERE id = ?").run(role, id);
   return { success: true };
 });

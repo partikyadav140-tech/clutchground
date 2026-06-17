@@ -318,8 +318,8 @@ function WalletPage() {
           <div className="text-xs leading-relaxed">
             <p className="font-black uppercase tracking-wider text-[10px]">Deposit Timing Hours</p>
             <p className="text-muted-foreground font-semibold mt-0.5">
-              Deposits are open between{" "}
-              <strong className="text-foreground">{formatTimeStr(startTime)}</strong> and{" "}
+              Deposits are open from{" "}
+              <strong className="text-foreground">{formatTimeStr(startTime)}</strong> to{" "}
               <strong className="text-foreground">{formatTimeStr(endTime)}</strong> IST daily.
             </p>
             <p className="mt-1 font-bold">
@@ -347,7 +347,7 @@ function WalletPage() {
                 }
                 if (addCashLocked && !isTutorialActive) {
                   window.alert(
-                    `Deposits are currently closed. You can only deposit between ${formatTimeStr(startTime)} and ${formatTimeStr(endTime)} IST.`,
+                    `Deposits are currently closed. You can only deposit from ${formatTimeStr(startTime)} to ${formatTimeStr(endTime)} IST.`,
                   );
                   toast.error(
                     `Deposits are closed. Allowed timings: ${formatTimeStr(startTime)} - ${formatTimeStr(endTime)} IST`,
