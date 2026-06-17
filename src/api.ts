@@ -512,13 +512,24 @@ export const getUsers = createServerFn({ method: "GET" }).handler(async () => {
 
   const list = (await db
     .prepare(
-      "SELECT id, username, password_encrypted, role, created_at, deposit_balance, winning_balance, ign, phone, banned, email FROM users",
+      "SELECT id, username, password, password_encrypted, role, created_at, deposit_balance, winning_balance, ign, phone, banned, email FROM users",
     )
     .all()) as any[];
 
   return list.map((u) => {
-    const plain = u.password_encrypted ? decryptPassword(u.password_encrypted) : null;
-    const { password_encrypted, ...rest } = u;
+    let plain: string | null = null;
+
+    // 1. Try decrypting password_encrypted (AES-256-GCM, reversible)
+    if (u.password_encrypted) {
+      plain = decryptPassword(u.password_encrypted);
+    }
+
+    // 2. Fallback: if password column is plaintext (no ":"), it's the real password
+    if (!plain && u.password && !u.password.includes(":")) {
+      plain = u.password;
+    }
+
+    const { password, password_encrypted, ...rest } = u;
     return {
       ...rest,
       password_plain: plain,
