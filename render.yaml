@@ -3,7 +3,7 @@ services:
     name: clutchground-api
     runtime: node
     plan: free
-    buildCommand: npm install --include=dev && npm run build
+    buildCommand: npm install --include=dev --legacy-peer-deps && npm run build
     startCommand: node server.mjs
     envVars:
       - key: NODE_ENV
