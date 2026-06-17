@@ -1,3 +1,4 @@
+"use server";
 import webpush from "web-push";
 import { getEnvVar } from "./env";
 

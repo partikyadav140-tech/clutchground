@@ -238,7 +238,11 @@ function NotificationsPage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(i * 0.04, 0.3) }}
-                onClick={() => n.redirect_url && router.navigate({ to: n.redirect_url })}
+                onClick={() => {
+                  if (n.redirect_url && n.redirect_url.startsWith("/") && !/[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(n.redirect_url)) {
+                    router.navigate({ to: n.redirect_url });
+                  }
+                }}
                 className={`bg-card rounded-2xl border shadow-card overflow-hidden ${n.redirect_url ? "cursor-pointer press-effect active:scale-[0.98]" : ""} ${isNew ? "border-primary/30" : "border-border"}`}
               >
                 {/* New indicator stripe */}

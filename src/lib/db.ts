@@ -131,6 +131,18 @@ export const db = {
 
 async function initDb() {
   try {
+    // Drop login_attempts if it was created without id column (previous broken migration)
+    try {
+      const colCheck = await pool.query(
+        `SELECT column_name FROM information_schema.columns WHERE table_name = 'login_attempts' AND column_name = 'id'`,
+      );
+      if (colCheck.rows.length === 0) {
+        await pool.query(`DROP TABLE IF EXISTS login_attempts CASCADE;`);
+      }
+    } catch {
+      // Table doesn't exist yet, that's fine
+    }
+
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -388,6 +400,14 @@ async function initDb() {
         verified BOOLEAN DEFAULT false,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS login_attempts (
+        id SERIAL PRIMARY KEY,
+        identifier TEXT UNIQUE NOT NULL,
+        attempt_count INTEGER NOT NULL DEFAULT 0,
+        locked_until TIMESTAMP NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
     // Ensure columns exist (for SQLite/Postgres compatibility we use separate ALTER statements if needed, but in Postgres ADD COLUMN IF NOT EXISTS works)
@@ -435,7 +455,7 @@ async function initDb() {
 
       // Team requests initiated_by migration
       await pool.query(
-        `ALTER TABLE team_requests ADD COLUMN IF NOT EXISTS initiated_by TEXT DEFAULT 'player';`,
+        `ALTER TABLE team_requests ADD COLUMN IF NOT EXISTS initiated_by INTEGER REFERENCES users(id);`,
       );
 
       await pool.query(
@@ -473,8 +493,9 @@ async function initDb() {
       const adminCheck = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
       if (adminCheck.rows.length === 0) {
         const { hashPassword, encryptPassword } = await import("./auth-crypto");
-        const hashedPassword = hashPassword("admin123");
-        const encryptedPassword = encryptPassword("admin123");
+        const defaultPassword = process.env.ADMIN_PASSWORD || "admin123";
+        const hashedPassword = hashPassword(defaultPassword);
+        const encryptedPassword = encryptPassword(defaultPassword);
         await pool.query(
           `
           INSERT INTO users (username, password, password_encrypted, role, phone)
@@ -482,7 +503,10 @@ async function initDb() {
         `,
           [hashedPassword, encryptedPassword],
         );
-        console.log("[DB] Default admin seeded successfully.");
+        console.log("[DB] Default admin seeded. IMPORTANT: Change the admin password immediately after first login!");
+        if (!process.env.ADMIN_PASSWORD) {
+          console.log("[DB] WARNING: Using default password 'admin123'. Set ADMIN_PASSWORD env var for better security.");
+        }
       } else {
         console.log("[DB] Admin accounts already exist. Skipping seed.");
       }

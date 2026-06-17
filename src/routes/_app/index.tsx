@@ -6,15 +6,11 @@ import {
   getMyMatches,
   getHeroBanners,
   getProfile,
-  getMyTeam,
-  getTeamRequests,
-  getTeamChatUnreadCount,
 } from "../../api";
 import useEmblaCarousel from "embla-carousel-react";
 import Autoplay from "embla-carousel-autoplay";
 import {
   Trophy,
-  Users,
   Crown,
   Wallet,
   ChevronRight,
@@ -67,9 +63,6 @@ function HomePage() {
   const router = useRouter();
   const [profile, setProfile] = React.useState<any>(null);
   const [joinedMatches, setJoinedMatches] = React.useState<number[]>([]);
-  const [myTeam, setMyTeam] = React.useState<any>(null);
-  const [teamRequests, setTeamRequests] = React.useState<any[]>([]);
-  const [unreadChatCount, setUnreadChatCount] = React.useState<number>(0);
 
   const [banners, setBanners] = React.useState<string[]>([]);
   const [currentBannerIdx, setCurrentBannerIdx] = React.useState(0);
@@ -97,46 +90,12 @@ function HomePage() {
         .then((matches: any[]) => setJoinedMatches(matches.map((m) => m.id)))
         .catch(console.error);
 
-      Promise.all([(getProfile as any)({ data: user.id }), (getMyTeam as any)({ data: user.id })])
-        .then(([p, t]) => {
-          setProfile(p);
-          setMyTeam(t);
-          if (t && t.leader_id === user.id) {
-            (getTeamRequests as any)({ data: user.id })
-              .then((reqs: any[]) => setTeamRequests(reqs))
-              .catch(console.error);
-          }
-        })
+      (getProfile as any)({ data: user.id })
+        .then((p: any) => setProfile(p))
         .catch(console.error);
     }
   }, [user]);
 
-  React.useEffect(() => {
-    if (!user || !myTeam) {
-      setUnreadChatCount(0);
-      return;
-    }
-
-    const fetchUnreadCount = () => {
-      const lastReadId = Number(
-        localStorage.getItem(`clutchground_team_last_read_${myTeam.id}`) || 0,
-      );
-      (getTeamChatUnreadCount as any)({
-        data: {
-          teamId: myTeam.id,
-          lastReadMessageId: lastReadId,
-        },
-      })
-        .then((count: number) => {
-          setUnreadChatCount(count);
-        })
-        .catch(console.error);
-    };
-
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 4000); // Poll every 4 seconds
-    return () => clearInterval(interval);
-  }, [user, myTeam]);
 
   /* ── Carousels ── */
   const [featuredRef] = useEmblaCarousel({ loop: true, align: "center", containScroll: false }, [
@@ -493,59 +452,6 @@ function HomePage() {
 
       {/* Daily spin wheel — above My Team */}
       <SpinWheelFab bottomOffset={152} />
-
-      {/* ═══════════════════════════════════════════════
-          FIXED: My Team Floating Button (right side, above navbar)
-         ═══════════════════════════════════════════════ */}
-      {user && (
-        <Link
-          to="/my-team"
-          className="fixed right-3 z-40 no-underline"
-          style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 86px)" }}
-        >
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", damping: 18, stiffness: 260, delay: 0.5 }}
-            className="relative flex items-center gap-2.5 pl-3 pr-4 py-2.5 rounded-2xl border border-border bg-card/95 backdrop-blur-xl shadow-card press-effect active:scale-95 transition-transform cursor-pointer"
-          >
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-primary/15 text-primary border border-primary/20 overflow-hidden">
-              {myTeam && myTeam.logo ? (
-                <img src={myTeam.logo} className="w-full h-full object-cover" alt="team logo" />
-              ) : (
-                <Users className="w-5 h-5" />
-              )}
-            </div>
-            {/* Label */}
-            <div className="flex flex-col">
-              <span className="text-xs font-bold text-foreground leading-none flex items-center gap-1.5">
-                {myTeam ? "My Team" : "Squad"}
-                {unreadChatCount > 0 && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                )}
-              </span>
-              <span className="text-label leading-tight mt-0.5 max-w-[80px] truncate">
-                {myTeam ? myTeam.name : "Join / Create"}
-              </span>
-            </div>
-            {/* Notification dot for pending requests and chat */}
-            {myTeam && (teamRequests?.length || 0) + unreadChatCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex items-center justify-center">
-                <span
-                  className="absolute w-4 h-4 rounded-full animate-ping opacity-40"
-                  style={{ background: "var(--primary)" }}
-                />
-                <span
-                  className="relative w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold text-white px-1"
-                  style={{ background: "var(--primary)", minWidth: "16px" }}
-                >
-                  {(teamRequests?.length || 0) + unreadChatCount}
-                </span>
-              </span>
-            )}
-          </motion.div>
-        </Link>
-      )}
 
       {/* ── Hero Image Lightbox ── */}
       <AnimatePresence>

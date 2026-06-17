@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Suspense, useEffect, useLayoutEffect, useRef } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { MyTeamFab } from "@/components/MyTeamFab";
 
 import { getSiteSettings } from "../api";
 
@@ -123,6 +124,9 @@ export const Route = createFileRoute("/_app")({
             </Suspense>
           </div>
         </main>
+
+        {/* Global My Team floating button — visible on all pages */}
+        {!isAuthRoute && <MyTeamFab />}
       </div>
     );
   },

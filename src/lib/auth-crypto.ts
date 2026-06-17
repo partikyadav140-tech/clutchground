@@ -1,3 +1,4 @@
+"use server";
 import crypto from "node:crypto";
 import { getEnvVar } from "./env";
 
@@ -24,8 +25,21 @@ export function verifyPassword(password: string, stored: string): boolean {
   return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(testHash, "hex"));
 }
 
-const ENCRYPTION_KEY =
-  getEnvVar("ENCRYPTION_KEY") || "default_clutchground_secret_32_bytes_key_dev!"; // must be 32 bytes
+function getEncryptionKey(): string {
+  const key = getEnvVar("ENCRYPTION_KEY");
+  if (!key) {
+    if (process.env.NODE_ENV === "production") {
+      console.error("[FATAL] ENCRYPTION_KEY environment variable is not set. Password encryption is insecure.");
+      throw new Error("ENCRYPTION_KEY must be set in production. Password encryption cannot proceed without a secure key.");
+    }
+    console.warn("[SECURITY] ENCRYPTION_KEY not set — using insecure dev fallback. Set ENCRYPTION_KEY before production deployment.");
+    return "default_clutchground_secret_32_bytes_key_dev!";
+  }
+  if (key.length < 32) {
+    throw new Error("ENCRYPTION_KEY must be at least 32 bytes for AES-256.");
+  }
+  return key;
+}
 
 /**
  * Encrypt a password using AES-256-GCM.
@@ -34,8 +48,9 @@ const ENCRYPTION_KEY =
 export function encryptPassword(password: string): string {
   if (!password) return "";
   const iv = crypto.randomBytes(12);
+  const encKey = getEncryptionKey();
   const key = Buffer.alloc(32);
-  Buffer.from(ENCRYPTION_KEY).copy(key);
+  Buffer.from(encKey).copy(key);
 
   const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
   let encrypted = cipher.update(password, "utf8", "hex");
@@ -57,8 +72,9 @@ export function decryptPassword(encryptedStr: string): string | null {
 
     const iv = Buffer.from(ivHex, "hex");
     const authTag = Buffer.from(authTagHex, "hex");
+    const encKey = getEncryptionKey();
     const key = Buffer.alloc(32);
-    Buffer.from(ENCRYPTION_KEY).copy(key);
+    Buffer.from(encKey).copy(key);
 
     const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
     decipher.setAuthTag(authTag);

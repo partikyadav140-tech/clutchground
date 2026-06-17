@@ -67,6 +67,9 @@ function AdminNotificationsPage() {
     if (targetType === "users" && !targetData.trim())
       return toast.error("Enter usernames to target.");
     if (targetType === "tournament" && !targetData) return toast.error("Select a tournament.");
+    if (redirectUrl && (!redirectUrl.startsWith("/") || /[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(redirectUrl))) {
+      return toast.error("Action URL must be a relative path starting with / (e.g., /tournaments/5)");
+    }
 
     setIsSending(true);
     try {

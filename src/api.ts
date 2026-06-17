@@ -35,15 +35,61 @@ export const deleteImage = createServerFn({ method: "POST" }).handler(async ({ d
   return { success };
 });
 
+// ── Login Rate Limiting ──
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 2 * 60 * 60 * 1000; // 2 hours
+
+// ── Redirect URL Validation ──
+function validateRedirectUrl(url: string | null | undefined): string | null {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (trimmed === "") return null;
+  // Only allow relative paths starting with / and not containing protocol schemes
+  if (!trimmed.startsWith("/")) return null;
+  if (/[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(trimmed)) return null;
+  // Block javascript: and data: URLs
+  if (/^(javascript|data|vbscript):/i.test(trimmed)) return null;
+  return trimmed;
+}
+
 export const loginUser = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const { email, password } = data as unknown as { email: string; password: string };
   const normalizedEmail = (email || "").trim().toLowerCase();
 
-  console.log("Login attempt - Email/Username:", normalizedEmail);
-
   if (!normalizedEmail) {
     throw new Error("Email address or username is required");
+  }
+  if (!password || typeof password !== "string" || password.length === 0) {
+    throw new Error("Password is required");
+  }
+  if (normalizedEmail.length > 254) {
+    throw new Error("Invalid email address");
+  }
+
+  // Check rate limiting from DB
+  const attemptRecord = (await db
+    .prepare("SELECT attempt_count, locked_until FROM login_attempts WHERE identifier = ?")
+    .get(normalizedEmail)) as any;
+
+  if (attemptRecord) {
+    // Check if currently locked
+    if (attemptRecord.locked_until) {
+      const lockedUntil = new Date(attemptRecord.locked_until).getTime();
+      if (lockedUntil > Date.now()) {
+        const remainingMin = Math.ceil((lockedUntil - Date.now()) / 60000);
+        const remainingHrs = Math.floor(remainingMin / 60);
+        const mins = remainingMin % 60;
+        const timeStr = remainingHrs > 0 ? `${remainingHrs}h ${mins}m` : `${mins}m`;
+        throw new Error(
+          `Too many failed attempts. Account locked for ${timeStr}. Try again later.`,
+        );
+      }
+      // Lockout expired, reset
+      await db
+        .prepare("DELETE FROM login_attempts WHERE identifier = ?")
+        .run(normalizedEmail);
+    }
   }
 
   let user;
@@ -57,20 +103,47 @@ export const loginUser = createServerFn({ method: "POST" }).handler(async ({ dat
       .get(normalizedEmail, normalizedEmail)) as any;
   }
 
-  console.log(
-    "User lookup result:",
-    user ? { id: user.id, username: user.username, role: user.role, email: user.email } : null,
-  );
-
   if (!user) {
-    console.log("No user found with email/username/phone:", normalizedEmail);
-    throw new Error("Invalid email, username, phone or password");
+    // Track failed attempt in DB
+    const existing = (await db
+      .prepare("SELECT attempt_count FROM login_attempts WHERE identifier = ?")
+      .get(normalizedEmail)) as any;
+    const newCount = (existing?.attempt_count || 0) + 1;
+
+    if (newCount >= MAX_LOGIN_ATTEMPTS) {
+      const lockedUntil = new Date(Date.now() + LOCKOUT_DURATION_MS).toISOString();
+      await db
+        .prepare(
+          `INSERT INTO login_attempts (identifier, attempt_count, locked_until, updated_at)
+           VALUES (?, ?, ?, NOW())
+           ON CONFLICT (identifier) DO UPDATE SET attempt_count = ?, locked_until = ?, updated_at = NOW()`,
+        )
+        .run(normalizedEmail, newCount, lockedUntil, newCount, lockedUntil);
+      throw new Error(
+        `Wrong email or password. Account locked for 2 hours due to ${MAX_LOGIN_ATTEMPTS} failed attempts.`,
+      );
+    }
+
+    await db
+      .prepare(
+        `INSERT INTO login_attempts (identifier, attempt_count, updated_at)
+         VALUES (?, ?, NOW())
+         ON CONFLICT (identifier) DO UPDATE SET attempt_count = ?, updated_at = NOW()`,
+      )
+      .run(normalizedEmail, newCount, newCount);
+    const remaining = MAX_LOGIN_ATTEMPTS - newCount;
+    throw new Error(
+      `Wrong email or password. ${remaining} attempt${remaining !== 1 ? "s" : ""} remaining.`,
+    );
   }
 
   // Use scrypt verification and handle legacy plaintext auto-upgrading
   const { verifyPassword, hashPassword, encryptPassword } = await import("./lib/auth-crypto");
+  let passwordCorrect = false;
+
   if (!user.password.includes(":")) {
     if (user.password === password) {
+      passwordCorrect = true;
       // Auto-upgrade plaintext to secure hash
       const hashedPassword = hashPassword(password);
       const encryptedPassword = encryptPassword(password);
@@ -78,16 +151,44 @@ export const loginUser = createServerFn({ method: "POST" }).handler(async ({ dat
         .prepare("UPDATE users SET password = ?, password_encrypted = ? WHERE id = ?")
         .run(hashedPassword, encryptedPassword, user.id);
       user.password = hashedPassword;
-      console.log(`[Auth] Auto-upgraded password hash for user: ${user.username}`);
-    } else {
-      console.log("Plaintext password mismatch for user:", user.username);
-      throw new Error("Invalid email, username, phone or password");
     }
   } else {
-    if (!verifyPassword(password, user.password)) {
-      console.log("Hashed password verification failed for user:", user.username);
-      throw new Error("Invalid email, username, phone or password");
+    if (verifyPassword(password, user.password)) {
+      passwordCorrect = true;
     }
+  }
+
+  if (!passwordCorrect) {
+    const existing = (await db
+      .prepare("SELECT attempt_count FROM login_attempts WHERE identifier = ?")
+      .get(normalizedEmail)) as any;
+    const newCount = (existing?.attempt_count || 0) + 1;
+
+    if (newCount >= MAX_LOGIN_ATTEMPTS) {
+      const lockedUntil = new Date(Date.now() + LOCKOUT_DURATION_MS).toISOString();
+      await db
+        .prepare(
+          `INSERT INTO login_attempts (identifier, attempt_count, locked_until, updated_at)
+           VALUES (?, ?, ?, NOW())
+           ON CONFLICT (identifier) DO UPDATE SET attempt_count = ?, locked_until = ?, updated_at = NOW()`,
+        )
+        .run(normalizedEmail, newCount, lockedUntil, newCount, lockedUntil);
+      throw new Error(
+        `Wrong email or password. Account locked for 2 hours due to ${MAX_LOGIN_ATTEMPTS} failed attempts.`,
+      );
+    }
+
+    await db
+      .prepare(
+        `INSERT INTO login_attempts (identifier, attempt_count, updated_at)
+         VALUES (?, ?, NOW())
+         ON CONFLICT (identifier) DO UPDATE SET attempt_count = ?, updated_at = NOW()`,
+      )
+      .run(normalizedEmail, newCount, newCount);
+    const remaining = MAX_LOGIN_ATTEMPTS - newCount;
+    throw new Error(
+      `Wrong email or password. ${remaining} attempt${remaining !== 1 ? "s" : ""} remaining.`,
+    );
   }
 
   if (user.banned) {
@@ -95,6 +196,9 @@ export const loginUser = createServerFn({ method: "POST" }).handler(async ({ dat
       "This account has been banned by the administrator due to violation of terms of service and illegal activities. Please contact support for assistance.",
     );
   }
+
+  // Clear failed login attempts on successful login
+  await db.prepare("DELETE FROM login_attempts WHERE identifier = ?").run(normalizedEmail);
 
   const sessionId = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(); // 7 days
@@ -125,6 +229,29 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
   const { db } = await import("./lib/db");
   const { username, password, ign, uid, email, security_question, security_answer, otpToken } =
     data as any;
+
+  // Input validation
+  if (!username || typeof username !== "string" || username.trim().length < 3 || username.trim().length > 20) {
+    throw new Error("Username must be 3-20 characters");
+  }
+  if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) {
+    throw new Error("Username can only contain letters, numbers, and underscores");
+  }
+  if (!password || typeof password !== "string" || password.length < 6) {
+    throw new Error("Password must be at least 6 characters");
+  }
+  if (password.length > 100) {
+    throw new Error("Password too long");
+  }
+  if (email && (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)) {
+    throw new Error("Invalid email address");
+  }
+  if (ign !== undefined && ign !== null && typeof ign === "string" && ign.length > 30) {
+    throw new Error("IGN too long (max 30 characters)");
+  }
+  if (uid !== undefined && uid !== null && typeof uid === "string" && uid.length > 20) {
+    throw new Error("UID too long (max 20 characters)");
+  }
 
   // Verify email OTP before creating account
   if (!otpToken) {
@@ -233,7 +360,7 @@ export const resetPassword = createServerFn({ method: "POST" }).handler(async ({
 
 export const checkEmailExists = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
-  const { email } = data as { email: string };
+  const { email } = data as unknown as { email: string };
   const targetEmail = (email || "").trim().toLowerCase();
   if (!targetEmail) return { exists: false };
   const user = (await db.prepare("SELECT id FROM users WHERE email = ?").get(targetEmail)) as any;
@@ -282,6 +409,11 @@ export const sendEmailOtp = createServerFn({ method: "POST" }).handler(async ({ 
 
   if (!targetEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
     throw new Error("A valid email address is required");
+  }
+
+  // For signup, only allow Gmail addresses
+  if (purpose === "signup" && !targetEmail.endsWith("@gmail.com")) {
+    throw new Error("Only Gmail addresses are allowed for signup. Please use a Gmail account.");
   }
 
   // Rate-limit: max 3 OTPs per email per 10 minutes
@@ -1120,6 +1252,22 @@ export const updateProfile = createServerFn({ method: "POST" }).handler(async ({
 
   const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
 
+  // Validate URLs to prevent CSS injection and ensure they are from trusted sources
+  const VALID_CDN_PATTERN = /^https:\/\/.*\.(cloudinary\.com|supabase\.co)\/.*$/;
+  if (avatar_url !== undefined && avatar_url !== null && avatar_url !== "" && !VALID_CDN_PATTERN.test(String(avatar_url))) {
+    throw new Error("Invalid avatar URL. Must be from a trusted CDN.");
+  }
+  if (banner_url !== undefined && banner_url !== null && banner_url !== "" && !VALID_CDN_PATTERN.test(String(banner_url))) {
+    throw new Error("Invalid banner URL. Must be from a trusted CDN.");
+  }
+  // Validate string lengths
+  if (typeof ign === "string" && ign.length > 30) {
+    throw new Error("IGN too long (max 30 characters)");
+  }
+  if (typeof uid === "string" && uid.length > 20) {
+    throw new Error("UID too long (max 20 characters)");
+  }
+
   // Cloudinary cleanup: delete old avatar/banner when changed or removed
   if (avatar_url !== undefined || banner_url !== undefined) {
     try {
@@ -1355,6 +1503,13 @@ export const updateCoinBalance = createServerFn({ method: "POST" }).handler(asyn
     type: "deposit_balance" | "winning_balance";
     amount: number;
   };
+
+  if (type !== "deposit_balance" && type !== "winning_balance") {
+    throw new Error("Invalid balance type. Must be 'deposit_balance' or 'winning_balance'.");
+  }
+  if (typeof amount !== "number" || !isFinite(amount) || amount < 0) {
+    throw new Error("Invalid amount. Must be a non-negative finite number.");
+  }
 
   await db.transaction(async (tx) => {
     const old = (await tx
@@ -1996,7 +2151,7 @@ export const sendPushNotification = createServerFn({ method: "POST" }).handler(a
   const { db } = await import("./lib/db");
   const { targetType, targetData, message, redirectUrl } = data as any;
 
-  const notifyUrl = redirectUrl || null;
+  const notifyUrl = validateRedirectUrl(redirectUrl);
   const { sendNotificationHelper } = await import("./lib/push-server");
 
   if (targetType === "all") {
@@ -3196,9 +3351,18 @@ export const clearSiteSetting = createServerFn({ method: "POST" }).handler(async
 export const saveContactMessage = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const { db } = await import("./lib/db");
   const { name, email, message } = data as any;
+  if (!name || typeof name !== "string" || name.trim().length === 0 || name.length > 100) {
+    throw new Error("Invalid name");
+  }
+  if (!email || typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+    throw new Error("Invalid email address");
+  }
+  if (!message || typeof message !== "string" || message.trim().length === 0 || message.length > 2000) {
+    throw new Error("Invalid message");
+  }
   await db
     .prepare("INSERT INTO contact_messages (name, email, message) VALUES (?, ?, ?)")
-    .run(name, email, message);
+    .run(name.trim(), email.trim().toLowerCase(), message.trim());
   return { success: true };
 });
 
@@ -3310,6 +3474,14 @@ export const createTicket = createServerFn({ method: "POST" }).handler(async ({ 
   const { db } = await import("./lib/db");
   const { userId: clientUserId, subject, message } = data as any;
   const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
+
+  if (!subject || typeof subject !== "string" || subject.trim().length === 0 || subject.length > 200) {
+    throw new Error("Invalid subject (1-200 characters)");
+  }
+  if (!message || typeof message !== "string" || message.trim().length === 0 || message.length > 5000) {
+    throw new Error("Invalid message (1-5000 characters)");
+  }
+
   const processedMessage = await processTicketMessage(message);
   const res = await db
     .prepare("INSERT INTO tickets (user_id, subject) VALUES (?, ?)")
@@ -3377,6 +3549,10 @@ export const replyTicket = createServerFn({ method: "POST" }).handler(async ({ d
 
   if (isAdmin && caller.role !== "admin") {
     throw new Error("Unauthorized: Admin privilege required");
+  }
+
+  if (!message || typeof message !== "string" || message.trim().length === 0 || message.length > 5000) {
+    throw new Error("Invalid message (1-5000 characters)");
   }
 
   const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
@@ -3649,6 +3825,13 @@ export const sendMessage = createServerFn({ method: "POST" }).handler(async ({ d
   const { senderId: clientSenderId, receiverId, teamId, message } = data as any;
   const senderId = caller.role === "admin" ? clientSenderId || caller.id : caller.id;
 
+  if (!message || typeof message !== "string" || message.trim().length === 0) {
+    throw new Error("Message cannot be empty");
+  }
+  if (message.length > 1000) {
+    throw new Error("Message too long (max 1000 characters)");
+  }
+
   if (teamId) {
     const member = await db
       .prepare("SELECT id FROM team_members WHERE team_id = ? AND user_id = ? LIMIT 1")
@@ -3666,6 +3849,36 @@ export const sendMessage = createServerFn({ method: "POST" }).handler(async ({ d
   `,
     )
     .run(senderId, receiverId || null, teamId || null, message);
+
+  // Send push notifications to other team members
+  if (teamId) {
+    try {
+      const { triggerPushNotification } = await import("./lib/push-server");
+      const sender = (await db
+        .prepare("SELECT username, ign FROM users WHERE id = ?")
+        .get(senderId)) as any;
+      const senderName = sender?.ign || sender?.username || "Someone";
+
+      const members = (await db
+        .prepare("SELECT user_id FROM team_members WHERE team_id = ? AND user_id != ?")
+        .all(teamId, senderId)) as any[];
+
+      if (members && members.length > 0) {
+        const truncatedMsg = message.length > 80 ? message.substring(0, 80) + "..." : message;
+        const promises = members.map((m: any) =>
+          triggerPushNotification(
+            m.user_id,
+            `💬 ${senderName}`,
+            truncatedMsg,
+            "/chat",
+          ).catch(() => {}),
+        );
+        await Promise.all(promises);
+      }
+    } catch (e) {
+      console.error("Failed to send team chat push notifications:", e);
+    }
+  }
 
   return { success: true, messageId: res.lastInsertRowid };
 });

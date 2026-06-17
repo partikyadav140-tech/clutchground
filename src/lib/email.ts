@@ -91,14 +91,15 @@ export async function sendOtpEmail(
 </html>
   `.trim();
 
-  // Always log OTP to server console for debugging
-  console.log(`\n[Email OTP] ────────────────────────────────`);
-  console.log(`[Email OTP] PURPOSE : ${purpose.toUpperCase()}`);
-  console.log(`[Email OTP] TO      : ${to}`);
-  console.log(`[Email OTP] FROM    : ${fromEmail}`);
-  console.log(`[Email OTP] API KEY : ${apiKey ? apiKey.slice(0, 8) + "..." : "NOT SET"}`);
-  console.log(`[Email OTP] OTP CODE: ${otp}`);
-  console.log(`[Email OTP] ────────────────────────────────\n`);
+  // Log OTP to server console only in development (NEVER in production)
+  const isProd = getEnvVar("NODE_ENV") === "production";
+  if (!isProd) {
+    console.log(`\n[Email OTP] ────────────────────────────────`);
+    console.log(`[Email OTP] PURPOSE : ${purpose.toUpperCase()}`);
+    console.log(`[Email OTP] TO      : ${to}`);
+    console.log(`[Email OTP] OTP CODE: ${otp}`);
+    console.log(`[Email OTP] ────────────────────────────────\n`);
+  }
 
   if (!apiKey) {
     const isProd = getEnvVar("NODE_ENV") === "production";

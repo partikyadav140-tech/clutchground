@@ -2,11 +2,8 @@ import { useState, useEffect } from "react";
 import { getUserFromSession, logoutUser } from "../api";
 import { useRouter } from "@tanstack/react-router";
 
-export function getSessionId() {
-  if (typeof window !== "undefined") {
-    return localStorage.getItem("sessionId");
-  }
-  return null;
+export function getSessionId(): string | null {
+  return getCookieClient("sessionId");
 }
 
 export function getCookieClient(name: string) {
@@ -20,18 +17,16 @@ export function getCookieClient(name: string) {
 }
 
 export function setSessionId(id: string) {
-  localStorage.setItem("sessionId", id);
   if (typeof document !== "undefined") {
     const isSecure = window.location.protocol === "https:";
-    document.cookie = `sessionId=${encodeURIComponent(id)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax${isSecure ? "; Secure" : ""}`;
+    document.cookie = `sessionId=${encodeURIComponent(id)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict${isSecure ? "; Secure" : ""}`;
   }
 }
 
 export function clearSessionId() {
-  localStorage.removeItem("sessionId");
   if (typeof document !== "undefined") {
     const isSecure = window.location.protocol === "https:";
-    document.cookie = `sessionId=; path=/; max-age=0; SameSite=Lax${isSecure ? "; Secure" : ""}`;
+    document.cookie = `sessionId=; path=/; max-age=0; SameSite=Strict${isSecure ? "; Secure" : ""}`;
   }
 }
 
@@ -62,15 +57,8 @@ export function useAuth() {
     };
     listeners.add(listener);
 
-    // Sync cookie with localStorage session if needed
+    // Session is stored in HttpOnly cookie only (no localStorage)
     const initialSessionId = getSessionId();
-    if (initialSessionId && typeof document !== "undefined") {
-      const cookieVal = getCookieClient("sessionId");
-      if (cookieVal !== initialSessionId) {
-        const isSecure = window.location.protocol === "https:";
-        document.cookie = `sessionId=${encodeURIComponent(initialSessionId)}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax${isSecure ? "; Secure" : ""}`;
-      }
-    }
 
     async function fetchUser() {
       const sessionId = getSessionId();
@@ -121,7 +109,7 @@ export function useAuth() {
     if (sessionId) {
       (logoutUser as any)({ data: sessionId });
     }
-    localStorage.removeItem("sessionId");
+    clearSessionId();
     globalUser = null;
     notifyListeners();
     router.navigate({ to: "/login" });

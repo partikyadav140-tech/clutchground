@@ -17,17 +17,25 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [isLocked, setIsLocked] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg("");
     try {
       const res = await (loginUser as any)({ data: { email: email.trim(), password } });
       setSessionId(res.sessionId);
-      toast.success("Welcome back! 🔥");
+      toast.success("Welcome back!");
       window.location.href = res.user.role === "admin" ? "/admin" : "/";
     } catch (err: any) {
-      toast.error(err.message || "Invalid credentials");
+      const msg = err.message || "Invalid credentials";
+      setErrorMsg(msg);
+      if (msg.includes("locked for 2 hours")) {
+        setIsLocked(true);
+      }
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -126,10 +134,21 @@ function LoginPage() {
             </div>
           </div>
 
+          {/* Error / Lockout message */}
+          {errorMsg && (
+            <div className={`p-3 rounded-2xl border text-[12px] font-semibold ${
+              isLocked
+                ? "bg-red-500/10 border-red-500/30 text-red-400"
+                : "bg-amber-500/10 border-amber-500/30 text-amber-400"
+            }`}>
+              {errorMsg}
+            </div>
+          )}
+
           {/* Sign in button */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || isLocked}
             className="w-full h-13 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all active:scale-95 press-effect shadow-cta mt-2"
             style={{ background: loading ? "var(--secondary)" : "var(--gradient-cta)" }}
           >

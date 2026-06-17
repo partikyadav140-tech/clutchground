@@ -176,7 +176,7 @@ export function Navbar() {
 
             showBrowserNotification("🎮 ClutchGround", {
               body: n.message || "You have a new notification",
-              url: n.redirect_url || "/notifications",
+              url: (n.redirect_url && n.redirect_url.startsWith("/") && !/[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(n.redirect_url)) ? n.redirect_url : "/notifications",
               tag: `cg-notif-${n.id}`,
               important: !!important,
             });

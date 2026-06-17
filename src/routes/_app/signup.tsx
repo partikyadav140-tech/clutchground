@@ -37,6 +37,7 @@ function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [emailError, setEmailError] = useState("");
+  const [gmailError, setGmailError] = useState("");
   const [form, setForm] = useState({
     username: "",
     ign: "",
@@ -104,6 +105,12 @@ function SignupPage() {
     e.preventDefault();
     if (!form.email.trim()) {
       toast.error("Email address is required for verification");
+      return;
+    }
+    // Block non-Gmail addresses
+    if (!form.email.trim().toLowerCase().endsWith("@gmail.com")) {
+      setGmailError("Only Gmail addresses are allowed. Please use a Gmail account.");
+      toast.error("Only Gmail addresses are allowed for signup");
       return;
     }
     setLoading(true);
@@ -307,17 +314,30 @@ function SignupPage() {
                 <AppInput
                   icon={Mail}
                   type="email"
-                  placeholder="Email address (required)"
+                  placeholder="Gmail address only (required)"
                   value={form.email}
                   onChange={(e) => {
                     set("email")(e);
                     if (emailError) setEmailError("");
+                    // Live Gmail validation
+                    const val = e.target.value.trim().toLowerCase();
+                    if (val && !val.endsWith("@gmail.com") && val.includes("@")) {
+                      setGmailError("Only Gmail addresses are allowed. Please use a Gmail account.");
+                    } else {
+                      setGmailError("");
+                    }
                   }}
                   onBlur={(e) => handleEmailCheck(e.target.value)}
                   required
                   autoComplete="email"
                 />
-                {emailError && (
+                {gmailError && (
+                  <p className="text-destructive text-[11px] font-semibold px-1 flex items-center gap-1">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
+                    {gmailError}
+                  </p>
+                )}
+                {emailError && !gmailError && (
                   <p className="text-destructive text-[11px] font-semibold px-1">{emailError}</p>
                 )}
               </div>
@@ -342,10 +362,10 @@ function SignupPage() {
               </div>
               <button
                 type="submit"
-                disabled={loading || !!emailError}
+                disabled={loading || !!emailError || !!gmailError}
                 className="w-full h-13 rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center justify-center gap-2 transition-all active:scale-95 press-effect shadow-cta mt-2"
                 style={{
-                  background: loading || !!emailError ? "var(--secondary)" : "var(--gradient-cta)",
+                  background: loading || !!emailError || !!gmailError ? "var(--secondary)" : "var(--gradient-cta)",
                 }}
               >
                 {loading ? (

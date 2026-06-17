@@ -33,11 +33,102 @@ const MIME_TYPES = {
   ".xml": "application/xml",
 };
 
+// ── Security Headers ──────────────────────────────────────────────────────
+const SECURITY_HEADERS = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "X-XSS-Protection": "0",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+  "X-Permitted-Cross-Domain-Policies": "none",
+  "Cross-Origin-Opener-Policy": "same-origin",
+  "Cross-Origin-Resource-Policy": "same-origin",
+  "Cross-Origin-Embedder-Policy": "credentialless",
+};
+
+const CSP_DIRECTIVES = [
+  "default-src 'self'",
+  "script-src 'self' 'wasm-unsafe-eval'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https://res.cloudinary.com https://*.cloudinary.com",
+  "font-src 'self'",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'",
+].join("; ");
+
+SECURITY_HEADERS["Content-Security-Policy"] = CSP_DIRECTIVES;
+
+// ── Rate Limiting (in-memory, per-IP) ────────────────────────────────────
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 120;
+const rateLimitMap = new Map();
+let lastCleanup = Date.now();
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  // Cleanup old entries every 60s
+  if (now - lastCleanup > RATE_LIMIT_WINDOW_MS) {
+    for (const [key, entry] of rateLimitMap) {
+      if (now - entry.start > RATE_LIMIT_WINDOW_MS) rateLimitMap.delete(key);
+    }
+    lastCleanup = now;
+  }
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now - entry.start > RATE_LIMIT_WINDOW_MS) {
+    rateLimitMap.set(ip, { start: now, count: 1 });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= RATE_LIMIT_MAX;
+}
+
+// ── Block suspicious paths ────────────────────────────────────────────────
+const BLOCKED_PATHS = [
+  "/wp-admin", "/wp-login", "/wp-content", "/xmlrpc.php",
+  "/.env", "/.git", "/.htaccess", "/.htpasswd",
+  "/phpmyadmin", "/adminer", "/server-status",
+  "/config.json", "/config.yml", "/package.json",
+  "/.DS_Store", "/Thumbs.db",
+];
+
 createServer(async (req, res) => {
   try {
     const origin = `http://${req.headers.host || "localhost"}`;
     const url = new URL(req.url, origin);
     const pathname = url.pathname;
+
+    // ── Block suspicious paths ────────────────────────────────────────────
+    const lowerPath = pathname.toLowerCase();
+    for (const blocked of BLOCKED_PATHS) {
+      if (lowerPath === blocked || lowerPath.startsWith(blocked + "/")) {
+        res.writeHead(404);
+        res.end("Not Found");
+        return;
+      }
+    }
+
+    // ── Block directory traversal attempts ────────────────────────────────
+    if (lowerPath.includes("..") || lowerPath.includes("%2e%2e")) {
+      res.writeHead(400);
+      res.end("Bad Request");
+      return;
+    }
+
+    // ── Rate limit by IP ──────────────────────────────────────────────────
+    const clientIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim()
+      || req.headers["x-real-ip"]
+      || req.socket?.remoteAddress
+      || "unknown";
+
+    if (!checkRateLimit(clientIp)) {
+      res.writeHead(429, { "Retry-After": "60" });
+      res.end("Too Many Requests");
+      return;
+    }
 
     // ── 1. Try to serve static file from dist/client ──────────────────────
     const filePath = join(clientDir, pathname);
@@ -53,6 +144,7 @@ createServer(async (req, res) => {
           "Cache-Control": isHashed
             ? "public, max-age=31536000, immutable"
             : "no-cache, must-revalidate",
+          ...SECURITY_HEADERS,
         });
         createReadStream(filePath).pipe(res);
         return;
@@ -92,6 +184,9 @@ createServer(async (req, res) => {
         responseHeaders[key] = value;
       }
     });
+
+    // Inject security headers into SSR response
+    Object.assign(responseHeaders, SECURITY_HEADERS);
 
     res.writeHead(response.status, responseHeaders);
     if (response.body) {
