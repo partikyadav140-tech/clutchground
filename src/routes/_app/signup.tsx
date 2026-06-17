@@ -46,8 +46,18 @@ function SignupPage() {
     password: "",
   });
   const [passwordError, setPasswordError] = useState("");
+  const [usernameError, setUsernameError] = useState("");
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const validateUsername = (u: string) => {
+    if (!u) { setUsernameError(""); return false; }
+    if (u.trim().length < 3) { setUsernameError("Username must be at least 3 characters"); return false; }
+    if (u.trim().length > 20) { setUsernameError("Username must be 20 characters or less"); return false; }
+    if (!/^[a-zA-Z0-9_]+$/.test(u.trim())) { setUsernameError("Only letters, numbers, and underscores allowed"); return false; }
+    setUsernameError("");
+    return true;
+  };
 
   const validatePassword = (pw: string) => {
     if (!pw) { setPasswordError(""); return false; }
@@ -311,14 +321,28 @@ function SignupPage() {
               onSubmit={handleStep1}
               className="space-y-3.5"
             >
-              <AppInput
-                icon={User}
-                placeholder="Username"
-                value={form.username}
-                onChange={set("username")}
-                required
-                autoComplete="username"
-              />
+              <div className="space-y-1">
+                <AppInput
+                  icon={User}
+                  placeholder="Username"
+                  value={form.username}
+                  onChange={(e) => { set("username")(e); validateUsername(e.target.value); }}
+                  required
+                  autoComplete="username"
+                />
+                {usernameError && form.username && (
+                  <p className="text-destructive text-[11px] font-semibold px-1 flex items-center gap-1">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
+                    {usernameError}
+                  </p>
+                )}
+                {form.username && !usernameError && form.username.trim().length >= 3 && (
+                  <p className="text-emerald-500 text-[11px] font-semibold px-1 flex items-center gap-1">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    Username is available
+                  </p>
+                )}
+              </div>
               <div className="space-y-1">
                 <AppInput
                   icon={Mail}
@@ -383,10 +407,10 @@ function SignupPage() {
               )}
               <button
                 type="submit"
-                disabled={loading || !!emailError || !!gmailError || !form.password || form.password.length < 6}
+                disabled={loading || !!emailError || !!gmailError || !!usernameError || !form.username || form.username.trim().length < 3 || !form.password || form.password.length < 6}
                 className="w-full h-13 rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center justify-center gap-2 transition-all active:scale-95 press-effect shadow-cta mt-2"
                 style={{
-                  background: loading || !!emailError || !!gmailError || !form.password || form.password.length < 6 ? "var(--secondary)" : "var(--gradient-cta)",
+                  background: loading || !!emailError || !!gmailError || !!usernameError || !form.username || form.username.trim().length < 3 || !form.password || form.password.length < 6 ? "var(--secondary)" : "var(--gradient-cta)",
                 }}
               >
                 {loading ? (
