@@ -231,12 +231,36 @@ function TournamentDetailPage() {
               </button>
             )}
           </div>
-          <h1
-            className="font-display font-black text-2xl leading-tight drop-shadow-lg line-clamp-2"
-            style={{ color: "#ffffff" }}
-          >
-            {t.title}
-          </h1>
+          <div className="flex items-end justify-between gap-3">
+            <h1
+              className="font-display font-black text-2xl leading-tight drop-shadow-lg line-clamp-2 flex-1 min-w-0"
+              style={{ color: "#ffffff" }}
+            >
+              {t.title}
+            </h1>
+            {(t.startsAt || t.startsat) && (() => {
+              const d = new Date(t.startsAt || t.startsat);
+              if (isNaN(d.getTime())) return null;
+              const dateLabel = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+              const timeLabel = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+              return (
+                <div
+                  className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl"
+                  style={{
+                    background: "rgba(0,0,0,0.6)",
+                    backdropFilter: "blur(10px)",
+                    border: `1px solid ${mc.color}40`,
+                  }}
+                >
+                  <Calendar className="w-3 h-3" style={{ color: mc.color }} />
+                  <div className="flex flex-col items-end">
+                    <span className="text-[9px] font-black text-white leading-tight">{dateLabel}</span>
+                    <span className="text-[8px] font-bold leading-tight" style={{ color: mc.color }}>{timeLabel}</span>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
         </div>
       </div>
 

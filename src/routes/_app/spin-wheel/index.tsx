@@ -141,20 +141,65 @@ function SpinWheelPage() {
       ) : (
         <div className="space-y-4">
           {status?.joinedTournamentCount === 0 && (
-            <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300 space-y-2">
-              <p className="font-bold flex items-center gap-1.5">
-                <Gift className="w-4 h-4 text-amber-400" /> Unlock Daily Free Spin
-              </p>
-              <p className="text-xs text-amber-200/90 leading-relaxed">
-                You have not joined any tournaments yet. Join at least 1 tournament to unlock your
-                daily free spin!
-              </p>
+            <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-primary/5 p-5 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                  <Gift className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-display font-black text-sm text-foreground">Unlock Your Daily Free Spin</p>
+                  <p className="text-[11px] text-muted-foreground font-semibold mt-0.5">
+                    Complete the steps below to start winning
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2.5">
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-secondary/40 border border-border/60">
+                  <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-[11px] font-black text-primary">1</span>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-foreground">Join a Tournament</p>
+                    <p className="text-[11px] text-muted-foreground font-semibold mt-0.5 leading-relaxed">
+                      Browse upcoming Free Fire tournaments and register your team. Entry is instant.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-secondary/40 border border-border/60">
+                  <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-[11px] font-black text-primary">2</span>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-foreground">Come Back Daily</p>
+                    <p className="text-[11px] text-muted-foreground font-semibold mt-0.5 leading-relaxed">
+                      Once unlocked, you get one free spin every day. Winnings go straight to your deposit balance.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-xl bg-secondary/40 border border-border/60">
+                  <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-[11px] font-black text-primary">3</span>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-foreground">Win CG Coins</p>
+                    <p className="text-[11px] text-muted-foreground font-semibold mt-0.5 leading-relaxed">
+                      Each spin rewards real coins. Use them for tournament entries or withdraw your winnings.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <Button
                 asChild
-                size="sm"
-                className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg mt-1 w-full"
+                className="w-full h-11 rounded-xl font-display font-black text-xs uppercase tracking-wider"
+                style={{ background: "var(--gradient-cta)" }}
               >
-                <Link to="/tournaments">View Tournaments</Link>
+                <Link to="/tournaments">
+                  <span className="flex items-center gap-2">Join a Tournament to Unlock</span>
+                </Link>
               </Button>
             </div>
           )}

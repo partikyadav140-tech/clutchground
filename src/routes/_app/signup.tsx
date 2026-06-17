@@ -45,8 +45,17 @@ function SignupPage() {
     email: "",
     password: "",
   });
+  const [passwordError, setPasswordError] = useState("");
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const validatePassword = (pw: string) => {
+    if (!pw) { setPasswordError(""); return false; }
+    if (pw.length < 6) { setPasswordError("Password must be at least 6 characters"); return false; }
+    if (pw.length > 100) { setPasswordError("Password is too long"); return false; }
+    setPasswordError("");
+    return true;
+  };
 
   const handleEmailCheck = async (emailVal: string) => {
     const trimmed = emailVal.trim().toLowerCase();
@@ -347,7 +356,7 @@ function SignupPage() {
                   type={showPass ? "text" : "password"}
                   placeholder="Password"
                   value={form.password}
-                  onChange={set("password")}
+                  onChange={(e) => { set("password")(e); validatePassword(e.target.value); }}
                   required
                   autoComplete="new-password"
                   className="w-full h-13 bg-secondary/50 border border-border focus:border-primary/60 focus:bg-secondary/80 focus:ring-1 focus:ring-primary/20 rounded-2xl pl-12 pr-12 text-sm font-semibold text-foreground outline-none transition-all"
@@ -360,12 +369,24 @@ function SignupPage() {
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {passwordError && form.password && (
+                <p className="text-destructive text-[11px] font-semibold px-1 flex items-center gap-1 -mt-2">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
+                  {passwordError}
+                </p>
+              )}
+              {form.password && !passwordError && form.password.length >= 6 && (
+                <p className="text-emerald-500 text-[11px] font-semibold px-1 flex items-center gap-1 -mt-2">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  Password meets requirements
+                </p>
+              )}
               <button
                 type="submit"
-                disabled={loading || !!emailError || !!gmailError}
+                disabled={loading || !!emailError || !!gmailError || !form.password || form.password.length < 6}
                 className="w-full h-13 rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center justify-center gap-2 transition-all active:scale-95 press-effect shadow-cta mt-2"
                 style={{
-                  background: loading || !!emailError || !!gmailError ? "var(--secondary)" : "var(--gradient-cta)",
+                  background: loading || !!emailError || !!gmailError || !form.password || form.password.length < 6 ? "var(--secondary)" : "var(--gradient-cta)",
                 }}
               >
                 {loading ? (

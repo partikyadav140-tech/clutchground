@@ -4,7 +4,6 @@ import {
   HeadContent,
   Scripts,
   ScrollRestoration,
-  useRouterState,
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -310,11 +309,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  const routerState = useRouterState();
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [routerState.location.pathname]);
 
   useEffect(() => {
     trackWebVitals();

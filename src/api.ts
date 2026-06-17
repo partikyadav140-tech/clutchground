@@ -509,6 +509,7 @@ export const getUsers = createServerFn({ method: "GET" }).handler(async () => {
   await getCurrentUser("admin");
   const { db } = await import("./lib/db");
   const { decryptPassword } = await import("./lib/auth-crypto");
+  const crypto = await import("node:crypto");
 
   const list = (await db
     .prepare(
@@ -516,25 +517,47 @@ export const getUsers = createServerFn({ method: "GET" }).handler(async () => {
     )
     .all()) as any[];
 
-  return list.map((u) => {
+  const result: any[] = [];
+
+  for (const u of list) {
     let plain: string | null = null;
 
-    // 1. Try decrypting password_encrypted (AES-256-GCM, reversible)
+    // 1. Try decrypting password_encrypted with current ENCRYPTION_KEY
     if (u.password_encrypted) {
       plain = decryptPassword(u.password_encrypted);
     }
 
-    // 2. Fallback: if password column is plaintext (no ":"), it's the real password
+    // 2. Try decrypting with old default key (passwords encrypted before ENCRYPTION_KEY was set)
+    if (!plain && u.password_encrypted && u.password_encrypted.includes(":")) {
+      try {
+        const [ivHex, authTagHex, ciphertext] = u.password_encrypted.split(":");
+        if (ivHex && authTagHex && ciphertext) {
+          const iv = Buffer.from(ivHex, "hex");
+          const authTag = Buffer.from(authTagHex, "hex");
+          const key = Buffer.alloc(32);
+          Buffer.from("default_clutchground_secret_32_bytes_key_dev!").copy(key);
+          const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+          decipher.setAuthTag(authTag);
+          let decrypted = decipher.update(ciphertext, "hex", "utf8");
+          decrypted += decipher.final("utf8");
+          plain = decrypted;
+        }
+      } catch {}
+    }
+
+    // 3. Fallback: if password column is plaintext (no ":"), it's the real password
     if (!plain && u.password && !u.password.includes(":")) {
       plain = u.password;
     }
 
     const { password, password_encrypted, ...rest } = u;
-    return {
+    result.push({
       ...rest,
       password_plain: plain,
-    };
-  });
+    });
+  }
+
+  return result;
 });
 
 export const getTournaments = createServerFn({ method: "GET" }).handler(async () => {

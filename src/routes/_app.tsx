@@ -118,7 +118,7 @@ export const Route = createFileRoute("/_app")({
           >
             <Suspense fallback={<PageSpinner />}>
               <div className={isChatPage ? "h-full flex flex-col" : "min-h-full flex flex-col"}>
-                <Outlet />
+                <Outlet key={path} />
                 {!isAuthRoute && !isChatPage && <Footer />}
               </div>
             </Suspense>

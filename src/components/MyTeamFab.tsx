@@ -12,11 +12,12 @@ export function MyTeamFab() {
   const [myTeam, setMyTeam] = React.useState<any>(null);
   const [teamRequests, setTeamRequests] = React.useState<any[]>([]);
   const [unreadChatCount, setUnreadChatCount] = React.useState<number>(0);
+  const [loaded, setLoaded] = React.useState(false);
   const prevUnreadRef = React.useRef<number>(0);
 
   // Load team data
   React.useEffect(() => {
-    if (!user) return;
+    if (!user) { setLoaded(true); return; }
     (getMyTeam as any)({ data: user.id })
       .then((t: any) => {
         setMyTeam(t);
@@ -26,7 +27,8 @@ export function MyTeamFab() {
             .catch(console.error);
         }
       })
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setLoaded(true));
   }, [user]);
 
   // Poll unread team chat count + show toast on new messages
@@ -70,13 +72,14 @@ export function MyTeamFab() {
     return () => clearInterval(interval);
   }, [user, myTeam]);
 
-  if (!user || !myTeam) return null;
+  if (!user || !loaded) return null;
 
+  const hasTeam = !!myTeam;
   const totalBadge = (teamRequests?.length || 0) + unreadChatCount;
 
   return (
     <Link
-      to="/my-team"
+      to={hasTeam ? "/my-team" : "/teams"}
       className="fixed right-3 z-40 no-underline"
       style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 86px)" }}
     >
@@ -87,7 +90,7 @@ export function MyTeamFab() {
         className="relative flex items-center gap-2.5 pl-3 pr-4 py-2.5 rounded-2xl border border-border bg-card/95 backdrop-blur-xl shadow-card press-effect active:scale-95 transition-transform cursor-pointer"
       >
         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-primary/15 text-primary border border-primary/20 overflow-hidden">
-          {myTeam.logo ? (
+          {hasTeam && myTeam.logo ? (
             <img src={myTeam.logo} className="w-full h-full object-cover" alt="team logo" />
           ) : (
             <Users className="w-5 h-5" />
@@ -95,16 +98,16 @@ export function MyTeamFab() {
         </div>
         <div className="flex flex-col">
           <span className="text-xs font-bold text-foreground leading-none flex items-center gap-1.5">
-            My Team
-            {unreadChatCount > 0 && (
+            {hasTeam ? "My Team" : "Join Team"}
+            {hasTeam && unreadChatCount > 0 && (
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
             )}
           </span>
           <span className="text-label leading-tight mt-0.5 max-w-[80px] truncate">
-            {myTeam.name}
+            {hasTeam ? myTeam.name : "Create or join"}
           </span>
         </div>
-        {totalBadge > 0 && (
+        {hasTeam && totalBadge > 0 && (
           <span className="absolute -top-1 -right-1 flex items-center justify-center">
             <span
               className="absolute w-4 h-4 rounded-full animate-ping opacity-40"
