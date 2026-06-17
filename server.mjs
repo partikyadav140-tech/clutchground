@@ -44,12 +44,11 @@ const SECURITY_HEADERS = {
   "X-Permitted-Cross-Domain-Policies": "none",
   "Cross-Origin-Opener-Policy": "same-origin",
   "Cross-Origin-Resource-Policy": "same-origin",
-  "Cross-Origin-Embedder-Policy": "credentialless",
 };
 
 const CSP_DIRECTIVES = [
   "default-src 'self'",
-  "script-src 'self' 'wasm-unsafe-eval'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://res.cloudinary.com https://*.cloudinary.com",
   "font-src 'self'",
