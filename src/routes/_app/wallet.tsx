@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { processWithdrawal, getTransactionHistory, saveUpiId, getSiteSettings } from "../../api";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { AnimatedCounter } from "@/components/AnimatedCounter";
 import { SkeletonWallet } from "@/components/SkeletonPage";
 
 export const Route = createFileRoute("/_app/wallet")({
@@ -227,7 +228,7 @@ function WalletPage() {
           <div className="flex items-center gap-3 mb-6">
             <GodCoin className="w-9 h-9 text-white" />
             <span className="font-display font-black text-5xl text-white tabular-nums leading-none">
-              {totalBal}
+              <AnimatedCounter value={totalBal} />
             </span>
             <span className="text-sm font-bold text-white/40 self-end mb-1">Coins</span>
           </div>
@@ -242,7 +243,7 @@ function WalletPage() {
               <div className="flex items-center gap-1.5">
                 <GodCoin className="w-3.5 h-3.5 text-emerald-400" />
                 <span className="font-display font-black text-xl text-white tabular-nums">
-                  {winBal}
+                  <AnimatedCounter value={winBal} />
                 </span>
               </div>
               <p className="text-xs text-emerald-500/60 font-medium mt-1">Withdrawable</p>
@@ -257,7 +258,7 @@ function WalletPage() {
               <div className="flex items-center gap-1.5">
                 <GodCoin className="w-3.5 h-3.5 text-primary" />
                 <span className="font-display font-black text-xl text-white tabular-nums">
-                  {depositBal}
+                  <AnimatedCounter value={depositBal} />
                 </span>
               </div>
               <p className="text-xs font-medium mt-1" style={{ color: "rgba(0,200,255,0.5)" }}>

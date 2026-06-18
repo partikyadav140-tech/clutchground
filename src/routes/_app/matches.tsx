@@ -13,7 +13,7 @@ import {
   Shield,
   Users,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../lib/auth-client";
 import { getMyMatches, getTournamentResults } from "../../api";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { GodCoin } from "@/components/GodCoin";
 import { StandingsCard } from "@/components/StandingsCard";
 import { CountdownTimer } from "@/components/CountdownTimer";
+import { RewardCelebration } from "@/components/spin-wheel/RewardCelebration";
 import { SkeletonMatchCard } from "@/components/SkeletonPage";
 import { getTournamentPoster } from "@/lib/mode-colors";
 
@@ -60,6 +61,9 @@ function MatchesPage() {
   const [standings, setStandings] = useState<any[]>([]);
   const [loadingStandings, setLoadingStandings] = useState(false);
   const [tab, setTab] = useState<"upcoming" | "history">("upcoming");
+  const [celebrationOpen, setCelebrationOpen] = useState(false);
+  const [winPrize, setWinPrize] = useState<{ label: string; amount: number } | null>(null);
+  const celebrationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -71,10 +75,29 @@ function MatchesPage() {
       try {
         const m = await (getMyMatches as any)({ data: user.id });
         setMatches(m || []);
+
+        const win = (m || []).find(
+          (match: any) => match.position === 1 && (match.awarded_prize ?? 0) > 0
+        );
+        if (win) {
+          setWinPrize({
+            label: win.name || "Tournament Win",
+            amount: win.awarded_prize,
+          });
+          celebrationTimerRef.current = setTimeout(() => {
+            setCelebrationOpen(true);
+          }, 2000);
+        }
       } catch {}
       setLoading(false);
     })();
   }, [user, authLoading]);
+
+  useEffect(() => {
+    return () => {
+      if (celebrationTimerRef.current) clearTimeout(celebrationTimerRef.current);
+    };
+  }, []);
 
   const openStandings = async (m: any) => {
     setStandingsTournament(m);
@@ -218,6 +241,12 @@ function MatchesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <RewardCelebration
+        open={celebrationOpen}
+        onClose={() => setCelebrationOpen(false)}
+        prize={winPrize}
+      />
     </div>
   );
 }

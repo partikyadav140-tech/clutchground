@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, UserPlus } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { PlayerSearchInvite } from "@/components/team/PlayerSearchInvite";
+import { SkeletonTeamList } from "@/components/SkeletonPage";
 import { getMyTeam } from "../../api";
 import { useAuth } from "../../lib/auth-client";
 import { countRosterSlots, type Team } from "@/lib/team-utils";
@@ -39,8 +40,8 @@ function TeamInvitePage() {
 
   if (loading || authLoading) {
     return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-[60vh] pb-4">
+        <SkeletonTeamList />
       </div>
     );
   }

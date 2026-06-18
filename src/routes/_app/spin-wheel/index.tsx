@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Sparkles, Gift, Zap, Ticket, ShoppingCart, ChevronRight } from "lucide-react";
+import { Sparkles, Gift, Zap, Ticket, ShoppingCart, ChevronRight, Lock } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { GodCoin } from "@/components/GodCoin";
 import { SpinWheel } from "@/components/spin-wheel/SpinWheel";
+import { SkeletonSpinWheel } from "@/components/SkeletonPage";
 import { RewardCelebration } from "@/components/spin-wheel/RewardCelebration";
 import { useAuth } from "@/lib/auth-client";
 import { getProfile, getSpinWheelConfig, getSpinWheelStatus, performSpin } from "@/api";
@@ -26,7 +27,6 @@ type SpinStatus = {
   depositBalance: number;
   winningBalance: number;
   totalBalance: number;
-  minDeposit: number;
   joinedTournamentCount: number;
   lastSpin: { prizeLabel: string; prizeAmount: number } | null;
 };
@@ -41,6 +41,7 @@ function SpinWheelPage() {
   const [targetSliceIndex, setTargetSliceIndex] = useState<number | null>(null);
   const [result, setResult] = useState<{ label: string; amount: number } | null>(null);
   const [celebrationOpen, setCelebrationOpen] = useState(false);
+  const navigate = useNavigate();
 
   const syncUserBalances = useCallback(
     (p: { deposit_balance?: number; winning_balance?: number }) => {
@@ -135,9 +136,7 @@ function SpinWheelPage() {
       </p>
 
       {loading ? (
-        <div className="flex justify-center py-16">
-          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
+        <SkeletonSpinWheel />
       ) : (
         <div className="space-y-4">
           {status?.joinedTournamentCount === 0 && (
@@ -233,13 +232,24 @@ function SpinWheelPage() {
           {/* Spin Button */}
           <Button
             className="w-full h-12 rounded-2xl font-display font-black text-base"
-            disabled={!status?.canSpin || spinning || !user}
-            onClick={handleSpin}
+            disabled={spinning || !user}
+            onClick={() => {
+              if (status?.joinedTournamentCount === 0) {
+                navigate({ to: "/tournaments" });
+                return;
+              }
+              handleSpin();
+            }}
           >
             {spinning ? (
               <span className="flex items-center gap-2">
                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 Spinning...
+              </span>
+            ) : status?.joinedTournamentCount === 0 ? (
+              <span className="flex items-center gap-2">
+                <Lock className="w-5 h-5" />
+                Join a tournament to unlock
               </span>
             ) : !status?.canSpin ? (
               "No spins — buy more below"

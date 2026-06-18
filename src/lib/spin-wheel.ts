@@ -16,7 +16,6 @@ export type SpinPack = {
 export type SpinWheelConfig = {
   segments: SpinSegment[];
   activePrizeIds: string[];
-  minDeposit: number;
   spinPacks: SpinPack[];
 };
 
@@ -30,7 +29,6 @@ export const DEFAULT_SPIN_PACKS: SpinPack[] = [
 ];
 
 export const SPIN_WHEEL_SETTINGS_KEY = "spin_wheel_config";
-export const SPIN_MIN_DEPOSIT_DEFAULT = 100;
 export const SPIN_MAX_ACTIVE_PRIZES = 3;
 
 export const DEFAULT_SPIN_SEGMENTS: SpinSegment[] = [
@@ -48,7 +46,6 @@ export const DEFAULT_SPIN_SEGMENTS: SpinSegment[] = [
 export const DEFAULT_SPIN_WHEEL_CONFIG: SpinWheelConfig = {
   segments: DEFAULT_SPIN_SEGMENTS,
   activePrizeIds: ["seg-1", "seg-none", "seg-5"],
-  minDeposit: SPIN_MIN_DEPOSIT_DEFAULT,
   spinPacks: DEFAULT_SPIN_PACKS,
 };
 
@@ -89,7 +86,6 @@ export function parseSpinWheelConfig(raw: string | null | undefined): SpinWheelC
     return {
       segments,
       activePrizeIds: activePrizeIds.length > 0 ? activePrizeIds : [segments[0].id],
-      minDeposit: Math.max(0, Number(parsed.minDeposit) || SPIN_MIN_DEPOSIT_DEFAULT),
       spinPacks: normalizeSpinPacks(parsed.spinPacks as SpinPack[] | undefined),
     };
   } catch {

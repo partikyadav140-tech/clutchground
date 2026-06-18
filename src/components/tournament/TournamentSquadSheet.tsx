@@ -49,7 +49,7 @@ export function TournamentSquadSheet({ registrationId, open, onOpenChange, mode 
             <div className="flex items-center gap-3 p-4 rounded-2xl bg-secondary/30 border border-border">
               <div className="w-14 h-14 rounded-2xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center font-display font-black text-xl text-primary shrink-0">
                 {squad.teamLogo ? (
-                  <img src={squad.teamLogo} alt="" className="w-full h-full object-cover" />
+                  <img src={squad.teamLogo} alt={squad.teamName || "Team logo"} className="w-full h-full object-cover" />
                 ) : (
                   squad.teamName?.[0]
                 )}
@@ -68,7 +68,7 @@ export function TournamentSquadSheet({ registrationId, open, onOpenChange, mode 
                   <div className="flex items-center gap-3 p-3 rounded-2xl border border-border bg-card">
                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0">
                       {m.avatar_url ? (
-                        <img src={m.avatar_url} alt="" className="w-full h-full object-cover" />
+                        <img src={m.avatar_url} alt={m.ign || m.username || "Player"} className="w-full h-full object-cover" />
                       ) : (
                         (m.ign || "?")[0]
                       )}

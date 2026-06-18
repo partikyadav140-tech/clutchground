@@ -280,6 +280,8 @@ export function Navbar() {
               <Bell className="w-[22px] h-[22px] lg:w-4 lg:h-4" />
               {unread > 0 && (
                 <span
+                  aria-live="polite"
+                  aria-atomic="true"
                   className="absolute -top-0.5 -right-0.5 w-5 h-5 lg:w-4 lg:h-4 rounded-full text-[9px] lg:text-[8px] font-black grid place-items-center"
                   style={{ background: "var(--fire)", color: "#fff" }}
                 >

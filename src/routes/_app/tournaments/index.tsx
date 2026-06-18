@@ -6,11 +6,17 @@ import { Search, Filter, Swords } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageHeader } from "@/components/PageHeader";
 import { TournamentCard } from "@/components/TournamentCard";
+import { SkeletonPage } from "@/components/SkeletonPage";
 
 export const Route = createFileRoute("/_app/tournaments/")({
   head: () => ({ meta: [{ title: "Arena — CLUTCHGROUND" }] }),
   loader: async () => await getTournaments(),
   component: TournamentsPage,
+  pendingComponent: () => (
+    <div className="min-h-screen bg-background pb-24">
+      <SkeletonPage />
+    </div>
+  ),
 });
 
 const FILTERS = ["All", "Solo", "Duo", "Squad", "Free"] as const;

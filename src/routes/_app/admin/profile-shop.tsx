@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-client";
 import { getProfileShopAdminConfig, saveProfileShopAdminConfig } from "@/api";
 import { GodCoin } from "@/components/GodCoin";
+import { SkeletonAdminTable } from "@/components/SkeletonPage";
 import type { ProfileCosmeticItem, ProfileShopConfig } from "@/lib/profile-customization";
 import {
   DEFAULT_PROFILE_SHOP,
@@ -125,8 +126,8 @@ function AdminProfileShopPage() {
 
   if (loading || fetching) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-[60vh] bg-background pb-6">
+        <SkeletonAdminTable />
       </div>
     );
   }

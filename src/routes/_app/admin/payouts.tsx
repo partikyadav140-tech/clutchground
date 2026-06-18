@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { confirmDialog } from "@/components/ConfirmDialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { AdminNavBar } from "@/components/AdminNavBar";
+import { SkeletonAdminTable } from "@/components/SkeletonPage";
 
 export const Route = createFileRoute("/_app/admin/payouts")({
   head: () => ({ meta: [{ title: "Payouts Admin — CLUTCHGROUND" }] }),
@@ -38,8 +39,8 @@ function AdminPayoutsPage() {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-[60vh] bg-background pb-6">
+        <SkeletonAdminTable />
       </div>
     );
 

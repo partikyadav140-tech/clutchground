@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { SkeletonSupport } from "@/components/SkeletonPage";
 import {
   LifeBuoy,
   Plus,
@@ -64,7 +65,11 @@ function SupportPage() {
     }
   };
 
-  if (loading || !user) return null;
+  if (loading || !user) return (
+    <div className="min-h-[60vh] pb-6">
+      <SkeletonSupport />
+    </div>
+  );
 
   return (
     <div className="min-h-full bg-background pb-6">

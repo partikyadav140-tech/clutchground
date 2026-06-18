@@ -19,6 +19,10 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [isLocked, setIsLocked] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,12 +98,19 @@ function LoginPage() {
                 type="text"
                 placeholder="Email address"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); if (emailTouched && e.target.value.trim()) setEmailError(""); }}
+                onBlur={() => { setEmailTouched(true); setEmailError(email.trim() ? "" : "Email address is required"); }}
                 required
                 autoComplete="email"
                 className="w-full h-13 bg-secondary/50 border border-border focus:border-primary/60 rounded-2xl pl-12 pr-4 text-sm font-semibold text-foreground outline-none transition-all focus:ring-1 focus:ring-primary/20 focus:bg-secondary/80"
               />
             </div>
+            {emailTouched && emailError && (
+              <p className="text-destructive text-[11px] font-semibold px-1 mt-1.5 flex items-center gap-1">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
+                {emailError}
+              </p>
+            )}
           </div>
 
           {/* Password */}
@@ -111,7 +122,8 @@ function LoginPage() {
                 type={showPass ? "text" : "password"}
                 placeholder="Your password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); if (passwordTouched && e.target.value) setPasswordError(""); }}
+                onBlur={() => { setPasswordTouched(true); setPasswordError(password ? "" : "Password is required"); }}
                 required
                 autoComplete="current-password"
                 className="w-full h-13 bg-secondary/50 border border-border focus:border-primary/60 rounded-2xl pl-12 pr-12 text-sm font-semibold text-foreground outline-none transition-all focus:ring-1 focus:ring-primary/20 focus:bg-secondary/80"
@@ -132,6 +144,12 @@ function LoginPage() {
                 Forgot Password?
               </Link>
             </div>
+            {passwordTouched && passwordError && (
+              <p className="text-destructive text-[11px] font-semibold px-1 mt-1.5 flex items-center gap-1">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-destructive shrink-0" />
+                {passwordError}
+              </p>
+            )}
           </div>
 
           {/* Error / Lockout message */}
@@ -148,9 +166,9 @@ function LoginPage() {
           {/* Sign in button */}
           <button
             type="submit"
-            disabled={loading || isLocked}
+            disabled={loading || isLocked || !email.trim() || !password}
             className="w-full h-13 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all active:scale-95 press-effect shadow-cta mt-2"
-            style={{ background: loading ? "var(--secondary)" : "var(--gradient-cta)" }}
+            style={{ background: loading || !email.trim() || !password ? "var(--secondary)" : "var(--gradient-cta)" }}
           >
             {loading ? (
               <>

@@ -4,6 +4,7 @@ import { useAuth } from "../../lib/auth-client";
 import { getGlobalLeaderboard, getSiteSettings } from "../../api";
 import { Crown, Trophy, Star, Medal, Zap } from "lucide-react";
 import { motion } from "framer-motion";
+import { SkeletonLeaderboard } from "@/components/SkeletonPage";
 
 export const Route = createFileRoute("/_app/leaderboard")({
   head: () => ({ meta: [{ title: "Leaderboard — CLUTCHGROUND" }] }),
@@ -15,6 +16,11 @@ export const Route = createFileRoute("/_app/leaderboard")({
     return { leaderboard, settings };
   },
   component: LeaderboardPage,
+  pendingComponent: () => (
+    <div className="min-h-screen bg-background pb-24">
+      <SkeletonLeaderboard />
+    </div>
+  ),
 });
 
 function LeaderboardPage() {
@@ -244,7 +250,7 @@ function LeaderboardPage() {
                         }}
                       >
                         {p.logo ? (
-                          <img src={p.logo} className="w-full h-full object-cover" />
+                          <img src={p.logo} className="w-full h-full object-cover" loading="lazy" alt={p.team || "Player"} />
                         ) : (
                           (p.team || "T")[0].toUpperCase()
                         )}
@@ -325,7 +331,7 @@ function PodiumPillar({
         style={{ background: cfg.bg, borderColor: cfg.color, boxShadow: cfg.glow }}
       >
         {p.logo ? (
-          <img src={p.logo} className="w-full h-full object-cover" />
+          <img src={p.logo} className="w-full h-full object-cover" loading="lazy" alt={p.team || "Player"} />
         ) : (
           (p.team || "T")[0].toUpperCase()
         )}

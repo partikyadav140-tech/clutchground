@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-client";
 import { GodCoin } from "@/components/GodCoin";
 import { Button } from "@/components/ui/button";
+import { SkeletonShop } from "@/components/SkeletonPage";
 import {
   DP_ANIMATIONS,
   BANNER_PRESETS,
@@ -318,8 +319,8 @@ function ProfileShopPage() {
       {/* Animations Grid */}
       <div className="px-4 mt-2 space-y-3">
         {loading ? (
-          <div className="flex justify-center py-16">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="py-4">
+            <SkeletonShop />
           </div>
         ) : (
           <AnimatePresence mode="popLayout">

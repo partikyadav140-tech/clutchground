@@ -335,7 +335,7 @@ function MyTeamPage() {
               <div className="relative shrink-0">
                 <div className="w-20 h-20 rounded-2xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center font-display font-black text-2xl text-primary">
                   {teamForm.logo ? (
-                    <img src={teamForm.logo} alt="" className="w-full h-full object-cover" />
+                    <img src={teamForm.logo} alt="Team logo preview" className="w-full h-full object-cover" />
                   ) : (
                     getInitials(teamForm.name || "?")
                   )}
@@ -412,7 +412,7 @@ function MyTeamPage() {
 
               <div className="relative mx-auto w-28 h-28 rounded-3xl overflow-hidden bg-primary/10 border-2 border-primary/25 flex items-center justify-center font-display font-black text-3xl text-primary shadow-primary mb-4">
                 {myTeam.logo ? (
-                  <img src={myTeam.logo} alt="" className="w-full h-full object-cover" />
+                  <img src={myTeam.logo} alt={myTeam.name} className="w-full h-full object-cover" />
                 ) : (
                   getInitials(myTeam.name)
                 )}

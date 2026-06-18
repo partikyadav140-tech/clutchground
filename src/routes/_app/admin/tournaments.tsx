@@ -39,6 +39,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { confirmDialog } from "@/components/ConfirmDialog";
 import { motion } from "framer-motion";
 import { GodCoin } from "@/components/GodCoin";
+import { SkeletonAdminTable } from "@/components/SkeletonPage";
 import { StandingsCard } from "@/components/StandingsCard";
 import { ClashSquadResults } from "@/components/tournament/results/ClashSquadResults";
 import { LoneWolfResults } from "@/components/tournament/results/LoneWolfResults";
@@ -465,8 +466,8 @@ function AdminTournamentsPage() {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center min-h-[60vh] bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-[60vh] bg-background pb-6">
+        <SkeletonAdminTable />
       </div>
     );
 

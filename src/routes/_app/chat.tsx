@@ -2,6 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../lib/auth-client";
 import { Button } from "@/components/ui/button";
+import { SkeletonChatList } from "@/components/SkeletonPage";
 import { toast } from "sonner";
 import {
   MessageCircle,
@@ -233,7 +234,11 @@ function ChatPage() {
     }
   };
 
-  if (loading || !user) return null;
+  if (loading || !user) return (
+    <div className="min-h-[60vh] pb-24">
+      <SkeletonChatList />
+    </div>
+  );
 
   // Render main screen or chat screen on mobile
   if (activeChat) {
@@ -250,7 +255,7 @@ function ChatPage() {
           </Button>
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden font-display font-black text-cta">
             {activeChat.avatar ? (
-              <img src={activeChat.avatar} className="w-full h-full object-cover" />
+              <img src={activeChat.avatar} className="w-full h-full object-cover" loading="lazy" alt={activeChat.name} />
             ) : (
               activeChat.name[0].toUpperCase()
             )}
@@ -277,7 +282,7 @@ function ChatPage() {
                   {!isMe && (
                     <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center shrink-0 overflow-hidden font-display font-black text-xs text-muted-foreground border border-white/5">
                       {m.avatar_url ? (
-                        <img src={m.avatar_url} className="w-full h-full object-cover" />
+                        <img src={m.avatar_url} className="w-full h-full object-cover" loading="lazy" alt={m.ign || m.username || "User"} />
                       ) : (
                         (m.ign || m.username)[0].toUpperCase()
                       )}
@@ -378,7 +383,7 @@ function ChatPage() {
               >
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-[#d95a00] flex items-center justify-center font-display font-black text-2xl text-white shadow-md overflow-hidden shrink-0">
                   {myTeam.logo ? (
-                    <img src={myTeam.logo} className="w-full h-full object-cover" />
+                    <img src={myTeam.logo} className="w-full h-full object-cover" loading="lazy" alt={myTeam.name} />
                   ) : (
                     myTeam.name.slice(0, 2).toUpperCase()
                   )}
@@ -420,7 +425,7 @@ function ChatPage() {
                   >
                     <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center font-display font-black text-xl text-muted-foreground overflow-hidden shrink-0">
                       {f.avatar_url ? (
-                        <img src={f.avatar_url} className="w-full h-full object-cover" />
+                        <img src={f.avatar_url} className="w-full h-full object-cover" loading="lazy" alt={f.ign || f.username || "Friend"} />
                       ) : f.ign ? (
                         f.ign[0].toUpperCase()
                       ) : (
@@ -473,7 +478,7 @@ function ChatPage() {
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center font-display font-black text-muted-foreground">
                       {u.avatar_url ? (
-                        <img src={u.avatar_url} className="w-full h-full object-cover rounded-lg" />
+                        <img src={u.avatar_url} className="w-full h-full object-cover rounded-lg" loading="lazy" alt={u.ign || u.username || "Player"} />
                       ) : u.ign ? (
                         u.ign[0].toUpperCase()
                       ) : (
@@ -521,7 +526,7 @@ function ChatPage() {
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center font-display font-black text-muted-foreground">
                       {r.avatar_url ? (
-                        <img src={r.avatar_url} className="w-full h-full object-cover rounded-xl" />
+                        <img src={r.avatar_url} className="w-full h-full object-cover rounded-xl" loading="lazy" alt={r.ign || r.username || "Player"} />
                       ) : r.ign ? (
                         r.ign[0].toUpperCase()
                       ) : (

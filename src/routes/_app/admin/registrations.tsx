@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { AdminNavBar } from "@/components/AdminNavBar";
+import { SkeletonAdminTable } from "@/components/SkeletonPage";
 
 export const Route = createFileRoute("/_app/admin/registrations")({
   head: () => ({ meta: [{ title: "Registrations Admin — Professional Esports Arena" }] }),
@@ -29,8 +30,8 @@ function AdminRegistrationsPage() {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center min-h-[60vh] bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-[60vh] bg-background pb-6">
+        <SkeletonAdminTable />
       </div>
     );
 

@@ -29,6 +29,7 @@ import { useAuth } from "../../lib/auth-client";
 import { GodCoin } from "@/components/GodCoin";
 import { TournamentCard } from "@/components/TournamentCard";
 import { SpinWheelFab } from "@/components/spin-wheel/SpinWheelFab";
+import { SkeletonHome } from "@/components/SkeletonPage";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({ meta: [{ title: "ClutchGround | Clutch Ground — Rule the Battleground" }] }),
@@ -41,8 +42,8 @@ export const Route = createFileRoute("/_app/")({
   },
   component: HomePage,
   pendingComponent: () => (
-    <div className="h-screen flex items-center justify-center bg-background">
-      <div className="w-8 h-8 border-[3px] border-primary border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen bg-background">
+      <SkeletonHome />
     </div>
   ),
 });
@@ -429,7 +430,7 @@ function HomePage() {
                   {/* Avatar */}
                   <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center font-display font-black text-xs text-foreground shrink-0 overflow-hidden border border-border">
                     {p.logo ? (
-                      <img src={p.logo} className="w-full h-full object-cover" alt="" />
+                      <img src={p.logo} className="w-full h-full object-cover" alt={p.team || "Player"} loading="lazy" />
                     ) : (
                       (p.team || "T")[0].toUpperCase()
                     )}

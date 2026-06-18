@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/Logo";
+import { PasswordStrength } from "@/components/PasswordStrength";
 
 export const Route = createFileRoute("/_app/signup")({
   head: () => ({ meta: [{ title: "Create Account — CLUTCHGROUND" }] }),
@@ -405,6 +406,7 @@ function SignupPage() {
                   Password meets requirements
                 </p>
               )}
+              {form.password && <PasswordStrength password={form.password} />}
               <button
                 type="submit"
                 disabled={loading || !!emailError || !!gmailError || !!usernameError || !form.username || form.username.trim().length < 3 || !form.password || form.password.length < 6}

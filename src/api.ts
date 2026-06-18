@@ -795,31 +795,6 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
       }
     }
 
-    // Send room details via email (secure — not visible in notifications)
-    try {
-      const { sendEmail } = await import("./lib/email");
-      const tournament = (await db.prepare("SELECT title, room_id, room_pass FROM tournaments WHERE id = ?").get(id)) as any;
-      if (tournament?.room_id || tournament?.room_pass) {
-        const emailUserIds = [...notifiedUsers];
-        const emailBody = `
-          <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:20px;">
-            <h2 style="color:#f97316;">🎮 Room Details Updated</h2>
-            <p>Tournament: <strong>${tournament.title}</strong></p>
-            ${tournament.room_id ? `<p><strong>Room ID:</strong> ${tournament.room_id}</p>` : ""}
-            ${tournament.room_pass ? `<p><strong>Room Password:</strong> ${tournament.room_pass}</p>` : ""}
-            <p style="color:#666;font-size:12px;">Do not share these details publicly. Good luck!</p>
-          </div>
-        `;
-        for (const uid of emailUserIds) {
-          const userEmail = (await db.prepare("SELECT email FROM users WHERE id = ?").get(uid)) as any;
-          if (userEmail?.email) {
-            sendEmail(userEmail.email, `Room Details — ${tournament.title}`, emailBody).catch(() => {});
-          }
-        }
-      }
-    } catch (e) {
-      console.error("Failed to send room details email:", e);
-    }
   }
 
   // Clear tournaments cache to ensure updated data is fetched
@@ -4418,7 +4393,6 @@ export const getSpinWheelConfig = createServerFn({ method: "POST" }).handler(asy
   return {
     segments: config.segments,
     activePrizeIds: config.activePrizeIds,
-    minDeposit: config.minDeposit,
     spinPacks: config.spinPacks,
     totalSlices: slices.length,
   };
@@ -4523,7 +4497,6 @@ export const getSpinWheelStatus = createServerFn({ method: "POST" }).handler(asy
     depositBalance,
     winningBalance,
     totalBalance: depositBalance + winningBalance,
-    minDeposit: config.minDeposit,
     joinedTournamentCount,
     lastSpin: lastSpin
       ? {
@@ -4708,7 +4681,6 @@ export const saveSpinWheelAdminConfig = createServerFn({ method: "POST" }).handl
           color: string;
         }>;
         activePrizeIds: string[];
-        minDeposit: number;
         spinPacks: Array<{ id: string; spins: number; cost: number; label?: string }>;
       };
     };
@@ -4743,7 +4715,6 @@ export const saveSpinWheelAdminConfig = createServerFn({ method: "POST" }).handl
     const payload = {
       segments,
       activePrizeIds,
-      minDeposit: Math.max(0, Number(config.minDeposit) || 100),
       spinPacks,
     };
 

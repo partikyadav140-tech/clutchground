@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, Inbox } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { TeamRequestsPanel } from "@/components/team/TeamRequestsPanel";
+import { SkeletonTeamList } from "@/components/SkeletonPage";
 import { getMyTeam, getTeamRequests } from "../../api";
 import { useAuth } from "../../lib/auth-client";
 import type { Team } from "@/lib/team-utils";
@@ -42,8 +43,8 @@ function TeamRequestsPage() {
 
   if (loading || authLoading) {
     return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-[60vh] pb-4">
+        <SkeletonTeamList />
       </div>
     );
   }

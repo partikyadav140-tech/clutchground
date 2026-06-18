@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { AdminNavBar } from "@/components/AdminNavBar";
 import { motion } from "framer-motion";
 import { getSiteSettings, saveSiteSetting, clearSiteSetting, uploadImage } from "../../../api";
+import { SkeletonAdminTable } from "@/components/SkeletonPage";
 
 export const Route = createFileRoute("/_app/admin/site-settings")({
   head: () => ({ meta: [{ title: "Site Settings — Admin" }] }),
@@ -203,8 +204,8 @@ function AdminSiteSettingsPage() {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-[60vh] bg-background pb-6">
+        <SkeletonAdminTable />
       </div>
     );
 

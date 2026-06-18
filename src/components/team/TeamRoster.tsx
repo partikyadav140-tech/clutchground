@@ -33,7 +33,7 @@ function MemberAvatar({
       style={{ borderColor: `${accent}44`, background: `${accent}14`, color: accent }}
     >
       {avatarUrl ? (
-        <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+        <img src={avatarUrl} alt={name || "Player"} className="w-full h-full object-cover" />
       ) : (
         getInitials(name)
       )}

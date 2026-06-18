@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { PageHeader } from "@/components/PageHeader";
 import { TeamDetailSheet } from "@/components/team/TeamDetailSheet";
 import { TeamInvitesPanel } from "@/components/team/TeamInvitesPanel";
+import { SkeletonTeamList } from "@/components/SkeletonPage";
 import {
   getAllTeams,
   getMyTeam,
@@ -93,8 +94,8 @@ function TeamsPage() {
 
   if (loading || authLoading) {
     return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-[60vh] pb-4">
+        <SkeletonTeamList />
       </div>
     );
   }
@@ -203,7 +204,7 @@ function TeamsPage() {
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl overflow-hidden bg-primary/10 border border-primary/15 flex items-center justify-center font-display font-black text-lg text-primary shrink-0">
                     {team.logo ? (
-                      <img src={team.logo} alt="" className="w-full h-full object-cover" />
+                      <img src={team.logo} alt={team.name || "Team logo"} className="w-full h-full object-cover" />
                     ) : (
                       getInitials(team.name)
                     )}

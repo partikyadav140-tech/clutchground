@@ -292,6 +292,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
             <InstallPwaDialog />
             {children}
             <ConfirmDialog />
+            <div aria-live="polite" aria-atomic="true" className="sr-only" />
             <Toaster
               theme="system"
               position="top-center"

@@ -6,6 +6,7 @@ import { LifeBuoy, Clock, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { getAllTickets } from "../../../api";
 import { AdminNavBar } from "@/components/AdminNavBar";
+import { SkeletonAdminTable } from "@/components/SkeletonPage";
 
 export const Route = createFileRoute("/_app/admin/tickets/")({
   head: () => ({ meta: [{ title: "Support Tickets — Admin" }] }),
@@ -35,7 +36,12 @@ function AdminTicketsPage() {
     } catch (e) {}
   };
 
-  if (loading || !user) return null;
+  if (loading || !user)
+    return (
+      <div className="min-h-[60vh] bg-background pb-6">
+        <SkeletonAdminTable />
+      </div>
+    );
 
   return (
     <div className="bg-background min-h-screen pb-24">

@@ -30,6 +30,7 @@ import { LoneWolfResults } from "@/components/tournament/results/LoneWolfResults
 import { TournamentSquadSheet } from "@/components/tournament/TournamentSquadSheet";
 import { CountdownTimer } from "@/components/CountdownTimer";
 import { getTournamentPoster } from "@/lib/mode-colors";
+import { SkeletonPage } from "@/components/SkeletonPage";
 
 export const Route = createFileRoute("/_app/tournaments/$id")({
   component: TournamentDetailPage,
@@ -57,6 +58,11 @@ export const Route = createFileRoute("/_app/tournaments/$id")({
     const results = t.status === "completed" ? allRegistrations : [];
     return { t, results, allRegistrations };
   },
+  pendingComponent: () => (
+    <div className="min-h-screen bg-background pb-24">
+      <SkeletonPage />
+    </div>
+  ),
 });
 
 const MODE_CONFIG: Record<string, { color: string; glow: string; gradient: string; bg: string }> = {
@@ -130,7 +136,7 @@ function TournamentDetailPage() {
     <div className="min-h-screen bg-background pb-[88px]">
       {/* ── HERO BANNER ── */}
       <div className="relative overflow-hidden" style={{ height: 220 }}>
-        <img src={getTournamentPoster(t)} alt={t.title} className="w-full h-full object-cover" />
+        <img src={getTournamentPoster(t)} alt={t.title} className="w-full h-full object-cover" loading="lazy" />
         {/* Dark readability layer — always dark so image text is visible */}
         <div
           className="absolute inset-0"

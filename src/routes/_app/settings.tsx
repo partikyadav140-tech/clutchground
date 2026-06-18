@@ -20,6 +20,7 @@ import { useTheme } from "../../lib/theme";
 import { PageHeader } from "@/components/PageHeader";
 import { GodCoin } from "@/components/GodCoin";
 import { Button } from "@/components/ui/button";
+import { SkeletonSettings } from "@/components/SkeletonPage";
 
 export const Route = createFileRoute("/_app/settings")({
   head: () => ({ meta: [{ title: "Settings — ClutchGround" }] }),
@@ -36,7 +37,11 @@ function SettingsPage() {
 
   if (!user) {
     router.navigate({ to: "/login" });
-    return null;
+    return (
+      <div className="min-h-[60vh] pb-6">
+        <SkeletonSettings />
+      </div>
+    );
   }
 
   return (

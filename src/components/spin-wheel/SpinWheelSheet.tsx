@@ -31,7 +31,6 @@ type SpinStatus = {
   depositBalance: number;
   winningBalance: number;
   totalBalance: number;
-  minDeposit: number;
   joinedTournamentCount: number;
   lastSpin: { prizeLabel: string; prizeAmount: number } | null;
 };

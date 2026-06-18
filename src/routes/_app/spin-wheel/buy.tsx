@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { GodCoin } from "@/components/GodCoin";
+import { SkeletonSpinWheel } from "@/components/SkeletonPage";
 import { useAuth } from "@/lib/auth-client";
 import { confirmDialog } from "@/components/ConfirmDialog";
 import { getProfile, getSpinWheelConfig, getSpinWheelStatus, purchaseSpinPack } from "@/api";
@@ -183,8 +184,14 @@ function BuySpinsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background page-content flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background page-content pb-28">
+        <div className="px-4 pt-4 pb-2 flex items-center gap-3">
+          <div className="w-10 h-10" />
+          <div className="flex-1">
+            <div className="w-32 h-5 rounded-full bg-secondary/60" />
+          </div>
+        </div>
+        <SkeletonSpinWheel />
       </div>
     );
   }

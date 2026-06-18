@@ -117,10 +117,19 @@ export const Route = createFileRoute("/_app")({
               .join(" ")}
           >
             <Suspense fallback={<PageSpinner />}>
-              <div className={isChatPage ? "h-full flex flex-col" : "min-h-full flex flex-col"}>
-                <Outlet key={path} />
-                {!isAuthRoute && !isChatPage && <Footer />}
-              </div>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={path}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  className={isChatPage ? "h-full flex flex-col" : "min-h-full flex flex-col"}
+                >
+                  <Outlet />
+                  {!isAuthRoute && !isChatPage && <Footer />}
+                </motion.div>
+              </AnimatePresence>
             </Suspense>
           </div>
         </main>

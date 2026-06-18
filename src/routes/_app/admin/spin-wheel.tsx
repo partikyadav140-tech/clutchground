@@ -14,7 +14,6 @@ import {
   Gift,
   Coins,
   ShoppingBag,
-  Settings2,
   Info,
   Eye,
   EyeOff,
@@ -26,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { SpinWheel } from "@/components/spin-wheel/SpinWheel";
 import { useAuth } from "@/lib/auth-client";
 import { getSpinWheelAdminConfig, saveSpinWheelAdminConfig } from "@/api";
+import { SkeletonAdminTable } from "@/components/SkeletonPage";
 import {
   SPIN_MAX_ACTIVE_PRIZES,
   type SpinPack,
@@ -137,8 +137,8 @@ function AdminSpinWheelPage() {
 
   if (loading || fetching) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-[60vh] bg-background pb-6">
+        <SkeletonAdminTable />
       </div>
     );
   }
@@ -261,7 +261,6 @@ function AdminSpinWheelPage() {
               value: `${activeCount}/${SPIN_MAX_ACTIVE_PRIZES}`,
               color: "text-emerald-500",
             },
-            { label: "Min Dep", value: config.minDeposit, color: "text-amber-500" },
           ].map((s) => (
             <div key={s.label} className="flex-1 bg-secondary/50 rounded-xl py-2 text-center">
               <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -294,30 +293,6 @@ function AdminSpinWheelPage() {
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* ── Eligibility ── */}
-        <Section title="Eligibility" icon={Settings2} color="bg-amber-500/10 text-amber-500">
-          <FieldLabel hint="Users need this balance in deposit coins to get 1 free spin/day">
-            Minimum Deposit Balance (CG)
-          </FieldLabel>
-          <input
-            type="number"
-            min={0}
-            value={config.minDeposit}
-            onChange={(e) =>
-              setConfig((p) => (p ? { ...p, minDeposit: Number(e.target.value) || 0 } : p))
-            }
-            className="w-full h-12 rounded-xl border border-border bg-secondary/40 px-4 text-sm font-bold outline-none focus:border-primary transition-colors"
-          />
-          <div className="flex items-start gap-2 bg-blue-500/5 border border-blue-500/15 rounded-xl p-3">
-            <Info className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
-            <p className="text-[11px] text-muted-foreground leading-snug">
-              Users with at least this many{" "}
-              <strong className="text-foreground">deposit coins</strong> get 1 free spin per day
-              (resets at IST midnight).
-            </p>
-          </div>
-        </Section>
 
         {/* ── Active Prizes ── */}
         <Section

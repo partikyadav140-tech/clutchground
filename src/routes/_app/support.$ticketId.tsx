@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { SkeletonTicketChat } from "@/components/SkeletonPage";
 import {
   ArrowLeft,
   Send,
@@ -261,8 +262,8 @@ function TicketChatPage() {
 
   if (!ticket || loading) {
     return (
-      <div className="h-full flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="h-full bg-background">
+        <SkeletonTicketChat />
       </div>
     );
   }
@@ -460,7 +461,7 @@ function TicketChatPage() {
             {/* Attachment Preview */}
             {selectedImage && (
               <div className="relative inline-flex items-center rounded-2xl bg-secondary/80 border border-border/80 p-2 pr-8 animate-scale-in">
-                <img src={selectedImage} className="w-12 h-12 rounded-xl object-cover" />
+                <img src={selectedImage} className="w-12 h-12 rounded-xl object-cover" loading="lazy" alt="Attached image" />
                 <span className="text-[10px] text-muted-foreground ml-2 max-w-[120px] truncate">
                   photo_attached.jpg
                 </span>

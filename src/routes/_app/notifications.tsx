@@ -8,6 +8,7 @@ import {
   subscribeUserToPush,
 } from "../../lib/notification-utils";
 import { toast } from "sonner";
+import { SkeletonNotification } from "@/components/SkeletonPage";
 import { motion } from "framer-motion";
 
 export const Route = createFileRoute("/_app/notifications")({
@@ -135,8 +136,8 @@ function NotificationsPage() {
 
   if (!user || loading)
     return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background pb-5">
+        <SkeletonNotification />
       </div>
     );
 
