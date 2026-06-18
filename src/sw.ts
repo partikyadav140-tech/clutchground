@@ -99,15 +99,13 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-// Serve offline page when navigation fails
+// Offline fallback — only intercept when fully offline
 self.addEventListener("fetch", (event) => {
-  if (event.request.mode === "navigate") {
+  if (event.request.mode === "navigate" && !navigator.onLine) {
     event.respondWith(
-      fetch(event.request).catch(() => {
-        return caches.match(OFFLINE_URL).then((cached) => cached || new Response(OFFLINE_HTML, {
-          headers: { "Content-Type": "text/html" },
-        }));
-      }),
+      caches.match(OFFLINE_URL).then((cached) => cached || new Response(OFFLINE_HTML, {
+        headers: { "Content-Type": "text/html" },
+      })),
     );
   }
 });
