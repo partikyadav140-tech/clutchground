@@ -63,7 +63,7 @@ SECURITY_HEADERS["Content-Security-Policy"] = CSP_DIRECTIVES;
 
 // ── Rate Limiting (in-memory, per-IP) ────────────────────────────────────
 const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX = 120;
+const RATE_LIMIT_MAX = 200; // Increased from 120 — 5s auth poll + 20s notif poll + page loads need headroom
 const rateLimitMap = new Map();
 let lastCleanup = Date.now();
 
@@ -124,8 +124,16 @@ createServer(async (req, res) => {
       || "unknown";
 
     if (!checkRateLimit(clientIp)) {
-      res.writeHead(429, { "Retry-After": "60" });
-      res.end("Too Many Requests");
+      res.writeHead(429, {
+        "Retry-After": "30",
+        "Content-Type": "application/json",
+        ...SECURITY_HEADERS,
+      });
+      res.end(JSON.stringify({
+        error: "Too Many Requests",
+        message: "You're making requests too quickly. Please slow down.",
+        retryAfter: 30,
+      }));
       return;
     }
 

@@ -87,12 +87,17 @@ function ChatPage() {
     } catch (e) {}
   };
 
-  // Chat Polling
+  // Chat Polling — only when a chat is active
   useEffect(() => {
     if (!activeChat || !user) return;
 
     setMessages([]); // clear old messages
     lastMessageIdRef.current = 0;
+
+    let consecutiveErrors = 0;
+    const BASE_INTERVAL = 5_000; // 5s (was 3s)
+    let currentInterval = BASE_INTERVAL;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
     const fetchMessages = async () => {
       try {
@@ -129,7 +134,6 @@ function ChatPage() {
               },
             })
               .then(() => {
-                // Refresh friends list to update unread badge counts immediately
                 (getFriends as any)({ data: user.id })
                   .then(setFriends)
                   .catch(() => {});
@@ -137,13 +141,31 @@ function ChatPage() {
               .catch(() => {});
           }
         }
-      } catch (e) {}
+        consecutiveErrors = 0;
+        if (currentInterval !== BASE_INTERVAL) {
+          currentInterval = BASE_INTERVAL;
+          if (intervalId) clearInterval(intervalId);
+          intervalId = setInterval(fetchMessages, currentInterval);
+        }
+      } catch {
+        consecutiveErrors++;
+        if (consecutiveErrors >= 3) {
+          const newInterval = Math.min(currentInterval * 2, 30_000);
+          if (newInterval !== currentInterval) {
+            currentInterval = newInterval;
+            if (intervalId) clearInterval(intervalId);
+            intervalId = setInterval(fetchMessages, currentInterval);
+          }
+        }
+      }
     };
 
     fetchMessages(); // initial fetch
-    const interval = setInterval(fetchMessages, 3000); // Poll every 3 seconds
+    intervalId = setInterval(fetchMessages, currentInterval);
 
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [activeChat, user]);
 
   // Mark messages as read when opening a friend chat
@@ -165,10 +187,18 @@ function ChatPage() {
     }
   }, [activeChat, user]);
 
-  // Background polling for friends list and requests (every 4 seconds) to update badges
+  // Background polling for friends list and requests — ONLY when on chat page
   useEffect(() => {
     if (!user) return;
-    const interval = setInterval(async () => {
+    const path = window.location.pathname;
+    if (!path.startsWith("/chat")) return; // Don't poll if not on chat page
+
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    let consecutiveErrors = 0;
+    const BASE_INTERVAL = 15_000; // 15s (was 4s — massive reduction)
+    let currentInterval = BASE_INTERVAL;
+
+    const poll = async () => {
       try {
         const [f, r] = await Promise.all([
           (getFriends as any)({ data: user.id }),
@@ -176,10 +206,24 @@ function ChatPage() {
         ]);
         setFriends(f || []);
         setRequests(r || []);
-      } catch (e) {}
-    }, 4000);
+        consecutiveErrors = 0;
+      } catch {
+        consecutiveErrors++;
+        if (consecutiveErrors >= 2) {
+          const newInterval = Math.min(currentInterval * 2, 60_000);
+          if (newInterval !== currentInterval) {
+            currentInterval = newInterval;
+            if (intervalId) clearInterval(intervalId);
+            intervalId = setInterval(poll, currentInterval);
+          }
+        }
+      }
+    };
 
-    return () => clearInterval(interval);
+    intervalId = setInterval(poll, currentInterval);
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [user]);
 
   const handleSearch = async (e: React.FormEvent) => {

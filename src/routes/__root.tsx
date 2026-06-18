@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import { trackWebVitals } from "@/lib/performance";
 import { ThemeProvider, themeInitScript } from "@/lib/theme";
 import { InstallPwaDialog } from "@/components/InstallPwaDialog";
+import { GlobalErrorBoundaryWrapper } from "../router";
 
 import appCss from "../styles.css?url";
 
@@ -286,19 +287,21 @@ function RootShell({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ThemeProvider>
-          <SplashScreen />
-          <InstallPwaDialog />
-          {children}
-          <ConfirmDialog />
-          <Toaster
-            theme="system"
-            position="top-center"
-            toastOptions={{
-              className:
-                "bg-card border border-primary/50 text-foreground font-display shadow-fire",
-              descriptionClassName: "text-muted-foreground font-sans",
-            }}
-          />
+          <GlobalErrorBoundaryWrapper>
+            <SplashScreen />
+            <InstallPwaDialog />
+            {children}
+            <ConfirmDialog />
+            <Toaster
+              theme="system"
+              position="top-center"
+              toastOptions={{
+                className:
+                  "bg-card border border-primary/50 text-foreground font-display shadow-fire",
+                descriptionClassName: "text-muted-foreground font-sans",
+              }}
+            />
+          </GlobalErrorBoundaryWrapper>
         </ThemeProvider>
         <Scripts />
       </body>

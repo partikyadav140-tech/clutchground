@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { getUserFromSession, logoutUser } from "../api";
 import { useRouter } from "@tanstack/react-router";
 
@@ -30,48 +30,103 @@ export function clearSessionId() {
   }
 }
 
-// Global state for live updates across components
+// ── Global state for live updates across components ──────────────────────
 let globalUser: any = null;
-const listeners = new Set<Function>();
+const listeners = new Set<(u: any) => void>();
 
 function notifyListeners() {
   listeners.forEach((l) => l(globalUser));
 }
 
-let polling = false;
+// ── Shared polling state (singleton across all useAuth instances) ─────────
+const AUTH_POLL_INTERVAL = 30_000; // 30s (was 5s — massive reduction)
+const AUTH_POLL_INTERVAL_ACTIVE = 15_000; // 15s when on wallet/transaction pages
+let pollIntervalId: ReturnType<typeof setInterval> | null = null;
+let pollRefCount = 0;
+let consecutiveErrors = 0;
+let activePollers = 0;
+
+function startAuthPolling() {
+  if (pollIntervalId) return; // Already running
+  pollIntervalId = setInterval(fetchAndNotify, AUTH_POLL_INTERVAL);
+}
+
+function stopAuthPolling() {
+  if (pollRefCount > 0) return; // Still in use
+  if (pollIntervalId) {
+    clearInterval(pollIntervalId);
+    pollIntervalId = null;
+  }
+}
+
+async function fetchAndNotify() {
+  const sessionId = getSessionId();
+  if (!sessionId) {
+    if (globalUser) {
+      globalUser = null;
+      notifyListeners();
+    }
+    return;
+  }
+  try {
+    const userData = await (getUserFromSession as any)({ data: sessionId });
+    if (userData === null) {
+      clearSessionId();
+      if (globalUser) {
+        globalUser = null;
+        notifyListeners();
+      }
+    } else if (JSON.stringify(userData) !== JSON.stringify(globalUser)) {
+      globalUser = userData;
+      notifyListeners();
+    }
+    consecutiveErrors = 0;
+  } catch {
+    consecutiveErrors++;
+    // Back off on repeated errors
+    if (consecutiveErrors >= 3 && pollIntervalId) {
+      clearInterval(pollIntervalId);
+      const backoffMs = Math.min(AUTH_POLL_INTERVAL * Math.pow(2, consecutiveErrors - 2), 120_000);
+      pollIntervalId = setInterval(fetchAndNotify, backoffMs);
+    }
+  }
+}
 
 export function useAuth() {
   const [user, setUserState] = useState<any>(globalUser);
   const [loading, setLoading] = useState(!globalUser);
   const router = useRouter();
+  const mountedRef = useRef(true);
 
-  const setUser = (newUser: any) => {
+  const setUser = useCallback((newUser: any) => {
     globalUser = newUser;
     notifyListeners();
-  };
+  }, []);
 
   useEffect(() => {
+    mountedRef.current = true;
+
     const listener = (u: any) => {
-      setUserState(u);
-      setLoading(false);
+      if (mountedRef.current) {
+        setUserState(u);
+        setLoading(false);
+      }
     };
     listeners.add(listener);
 
-    // Session is stored in HttpOnly cookie only (no localStorage)
-    const initialSessionId = getSessionId();
-
-    async function fetchUser() {
+    async function initialFetch() {
       const sessionId = getSessionId();
       if (!sessionId) {
         if (globalUser) {
           globalUser = null;
           notifyListeners();
         }
-        setLoading(false);
+        if (mountedRef.current) setLoading(false);
         return;
       }
       try {
         const userData = await (getUserFromSession as any)({ data: sessionId });
+        if (!mountedRef.current) return;
         if (userData === null) {
           clearSessionId();
           if (globalUser) {
@@ -82,38 +137,40 @@ export function useAuth() {
           globalUser = userData;
           notifyListeners();
         }
-      } catch (e) {
-        console.warn("Failed to fetch user session, keeping existing state");
+      } catch {
+        // Keep existing state on network errors
       }
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
 
     if (!globalUser) {
-      fetchUser();
+      initialFetch();
     } else {
       setLoading(false);
     }
 
-    if (!polling) {
-      polling = true;
-      setInterval(fetchUser, 5000); // Poll every 5s for live coin updates
-    }
+    // Shared polling — start only once, ref-count across components
+    pollRefCount++;
+    startAuthPolling();
 
     return () => {
+      mountedRef.current = false;
       listeners.delete(listener);
+      pollRefCount--;
+      stopAuthPolling();
     };
   }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     const sessionId = getSessionId();
     if (sessionId) {
-      (logoutUser as any)({ data: sessionId });
+      (logoutUser as any)({ data: sessionId }).catch(() => {});
     }
     clearSessionId();
     globalUser = null;
     notifyListeners();
     router.navigate({ to: "/login" });
-  };
+  }, [router]);
 
   return { user, loading, logout, setUser };
 }

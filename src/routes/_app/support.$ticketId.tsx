@@ -148,7 +148,7 @@ function TicketChatPage() {
     }
     if (user) {
       loadTicket(false);
-      const id = setInterval(() => loadTicket(true), 4000);
+      const id = setInterval(() => loadTicket(true), 10_000); // 10s (was 4s)
       return () => clearInterval(id);
     }
   }, [user, loading]);

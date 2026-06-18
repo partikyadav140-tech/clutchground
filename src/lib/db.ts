@@ -12,9 +12,16 @@ if (!connString) {
 const pool = new Pool({
   connectionString: connString,
   ssl: { rejectUnauthorized: false },
-  max: 10,
+  max: 20, // Increased from 10 — handles concurrent polling + page loads
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
+  connectionTimeoutMillis: 15000, // Increased from 10s for cold starts
+  // Allow the pool to queue requests instead of failing immediately
+  allowExitOnIdle: false,
+});
+
+// Prevent pool crashes from unhandled errors
+pool.on("error", (err) => {
+  console.error("[DB Pool] Unexpected error on idle client:", err.message);
 });
 
 // PostgreSQL lowercases unquoted column names.

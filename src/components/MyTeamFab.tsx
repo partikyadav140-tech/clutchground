@@ -38,6 +38,11 @@ export function MyTeamFab() {
       return;
     }
 
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    let consecutiveErrors = 0;
+    const BASE_INTERVAL = 15_000; // 15s (was 4s — massive reduction)
+    let currentInterval = BASE_INTERVAL;
+
     const fetchUnreadCount = () => {
       const lastReadId = Number(
         localStorage.getItem(`clutchground_team_last_read_${myTeam.id}`) || 0,
@@ -50,7 +55,6 @@ export function MyTeamFab() {
       })
         .then((count: number) => {
           setUnreadChatCount((prev) => {
-            // Detect new unread messages (count increased)
             if (count > prev && prevUnreadRef.current > 0) {
               showBrowserNotification("💬 Team Chat", {
                 body: `You have ${count - prev} new message${count - prev > 1 ? "s" : ""} in ${myTeam.name}`,
@@ -63,13 +67,31 @@ export function MyTeamFab() {
             prevUnreadRef.current = count;
             return count;
           });
+          consecutiveErrors = 0;
+          if (currentInterval !== BASE_INTERVAL) {
+            currentInterval = BASE_INTERVAL;
+            if (intervalId) clearInterval(intervalId);
+            intervalId = setInterval(fetchUnreadCount, currentInterval);
+          }
         })
-        .catch(console.error);
+        .catch(() => {
+          consecutiveErrors++;
+          if (consecutiveErrors >= 2) {
+            const newInterval = Math.min(currentInterval * 2, 60_000);
+            if (newInterval !== currentInterval) {
+              currentInterval = newInterval;
+              if (intervalId) clearInterval(intervalId);
+              intervalId = setInterval(fetchUnreadCount, currentInterval);
+            }
+          }
+        });
     };
 
     fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 4000);
-    return () => clearInterval(interval);
+    intervalId = setInterval(fetchUnreadCount, currentInterval);
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [user, myTeam]);
 
   if (!user || !loaded) return null;

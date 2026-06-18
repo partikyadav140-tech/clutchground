@@ -136,9 +136,14 @@ export function Navbar() {
     if (!user) return;
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "granted") {
-        subscribeUserToPush(user.id);
+        subscribeUserToPush(user.id).catch(() => {});
       }
     }
+
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    let consecutiveErrors = 0;
+    const BASE_INTERVAL = 20_000; // 20 seconds (was 5s)
+    let currentInterval = BASE_INTERVAL;
 
     async function poll() {
       try {
@@ -185,14 +190,32 @@ export function Navbar() {
           });
         }
         notifsRef.current = ids;
+        consecutiveErrors = 0;
+        // Reset to base interval on success
+        if (currentInterval !== BASE_INTERVAL) {
+          currentInterval = BASE_INTERVAL;
+          if (intervalId) clearInterval(intervalId);
+          intervalId = setInterval(poll, currentInterval);
+        }
       } catch {
-        // Ignore polling errors
+        consecutiveErrors++;
+        // Back off on repeated errors to avoid flooding
+        if (consecutiveErrors >= 2) {
+          const newInterval = Math.min(currentInterval * 2, 60_000);
+          if (newInterval !== currentInterval) {
+            currentInterval = newInterval;
+            if (intervalId) clearInterval(intervalId);
+            intervalId = setInterval(poll, currentInterval);
+          }
+        }
       }
     }
 
     poll();
-    const id = setInterval(poll, 5000);
-    return () => clearInterval(id);
+    intervalId = setInterval(poll, currentInterval);
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [user]);
 
   const cleanPath = path === "/" ? "/" : path.replace(/\/$/, "");
