@@ -3,9 +3,10 @@ import { Link } from "@tanstack/react-router";
 import { Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth-client";
-import { getMyTeam, getTeamRequests, getTeamChatUnreadCount } from "../api";
+import { getMyTeam, getTeamRequests } from "../api";
 import { showBrowserNotification } from "@/lib/notification-utils";
 import { playNotificationTone, vibrateNotification } from "@/lib/notification-utils";
+import { useSocket, useRoom } from "@/hooks/useSocket";
 
 export function MyTeamFab() {
   const { user } = useAuth();
@@ -14,6 +15,10 @@ export function MyTeamFab() {
   const [unreadChatCount, setUnreadChatCount] = React.useState<number>(0);
   const [loaded, setLoaded] = React.useState(false);
   const prevUnreadRef = React.useRef<number>(0);
+  const { on: socketOn } = useSocket();
+
+  // Auto-join/leave team room
+  useRoom("team", myTeam?.id || null);
 
   // Load team data
   React.useEffect(() => {
@@ -31,68 +36,27 @@ export function MyTeamFab() {
       .finally(() => setLoaded(true));
   }, [user]);
 
-  // Poll unread team chat count + show toast on new messages
+  // ── WebSocket: listen for team unread count updates (replaces polling) ──
   React.useEffect(() => {
-    if (!user || !myTeam) {
-      setUnreadChatCount(0);
-      return;
-    }
+    if (!user || !myTeam || !socketOn) return;
 
-    let intervalId: ReturnType<typeof setInterval> | null = null;
-    let consecutiveErrors = 0;
-    const BASE_INTERVAL = 15_000; // 15s (was 4s — massive reduction)
-    let currentInterval = BASE_INTERVAL;
-
-    const fetchUnreadCount = () => {
-      const lastReadId = Number(
-        localStorage.getItem(`clutchground_team_last_read_${myTeam.id}`) || 0,
-      );
-      (getTeamChatUnreadCount as any)({
-        data: {
-          teamId: myTeam.id,
-          lastReadMessageId: lastReadId,
-        },
-      })
-        .then((count: number) => {
-          setUnreadChatCount((prev) => {
-            if (count > prev && prevUnreadRef.current > 0) {
-              showBrowserNotification("💬 Team Chat", {
-                body: `You have ${count - prev} new message${count - prev > 1 ? "s" : ""} in ${myTeam.name}`,
-                url: "/chat",
-                tag: `cg-team-chat-${myTeam.id}`,
-              });
-              playNotificationTone(false);
-              vibrateNotification(false);
-            }
-            prevUnreadRef.current = count;
-            return count;
+    return socketOn("team-unread-count", (data: { teamId: number; count: number }) => {
+      if (data.teamId !== myTeam.id) return;
+      setUnreadChatCount((prev) => {
+        if (data.count > prev && prevUnreadRef.current > 0) {
+          showBrowserNotification("💬 Team Chat", {
+            body: `You have ${data.count - prev} new message${data.count - prev > 1 ? "s" : ""} in ${myTeam.name}`,
+            url: "/chat",
+            tag: `cg-team-chat-${myTeam.id}`,
           });
-          consecutiveErrors = 0;
-          if (currentInterval !== BASE_INTERVAL) {
-            currentInterval = BASE_INTERVAL;
-            if (intervalId) clearInterval(intervalId);
-            intervalId = setInterval(fetchUnreadCount, currentInterval);
-          }
-        })
-        .catch(() => {
-          consecutiveErrors++;
-          if (consecutiveErrors >= 2) {
-            const newInterval = Math.min(currentInterval * 2, 60_000);
-            if (newInterval !== currentInterval) {
-              currentInterval = newInterval;
-              if (intervalId) clearInterval(intervalId);
-              intervalId = setInterval(fetchUnreadCount, currentInterval);
-            }
-          }
-        });
-    };
-
-    fetchUnreadCount();
-    intervalId = setInterval(fetchUnreadCount, currentInterval);
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [user, myTeam]);
+          playNotificationTone(false);
+          vibrateNotification(false);
+        }
+        prevUnreadRef.current = data.count;
+        return data.count;
+      });
+    });
+  }, [user, myTeam, socketOn]);
 
   if (!user || !loaded) return null;
 

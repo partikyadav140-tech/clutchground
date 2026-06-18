@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Gift, Zap, Ticket, ShoppingCart, ChevronRight } from "lucide-react";
+import { Sparkles, Gift, Zap, Ticket, ShoppingCart, ChevronRight, Lock, Trophy, CheckCircle2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {
@@ -139,13 +139,39 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
         ) : (
           <div className="space-y-4">
             {status?.joinedTournamentCount === 0 && (
-              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300 space-y-2">
-                <p className="font-bold flex items-center gap-1.5">
-                  <Gift className="w-4 h-4 text-amber-400" /> Unlock Daily Free Spin
-                </p>
-                <p className="text-xs text-amber-200/90 leading-relaxed">
-                  You have not joined any tournaments yet. Join at least 1 tournament to unlock your
-                  daily free spin!
+              <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                    <Lock className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-amber-300">Daily Free Spin Locked</p>
+                    <p className="text-[10px] text-amber-200/70">Join a tournament to unlock</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs text-amber-200/90 leading-relaxed font-semibold">
+                    Follow these steps to unlock your free daily spin:
+                  </p>
+                  <div className="space-y-2">
+                    {[
+                      { step: 1, text: "Go to the Tournament Arena", icon: Trophy },
+                      { step: 2, text: "Pick a tournament & tap Join", icon: CheckCircle2 },
+                      { step: 3, text: "Fill in your game details", icon: CheckCircle2 },
+                      { step: 4, text: "Come back here — free spin unlocked!", icon: Gift },
+                    ].map(({ step, text, icon: Icon }) => (
+                      <div key={step} className="flex items-center gap-2.5">
+                        <div className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                          <span className="text-[10px] font-black text-amber-400">{step}</span>
+                        </div>
+                        <Icon className="w-3 h-3 text-amber-400/60 shrink-0" />
+                        <span className="text-xs text-amber-200/80">{text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <p className="text-[10px] text-amber-200/60 italic">
+                  This applies to all users — new or existing. Join once, unlock forever!
                 </p>
                 <Button
                   asChild
@@ -153,7 +179,7 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
                   className="bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg mt-1 w-full"
                   onClick={() => onOpenChange(false)}
                 >
-                  <Link to="/tournaments">View Tournaments</Link>
+                  <Link to="/tournaments">Browse Tournaments</Link>
                 </Button>
               </div>
             )}
@@ -192,6 +218,11 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
                 <span className="flex items-center gap-2">
                   <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Spinning...
+                </span>
+              ) : status?.joinedTournamentCount === 0 ? (
+                <span className="flex items-center gap-2">
+                  <Lock className="w-5 h-5" />
+                  Join a tournament to unlock
                 </span>
               ) : !status?.canSpin ? (
                 "No spins — buy more below"

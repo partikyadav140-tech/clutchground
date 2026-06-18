@@ -17,6 +17,7 @@ import {
 import { getTicket, replyTicket } from "../../api";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useSocket, useRoom } from "@/hooks/useSocket";
 
 export const Route = createFileRoute("/_app/support/$ticketId")({
   head: () => ({ meta: [{ title: "Ticket Chat — CLUTCHGROUND" }] }),
@@ -104,6 +105,7 @@ function TicketChatPage() {
   const { ticketId } = Route.useParams();
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { on: socketOn } = useSocket();
 
   const [ticket, setTicket] = useState<any>(null);
   const [message, setMessage] = useState("");
@@ -116,6 +118,9 @@ function TicketChatPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-join/leave ticket room
+  useRoom("ticket", Number(ticketId) || null);
 
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     setTimeout(() => endRef.current?.scrollIntoView({ behavior }), 60);
@@ -148,10 +153,19 @@ function TicketChatPage() {
     }
     if (user) {
       loadTicket(false);
-      const id = setInterval(() => loadTicket(true), 10_000); // 10s (was 4s)
-      return () => clearInterval(id);
     }
   }, [user, loading]);
+
+  // ── WebSocket: Listen for ticket replies (replaces polling) ────────────
+  useEffect(() => {
+    if (!user || !socketOn || !ticketId) return;
+
+    return socketOn("ticket-reply", (data: { ticketId: number; reply: any }) => {
+      if (String(data.ticketId) !== String(ticketId)) return;
+      // Reload ticket to get full data with user info
+      loadTicket(true);
+    });
+  }, [user, socketOn, ticketId, loadTicket]);
 
   // Auto-resize textarea
   useEffect(() => {

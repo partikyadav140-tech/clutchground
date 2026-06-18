@@ -26,6 +26,7 @@ import {
   sendMessage,
   markChatMessagesAsRead,
 } from "../../api";
+import { useSocket, useRoom } from "@/hooks/useSocket";
 
 export const Route = createFileRoute("/_app/chat")({
   head: () => ({ meta: [{ title: "Chat & Friends — CLUTCHGROUND" }] }),
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/_app/chat")({
 function ChatPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { on: socketOn } = useSocket();
 
   // Lists Data
   const [friends, setFriends] = useState<any[]>([]);
@@ -64,6 +66,9 @@ function ChatPage() {
   // Layout State
   const [view, setView] = useState<"chats" | "friends" | "requests">("chats");
 
+  // Auto-join/leave chat rooms
+  useRoom("team", activeChat?.type === "team" ? activeChat.id : null);
+
   useEffect(() => {
     if (!loading && !user) {
       router.navigate({ to: "/login" });
@@ -87,144 +92,91 @@ function ChatPage() {
     } catch (e) {}
   };
 
-  // Chat Polling — only when a chat is active
+  // ── Initial message fetch when opening a chat ─────────────────────────
   useEffect(() => {
-    if (!activeChat || !user) return;
+    if (!activeChat || !user) {
+      setMessages([]);
+      lastMessageIdRef.current = 0;
+      return;
+    }
 
-    setMessages([]); // clear old messages
-    lastMessageIdRef.current = 0;
-
-    let consecutiveErrors = 0;
-    const BASE_INTERVAL = 5_000; // 5s (was 3s)
-    let currentInterval = BASE_INTERVAL;
-    let intervalId: ReturnType<typeof setInterval> | null = null;
-
-    const fetchMessages = async () => {
+    async function loadMessages() {
       try {
         const newMsgs = await (getChatMessages as any)({
           data: {
             userId: user.id,
-            otherUserId: activeChat.type === "friend" ? activeChat.id : undefined,
-            teamId: activeChat.type === "team" ? activeChat.id : undefined,
-            lastMessageId: lastMessageIdRef.current,
+            otherUserId: activeChat!.type === "friend" ? activeChat!.id : undefined,
+            teamId: activeChat!.type === "team" ? activeChat!.id : undefined,
+            lastMessageId: 0,
           },
         });
-
         if (newMsgs && newMsgs.length > 0) {
-          setMessages((prev) => {
-            const existingIds = new Set(prev.map((m) => m.id));
-            const filtered = newMsgs.filter((m: any) => !existingIds.has(m.id));
-            const combined = [...prev, ...filtered];
-            if (activeChat.type === "team") {
-              const maxId = Math.max(...combined.map((m) => m.id), 0);
-              if (maxId > 0) {
-                localStorage.setItem(`clutchground_team_last_read_${activeChat.id}`, String(maxId));
-              }
-            }
-            return combined;
-          });
+          setMessages(newMsgs);
           lastMessageIdRef.current = newMsgs[newMsgs.length - 1].id;
-          setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-
-          if (activeChat.type === "friend") {
-            (markChatMessagesAsRead as any)({
-              data: {
-                userId: user.id,
-                otherUserId: activeChat.id,
-              },
-            })
-              .then(() => {
-                (getFriends as any)({ data: user.id })
-                  .then(setFriends)
-                  .catch(() => {});
-              })
-              .catch(() => {});
-          }
+          setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "instant" }), 50);
         }
-        consecutiveErrors = 0;
-        if (currentInterval !== BASE_INTERVAL) {
-          currentInterval = BASE_INTERVAL;
-          if (intervalId) clearInterval(intervalId);
-          intervalId = setInterval(fetchMessages, currentInterval);
+        // Mark as read
+        if (activeChat!.type === "friend") {
+          (markChatMessagesAsRead as any)({
+            data: { userId: user.id, otherUserId: activeChat!.id },
+          }).catch(() => {});
         }
-      } catch {
-        consecutiveErrors++;
-        if (consecutiveErrors >= 3) {
-          const newInterval = Math.min(currentInterval * 2, 30_000);
-          if (newInterval !== currentInterval) {
-            currentInterval = newInterval;
-            if (intervalId) clearInterval(intervalId);
-            intervalId = setInterval(fetchMessages, currentInterval);
-          }
-        }
-      }
-    };
-
-    fetchMessages(); // initial fetch
-    intervalId = setInterval(fetchMessages, currentInterval);
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [activeChat, user]);
-
-  // Mark messages as read when opening a friend chat
-  useEffect(() => {
-    if (activeChat && activeChat.type === "friend" && user) {
-      (markChatMessagesAsRead as any)({
-        data: {
-          userId: user.id,
-          otherUserId: activeChat.id,
-        },
-      })
-        .then(() => {
-          // Refresh friends list to clear unread counts immediately
-          (getFriends as any)({ data: user.id })
-            .then(setFriends)
-            .catch(() => {});
-        })
-        .catch(() => {});
+      } catch {}
     }
+    loadMessages();
   }, [activeChat, user]);
 
-  // Background polling for friends list and requests — ONLY when on chat page
+  // ── WebSocket: Listen for new chat messages (replaces polling) ──────────
   useEffect(() => {
-    if (!user) return;
-    const path = window.location.pathname;
-    if (!path.startsWith("/chat")) return; // Don't poll if not on chat page
+    if (!activeChat || !user || !socketOn) return;
 
-    let intervalId: ReturnType<typeof setInterval> | null = null;
-    let consecutiveErrors = 0;
-    const BASE_INTERVAL = 15_000; // 15s (was 4s — massive reduction)
-    let currentInterval = BASE_INTERVAL;
+    return socketOn("new-message", (msg: any) => {
+      // Filter: only show messages for the active chat
+      const isForTeam = activeChat.type === "team" && msg.team_id === activeChat.id;
+      const isForFriend =
+        activeChat.type === "friend" &&
+        ((msg.sender_id === activeChat.id && msg.receiver_id === user.id) ||
+          (msg.sender_id === user.id && msg.receiver_id === activeChat.id));
 
-    const poll = async () => {
-      try {
-        const [f, r] = await Promise.all([
-          (getFriends as any)({ data: user.id }),
-          (getFriendRequests as any)({ data: user.id }),
-        ]);
-        setFriends(f || []);
-        setRequests(r || []);
-        consecutiveErrors = 0;
-      } catch {
-        consecutiveErrors++;
-        if (consecutiveErrors >= 2) {
-          const newInterval = Math.min(currentInterval * 2, 60_000);
-          if (newInterval !== currentInterval) {
-            currentInterval = newInterval;
-            if (intervalId) clearInterval(intervalId);
-            intervalId = setInterval(poll, currentInterval);
+      if (!isForTeam && !isForFriend) return;
+
+      setMessages((prev) => {
+        const existingIds = new Set(prev.map((m) => m.id));
+        if (existingIds.has(msg.id)) return prev;
+        const combined = [...prev, msg];
+        if (activeChat.type === "team") {
+          const maxId = Math.max(...combined.map((m) => m.id), 0);
+          if (maxId > 0) {
+            localStorage.setItem(`clutchground_team_last_read_${activeChat.id}`, String(maxId));
           }
         }
-      }
-    };
+        return combined;
+      });
 
-    intervalId = setInterval(poll, currentInterval);
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, [user]);
+      if (msg.id > lastMessageIdRef.current) {
+        lastMessageIdRef.current = msg.id;
+      }
+
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+
+      // Mark as read if it's a DM from the other person
+      if (activeChat.type === "friend" && msg.sender_id === activeChat.id) {
+        (markChatMessagesAsRead as any)({
+          data: { userId: user.id, otherUserId: activeChat.id },
+        }).catch(() => {});
+      }
+    });
+  }, [activeChat, user, socketOn]);
+
+  // ── WebSocket: Listen for friends list updates ──────────────────────────
+  useEffect(() => {
+    if (!user || !socketOn) return;
+
+    return socketOn("friends-update", () => {
+      (getFriends as any)({ data: user.id }).then(setFriends).catch(() => {});
+      (getFriendRequests as any)({ data: user.id }).then(setRequests).catch(() => {});
+    });
+  }, [user, socketOn]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -770,15 +770,13 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
       .prepare("SELECT user_id, players_json FROM registrations WHERE tournament_id = ?")
       .all(id)) as any[];
     const { sendNotificationHelper } = await import("./lib/push-server");
-    const notifMsg =
-      `🔑 Room details for ${title} updated! ` +
-      (room_id ? `ID: ${room_id} ` : "") +
-      (room_pass ? `Pass: ${room_pass}` : "");
+    // Don't include room_id/room_pass in notification — show in app only for security
+    const notifMsg = `🎮 Room details for ${title} have been updated! Open ClutchGround to view Room ID & Password.`;
 
     const notifiedUsers = new Set<number>();
     for (const r of registrations) {
       if (!notifiedUsers.has(r.user_id)) {
-        await sendNotificationHelper(r.user_id, notifMsg.trim(), `/tournaments/${id}`);
+        await sendNotificationHelper(r.user_id, notifMsg, `/tournaments/${id}`);
         notifiedUsers.add(r.user_id);
       }
       if (r.players_json) {
@@ -788,13 +786,39 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
             if (p.uid) {
               const u = (await db.prepare("SELECT id FROM users WHERE uid = ?").get(p.uid)) as any;
               if (u && !notifiedUsers.has(u.id)) {
-                await sendNotificationHelper(u.id, notifMsg.trim(), `/tournaments/${id}`);
+                await sendNotificationHelper(u.id, notifMsg, `/tournaments/${id}`);
                 notifiedUsers.add(u.id);
               }
             }
           }
         } catch (e) {}
       }
+    }
+
+    // Send room details via email (secure — not visible in notifications)
+    try {
+      const { sendEmail } = await import("./lib/email");
+      const tournament = (await db.prepare("SELECT title, room_id, room_pass FROM tournaments WHERE id = ?").get(id)) as any;
+      if (tournament?.room_id || tournament?.room_pass) {
+        const emailUserIds = [...notifiedUsers];
+        const emailBody = `
+          <div style="font-family:Arial,sans-serif;max-width:500px;margin:0 auto;padding:20px;">
+            <h2 style="color:#f97316;">🎮 Room Details Updated</h2>
+            <p>Tournament: <strong>${tournament.title}</strong></p>
+            ${tournament.room_id ? `<p><strong>Room ID:</strong> ${tournament.room_id}</p>` : ""}
+            ${tournament.room_pass ? `<p><strong>Room Password:</strong> ${tournament.room_pass}</p>` : ""}
+            <p style="color:#666;font-size:12px;">Do not share these details publicly. Good luck!</p>
+          </div>
+        `;
+        for (const uid of emailUserIds) {
+          const userEmail = (await db.prepare("SELECT email FROM users WHERE id = ?").get(uid)) as any;
+          if (userEmail?.email) {
+            sendEmail(userEmail.email, `Room Details — ${tournament.title}`, emailBody).catch(() => {});
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed to send room details email:", e);
     }
   }
 
@@ -3628,6 +3652,25 @@ export const replyTicket = createServerFn({ method: "POST" }).handler(async ({ d
       .run(tId, userId, processedMessage, !!isAdmin);
     await tx.prepare("UPDATE tickets SET updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(tId);
 
+    // Emit real-time ticket reply event
+    try {
+      const { emitTicketReply } = await import("./lib/socket-server");
+      const replyUser = (await db
+        .prepare("SELECT username, ign, avatar_url FROM users WHERE id = ?")
+        .get(userId)) as any;
+      emitTicketReply(tId, isAdmin ? undefined : userId, {
+        id: Date.now(),
+        ticket_id: tId,
+        user_id: userId,
+        message: processedMessage,
+        is_admin: !!isAdmin,
+        created_at: new Date().toISOString(),
+        username: replyUser?.username,
+        ign: replyUser?.ign,
+        avatar_url: replyUser?.avatar_url,
+      });
+    } catch {}
+
     if (isAdmin) {
       const ticket = await tx.prepare("SELECT user_id, subject FROM tickets WHERE id = ?").get(tId);
       if (ticket) {
@@ -3900,6 +3943,55 @@ export const sendMessage = createServerFn({ method: "POST" }).handler(async ({ d
   `,
     )
     .run(senderId, receiverId || null, teamId || null, message);
+
+  // Fetch sender info for the real-time event
+  const sender = (await db
+    .prepare("SELECT username, ign, avatar_url FROM users WHERE id = ?")
+    .get(senderId)) as any;
+
+  const messageObj = {
+    id: res.lastInsertRowid,
+    sender_id: senderId,
+    team_id: teamId || null,
+    receiver_id: receiverId || null,
+    message,
+    created_at: new Date().toISOString(),
+    ign: sender?.ign || sender?.username,
+    username: sender?.username,
+    avatar_url: sender?.avatar_url,
+  };
+
+  // Emit real-time event via WebSocket
+  try {
+    const { emitChatMessage, emitUnreadCount, emitTeamUnreadCount } = await import("./lib/socket-server");
+    if (teamId) {
+      emitChatMessage({ teamId, message: messageObj });
+      // Notify team members about unread count
+      const members = (await db
+        .prepare("SELECT user_id FROM team_members WHERE team_id = ? AND user_id != ?")
+        .all(teamId, senderId)) as any[];
+      for (const m of members) {
+        const countResult = (await db
+          .prepare(
+            `SELECT COUNT(*) as count FROM chat_messages WHERE team_id = ? AND sender_id != ? AND id > COALESCE((SELECT last_read_id FROM team_members WHERE team_id = ? AND user_id = ?), 0)`,
+          )
+          .get(teamId, m.user_id, teamId, m.user_id)) as any;
+        emitTeamUnreadCount(m.user_id, teamId, Number(countResult?.count || 0));
+      }
+    }
+    if (receiverId) {
+      emitChatMessage({ receiverId, message: messageObj });
+      // Update unread count for receiver
+      const countResult = (await db
+        .prepare(
+          `SELECT COUNT(*) as count FROM chat_messages WHERE receiver_id = ? AND is_read = false`,
+        )
+        .get(receiverId)) as any;
+      emitUnreadCount(receiverId, Number(countResult?.count || 0));
+    }
+  } catch (e) {
+    // WebSocket emit failures are non-critical
+  }
 
   // Send push notifications to other team members
   if (teamId) {

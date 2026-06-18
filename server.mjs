@@ -6,6 +6,7 @@ import { createServer } from "node:http";
 import { createReadStream, promises as fs } from "node:fs";
 import { join, extname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { Server as SocketIOServer } from "socket.io";
 import app from "./dist/server/server.js";
 
 const port = parseInt(process.env.PORT || "3000", 10);
@@ -207,4 +208,110 @@ createServer(async (req, res) => {
   }
 }).listen(port, () => {
   console.log(`✓ Server running on port ${port}`);
+
+  // ── Socket.io WebSocket Server ────────────────────────────────────────
+  const io = new SocketIOServer(globalThis.__server || process, {
+    path: "/ws",
+    cors: {
+      origin: ["https://clutchground.games", "http://localhost:8080"],
+      methods: ["GET", "POST"],
+    },
+    transports: ["websocket", "polling"],
+    pingInterval: 25000,
+    pingTimeout: 20000,
+  });
+
+  // Store for emit helpers
+  globalThis.__socketIO = io;
+
+  // ── Session-based authentication middleware ────────────────────────────
+  io.use(async (socket, next) => {
+    try {
+      const sessionId =
+        socket.handshake.auth?.sessionId ||
+        socket.handshake.headers?.cookie?.split("sessionId=")[1]?.split(";")[0];
+
+      if (!sessionId) {
+        return next(new Error("Authentication required"));
+      }
+
+      // Look up session in database
+      const { Pool } = await import("pg");
+      const pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+        max: 1,
+      });
+
+      try {
+        const result = await pool.query(
+          `SELECT s.user_id, u.username, u.role FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.id = $1 AND s.expires_at > NOW()`,
+          [sessionId],
+        );
+        if (result.rows.length === 0) {
+          return next(new Error("Session expired"));
+        }
+        const user = result.rows[0];
+        socket.data.userId = user.user_id;
+        socket.data.username = user.username;
+        socket.data.role = user.role;
+        next();
+      } finally {
+        await pool.end();
+      }
+    } catch (err) {
+      next(new Error("Authentication failed"));
+    }
+  });
+
+  io.on("connection", (socket) => {
+    const userId = socket.data.userId;
+    console.log(`[WS] User ${userId} connected (${socket.id})`);
+
+    // ── Join personal room ──────────────────────────────────────────────
+    socket.join(`user:${userId}`);
+
+    // ── Join team rooms ─────────────────────────────────────────────────
+    socket.on("join-team", async (teamId) => {
+      try {
+        const { Pool } = await import("pg");
+        const pool = new Pool({
+          connectionString: process.env.DATABASE_URL,
+          ssl: { rejectUnauthorized: false },
+          max: 1,
+        });
+        try {
+          const result = await pool.query(
+            "SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2 LIMIT 1",
+            [teamId, userId],
+          );
+          if (result.rows.length > 0 || socket.data.role === "admin") {
+            socket.join(`team:${teamId}`);
+          }
+        } finally {
+          await pool.end();
+        }
+      } catch {}
+    });
+
+    // ── Leave team room ─────────────────────────────────────────────────
+    socket.on("leave-team", (teamId) => {
+      socket.leave(`team:${teamId}`);
+    });
+
+    // ── Join ticket room ────────────────────────────────────────────────
+    socket.on("join-ticket", (ticketId) => {
+      socket.join(`ticket:${ticketId}`);
+    });
+
+    socket.on("leave-ticket", (ticketId) => {
+      socket.leave(`ticket:${ticketId}`);
+    });
+
+    socket.on("disconnect", () => {
+      console.log(`[WS] User ${userId} disconnected (${socket.id})`);
+    });
+  });
+
+  console.log(`✓ WebSocket server ready on /ws`);
 });

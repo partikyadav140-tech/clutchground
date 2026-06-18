@@ -26,6 +26,7 @@ import {
 } from "../lib/notification-utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
+import { useSocket } from "@/hooks/useSocket";
 
 const DESKTOP_NAV_ITEMS = [
   { to: "/", label: "Home", icon: Home },
@@ -54,6 +55,7 @@ export function Navbar() {
   const isTutorialActive = false;
   const isTutorialCompleted = true;
   const prevActiveRef = useRef(isTutorialActive);
+  const { on: socketOn } = useSocket();
 
   const balance = user
     ? ((user as { deposit_balance?: number }).deposit_balance || 0) +
@@ -140,83 +142,51 @@ export function Navbar() {
       }
     }
 
-    let intervalId: ReturnType<typeof setInterval> | null = null;
-    let consecutiveErrors = 0;
-    const BASE_INTERVAL = 20_000; // 20 seconds (was 5s)
-    let currentInterval = BASE_INTERVAL;
-
-    async function poll() {
+    // Initial fetch for existing data
+    async function fetchInitial() {
       try {
         const notifsFetch = getNotifications as unknown as (args: { data: number }) => Promise<
-          {
-            id: string;
-            is_read: boolean;
-            message?: string;
-            action_type?: string;
-            redirect_url?: string;
-          }[]
+          { id: string; is_read: boolean; message?: string; action_type?: string; redirect_url?: string }[]
         >;
-        const unreadChatsFetch = getUnreadChatCount as unknown as (args: {
-          data: number;
-        }) => Promise<number>;
-
+        const unreadChatsFetch = getUnreadChatCount as unknown as (args: { data: number }) => Promise<number>;
         const notifs = await notifsFetch({ data: user.id });
         setUnread(notifs.filter((n) => !n.is_read).length);
-
         const chatUnread = await unreadChatsFetch({ data: user.id });
         setUnreadChats(chatUnread);
-
-        const ids = notifs.map((n) => n.id);
-        const prev = notifsRef.current;
-        const newOnes = notifs.filter((n) => !prev.includes(n.id) && !n.is_read);
-
-        if (prev.length > 0 && newOnes.length > 0) {
-          newOnes.slice(-3).forEach((n) => {
-            const important =
-              n.action_type === "tournament_request" ||
-              (n.message &&
-                (n.message.startsWith("❌") ||
-                  n.message.startsWith("⚠️") ||
-                  n.message.startsWith("🏆")));
-
-            showBrowserNotification("🎮 ClutchGround", {
-              body: n.message || "You have a new notification",
-              url: (n.redirect_url && n.redirect_url.startsWith("/") && !/[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(n.redirect_url)) ? n.redirect_url : "/notifications",
-              tag: `cg-notif-${n.id}`,
-              important: !!important,
-            });
-            playNotificationTone(!!important);
-            vibrateNotification(!!important);
-          });
-        }
-        notifsRef.current = ids;
-        consecutiveErrors = 0;
-        // Reset to base interval on success
-        if (currentInterval !== BASE_INTERVAL) {
-          currentInterval = BASE_INTERVAL;
-          if (intervalId) clearInterval(intervalId);
-          intervalId = setInterval(poll, currentInterval);
-        }
-      } catch {
-        consecutiveErrors++;
-        // Back off on repeated errors to avoid flooding
-        if (consecutiveErrors >= 2) {
-          const newInterval = Math.min(currentInterval * 2, 60_000);
-          if (newInterval !== currentInterval) {
-            currentInterval = newInterval;
-            if (intervalId) clearInterval(intervalId);
-            intervalId = setInterval(poll, currentInterval);
-          }
-        }
-      }
+        notifsRef.current = notifs.map((n) => n.id);
+      } catch {}
     }
-
-    poll();
-    intervalId = setInterval(poll, currentInterval);
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
+    fetchInitial();
   }, [user]);
+
+  // ── WebSocket real-time events (replaces polling) ────────────────────────
+  useEffect(() => {
+    if (!user || !socketOn) return;
+
+    const cleanups = [
+      socketOn("new-notification", (notification: any) => {
+        setUnread((prev) => prev + 1);
+        const important =
+          notification?.action_type === "tournament_request" ||
+          notification?.message?.startsWith("❌") ||
+          notification?.message?.startsWith("⚠️") ||
+          notification?.message?.startsWith("🏆");
+        showBrowserNotification("🎮 ClutchGround", {
+          body: notification?.message || "You have a new notification",
+          url: (notification?.redirect_url && notification?.redirect_url.startsWith("/") && !/[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(notification.redirect_url)) ? notification.redirect_url : "/notifications",
+          tag: `cg-notif-${notification?.id}`,
+          important: !!important,
+        });
+        playNotificationTone(!!important);
+        vibrateNotification(!!important);
+      }),
+      socketOn("unread-count", (data: { count: number }) => {
+        setUnreadChats(data.count);
+      }),
+    ];
+
+    return () => cleanups.forEach((fn) => fn());
+  }, [user, socketOn]);
 
   const cleanPath = path === "/" ? "/" : path.replace(/\/$/, "");
   const isAuth = ["/login", "/signup"].includes(cleanPath);

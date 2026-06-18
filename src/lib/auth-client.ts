@@ -39,16 +39,16 @@ function notifyListeners() {
 }
 
 // ── Shared polling state (singleton across all useAuth instances) ─────────
-const AUTH_POLL_INTERVAL = 30_000; // 30s (was 5s — massive reduction)
-const AUTH_POLL_INTERVAL_ACTIVE = 15_000; // 15s when on wallet/transaction pages
+// With WebSocket, this is just a fallback for balance sync (5 min instead of 30s)
+const AUTH_POLL_INTERVAL = 300_000; // 5 min fallback (WebSocket handles real-time updates)
 let pollIntervalId: ReturnType<typeof setInterval> | null = null;
 let pollRefCount = 0;
 let consecutiveErrors = 0;
-let activePollers = 0;
 
 function startAuthPolling() {
   if (pollIntervalId) return; // Already running
   pollIntervalId = setInterval(fetchAndNotify, AUTH_POLL_INTERVAL);
+  setupBalanceListener(); // Also set up WebSocket balance listener
 }
 
 function stopAuthPolling() {
@@ -86,10 +86,34 @@ async function fetchAndNotify() {
     // Back off on repeated errors
     if (consecutiveErrors >= 3 && pollIntervalId) {
       clearInterval(pollIntervalId);
-      const backoffMs = Math.min(AUTH_POLL_INTERVAL * Math.pow(2, consecutiveErrors - 2), 120_000);
+      const backoffMs = Math.min(AUTH_POLL_INTERVAL * Math.pow(2, consecutiveErrors - 2), 600_000);
       pollIntervalId = setInterval(fetchAndNotify, backoffMs);
     }
   }
+}
+
+// ── WebSocket balance listener (updates balance in real-time) ──────────
+let balanceListenerSetup = false;
+function setupBalanceListener() {
+  if (balanceListenerSetup || typeof window === "undefined") return;
+  balanceListenerSetup = true;
+  // Lazy import to avoid SSR issues
+  import("./socket-client").then(({ getSocket }) => {
+    const checkSocket = () => {
+      const socket = getSocket();
+      if (socket) {
+        socket.on("balance-update", (data: { deposit: number; winning: number }) => {
+          if (globalUser) {
+            globalUser = { ...globalUser, deposit_balance: data.deposit, winning_balance: data.winning };
+            notifyListeners();
+          }
+        });
+      } else {
+        setTimeout(checkSocket, 2000);
+      }
+    };
+    checkSocket();
+  }).catch(() => {});
 }
 
 export function useAuth() {

@@ -132,3 +132,35 @@ export async function sendOtpEmail(
 
   console.log("[Resend] Email sent successfully. ID:", (result.data as any)?.id);
 }
+
+/**
+ * Sends a general email using Resend.
+ * Used for room details, notifications, etc.
+ */
+export async function sendEmail(
+  to: string,
+  subject: string,
+  htmlBody: string,
+): Promise<void> {
+  const apiKey = getEnvVar("RESEND_API_KEY");
+  const fromEmail = getEnvVar("RESEND_FROM_EMAIL") || "noreply@clutchground.games";
+
+  if (!apiKey) {
+    console.warn("[Email] RESEND_API_KEY not set — skipping email to", to);
+    return;
+  }
+
+  const { Resend } = await import("resend");
+  const resend = new Resend(apiKey);
+
+  const result = await resend.emails.send({
+    from: fromEmail,
+    to,
+    subject,
+    html: htmlBody,
+  });
+
+  if (result.error) {
+    console.error("[Email] Send error:", result.error);
+  }
+}
