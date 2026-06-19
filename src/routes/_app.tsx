@@ -1,5 +1,4 @@
 import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "framer-motion";
 import { Suspense, useEffect, useLayoutEffect, useRef } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -24,8 +23,8 @@ export const Route = createFileRoute("/_app")({
   component: () => {
     const settings = Route.useLoaderData() as Record<string, string>;
     const routerState = useRouterState();
-    const path = routerState.location.pathname;
-    const cleanPath = path === "/" ? "/" : path.replace(/\/$/, "");
+    const pathname = routerState.location.pathname;
+    const cleanPath = pathname === "/" ? "/" : pathname.replace(/\/$/, "");
     const scrollRef = useRef<HTMLElement>(null);
 
     const isAuthRoute = ["/login", "/signup"].includes(cleanPath);
@@ -38,29 +37,23 @@ export const Route = createFileRoute("/_app")({
     const announcement = settings?.announcement;
     const isMaintenance = settings?.maintenance_mode === "true";
 
-    // Scroll to top on route change
-    // useLayoutEffect: immediate reset before paint
     useLayoutEffect(() => {
       const el = scrollRef.current;
       if (el) el.scrollTop = 0;
-    }, [path]);
+    }, [pathname]);
 
-    // useEffect + double rAF: runs after framer-motion exit animation,
-    // ensuring the new page always starts at the very top
     useEffect(() => {
       const el = scrollRef.current;
       if (!el) return;
-      // First frame: reset immediately after paint
       const raf1 = requestAnimationFrame(() => {
         el.scrollTop = 0;
-        // Second frame: reset again after any animation layout shifts
         const raf2 = requestAnimationFrame(() => {
           el.scrollTop = 0;
         });
         return () => cancelAnimationFrame(raf2);
       });
       return () => cancelAnimationFrame(raf1);
-    }, [path]);
+    }, [pathname]);
 
     return (
       <div className="h-[100dvh] flex flex-col bg-background text-foreground overflow-hidden">
@@ -86,13 +79,11 @@ export const Route = createFileRoute("/_app")({
           className={[
             "flex-1 overflow-x-hidden hide-scrollbar relative",
             isChatPage ? "h-full flex flex-col overflow-hidden" : "overflow-y-auto",
-            /* Mobile: pt-20 on ALL non-auth & non-chat pages | Desktop: pt-16 on ALL non-auth pages */
             !isAuthRoute
               ? isChatPage
-                ? "lg:pt-16" /* chat pages: header hidden on mobile, shown on desktop */
-                : "pt-[60px]" /* standard pages: compact mobile header */
+                ? "lg:pt-16"
+                : "pt-[60px]"
               : "",
-            /* Mobile: bottom-nav padding | Desktop: no bottom nav */
             !isAuthRoute && !isChatPage
               ? "pb-[calc(80px+env(safe-area-inset-bottom,0px))] lg:pb-0"
               : "",
@@ -102,11 +93,6 @@ export const Route = createFileRoute("/_app")({
         >
           {!isAuthRoute && <Navbar />}
 
-          {/*
-            Container width:
-            • Mobile  → max-w-[480px] (unchanged — keeps the native app feel)
-            • Desktop → max-w-5xl (gives room to breathe on wide screens)
-          */}
           <div
             className={[
               "mx-auto w-full",
@@ -116,25 +102,15 @@ export const Route = createFileRoute("/_app")({
               .filter(Boolean)
               .join(" ")}
           >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={path}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2, ease: "easeInOut" }}
-                className={isChatPage ? "h-full flex flex-col" : "min-h-full flex flex-col"}
-              >
-                <Suspense fallback={<PageSpinner />}>
-                  <Outlet />
-                </Suspense>
-                {!isAuthRoute && !isChatPage && <Footer />}
-              </motion.div>
-            </AnimatePresence>
+            <div className={isChatPage ? "h-full flex flex-col" : "min-h-full flex flex-col"}>
+              <Suspense fallback={<PageSpinner />}>
+                <Outlet />
+              </Suspense>
+              {!isAuthRoute && !isChatPage && <Footer />}
+            </div>
           </div>
         </main>
 
-        {/* Global My Team floating button — visible on all pages */}
         {!isAuthRoute && <MyTeamFab />}
       </div>
     );
