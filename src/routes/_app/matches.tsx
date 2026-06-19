@@ -15,7 +15,9 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../lib/auth-client";
-import { getMyMatches, getTournamentResults } from "../../api";
+import { getMyMatches, getTournamentResults, getMatchResults, getMatchCount } from "../../api";
+import { ClashSquadResults } from "@/components/tournament/results/ClashSquadResults";
+import { LoneWolfResults } from "@/components/tournament/results/LoneWolfResults";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -65,6 +67,12 @@ function MatchesPage() {
   const [winPrize, setWinPrize] = useState<{ label: string; amount: number } | null>(null);
   const celebrationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Multi-match standings state
+  const [standingsMatchInfo, setStandingsMatchInfo] = useState<{ totalMatches: number; completedMatches: number[] }>({ totalMatches: 1, completedMatches: [] });
+  const [standingsSelectedMatch, setStandingsSelectedMatch] = useState(0);
+  const [standingsPerMatch, setStandingsPerMatch] = useState<any[]>([]);
+  const [loadingPerMatch, setLoadingPerMatch] = useState(false);
+
   useEffect(() => {
     if (!authLoading && !user) {
       router.navigate({ to: "/login" });
@@ -102,13 +110,33 @@ function MatchesPage() {
   const openStandings = async (m: any) => {
     setStandingsTournament(m);
     setLoadingStandings(true);
+    setStandingsSelectedMatch(0);
+    setStandingsPerMatch([]);
     try {
-      const data = await (getTournamentResults as any)({ data: m.id });
+      const [data, mInfo] = await Promise.all([
+        (getTournamentResults as any)({ data: m.id }),
+        (m.total_matches || 1) > 1
+          ? (getMatchCount as any)({ data: m.id })
+          : Promise.resolve({ totalMatches: 1, completedMatches: [] }),
+      ]);
       setStandings(data || []);
+      setStandingsMatchInfo(mInfo);
     } catch (e: any) {
       toast.error(e.message);
     }
     setLoadingStandings(false);
+  };
+
+  const loadStandingsMatch = async (matchNum: number) => {
+    if (!standingsTournament) return;
+    setStandingsSelectedMatch(matchNum);
+    if (matchNum === 0) { setStandingsPerMatch([]); return; }
+    setLoadingPerMatch(true);
+    try {
+      const mr = await (getMatchResults as any)({ data: { tournamentId: standingsTournament.id, matchNumber: matchNum } });
+      setStandingsPerMatch(mr || []);
+    } catch { setStandingsPerMatch([]); }
+    setLoadingPerMatch(false);
   };
 
   if (!user || loading)
@@ -222,21 +250,94 @@ function MatchesPage() {
               className="text-[10px] font-black uppercase tracking-widest mt-0.5"
               style={{ color: "var(--primary)" }}
             >
-              Final Standings
+              {standingsMatchInfo.totalMatches > 1 ? `${standingsMatchInfo.totalMatches} Match Tournament` : "Final Standings"}
             </p>
           </div>
+
+          {/* Match Selector for multi-match */}
+          {standingsMatchInfo.totalMatches > 1 && (
+            <div className="px-4 pt-3 pb-1 border-b border-border/50 bg-secondary/10 shrink-0">
+              <div className="flex gap-1.5 overflow-x-auto hide-scrollbar pb-1">
+                <button
+                  onClick={() => loadStandingsMatch(0)}
+                  className={`shrink-0 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                    standingsSelectedMatch === 0
+                      ? "bg-primary text-white shadow-sm"
+                      : "bg-card text-muted-foreground border border-border"
+                  }`}
+                >
+                  Overall
+                </button>
+                {Array.from({ length: standingsMatchInfo.totalMatches }, (_, i) => i + 1).map((matchNum) => (
+                  <button
+                    key={matchNum}
+                    onClick={() => loadStandingsMatch(matchNum)}
+                    disabled={!standingsMatchInfo.completedMatches.includes(matchNum)}
+                    className={`shrink-0 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                      standingsSelectedMatch === matchNum
+                        ? "bg-primary text-white shadow-sm"
+                        : standingsMatchInfo.completedMatches.includes(matchNum)
+                          ? "bg-card text-foreground border border-border"
+                          : "bg-secondary/50 text-muted-foreground/40 border border-border/50 cursor-not-allowed"
+                    }`}
+                  >
+                    Match {matchNum}
+                    {standingsMatchInfo.completedMatches.includes(matchNum) && standingsSelectedMatch !== matchNum && " ✓"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex-1 overflow-y-auto p-4">
             {loadingStandings ? (
               <div className="flex justify-center py-16">
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               </div>
+            ) : standingsSelectedMatch > 0 ? (
+              /* Per-match results */
+              loadingPerMatch ? (
+                <div className="flex justify-center py-16">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : standingsPerMatch.length > 0 ? (
+                standingsTournament?.tournament_type === "clash_squad" ? (
+                  <ClashSquadResults tournamentName={`${standingsTournament?.name} — Match ${standingsSelectedMatch}`} results={standingsPerMatch} />
+                ) : standingsTournament?.tournament_type === "lone_wolf" ? (
+                  <LoneWolfResults tournamentName={`${standingsTournament?.name} — Match ${standingsSelectedMatch}`} results={standingsPerMatch} />
+                ) : (
+                  <StandingsCard
+                    tournamentName={`${standingsTournament?.name} — Match ${standingsSelectedMatch}`}
+                    mode={standingsTournament?.format || standingsTournament?.mode || "Solo"}
+                    results={standingsPerMatch}
+                    tournamentType={standingsTournament?.tournament_type}
+                  />
+                )
+              ) : (
+                <div className="py-12 text-center text-muted-foreground text-sm font-semibold">
+                  No results for this match yet.
+                </div>
+              )
             ) : (
-              <StandingsCard
-                tournamentName={standingsTournament?.name || ""}
-                mode={standingsTournament?.format || standingsTournament?.mode || "Solo"}
-                results={standings}
-              />
+              /* Overall standings */
+              standings.length > 0 ? (
+                standingsTournament?.tournament_type === "clash_squad" ? (
+                  <ClashSquadResults tournamentName={standingsTournament?.name || ""} results={standings} />
+                ) : standingsTournament?.tournament_type === "lone_wolf" ? (
+                  <LoneWolfResults tournamentName={standingsTournament?.name || ""} results={standings} />
+                ) : (
+                  <StandingsCard
+                    tournamentName={standingsTournament?.name || ""}
+                    mode={standingsTournament?.format || standingsTournament?.mode || "Solo"}
+                    results={standings}
+                    tournamentType={standingsTournament?.tournament_type}
+                  />
+                )
+              ) : (
+                <div className="py-12 text-center text-muted-foreground text-sm font-semibold">
+                  No standings data available.
+                </div>
+              )
             )}
           </div>
         </DialogContent>

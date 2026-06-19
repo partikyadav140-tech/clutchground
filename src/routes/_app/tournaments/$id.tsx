@@ -1,6 +1,6 @@
 import { createFileRoute, notFound, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { getTournaments, getTournamentResults, getMyMatches } from "../../../api";
+import { getTournaments, getTournamentResults, getMyMatches, getMatchResults, getMatchCount } from "../../../api";
 import {
   Calendar,
   Trophy,
@@ -56,7 +56,10 @@ export const Route = createFileRoute("/_app/tournaments/$id")({
     if (!t) throw notFound();
     const allRegistrations = await (getTournamentResults as any)({ data: t.id });
     const results = t.status === "completed" ? allRegistrations : [];
-    return { t, results, allRegistrations };
+    const matchInfoData = (t.total_matches || 1) > 1
+      ? await (getMatchCount as any)({ data: t.id })
+      : { totalMatches: 1, completedMatches: [] };
+    return { t, results, allRegistrations, matchInfoData };
   },
   pendingComponent: () => (
     <div className="min-h-screen bg-background pb-24">
@@ -89,7 +92,7 @@ const MODE_CONFIG: Record<string, { color: string; glow: string; gradient: strin
 type Tab = "info" | "registered" | "prizes" | "standings";
 
 function TournamentDetailPage() {
-  const { t, results, allRegistrations } = Route.useLoaderData();
+  const { t, results, allRegistrations, matchInfoData } = Route.useLoaderData();
   const { user } = useAuth();
   const [isJoined, setIsJoined] = useState(false);
   const [tab, setTab] = useState<Tab>("info");
@@ -97,6 +100,12 @@ function TournamentDetailPage() {
   const [squadOpen, setSquadOpen] = useState(false);
   const navigate = useNavigate();
   const mc = MODE_CONFIG[t.mode] || MODE_CONFIG.Solo;
+
+  // Multi-match state
+  const isMultiMatch = (t.total_matches || 1) > 1;
+  const [selectedMatch, setSelectedMatch] = useState<number>(0); // 0 = Overall
+  const [perMatchResults, setPerMatchResults] = useState<any[]>([]);
+  const [loadingMatch, setLoadingMatch] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -125,12 +134,31 @@ function TournamentDetailPage() {
   const isLive = t.status === "live";
   const isComp = t.status === "completed";
 
+  const hasMatchResults = isMultiMatch && matchInfoData.completedMatches.length > 0;
+  const showStandings = (isComp && results?.length) || hasMatchResults;
+
   const tabs: { key: Tab; label: string }[] = [
     { key: "info", label: "Info" },
     { key: "registered", label: `Teams (${allRegistrations?.length || 0})` },
     { key: "prizes", label: "Prizes" },
-    ...(isComp && results?.length ? [{ key: "standings" as Tab, label: "Standings" }] : []),
+    ...(showStandings ? [{ key: "standings" as Tab, label: "Standings" }] : []),
   ];
+
+  const loadUserMatchResults = async (matchNum: number) => {
+    setSelectedMatch(matchNum);
+    if (matchNum === 0) {
+      setPerMatchResults([]);
+      return;
+    }
+    setLoadingMatch(true);
+    try {
+      const mr = await (getMatchResults as any)({ data: { tournamentId: t.id, matchNumber: matchNum } });
+      setPerMatchResults(mr || []);
+    } catch {
+      setPerMatchResults([]);
+    }
+    setLoadingMatch(false);
+  };
 
   return (
     <div className="min-h-screen bg-background pb-[88px]">
@@ -475,6 +503,7 @@ function TournamentDetailPage() {
                   { icon: Users, label: "Mode", value: t.mode },
                   { icon: Calendar, label: "Starts", value: "__TIMER__" },
                   { icon: Shield, label: "Slots", value: `${t.filled} / ${displaySlots}` },
+                  ...((t.total_matches || 1) > 1 ? [{ icon: Swords, label: "Matches", value: `${t.total_matches} Matches` }] : []),
                 ].map(({ icon: Icon, label, value }) => (
                   <div
                     key={label}
@@ -505,6 +534,32 @@ function TournamentDetailPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Multi-match info banner */}
+              {isMultiMatch && (
+                <div
+                  className="rounded-2xl border p-4 flex items-start gap-3 shadow-card"
+                  style={{ background: `${mc.color}08`, borderColor: `${mc.color}25` }}
+                >
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+                    style={{ background: `${mc.color}15` }}
+                  >
+                    <Swords className="w-4 h-4" style={{ color: mc.color }} />
+                  </div>
+                  <div>
+                    <p className="font-black text-sm text-foreground mb-1">
+                      {t.total_matches}-Match Tournament
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      This tournament has <strong className="text-foreground">{t.total_matches} matches</strong>. 
+                      Results from each match will be shared after every round. 
+                      Final standings are calculated by combining kills & points from all matches. 
+                      Prizes are distributed based on the final combined standings only.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* About */}
               <div className="bg-card rounded-2xl border border-border p-4 shadow-card">
@@ -657,6 +712,16 @@ function TournamentDetailPage() {
                             ? "Squad mode: Ranked by points (kills + position bonus). Top 3 teams split the prize pool: 1st place gets 50%, 2nd place gets 30%, 3rd place gets 20%."
                             : `${t.mode} mode: earn placement points + kill points. Top 3 teams split the prize pool.`}
                 </p>
+                {isMultiMatch && (
+                  <div
+                    className="mt-3 rounded-xl p-3 border text-xs text-muted-foreground leading-relaxed"
+                    style={{ background: `${mc.color}06`, borderColor: `${mc.color}20` }}
+                  >
+                    <span className="font-black text-foreground">📋 {t.total_matches}-Match Format:</span>{" "}
+                    Kills & points from all {t.total_matches} matches are combined to calculate the final standings. 
+                    Prizes are distributed only after all matches are completed based on the overall combined results — not per match.
+                  </div>
+                )}
               </div>
 
               {/* Prize breakdown */}
@@ -752,24 +817,116 @@ function TournamentDetailPage() {
           )}
 
           {/* STANDINGS TAB */}
-          {tab === "standings" && results?.length > 0 && (
+          {tab === "standings" && showStandings && (
             <motion.div
               key="standings"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
+              className="flex flex-col gap-4"
             >
-              {t.tournament_type === "clash_squad" ? (
-                <ClashSquadResults tournamentName={t.title} results={results} />
-              ) : t.tournament_type === "lone_wolf" ? (
-                <LoneWolfResults tournamentName={t.title} results={results} />
+              {/* Match Selector for multi-match */}
+              {isMultiMatch && (
+                <div className="flex gap-1.5 overflow-x-auto hide-scrollbar pb-1">
+                  <button
+                    onClick={() => loadUserMatchResults(0)}
+                    className={`shrink-0 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all press-effect active:scale-95 ${
+                      selectedMatch === 0
+                        ? "text-white shadow-sm"
+                        : "bg-card text-muted-foreground border border-border"
+                    }`}
+                    style={selectedMatch === 0 ? { background: mc.gradient } : undefined}
+                  >
+                    Overall
+                  </button>
+                  {Array.from({ length: t.total_matches }, (_, i) => i + 1).map((matchNum) => (
+                    <button
+                      key={matchNum}
+                      onClick={() => loadUserMatchResults(matchNum)}
+                      disabled={!matchInfoData.completedMatches.includes(matchNum)}
+                      className={`shrink-0 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all press-effect active:scale-95 ${
+                        selectedMatch === matchNum
+                          ? "text-white shadow-sm"
+                          : matchInfoData.completedMatches.includes(matchNum)
+                            ? "bg-card text-foreground border border-border"
+                            : "bg-secondary/50 text-muted-foreground/40 border border-border/50 cursor-not-allowed"
+                      }`}
+                      style={selectedMatch === matchNum ? { background: mc.gradient } : undefined}
+                    >
+                      Match {matchNum}
+                      {matchInfoData.completedMatches.includes(matchNum) && selectedMatch !== matchNum && " ✓"}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Per-Match Results */}
+              {isMultiMatch && selectedMatch > 0 ? (
+                loadingMatch ? (
+                  <div className="py-10 flex flex-col items-center justify-center">
+                    <div className="w-6 h-6 border-3 border-primary border-t-transparent rounded-full animate-spin mb-3" />
+                    <p className="text-xs font-bold text-muted-foreground">Loading match results...</p>
+                  </div>
+                ) : perMatchResults.length > 0 ? (
+                  /* Use the same professional StandingsCard for per-match results */
+                  t.tournament_type === "clash_squad" ? (
+                    <ClashSquadResults tournamentName={`${t.title} — Match ${selectedMatch}`} results={perMatchResults} />
+                  ) : t.tournament_type === "lone_wolf" ? (
+                    <LoneWolfResults tournamentName={`${t.title} — Match ${selectedMatch}`} results={perMatchResults} />
+                  ) : (
+                    <StandingsCard
+                      tournamentName={`${t.title} — Match ${selectedMatch}`}
+                      mode={t.mode}
+                      results={perMatchResults}
+                      tournamentType={t.tournament_type}
+                    />
+                  )
+                ) : (
+                  <div className="py-10 text-center text-muted-foreground text-sm font-semibold bg-card rounded-2xl border border-border">
+                    No results available for this match yet.
+                  </div>
+                )
               ) : (
-                <StandingsCard
-                  tournamentName={t.title}
-                  mode={t.mode}
-                  results={results}
-                  tournamentType={t.tournament_type}
-                />
+                /* Overall / Single-match standings */
+                <>
+                  {isComp && t.results_announced && results?.length > 0 ? (
+                    t.tournament_type === "clash_squad" ? (
+                      <ClashSquadResults tournamentName={t.title} results={results} />
+                    ) : t.tournament_type === "lone_wolf" ? (
+                      <LoneWolfResults tournamentName={t.title} results={results} />
+                    ) : (
+                      <StandingsCard
+                        tournamentName={t.title}
+                        mode={t.mode}
+                        results={results}
+                        tournamentType={t.tournament_type}
+                      />
+                    )
+                  ) : !isMultiMatch && results?.length > 0 ? (
+                    /* Single-match fallback (backward compat) */
+                    t.tournament_type === "clash_squad" ? (
+                      <ClashSquadResults tournamentName={t.title} results={results} />
+                    ) : t.tournament_type === "lone_wolf" ? (
+                      <LoneWolfResults tournamentName={t.title} results={results} />
+                    ) : (
+                      <StandingsCard
+                        tournamentName={t.title}
+                        mode={t.mode}
+                        results={results}
+                        tournamentType={t.tournament_type}
+                      />
+                    )
+                  ) : isMultiMatch ? (
+                    <div className="py-10 text-center bg-card rounded-2xl border border-border">
+                      <Trophy className="w-8 h-8 mx-auto mb-3 text-muted-foreground opacity-30" />
+                      <p className="text-sm font-bold text-foreground mb-1">Final standings coming soon</p>
+                      <p className="text-xs text-muted-foreground">
+                        {matchInfoData.completedMatches.length} of {matchInfoData.totalMatches} matches completed.
+                        <br />Select a match tab above to view per-match results.
+                      </p>
+                    </div>
+                  ) : null}
+                </>
               )}
             </motion.div>
           )}

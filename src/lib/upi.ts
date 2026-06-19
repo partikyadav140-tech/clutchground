@@ -37,6 +37,20 @@ export const getActiveUpiConfig = createServerFn({ method: "GET" }).handler(asyn
   };
 });
 
+/** Check if user has a submitted deposit awaiting admin review */
+export const checkPendingDeposit = createServerFn({ method: "GET" }).handler(async () => {
+  const user = await getCurrentUser();
+  const db = await getDb();
+  const pending = (await db
+    .prepare(
+      `SELECT id, amount, status, txn_ref, created_at FROM upi_deposits
+       WHERE user_id = ? AND status = 'submitted'
+       ORDER BY created_at DESC LIMIT 1`,
+    )
+    .get(user.id)) as any;
+  return { hasPending: !!pending, deposit: pending || null };
+});
+
 /** Create a pending UPI deposit request */
 export const createUpiDeposit = createServerFn({ method: "POST" }).handler(async ({ data }) => {
   const user = await getCurrentUser();
@@ -84,6 +98,18 @@ export const createUpiDeposit = createServerFn({ method: "POST" }).handler(async
     };
     throw new Error(
       `Deposits are closed. Allowed hours: ${formatTime(startTime)} to ${formatTime(endTime)} IST.`,
+    );
+  }
+
+  // Block if user already has a submitted deposit awaiting admin review
+  const existingPending = (await db
+    .prepare(
+      `SELECT id, amount FROM upi_deposits WHERE user_id = ? AND status = 'submitted' LIMIT 1`,
+    )
+    .get(userId)) as any;
+  if (existingPending) {
+    throw new Error(
+      `You already have a pending deposit of ₹${existingPending.amount}. Please wait for admin approval before making a new deposit.`,
     );
   }
 

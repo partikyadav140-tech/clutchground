@@ -330,6 +330,10 @@ export function JoinBattleDialog({
     } else if (step === "team-setup") {
       // Only validate manual entry if using manual mode
       if (teamSetupMode === "manual") {
+        if (!leader.teamName?.trim()) {
+          toast.error("Please enter your team name");
+          return;
+        }
         const requiredFields = [leader.ign, leader.uid];
         if (requiredFields.some((f) => !f || f.trim() === "")) {
           toast.error("Please fill in your IGN and UID");
@@ -572,6 +576,17 @@ export function JoinBattleDialog({
           <div className="space-y-4 py-4">
             <div className="text-xs uppercase tracking-widest font-black text-muted-foreground mb-2">
               Step 2: Enter Player Details
+            </div>
+
+            {/* Team Name */}
+            <div className="bg-secondary/50 border border-border rounded-xl p-4">
+              <Field
+                label="Team Name"
+                value={leader.teamName}
+                onChange={(v) => setLeader((l) => ({ ...l, teamName: v }))}
+                placeholder="Enter your team/squad name"
+                compact
+              />
             </div>
 
             {/* Captain Details */}

@@ -8,7 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { createUpiDeposit, submitUpiUtr, getWalletBalance, getActiveUpiConfig } from "../api";
+import { createUpiDeposit, submitUpiUtr, getWalletBalance, getActiveUpiConfig, checkPendingDeposit } from "../api";
 import { useAuth } from "../lib/auth-client";
 import {
   CreditCard,
@@ -20,11 +20,55 @@ import {
   ArrowRight,
   Clock,
   ShieldCheck,
+  ChevronDown,
+  ChevronUp,
+  AlertCircle,
+  QrCode,
 } from "lucide-react";
 
 const predefinedAmounts = [10, 50, 100, 200, 500, 1000];
 
 type Step = "amount" | "pay" | "upiid" | "done";
+
+/* ── UPI App definitions with brand colors ── */
+const UPI_APPS = [
+  {
+    name: "GPay",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Google_Pay_Logo.svg/512px-Google_Pay_Logo.svg.png",
+    bg: "#ffffff",
+    border: "#4285F4",
+  },
+  {
+    name: "PhonePe",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/PhonePe_Logo.svg/512px-PhonePe_Logo.svg.png",
+    bg: "#5f259f",
+    border: "#5f259f",
+  },
+  {
+    name: "Paytm",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Paytm_Logo_%28standalone%29.svg/512px-Paytm_Logo_%28standalone%29.svg.png",
+    bg: "#ffffff",
+    border: "#00B9F1",
+  },
+  {
+    name: "CRED",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/CRED_app_logo.png/480px-CRED_app_logo.png",
+    bg: "#1a1a1a",
+    border: "#ffffff20",
+  },
+  {
+    name: "Amazon",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/603px-Amazon_logo.svg.png",
+    bg: "#232F3E",
+    border: "#FF9900",
+  },
+  {
+    name: "BHIM",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/UPI-Logo-vector.svg/480px-UPI-Logo-vector.svg.png",
+    bg: "#ffffff",
+    border: "#00838F",
+  },
+];
 
 export function WalletDepositDialog({
   trigger,
@@ -64,15 +108,34 @@ export function WalletDepositDialog({
     maxDeposit: string;
   } | null>(null);
 
+  // Pending deposit state
+  const [pendingDeposit, setPendingDeposit] = useState<{
+    hasPending: boolean;
+    deposit: any;
+  } | null>(null);
+  const [checkingPending, setCheckingPending] = useState(false);
+
+  // Fallback section toggle
+  const [showFallback, setShowFallback] = useState(false);
+
   useEffect(() => {
     if (open) {
-      getActiveUpiConfig().then((cfg) => {
-        setUpiConfig(cfg);
-        const minVal = parseInt(cfg.minDeposit) || 50;
-        if (amount < minVal) {
-          setAmount(minVal);
-        }
-      });
+      // Check for pending deposits and load UPI config simultaneously
+      setCheckingPending(true);
+      Promise.all([
+        getActiveUpiConfig(),
+        checkPendingDeposit(),
+      ])
+        .then(([cfg, pendingResult]) => {
+          setUpiConfig(cfg);
+          const minVal = parseInt(cfg.minDeposit) || 50;
+          if (amount < minVal) {
+            setAmount(minVal);
+          }
+          setPendingDeposit(pendingResult as any);
+        })
+        .catch(() => {})
+        .finally(() => setCheckingPending(false));
     }
   }, [open]);
 
@@ -134,11 +197,13 @@ export function WalletDepositDialog({
     setAmount(500);
     setCustomAmount("");
     setPayData(null);
+    setShowFallback(false);
+    setPendingDeposit(null);
     setOpen(false);
     onSuccess?.();
   };
 
-  /* ── UPI QR via Google Charts (no extra dep) ── */
+  /* ── UPI QR via QR API (fallback) ── */
   const qrUrl = payData
     ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(payData.upiLink)}&bgcolor=ffffff&color=1a1a2e&margin=8`
     : "";
@@ -156,6 +221,12 @@ export function WalletDepositDialog({
       return;
     }
     setOpen(true);
+  };
+
+  /* ── Open UPI Intent link ── */
+  const openUpiApp = () => {
+    if (!payData?.upiLink) return;
+    window.location.href = payData.upiLink;
   };
 
   return (
@@ -188,8 +259,82 @@ export function WalletDepositDialog({
           </DialogTitle>
         </DialogHeader>
 
+        {/* ════════════ PENDING DEPOSIT BLOCKER ════════════ */}
+        {checkingPending && (
+          <div className="flex flex-col items-center py-8 gap-3">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-muted-foreground font-semibold">Checking status...</p>
+          </div>
+        )}
+
+        {!checkingPending && pendingDeposit?.hasPending && step === "amount" && (
+          <div className="space-y-4 py-2">
+            <div className="flex flex-col items-center text-center gap-3 py-4">
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                style={{ background: "rgba(245,158,11,0.12)" }}
+              >
+                <Clock className="w-8 h-8 text-amber-500" />
+              </div>
+              <div>
+                <p className="font-display font-black text-lg text-foreground mb-1">
+                  Pending Deposit
+                </p>
+                <p className="text-sm text-muted-foreground max-w-[280px] mx-auto">
+                  You already have a deposit of{" "}
+                  <strong className="text-foreground">
+                    ₹{pendingDeposit.deposit?.amount}
+                  </strong>{" "}
+                  awaiting admin review.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 space-y-2">
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-amber-600">
+                <AlertCircle className="w-3.5 h-3.5" />
+                Deposit Details
+              </div>
+              <div className="space-y-1.5 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Amount</span>
+                  <span className="font-bold text-foreground">₹{pendingDeposit.deposit?.amount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Status</span>
+                  <span className={`font-bold px-2 py-0.5 rounded-full text-[10px] ${
+                    pendingDeposit.deposit?.status === "submitted"
+                      ? "bg-blue-500/10 text-blue-500"
+                      : "bg-amber-500/10 text-amber-600"
+                  }`}>
+                    {pendingDeposit.deposit?.status === "submitted"
+                      ? "Under Review"
+                      : "Awaiting Confirmation"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Ref</span>
+                  <span className="font-mono text-[11px] font-semibold text-foreground">{pendingDeposit.deposit?.txn_ref}</span>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center leading-relaxed">
+              Please wait for admin to <strong className="text-foreground">approve or reject</strong> your
+              existing deposit before making a new one.
+            </p>
+
+            <Button
+              onClick={() => setOpen(false)}
+              className="w-full bg-primary text-white font-display rounded-xl h-11"
+            >
+              Got it, Close
+            </Button>
+          </div>
+        )}
+
         {/* ════════════ STEP 1: Amount ════════════ */}
-        {step === "amount" && (
+        {!checkingPending && !pendingDeposit?.hasPending && step === "amount" && (
           <div className="space-y-4 py-2">
             <div className="flex items-center gap-2 text-cta mb-1">
               <CreditCard className="w-4 h-4" />
@@ -282,7 +427,7 @@ export function WalletDepositDialog({
           </div>
         )}
 
-        {/* ════════════ STEP 2: Pay ════════════ */}
+        {/* ════════════ STEP 2: Pay — UPI App Picker ════════════ */}
         {step === "pay" && payData && (
           <div className="space-y-4 py-2">
             {/* Amount pill */}
@@ -292,55 +437,104 @@ export function WalletDepositDialog({
               </span>
             </div>
 
-            {/* QR Code */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="bg-white rounded-2xl p-2 shadow-md border border-border">
-                <img
-                  src={qrUrl}
-                  alt="UPI QR Code"
-                  width={180}
-                  height={180}
-                  className="rounded-xl"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              </div>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-                Scan with any UPI app
-              </p>
-            </div>
+            {/* Primary CTA: Pay via UPI */}
+            <button
+              onClick={openUpiApp}
+              className="w-full h-14 rounded-2xl font-black text-base uppercase tracking-wider text-white flex items-center justify-center gap-3 press-effect active:scale-[0.97] transition-all shadow-lg relative overflow-hidden"
+              style={{
+                background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)",
+              }}
+            >
+              <div
+                className="absolute inset-0 opacity-20"
+                style={{
+                  background:
+                    "radial-gradient(circle at 30% 50%, rgba(255,255,255,0.3), transparent 60%)",
+                }}
+              />
+              <Smartphone className="w-5 h-5 relative z-10" />
+              <span className="relative z-10">Pay ₹{payData.amount} via UPI</span>
+              <ExternalLink className="w-4 h-4 relative z-10 opacity-60" />
+            </button>
 
-            {/* UPI ID to copy */}
+            <p className="text-[10px] text-muted-foreground text-center font-semibold">
+              Opens your UPI app with amount auto-filled • Just enter PIN & pay
+            </p>
+
+
+
+            {/* Paying to info */}
             <div className="bg-secondary/60 border border-border rounded-xl p-3">
-              <p className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-1">
-                Pay to UPI ID
-              </p>
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-mono font-bold text-foreground text-sm">{payData.upiId}</span>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-0.5">
+                    Paying to
+                  </p>
+                  <p className="font-mono font-bold text-foreground text-sm">{payData.upiId}</p>
+                </div>
                 <button
                   onClick={() => copyToClipboard(payData.upiId, "UPI ID")}
-                  className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                  className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                 >
                   <Copy className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
 
-            {/* Ref */}
-            <div className="bg-secondary/60 border border-border rounded-xl p-3">
-              <p className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-1">
-                Transaction Ref (add as note)
-              </p>
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-xs text-foreground">{payData.txnRef}</span>
-                <button
-                  onClick={() => copyToClipboard(payData.txnRef, "Reference")}
-                  className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                </button>
-              </div>
+            {/* Collapsible fallback: QR Code + manual options */}
+            <div className="border border-border/50 rounded-xl overflow-hidden">
+              <button
+                onClick={() => setShowFallback(!showFallback)}
+                className="w-full flex items-center justify-between px-3 py-2.5 bg-secondary/20 hover:bg-secondary/40 transition-colors"
+              >
+                <span className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                  <QrCode className="w-3.5 h-3.5" />
+                  Can't open UPI app? Scan QR or copy UPI ID
+                </span>
+                {showFallback ? (
+                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                )}
+              </button>
+              {showFallback && (
+                <div className="p-3 space-y-3 border-t border-border/50 bg-secondary/10">
+                  {/* QR Code */}
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="bg-white rounded-xl p-2 shadow-sm border border-border">
+                      <img
+                        src={qrUrl}
+                        alt="UPI QR Code"
+                        width={160}
+                        height={160}
+                        className="rounded-lg"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground font-semibold">
+                      Scan with any UPI app
+                    </p>
+                  </div>
+
+                  {/* Ref */}
+                  <div className="bg-secondary/60 border border-border rounded-xl p-2.5">
+                    <p className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-1">
+                      Transaction Ref (add as note)
+                    </p>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono text-xs text-foreground">{payData.txnRef}</span>
+                      <button
+                        onClick={() => copyToClipboard(payData.txnRef, "Reference")}
+                        className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* ⚠️ Professional Warning Note */}

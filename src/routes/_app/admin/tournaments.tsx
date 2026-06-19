@@ -30,6 +30,10 @@ import {
   deleteAllTournaments,
   uploadImage,
   deleteImage,
+  getMatchResults,
+  saveMatchResults,
+  saveFinalResults,
+  getMatchCount,
 } from "../../../api";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -177,15 +181,77 @@ function AdminTournamentsPage() {
     setResultsData([]);
     setResultsError(null);
     setLoadingResults(true);
+    setActiveMatchTab(t.total_matches > 1 ? 1 : 0); // 0 = legacy single-match mode
+    setMatchResultsData([]);
     try {
-      const data = await (getTournamentResults as any)({ data: t.id });
+      const [data, mInfo] = await Promise.all([
+        (getTournamentResults as any)({ data: t.id }),
+        t.total_matches > 1 ? (getMatchCount as any)({ data: t.id }) : Promise.resolve({ totalMatches: 1, completedMatches: [] }),
+      ]);
       setResultsData(data || []);
-      setIsEditingResults(t.status !== "completed"); // Default to view if completed
+      setMatchInfo(mInfo);
+      setIsEditingResults(t.status !== "completed" || !t.results_announced);
+
+      // If multi-match, load first match data
+      if (t.total_matches > 1 && mInfo.completedMatches.includes(1)) {
+        const mr = await (getMatchResults as any)({ data: { tournamentId: t.id, matchNumber: 1 } });
+        setMatchResultsData(mr || []);
+      }
     } catch (err: any) {
       setResultsError(err.message || "Failed to load tournament results.");
       toast.error(err.message || "Failed to load tournament results.");
     }
     setLoadingResults(false);
+  };
+
+  const loadMatchData = async (matchNum: number) => {
+    if (!resultsTId) return;
+    setActiveMatchTab(matchNum);
+    if (matchInfo.completedMatches.includes(matchNum)) {
+      try {
+        const mr = await (getMatchResults as any)({ data: { tournamentId: resultsTId.id, matchNumber: matchNum } });
+        setMatchResultsData(mr || []);
+      } catch { setMatchResultsData([]); }
+    } else {
+      // No results yet — prepare blank entries from registrations
+      setMatchResultsData(resultsData.map((r: any) => ({ ...r, kills: 0, position: 0, points: 0, registration_id: r.id })));
+    }
+  };
+
+  const handleSaveMatchResults = async (matchNum: number) => {
+    if (!resultsTId) return;
+    setSavingMatch(true);
+    try {
+      const resultsToSave = matchResultsData.map((r: any) => ({
+        id: r.registration_id || r.id,
+        kills: r.kills || 0,
+        position: r.position || 0,
+      }));
+      await (saveMatchResults as any)({
+        data: { tournamentId: resultsTId.id, matchNumber: matchNum, results: resultsToSave },
+      });
+      toast.success(`Match ${matchNum} results saved!`);
+      // Refresh match info
+      const mInfo = await (getMatchCount as any)({ data: resultsTId.id });
+      setMatchInfo(mInfo);
+    } catch (err: any) {
+      toast.error("Failed to save: " + err.message);
+    }
+    setSavingMatch(false);
+  };
+
+  const handlePublishFinal = async () => {
+    if (!resultsTId) return;
+    setSavingMatch(true);
+    try {
+      await (saveFinalResults as any)({ data: { tournamentId: resultsTId.id } });
+      toast.success("Final results published & prizes distributed!");
+      setResultsTId(null);
+      router.invalidate();
+    } catch (err: any) {
+      toast.error("Failed: " + err.message);
+    }
+    setSavingMatch(false);
   };
 
   const handleSaveResults = async () => {
@@ -462,7 +528,14 @@ function AdminTournamentsPage() {
     prize_pool: 0,
     open_slots: 2,
     map: "bermuda",
+    total_matches: 1,
   });
+
+  // Multi-match results state
+  const [activeMatchTab, setActiveMatchTab] = useState(1);
+  const [matchResultsData, setMatchResultsData] = useState<any[]>([]);
+  const [matchInfo, setMatchInfo] = useState<{ totalMatches: number; completedMatches: number[] }>({ totalMatches: 1, completedMatches: [] });
+  const [savingMatch, setSavingMatch] = useState(false);
 
   if (loading)
     return (
@@ -620,6 +693,7 @@ function AdminTournamentsPage() {
       hosted_by: t.hosted_by || "",
       per_kill_coin: t.per_kill_coin || 0,
       first_place_coin: t.first_place_coin || 0,
+      total_matches: t.total_matches || 1,
       map:
         t.map ||
         (t.tournament_type === "clash_squad"
@@ -681,6 +755,7 @@ function AdminTournamentsPage() {
                   prize_pool: 0,
                   open_slots: 2,
                   map: "bermuda",
+                  total_matches: 1,
                 });
                 setShowForm(true);
               }}
@@ -1000,6 +1075,19 @@ function AdminTournamentsPage() {
                   onChange={(e) => setFormData({ ...formData, hosted_by: e.target.value })}
                   placeholder="Host Name"
                 />
+                {formData.tournament_type !== 'clash_squad' && formData.tournament_type !== 'lone_wolf' && formData.mode === 'Squad' && (
+                <Input
+                  label="Number of Matches"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={formData.total_matches}
+                  onChange={(e) =>
+                    setFormData({ ...formData, total_matches: Math.max(1, Number(e.target.value)) })
+                  }
+                  placeholder="1"
+                />
+                )}
                 <div>
                   <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">
                     Event Card Banner
@@ -1408,6 +1496,11 @@ function AdminTournamentsPage() {
                 Match Results
                 <span className="block text-sm font-semibold text-muted-foreground mt-1 font-sans">
                   {resultsTId?.title}
+                  {(resultsTId?.total_matches || 1) > 1 && (
+                    <span className="ml-2 text-xs text-cta font-black">
+                      ({resultsTId?.total_matches} Matches)
+                    </span>
+                  )}
                 </span>
               </DialogTitle>
               <Button
@@ -1421,6 +1514,45 @@ function AdminTournamentsPage() {
               </Button>
             </div>
           </DialogHeader>
+
+          {/* ── Multi-Match Tab Bar ── */}
+          {(resultsTId?.total_matches || 1) > 1 && (
+            <div className="px-4 pt-3 pb-1 border-b border-border/50 bg-secondary/10">
+              <div className="flex gap-1.5 overflow-x-auto hide-scrollbar pb-1">
+                {Array.from({ length: resultsTId?.total_matches || 1 }, (_, i) => i + 1).map(
+                  (matchNum) => (
+                    <button
+                      key={matchNum}
+                      onClick={() => loadMatchData(matchNum)}
+                      className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                        activeMatchTab === matchNum
+                          ? "bg-primary text-white shadow-sm"
+                          : matchInfo.completedMatches.includes(matchNum)
+                            ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30"
+                            : "bg-card text-muted-foreground border border-border"
+                      }`}
+                    >
+                      Match {matchNum}
+                      {matchInfo.completedMatches.includes(matchNum) && activeMatchTab !== matchNum && " ✓"}
+                    </button>
+                  ),
+                )}
+                <button
+                  onClick={() => {
+                    setActiveMatchTab(0);
+                    setIsEditingResults(false);
+                  }}
+                  className={`shrink-0 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+                    activeMatchTab === 0
+                      ? "bg-amber-500 text-white shadow-sm"
+                      : "bg-card text-muted-foreground border border-border"
+                  }`}
+                >
+                  Final
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="p-4 sm:p-6 max-h-[60vh] overflow-y-auto bg-background/50">
             {loadingResults ? (
@@ -1436,7 +1568,99 @@ function AdminTournamentsPage() {
               <div className="py-12 text-center text-muted-foreground font-semibold bg-card rounded-xl border border-border shadow-sm">
                 No confirmed registrations found for this tournament.
               </div>
+            ) : (resultsTId?.total_matches || 1) > 1 && activeMatchTab > 0 ? (
+              /* ══════ MULTI-MATCH: Per-Match Entry ══════ */
+              <div className="space-y-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-display font-black text-lg text-foreground">
+                    Match {activeMatchTab}
+                  </h3>
+                  {matchInfo.completedMatches.includes(activeMatchTab) && (
+                    <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/30">
+                      ✓ Results Saved
+                    </span>
+                  )}
+                </div>
+
+                {matchResultsData.map((r, i) => (
+                  <div
+                    key={r.registration_id || r.id}
+                    className="bg-card p-3.5 rounded-xl border border-border shadow-sm"
+                  >
+                    <div className="font-bold text-foreground text-sm mb-2.5 truncate">
+                      <span className="text-muted-foreground font-black mr-2">#{i + 1}</span>
+                      {r.display_name || r.team_name || r.username}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1">
+                          Kills
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          className="w-full bg-secondary/50 border border-border rounded-lg text-center px-2 py-2 text-sm outline-none focus:border-primary font-bold"
+                          value={r.kills || 0}
+                          onChange={(e) =>
+                            setMatchResultsData((prev) =>
+                              prev.map((x) =>
+                                (x.registration_id || x.id) === (r.registration_id || r.id)
+                                  ? { ...x, kills: Number(e.target.value) }
+                                  : x,
+                              ),
+                            )
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1">
+                          Position
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          className="w-full bg-secondary/50 border border-border rounded-lg text-center px-2 py-2 text-sm outline-none focus:border-primary font-bold"
+                          value={r.position || 0}
+                          onChange={(e) =>
+                            setMatchResultsData((prev) =>
+                              prev.map((x) =>
+                                (x.registration_id || x.id) === (r.registration_id || r.id)
+                                  ? { ...x, position: Number(e.target.value) }
+                                  : x,
+                              ),
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (resultsTId?.total_matches || 1) > 1 && activeMatchTab === 0 ? (
+              /* ══════ MULTI-MATCH: Final Aggregated View ══════ */
+              <div className="space-y-4">
+                <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5">
+                  <p className="text-xs font-bold text-amber-600">
+                    📊 Final standings aggregated across {matchInfo.totalMatches} matches.
+                    {matchInfo.completedMatches.length < matchInfo.totalMatches
+                      ? ` (${matchInfo.completedMatches.length}/${matchInfo.totalMatches} matches completed)`
+                      : " All matches completed ✓"}
+                  </p>
+                </div>
+                {resultsTId?.tournament_type === "clash_squad" ? (
+                  <ClashSquadResults tournamentName={resultsTId?.title} results={resultsData} />
+                ) : resultsTId?.tournament_type === "lone_wolf" ? (
+                  <LoneWolfResults tournamentName={resultsTId?.title} results={resultsData} />
+                ) : (
+                  <StandingsCard
+                    tournamentName={resultsTId?.title}
+                    mode={resultsTId?.mode || "Squad"}
+                    results={resultsData}
+                  />
+                )}
+              </div>
             ) : isEditingResults ? (
+              /* ══════ SINGLE-MATCH: Existing Edit Form ══════ */
               <div className="space-y-3">
                 <div className="flex justify-end mb-2">
                   <Button
@@ -1556,6 +1780,7 @@ function AdminTournamentsPage() {
                 ))}
               </div>
             ) : (
+              /* ══════ SINGLE-MATCH: Preview Mode ══════ */
               <div className="space-y-4">
                 <div className="flex justify-end">
                   <Button
@@ -1582,6 +1807,8 @@ function AdminTournamentsPage() {
               </div>
             )}
           </div>
+
+          {/* ── Footer Actions ── */}
           <div className="flex justify-end gap-3 p-4 sm:p-6 border-t border-border bg-card">
             <Button
               variant="outline"
@@ -1590,7 +1817,36 @@ function AdminTournamentsPage() {
             >
               Cancel
             </Button>
-            {isEditingResults && (
+            {/* Multi-match: Save per-match */}
+            {(resultsTId?.total_matches || 1) > 1 && activeMatchTab > 0 && (
+              <Button
+                className="rounded-xl font-bold h-11 px-6 bg-primary text-white shadow-primary"
+                onClick={() => handleSaveMatchResults(activeMatchTab)}
+                disabled={savingMatch}
+              >
+                {savingMatch ? (
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  `Save Match ${activeMatchTab} Results`
+                )}
+              </Button>
+            )}
+            {/* Multi-match: Publish Final */}
+            {(resultsTId?.total_matches || 1) > 1 && activeMatchTab === 0 && (
+              <Button
+                className="rounded-xl font-bold h-11 px-6 bg-amber-500 text-white shadow-lg hover:bg-amber-600"
+                onClick={handlePublishFinal}
+                disabled={savingMatch || matchInfo.completedMatches.length < matchInfo.totalMatches}
+              >
+                {savingMatch ? (
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  "Publish Final Results & Distribute Prizes"
+                )}
+              </Button>
+            )}
+            {/* Single-match: Save & Publish */}
+            {(resultsTId?.total_matches || 1) <= 1 && isEditingResults && (
               <Button
                 className="rounded-xl font-bold h-11 px-6 bg-primary text-white shadow-primary"
                 onClick={handleSaveResults}

@@ -11,6 +11,7 @@ import {
   AtSign,
   ChevronLeft,
   Clock,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { GodCoin } from "@/components/GodCoin";
@@ -18,7 +19,7 @@ import { useAuth } from "../../lib/auth-client";
 import { useState, useEffect, useMemo } from "react";
 import { WalletDepositDialog } from "@/components/WalletDepositDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { processWithdrawal, getTransactionHistory, saveUpiId, getSiteSettings } from "../../api";
+import { processWithdrawal, getTransactionHistory, saveUpiId, getSiteSettings, checkPendingDeposit } from "../../api";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { AnimatedCounter } from "@/components/AnimatedCounter";
@@ -47,6 +48,8 @@ function WalletPage() {
   const [savingUpi, setSavingUpi] = useState(false);
 
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
+
+  const [pendingDeposit, setPendingDeposit] = useState<{ hasPending: boolean; deposit: any } | null>(null);
 
   const loadSettings = async () => {
     try {
@@ -84,6 +87,10 @@ function WalletPage() {
       loadTx();
       loadSettings();
       if ((user as any).upi_id) setPrimaryUpi((user as any).upi_id);
+      // Check for pending deposits
+      checkPendingDeposit()
+        .then((result) => setPendingDeposit(result as any))
+        .catch(() => {});
     }
   }, [user, authLoading]);
 
@@ -204,12 +211,12 @@ function WalletPage() {
         <h1 className="font-display font-black text-2xl text-foreground">My Wallet</h1>
       </div>
 
-      {/* ── Balance Card ── */}
-      <div className="px-4 mb-5">
+      {/* ── Balance Card with Actions ── */}
+      <div className="px-4 mb-4">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative rounded-3xl p-6 overflow-hidden"
+          className="relative rounded-3xl overflow-hidden"
           id="tutorial-wallet-balance"
           style={{ background: "linear-gradient(135deg, #0a1628 0%, #0d1f3c 50%, #0a1628 100%)" }}
         >
@@ -222,202 +229,184 @@ function WalletPage() {
             style={{ background: "var(--gradient-primary)" }}
           />
 
-          <p className="text-[10px] font-black uppercase tracking-widest text-primary/70 mb-2">
-            Total Balance
-          </p>
-          <div className="flex items-center gap-3 mb-6">
-            <GodCoin className="w-9 h-9 text-white" />
-            <span className="font-display font-black text-5xl text-white tabular-nums leading-none">
-              <AnimatedCounter value={totalBal} />
-            </span>
-            <span className="text-sm font-bold text-white/40 self-end mb-1">Coins</span>
+          {/* Balance */}
+          <div className="px-5 pt-5 pb-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-primary/70 mb-1.5">
+              Total Balance
+            </p>
+            <div className="flex items-center gap-3 mb-4">
+              <GodCoin className="w-8 h-8 text-white" />
+              <span className="font-display font-black text-4xl text-white tabular-nums leading-none">
+                <AnimatedCounter value={totalBal} />
+              </span>
+              <span className="text-sm font-bold text-white/40 self-end mb-0.5">Coins</span>
+            </div>
+
+            {/* Breakdown row */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              <div
+                className="rounded-xl px-3 py-2 border"
+                style={{ background: "rgba(16,185,129,0.08)", borderColor: "rgba(16,185,129,0.2)" }}
+              >
+                <p className="text-[8px] font-black uppercase tracking-widest text-emerald-500 mb-0.5">Winnings</p>
+                <div className="flex items-center gap-1">
+                  <GodCoin className="w-3 h-3 text-emerald-400" />
+                  <span className="font-display font-black text-lg text-white tabular-nums">
+                    <AnimatedCounter value={winBal} />
+                  </span>
+                </div>
+              </div>
+              <div
+                className="rounded-xl px-3 py-2 border"
+                style={{ background: "rgba(0,200,255,0.08)", borderColor: "rgba(0,200,255,0.2)" }}
+              >
+                <p className="text-[8px] font-black uppercase tracking-widest mb-0.5" style={{ color: "var(--primary)" }}>Deposited</p>
+                <div className="flex items-center gap-1">
+                  <GodCoin className="w-3 h-3 text-primary" />
+                  <span className="font-display font-black text-lg text-white tabular-nums">
+                    <AnimatedCounter value={depositBal} />
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons inside card */}
+            <div id="tutorial-wallet-actions" className="grid grid-cols-2 gap-2">
+              <div id="tutorial-wallet-addcash">
+                <WalletDepositDialog
+                  primaryUpi={primaryUpi}
+                  locked={addCashLocked || !primaryUpi}
+                  onLockedClick={() => {
+                    if (!primaryUpi && !isTutorialActive) {
+                      toast.error("Please set your Primary UPI ID first");
+                      setUpiSettingsOpen(true);
+                      return;
+                    }
+                    if (addCashLocked && !isTutorialActive) {
+                      toast.error(
+                        `Deposits closed. Timings: ${formatTimeStr(startTime)} - ${formatTimeStr(endTime)} IST`,
+                      );
+                      return;
+                    }
+                  }}
+                  trigger={
+                    <button
+                      type="button"
+                      className={`w-full h-12 rounded-xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest transition-all press-effect active:scale-95 ${
+                        (!primaryUpi || addCashLocked) && !isTutorialActive
+                          ? "bg-white/5 text-white/30 border border-white/10"
+                          : "text-white border border-primary/30"
+                      }`}
+                      style={
+                        !(!primaryUpi || addCashLocked) || isTutorialActive
+                          ? { background: "var(--gradient-primary)" }
+                          : undefined
+                      }
+                    >
+                      <ArrowDownToLine className="w-4 h-4" />
+                      Add Cash
+                    </button>
+                  }
+                  onSuccess={loadTx}
+                />
+              </div>
+              <button
+                id="tutorial-wallet-withdraw"
+                onClick={() => {
+                  if (!primaryUpi && !isTutorialActive) {
+                    toast.error("Please set your Primary UPI ID first");
+                    setUpiSettingsOpen(true);
+                    return;
+                  }
+                  if (winBal <= 0 && !isTutorialActive) {
+                    toast.error("No winnings to withdraw. Win tournaments first!");
+                    return;
+                  }
+                  setUpiId(primaryUpi || "dummy@upi");
+                  setWithdrawOpen(true);
+                }}
+                className="w-full h-12 rounded-xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest text-white border border-emerald-500/30 press-effect active:scale-95 transition-all"
+                style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}
+              >
+                <ArrowUpFromLine className="w-4 h-4" />
+                Withdraw
+              </button>
+            </div>
           </div>
 
-          {/* Breakdown */}
-          <div className="grid grid-cols-2 gap-3">
-            <div
-              className="rounded-2xl p-3 border"
-              style={{ background: "rgba(16,185,129,0.08)", borderColor: "rgba(16,185,129,0.2)" }}
-            >
-              <p className="text-label text-emerald-500 mb-1">Winnings</p>
-              <div className="flex items-center gap-1.5">
-                <GodCoin className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="font-display font-black text-xl text-white tabular-nums">
-                  <AnimatedCounter value={winBal} />
-                </span>
-              </div>
-              <p className="text-xs text-emerald-500/60 font-medium mt-1">Withdrawable</p>
+          {/* Deposit timing strip */}
+          <div
+            className="px-5 py-2 flex items-center justify-between"
+            style={{ background: addCashLocked ? "rgba(239,68,68,0.08)" : "rgba(16,185,129,0.06)", borderTop: "1px solid rgba(255,255,255,0.05)" }}
+          >
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-3 h-3" style={{ color: addCashLocked ? "#f87171" : "#10b981" }} />
+              <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: addCashLocked ? "#f87171" : "#10b981" }}>
+                {addCashLocked ? "Deposits Closed" : "Deposits Open"}
+              </span>
             </div>
-            <div
-              className="rounded-2xl p-3 border"
-              style={{ background: "rgba(0,200,255,0.08)", borderColor: "rgba(0,200,255,0.2)" }}
-            >
-              <p className="text-label mb-1" style={{ color: "var(--primary)" }}>
-                Deposited
-              </p>
-              <div className="flex items-center gap-1.5">
-                <GodCoin className="w-3.5 h-3.5 text-primary" />
-                <span className="font-display font-black text-xl text-white tabular-nums">
-                  <AnimatedCounter value={depositBal} />
-                </span>
-              </div>
-              <p className="text-xs font-medium mt-1" style={{ color: "rgba(0,200,255,0.5)" }}>
-                Entry fees only
-              </p>
-            </div>
+            <span className="text-[9px] font-bold text-white/40">
+              {formatTimeStr(startTime)} – {formatTimeStr(endTime)} IST
+            </span>
           </div>
         </motion.div>
       </div>
 
-      {/* ── Payment Settings ── */}
-      <div className="px-4 mb-5">
-        <div
-          id="tutorial-wallet-upi"
-          className="bg-card border border-border rounded-2xl p-4 shadow-card"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-display font-black text-sm text-foreground uppercase tracking-wide">
-              Primary UPI ID
-            </h2>
-            <button
-              onClick={() => setUpiSettingsOpen(true)}
-              className="text-[10px] font-black uppercase tracking-widest text-primary press-effect"
-            >
-              {primaryUpi ? "Edit" : "Set Now"}
-            </button>
-          </div>
-          {primaryUpi ? (
-            <p className="font-mono text-sm font-bold text-foreground bg-secondary/50 px-3 py-2 rounded-xl mb-3 border border-white/5">
-              {primaryUpi}
+      {/* ── Pending Deposit (compact) ── */}
+      {pendingDeposit?.hasPending && (
+        <div className="px-4 mb-3">
+          <div className="flex items-center gap-2.5 p-3 rounded-2xl border bg-amber-500/8 border-amber-500/20">
+            <AlertCircle className="w-4 h-4 shrink-0 text-amber-500" />
+            <p className="text-xs font-bold text-muted-foreground flex-1">
+              Deposit of <strong className="text-foreground">₹{pendingDeposit.deposit?.amount}</strong> awaiting review
             </p>
-          ) : (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-3">
-              <p className="text-xs font-bold text-red-500">Not configured</p>
-              <p className="text-[10px] text-red-500/80 mt-0.5">
-                Please set your UPI ID before adding or withdrawing funds.
-              </p>
-            </div>
-          )}
-          <p className="text-[10px] text-muted-foreground leading-relaxed font-medium">
-            <strong className="text-foreground">Important:</strong> You can add and withdraw money
-            by this UPI <span className="text-primary">only</span>. During deposits, only payments
-            made from this exact UPI ID will be accepted and credited.
-          </p>
+            <span className="text-[9px] font-black text-amber-500 uppercase shrink-0">
+              {pendingDeposit.deposit?.status === "submitted" ? "Under Review" : "Pending"}
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* ── Deposit Timing Warning Banner ── */}
+      {/* ── UPI Row (compact) ── */}
       <div className="px-4 mb-4">
         <div
-          className={`flex items-start gap-3 p-4 rounded-2xl border transition-all ${
-            addCashLocked
-              ? "bg-red-500/10 border-red-500/20 text-red-400"
-              : "bg-emerald-500/5 border-emerald-500/15 text-emerald-400"
-          }`}
+          id="tutorial-wallet-upi"
+          className="flex items-center gap-3 p-3 bg-card border border-border rounded-2xl shadow-card"
         >
-          <Clock className="w-4 h-4 shrink-0 mt-0.5" />
-          <div className="text-xs leading-relaxed">
-            <p className="font-black uppercase tracking-wider text-[10px]">Deposit Timing Hours</p>
-            <p className="text-muted-foreground font-semibold mt-0.5">
-              Deposits are open from{" "}
-              <strong className="text-foreground">{formatTimeStr(startTime)}</strong> to{" "}
-              <strong className="text-foreground">{formatTimeStr(endTime)}</strong> IST daily.
-            </p>
-            <p className="mt-1 font-bold">
-              Status: {addCashLocked ? "🔴 Closed (Outside timings)" : "🟢 Open"}
-            </p>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-primary/10">
+            <AtSign className="w-3.5 h-3.5 text-primary" />
           </div>
-        </div>
-      </div>
-
-      {/* ── Action Buttons ── */}
-      <div className="px-4 mb-5">
-        <div id="tutorial-wallet-actions" className="grid grid-cols-2 gap-3">
-          <div id="tutorial-wallet-addcash">
-            <WalletDepositDialog
-              primaryUpi={primaryUpi}
-              locked={addCashLocked || !primaryUpi}
-              onLockedClick={() => {
-                if (!primaryUpi && !isTutorialActive) {
-                  window.alert(
-                    "Please set your Primary UPI ID first to add cash or withdraw funds.",
-                  );
-                  toast.error("Please set your Primary UPI ID first");
-                  setUpiSettingsOpen(true);
-                  return;
-                }
-                if (addCashLocked && !isTutorialActive) {
-                  window.alert(
-                    `Deposits are currently closed. You can only deposit from ${formatTimeStr(startTime)} to ${formatTimeStr(endTime)} IST.`,
-                  );
-                  toast.error(
-                    `Deposits are closed. Allowed timings: ${formatTimeStr(startTime)} - ${formatTimeStr(endTime)} IST`,
-                  );
-                  return;
-                }
-              }}
-              trigger={
-                <button
-                  type="button"
-                  className={`flex items-center gap-3 bg-card border border-border rounded-2xl p-4 w-full press-effect active:scale-95 transition-all shadow-card ${(!primaryUpi || addCashLocked) && !isTutorialActive ? "opacity-50 cursor-not-allowed" : "hover:border-primary/40"}`}
-                >
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: "rgba(0,200,255,0.1)", color: "var(--primary)" }}
-                  >
-                    <ArrowDownToLine className="w-5 h-5" />
-                  </div>
-                  <div className="text-left">
-                    <p className="font-black text-sm text-foreground">Add Cash</p>
-                    <p className="text-[10px] text-muted-foreground font-semibold">Deposit coins</p>
-                  </div>
-                </button>
-              }
-              onSuccess={loadTx}
-            />
+          <div className="flex-1 min-w-0">
+            <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Primary UPI</p>
+            {primaryUpi ? (
+              <p className="font-mono text-xs font-bold text-foreground truncate">{primaryUpi}</p>
+            ) : (
+              <p className="text-xs font-bold text-red-500">Not set</p>
+            )}
           </div>
           <button
-            id="tutorial-wallet-withdraw"
-            onClick={() => {
-              if (!primaryUpi && !isTutorialActive) {
-                toast.error("Please set your Primary UPI ID first");
-                setUpiSettingsOpen(true);
-                return;
-              }
-              if (winBal <= 0 && !isTutorialActive) {
-                toast.error("No winnings to withdraw. Win tournaments first!");
-                return;
-              }
-              setUpiId(primaryUpi || "dummy@upi");
-              setWithdrawOpen(true);
+            onClick={() => setUpiSettingsOpen(true)}
+            className="shrink-0 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border press-effect active:scale-95 transition-all"
+            style={{
+              color: primaryUpi ? "var(--primary)" : "#f87171",
+              borderColor: primaryUpi ? "rgba(0,200,255,0.2)" : "rgba(248,113,113,0.3)",
+              background: primaryUpi ? "rgba(0,200,255,0.08)" : "rgba(248,113,113,0.08)",
             }}
-            className="flex items-center gap-3 bg-card border border-border rounded-2xl p-4 w-full press-effect active:scale-95 transition-all hover:border-emerald-500/40 shadow-card"
           >
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-emerald-500/10 text-emerald-500">
-              <ArrowUpFromLine className="w-5 h-5" />
-            </div>
-            <div className="text-left">
-              <p className="font-black text-sm text-foreground">Withdraw</p>
-              <p className="text-[10px] text-muted-foreground font-semibold">To UPI / Bank</p>
-            </div>
+            {primaryUpi ? "Edit" : "Set Now"}
           </button>
         </div>
       </div>
 
-      {/* ── Info Banner ── */}
-      <div className="px-4 mb-5">
+      {/* ── Info + Coin Rate ── */}
+      <div className="px-4 mb-4">
         <div
-          className="flex items-start gap-3 p-4 rounded-2xl border"
-          style={{ background: "rgba(0,200,255,0.05)", borderColor: "rgba(0,200,255,0.15)" }}
+          className="flex items-center gap-2.5 p-3 rounded-2xl border"
+          style={{ background: "rgba(0,200,255,0.04)", borderColor: "rgba(0,200,255,0.12)" }}
         >
-          <Info className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "var(--primary)" }} />
-          <p
-            className="text-xs font-medium leading-relaxed"
-            style={{ color: "rgba(0,200,255,0.8)" }}
-          >
-            <span className="font-black text-primary">1 Coin = ₹1</span> · Deposit coins pay
-            tournament entry fees. Only <span className="font-black">Winnings</span> can be
-            withdrawn to your UPI account.
+          <Info className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--primary)" }} />
+          <p className="text-[10px] font-semibold leading-relaxed" style={{ color: "rgba(0,200,255,0.7)" }}>
+            <span className="font-black text-primary">1 Coin = ₹1</span> · Deposits pay entry fees. Only <span className="font-black">Winnings</span> can be withdrawn.
           </p>
         </div>
       </div>
