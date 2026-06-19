@@ -118,6 +118,21 @@ export async function sendNotificationHelper(
       )
       .run(userId, message, url, actType, actData);
     notifId = result.lastInsertRowid;
+
+    // Emit real-time WebSocket notification
+    try {
+      const { emitNotification } = await import("./socket-server");
+      emitNotification(userId, {
+        id: notifId,
+        user_id: userId,
+        message,
+        redirect_url: url,
+        action_type: actType,
+        action_data: actData,
+        is_read: false,
+        created_at: new Date().toISOString(),
+      });
+    } catch {}
   } catch (err) {
     console.error("Failed to store notification record:", err);
   }

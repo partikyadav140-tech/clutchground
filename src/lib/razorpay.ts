@@ -146,6 +146,28 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
       console.error("Error notifying admins about Razorpay deposit:", e);
     }
 
+    // Emit real-time balance update via WebSocket
+    try {
+      const { emitBalanceUpdate } = await import("./socket-server");
+      const updatedUser = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(userId)) as any;
+      if (updatedUser) {
+        emitBalanceUpdate(userId, { deposit: updatedUser.deposit_balance || 0, winning: updatedUser.winning_balance || 0 });
+      }
+    } catch {}
+
+    // Emit real-time notification via WebSocket
+    try {
+      const { emitNotification } = await import("./socket-server");
+      emitNotification(userId, {
+        id: Date.now(),
+        user_id: userId,
+        message: `💰 ₹${order.amount} deposited — ${order.amount} CG Coins added to your wallet!`,
+        redirect_url: "/wallet",
+        is_read: false,
+        created_at: new Date().toISOString(),
+      });
+    } catch {}
+
     return { success: true, amount: order.amount };
   },
 );

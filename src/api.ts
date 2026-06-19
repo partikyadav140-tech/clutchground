@@ -1116,6 +1116,15 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
       console.error("[Push] Failed to import push-server for registration:", e);
     }
 
+    // Emit real-time balance update via WebSocket
+    try {
+      const { emitBalanceUpdate } = await import("./lib/socket-server");
+      const updatedUser = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(userId)) as any;
+      if (updatedUser) {
+        emitBalanceUpdate(userId, { deposit: updatedUser.deposit_balance || 0, winning: updatedUser.winning_balance || 0 });
+      }
+    } catch {}
+
     // Clear tournaments cache to ensure filled count is updated
     const { apiCache } = await import("./lib/cache");
     apiCache.delete("tournaments");
@@ -1583,6 +1592,15 @@ export const updateCoinBalance = createServerFn({ method: "POST" }).handler(asyn
         .run(userId, Math.abs(diff), tType, "Admin Adjustment");
     }
   });
+
+  // Emit real-time balance update via WebSocket
+  try {
+    const { emitBalanceUpdate } = await import("./lib/socket-server");
+    const updatedUser = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(userId)) as any;
+    if (updatedUser) {
+      emitBalanceUpdate(userId, { deposit: updatedUser.deposit_balance || 0, winning: updatedUser.winning_balance || 0 });
+    }
+  } catch {}
 
   return { success: true };
 });
@@ -2606,6 +2624,17 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
       }
     } catch (e) {}
 
+    // Emit real-time balance updates for all affected users via WebSocket
+    try {
+      const { emitBalanceUpdate } = await import("./lib/socket-server");
+      for (const r of results) {
+        if (r.userId) {
+          const u = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(r.userId)) as any;
+          if (u) emitBalanceUpdate(r.userId, { deposit: u.deposit_balance || 0, winning: u.winning_balance || 0 });
+        }
+      }
+    } catch {}
+
     // Clear tournaments cache to ensure updated data is fetched
     const { apiCache } = await import("./lib/cache");
     apiCache.delete("tournaments");
@@ -2683,6 +2712,15 @@ export const rescheduleTournament = createServerFn({ method: "POST" }).handler(a
       ).catch((e) => console.error("Reschedule push failed:", e));
     }
   } catch (e) {}
+
+  // Emit real-time balance updates for affected users via WebSocket
+  try {
+    const { emitBalanceUpdate } = await import("./lib/socket-server");
+    for (const uId of userIds) {
+      const u = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(uId)) as any;
+      if (u) emitBalanceUpdate(uId, { deposit: u.deposit_balance || 0, winning: u.winning_balance || 0 });
+    }
+  } catch {}
 
   // Clear tournaments cache to ensure updated data is fetched
   const { apiCache } = await import("./lib/cache");
@@ -3072,6 +3110,15 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" }).handl
       console.error("[Push] Tournament request notification failed:", e);
     }
 
+    // Emit real-time balance update for the requester (refund on rejection) via WebSocket
+    if (status === "rejected" && tourney.entry > 0) {
+      try {
+        const { emitBalanceUpdate } = await import("./lib/socket-server");
+        const u = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(req.requested_by)) as any;
+        if (u) emitBalanceUpdate(req.requested_by, { deposit: u.deposit_balance || 0, winning: u.winning_balance || 0 });
+      } catch {}
+    }
+
     return { success: true };
   },
 );
@@ -3141,6 +3188,23 @@ export const processWithdrawal = createServerFn({ method: "POST" }).handler(asyn
   } catch (e) {
     console.error("Error notifying admins about withdrawal:", e);
   }
+
+  // Emit real-time balance update via WebSocket
+  try {
+    const { emitBalanceUpdate, emitNotification } = await import("./lib/socket-server");
+    const updatedUser = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(userId)) as any;
+    if (updatedUser) {
+      emitBalanceUpdate(userId, { deposit: updatedUser.deposit_balance || 0, winning: updatedUser.winning_balance || 0 });
+    }
+    emitNotification(userId, {
+      id: Date.now(),
+      user_id: userId,
+      message: `💸 Withdrawal requested: ${amount} CG Coins to UPI ${upiId}. Processing time 2-3 working days.`,
+      redirect_url: "/wallet",
+      is_read: false,
+      created_at: new Date().toISOString(),
+    });
+  } catch {}
 
   return { success: true };
 });
@@ -3212,6 +3276,33 @@ export const updatePayoutStatus = createServerFn({ method: "POST" }).handler(asy
       "/wallet",
     ).catch((e) => console.error("Payout status push error:", e));
   } catch (e) {}
+
+  // Emit real-time balance update via WebSocket (for rejected refunds)
+  if (status === "rejected") {
+    try {
+      const { emitBalanceUpdate } = await import("./lib/socket-server");
+      const updatedUser = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(userId)) as any;
+      if (updatedUser) {
+        emitBalanceUpdate(userId, { deposit: updatedUser.deposit_balance || 0, winning: updatedUser.winning_balance || 0 });
+      }
+    } catch {}
+  }
+
+  // Emit real-time notification via WebSocket
+  try {
+    const { emitNotification } = await import("./lib/socket-server");
+    const msg = status === "completed"
+      ? `✅ Withdrawal completed: ${amount} CG Coins has been sent to your UPI.`
+      : `❌ Your withdrawal of ${amount} CG Coins was rejected. Coins refunded.`;
+    emitNotification(userId, {
+      id: Date.now(),
+      user_id: userId,
+      message: msg,
+      redirect_url: "/wallet",
+      is_read: false,
+      created_at: new Date().toISOString(),
+    });
+  } catch {}
 
   return { success: true };
 });
@@ -3446,6 +3537,16 @@ export const addDepositUpi = createServerFn({ method: "POST" }).handler(async ({
       .prepare("INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)")
       .run(userId, amount, "deposit_added", `Added Cash via UPI (UTR: ${utr})`);
   });
+
+  // Emit real-time balance update via WebSocket
+  try {
+    const { emitBalanceUpdate } = await import("./lib/socket-server");
+    const updatedUser = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(userId)) as any;
+    if (updatedUser) {
+      emitBalanceUpdate(userId, { deposit: updatedUser.deposit_balance || 0, winning: updatedUser.winning_balance || 0 });
+    }
+  } catch {}
+
   return { success: true };
 });
 
@@ -3750,6 +3851,12 @@ export const sendFriendRequest = createServerFn({ method: "POST" }).handler(asyn
     console.error("Failed to notify user of friend request:", err);
   }
 
+  // Emit real-time friend update via WebSocket
+  try {
+    const { emitFriendUpdate } = await import("./lib/socket-server");
+    emitFriendUpdate(toUserId);
+  } catch {}
+
   return { success: true };
 });
 
@@ -3812,6 +3919,13 @@ export const resolveFriendRequest = createServerFn({ method: "POST" }).handler(a
         console.error("Failed to notify user of accepted friend request:", err);
       }
     }
+
+    // Emit real-time friend update via WebSocket for both users
+    try {
+      const { emitFriendUpdate } = await import("./lib/socket-server");
+      emitFriendUpdate(f.user_id1);
+      emitFriendUpdate(f.user_id2);
+    } catch {}
   } else {
     await db.prepare("DELETE FROM friendships WHERE id = ?").run(requestId);
   }
@@ -4656,6 +4770,14 @@ export const performSpin = createServerFn({ method: "POST" }).handler(async ({ d
     };
   });
 
+  // Emit real-time balance update via WebSocket
+  if (result && result.amount > 0) {
+    try {
+      const { emitBalanceUpdate } = await import("./lib/socket-server");
+      emitBalanceUpdate(userId, { deposit: result.newDepositBalance || 0, winning: result.newWinningBalance || 0 });
+    } catch {}
+  }
+
   return result;
 });
 
@@ -4984,6 +5106,15 @@ export const announceTournamentResult = createServerFn({ method: "POST" }).handl
         // Don't fail the entire operation if push fails
       }
     }
+
+    // Emit real-time balance updates for all winners via WebSocket
+    try {
+      const { emitBalanceUpdate } = await import("./lib/socket-server");
+      for (const t of pushTargets) {
+        const u = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(t.userId)) as any;
+        if (u) emitBalanceUpdate(t.userId, { deposit: u.deposit_balance || 0, winning: u.winning_balance || 0 });
+      }
+    } catch {}
 
     return { success: true, announcedCount: results.length };
   },

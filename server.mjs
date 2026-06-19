@@ -50,7 +50,7 @@ const CSP_DIRECTIVES = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://res.cloudinary.com https://*.cloudinary.com",
   "font-src 'self'",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co ws: https:",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co ws: wss: https:",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -61,13 +61,12 @@ SECURITY_HEADERS["Content-Security-Policy"] = CSP_DIRECTIVES;
 
 // ── Rate Limiting (in-memory, per-IP) ────────────────────────────────────
 const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX = 200; // Increased from 120 — 5s auth poll + 20s notif poll + page loads need headroom
+const RATE_LIMIT_MAX = 200;
 const rateLimitMap = new Map();
 let lastCleanup = Date.now();
 
 function checkRateLimit(ip) {
   const now = Date.now();
-  // Cleanup old entries every 60s
   if (now - lastCleanup > RATE_LIMIT_WINDOW_MS) {
     for (const [key, entry] of rateLimitMap) {
       if (now - entry.start > RATE_LIMIT_WINDOW_MS) rateLimitMap.delete(key);
@@ -92,7 +91,7 @@ const BLOCKED_PATHS = [
   "/.DS_Store", "/Thumbs.db",
 ];
 
-createServer(async (req, res) => {
+const server = createServer(async (req, res) => {
   try {
     const origin = `http://${req.headers.host || "localhost"}`;
     const url = new URL(req.url, origin);
@@ -142,7 +141,6 @@ createServer(async (req, res) => {
       if (stats.isFile()) {
         const ext = extname(filePath).toLowerCase();
         const contentType = MIME_TYPES[ext] || "application/octet-stream";
-        // Hashed assets get long cache; everything else no-cache
         const isHashed = /\.[a-f0-9]{8,}\.[a-z]+$/.test(pathname);
         res.writeHead(200, {
           "Content-Type": contentType,
@@ -203,112 +201,113 @@ createServer(async (req, res) => {
     if (!res.headersSent) res.writeHead(500);
     res.end("Internal Server Error");
   }
-}).listen(port, () => {
-  console.log(`✓ Server running on port ${port}`);
+});
 
-  // ── Socket.io WebSocket Server ────────────────────────────────────────
-  const io = new SocketIOServer(globalThis.__server || process, {
-    path: "/ws",
-    cors: {
-      origin: ["https://clutchground.games", "http://localhost:8080"],
-      methods: ["GET", "POST"],
-    },
-    transports: ["websocket", "polling"],
-    pingInterval: 25000,
-    pingTimeout: 20000,
-  });
+// ── Socket.io WebSocket Server ────────────────────────────────────────
+const io = new SocketIOServer(server, {
+  path: "/ws",
+  cors: {
+    origin: ["https://clutchground.games", "https://www.clutchground.games", "http://localhost:8080"],
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+  transports: ["websocket", "polling"],
+  pingInterval: 25000,
+  pingTimeout: 20000,
+});
 
-  // Store for emit helpers
-  globalThis.__socketIO = io;
+// Store for socket-server.ts emit helpers (reads via globalThis.__socketIO fallback)
+globalThis.__socketIO = io;
 
-  // ── Session-based authentication middleware ────────────────────────────
-  io.use(async (socket, next) => {
+// ── Session-based authentication middleware ────────────────────────────
+io.use(async (socket, next) => {
+  try {
+    const sessionId =
+      socket.handshake.auth?.sessionId ||
+      socket.handshake.headers?.cookie?.split("sessionId=")[1]?.split(";")[0];
+
+    if (!sessionId) {
+      return next(new Error("Authentication required"));
+    }
+
+    const { Pool } = await import("pg");
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+      max: 1,
+    });
+
     try {
-      const sessionId =
-        socket.handshake.auth?.sessionId ||
-        socket.handshake.headers?.cookie?.split("sessionId=")[1]?.split(";")[0];
-
-      if (!sessionId) {
-        return next(new Error("Authentication required"));
+      const result = await pool.query(
+        `SELECT s.user_id, u.username, u.role FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.id = $1 AND s.expires_at > NOW()`,
+        [sessionId],
+      );
+      if (result.rows.length === 0) {
+        return next(new Error("Session expired"));
       }
+      const user = result.rows[0];
+      socket.data.userId = user.user_id;
+      socket.data.username = user.username;
+      socket.data.role = user.role;
+      next();
+    } finally {
+      await pool.end();
+    }
+  } catch (err) {
+    next(new Error("Authentication failed"));
+  }
+});
 
-      // Look up session in database
+io.on("connection", (socket) => {
+  const userId = socket.data.userId;
+  console.log(`[WS] User ${userId} connected (${socket.id})`);
+
+  // ── Join personal room ──────────────────────────────────────────────
+  socket.join(`user:${userId}`);
+
+  // ── Join team rooms ─────────────────────────────────────────────────
+  socket.on("join-team", async (teamId) => {
+    try {
       const { Pool } = await import("pg");
       const pool = new Pool({
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false },
         max: 1,
       });
-
       try {
         const result = await pool.query(
-          `SELECT s.user_id, u.username, u.role FROM sessions s JOIN users u ON s.user_id = u.id WHERE s.id = $1 AND s.expires_at > NOW()`,
-          [sessionId],
+          "SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2 LIMIT 1",
+          [teamId, userId],
         );
-        if (result.rows.length === 0) {
-          return next(new Error("Session expired"));
+        if (result.rows.length > 0 || socket.data.role === "admin") {
+          socket.join(`team:${teamId}`);
         }
-        const user = result.rows[0];
-        socket.data.userId = user.user_id;
-        socket.data.username = user.username;
-        socket.data.role = user.role;
-        next();
       } finally {
         await pool.end();
       }
-    } catch (err) {
-      next(new Error("Authentication failed"));
-    }
+    } catch {}
   });
 
-  io.on("connection", (socket) => {
-    const userId = socket.data.userId;
-    console.log(`[WS] User ${userId} connected (${socket.id})`);
-
-    // ── Join personal room ──────────────────────────────────────────────
-    socket.join(`user:${userId}`);
-
-    // ── Join team rooms ─────────────────────────────────────────────────
-    socket.on("join-team", async (teamId) => {
-      try {
-        const { Pool } = await import("pg");
-        const pool = new Pool({
-          connectionString: process.env.DATABASE_URL,
-          ssl: { rejectUnauthorized: false },
-          max: 1,
-        });
-        try {
-          const result = await pool.query(
-            "SELECT id FROM team_members WHERE team_id = $1 AND user_id = $2 LIMIT 1",
-            [teamId, userId],
-          );
-          if (result.rows.length > 0 || socket.data.role === "admin") {
-            socket.join(`team:${teamId}`);
-          }
-        } finally {
-          await pool.end();
-        }
-      } catch {}
-    });
-
-    // ── Leave team room ─────────────────────────────────────────────────
-    socket.on("leave-team", (teamId) => {
-      socket.leave(`team:${teamId}`);
-    });
-
-    // ── Join ticket room ────────────────────────────────────────────────
-    socket.on("join-ticket", (ticketId) => {
-      socket.join(`ticket:${ticketId}`);
-    });
-
-    socket.on("leave-ticket", (ticketId) => {
-      socket.leave(`ticket:${ticketId}`);
-    });
-
-    socket.on("disconnect", () => {
-      console.log(`[WS] User ${userId} disconnected (${socket.id})`);
-    });
+  // ── Leave team room ─────────────────────────────────────────────────
+  socket.on("leave-team", (teamId) => {
+    socket.leave(`team:${teamId}`);
   });
 
+  // ── Join ticket room ────────────────────────────────────────────────
+  socket.on("join-ticket", (ticketId) => {
+    socket.join(`ticket:${ticketId}`);
+  });
+
+  socket.on("leave-ticket", (ticketId) => {
+    socket.leave(`ticket:${ticketId}`);
+  });
+
+  socket.on("disconnect", () => {
+    console.log(`[WS] User ${userId} disconnected (${socket.id})`);
+  });
+});
+
+server.listen(port, () => {
+  console.log(`✓ Server running on port ${port}`);
   console.log(`✓ WebSocket server ready on /ws`);
 });
