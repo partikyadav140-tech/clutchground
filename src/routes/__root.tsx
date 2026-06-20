@@ -93,8 +93,7 @@ export const Route = createRootRoute({
       },
       {
         property: "og:image",
-        content:
-          "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319417/clutchground/placeholders/mygshudhl9qltqroxrmi.png",
+        content: "https://clutchground.games/logo-transparent.png",
       },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
@@ -119,8 +118,7 @@ export const Route = createRootRoute({
       },
       {
         name: "twitter:image",
-        content:
-          "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319417/clutchground/placeholders/mygshudhl9qltqroxrmi.png",
+        content: "https://clutchground.games/logo-transparent.png",
       },
       { name: "twitter:image:alt", content: "ClutchGround Free Fire Esports Platform" },
     ],
@@ -177,7 +175,7 @@ export const Route = createRootRoute({
               url: "https://clutchground.games/",
               logo: {
                 "@type": "ImageObject",
-                url: "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319417/clutchground/placeholders/mygshudhl9qltqroxrmi.png",
+                url: "https://clutchground.games/pwa-512x512.png",
                 width: 512,
                 height: 512,
               },
@@ -191,20 +189,6 @@ export const Route = createRootRoute({
                 url: "https://clutchground.games/contact",
               },
               sameAs: [],
-            },
-            {
-              "@type": "SportsEvent",
-              "@id": "https://clutchground.games/tournaments#event",
-              name: "ClutchGround Free Fire Tournaments",
-              sport: "Esports - Free Fire",
-              organizer: { "@id": "https://clutchground.games/#organization" },
-              location: {
-                "@type": "VirtualLocation",
-                url: "https://clutchground.games/tournaments",
-              },
-              description:
-                "Daily and weekly Free Fire esports tournaments with real cash prizes for Indian players.",
-              url: "https://clutchground.games/tournaments",
             },
           ],
         }),

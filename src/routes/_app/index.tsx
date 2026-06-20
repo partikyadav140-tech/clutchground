@@ -287,8 +287,7 @@ function HomePage() {
                 transition={{ duration: 0.6, ease: "easeInOut" }}
                 className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    "https://res.cloudinary.com/dkjt9m4d0/image/upload/v1780319417/clutchground/placeholders/mygshudhl9qltqroxrmi.png";
+                  (e.target as HTMLImageElement).src = "/logo-transparent.png";
                 }}
               />
             </AnimatePresence>

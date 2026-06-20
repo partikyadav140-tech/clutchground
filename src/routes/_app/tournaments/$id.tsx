@@ -209,8 +209,71 @@ function TournamentDetailPage() {
     setLoadingMatch(false);
   };
 
+  const getISOStartDate = () => {
+    try {
+      const d = new Date(t.startsAt || t.startsat || "");
+      if (!isNaN(d.getTime())) return d.toISOString();
+    } catch {}
+    return new Date().toISOString();
+  };
+
+  const getISOEndDate = () => {
+    try {
+      const d = new Date(t.startsAt || t.startsat || "");
+      if (!isNaN(d.getTime())) {
+        return new Date(d.getTime() + 2 * 60 * 60 * 1000).toISOString();
+      }
+    } catch {}
+    return new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+  };
+
   return (
     <div className="min-h-screen bg-background pb-[88px]">
+      {/* JSON-LD structured data for Google Search Console rich results */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SportsEvent",
+            "@id": `https://clutchground.games/tournaments/${t.id}#event`,
+            name: t.title,
+            startDate: getISOStartDate(),
+            endDate: getISOEndDate(),
+            eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+            eventStatus:
+              t.status === "completed"
+                ? "https://schema.org/EventCompleted"
+                : t.status === "live"
+                  ? "https://schema.org/EventLive"
+                  : "https://schema.org/EventScheduled",
+            location: {
+              "@type": "VirtualLocation",
+              name: "ClutchGround Arena",
+              url: `https://clutchground.games/tournaments/${t.id}`,
+            },
+            image: getTournamentPoster(t),
+            description:
+              t.description ||
+              `Join the ${t.title} tournament on ClutchGround. Play Free Fire ${t.mode} and win prizes!`,
+            url: `https://clutchground.games/tournaments/${t.id}`,
+            organizer: {
+              "@type": "Organization",
+              name: "ClutchGround",
+              url: "https://clutchground.games/",
+              logo: "https://clutchground.games/pwa-512x512.png",
+            },
+            offers: {
+              "@type": "Offer",
+              url: `https://clutchground.games/tournaments/${t.id}`,
+              price: entryAmount,
+              priceCurrency: "INR",
+              valueAddedTaxIncluded: true,
+              availability: isFull ? "https://schema.org/SoldOut" : "https://schema.org/InStock",
+            },
+          }),
+        }}
+      />
       {/* ── HERO BANNER ── */}
       <div className="relative overflow-hidden" style={{ height: 220 }}>
         <img
