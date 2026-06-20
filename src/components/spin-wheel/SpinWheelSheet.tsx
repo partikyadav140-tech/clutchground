@@ -147,7 +147,7 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            {status?.joinedTournamentCount === 0 && (
+            {Number(status?.joinedTournamentCount || 0) === 0 && (
               <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300 space-y-3">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
@@ -228,7 +228,7 @@ export function SpinWheelSheet({ open, onOpenChange }: SpinWheelSheetProps) {
                   <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Spinning...
                 </span>
-              ) : status?.joinedTournamentCount === 0 ? (
+              ) : Number(status?.joinedTournamentCount || 0) === 0 ? (
                 <span className="flex items-center gap-2">
                   <Lock className="w-5 h-5" />
                   Join a tournament to unlock

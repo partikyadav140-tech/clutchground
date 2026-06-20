@@ -4706,7 +4706,7 @@ export const getSpinWheelStatus = createServerFn({ method: "POST" }).handler(asy
   `,
     )
     .get(userId, uidPattern, userId, uidPattern)) as any;
-  const joinedTournamentCount = regCountRow?.cnt || 0;
+  const joinedTournamentCount = Number(regCountRow?.cnt || 0);
 
   const freeSpinAvailable = !freeSpinToday && joinedTournamentCount >= 1;
   const canSpin = freeSpinAvailable || spinCredits > 0;
@@ -4816,7 +4816,7 @@ export const performSpin = createServerFn({ method: "POST" }).handler(async ({ d
     `,
       )
       .get(userId, uidPattern, userId, uidPattern)) as any;
-    const joinedTournamentCount = regCountRow?.cnt || 0;
+    const joinedTournamentCount = Number(regCountRow?.cnt || 0);
 
     const depositBalance = user.deposit_balance || 0;
     const spinCredits = user.spin_credits || 0;

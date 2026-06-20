@@ -139,7 +139,7 @@ function SpinWheelPage() {
         <SkeletonSpinWheel />
       ) : (
         <div className="space-y-4">
-          {status?.joinedTournamentCount === 0 && (
+          {Number(status?.joinedTournamentCount || 0) === 0 && (
             <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-primary/5 p-5 space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
@@ -239,7 +239,7 @@ function SpinWheelPage() {
             className="w-full h-12 rounded-2xl font-display font-black text-base"
             disabled={spinning || !user}
             onClick={() => {
-              if (status?.joinedTournamentCount === 0) {
+              if (Number(status?.joinedTournamentCount || 0) === 0) {
                 navigate({ to: "/tournaments" });
                 return;
               }
@@ -251,7 +251,7 @@ function SpinWheelPage() {
                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 Spinning...
               </span>
-            ) : status?.joinedTournamentCount === 0 ? (
+            ) : Number(status?.joinedTournamentCount || 0) === 0 ? (
               <span className="flex items-center gap-2">
                 <Lock className="w-5 h-5" />
                 Join a tournament to unlock

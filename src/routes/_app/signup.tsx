@@ -209,7 +209,9 @@ function SignupPage() {
           `⚠️ Email delivery failed — check your spam or contact support. Code is valid.`,
         );
       } else {
-        toast.success(`Verification code sent to ${res.masked}`);
+        toast.success(
+          `Verification code sent to ${res.masked}. Check spam folder if you do not see the OTP.`,
+        );
       }
       startCooldown();
       goTo(2);
@@ -234,7 +236,7 @@ function SignupPage() {
       if (res.emailError) {
         toast.warning(`⚠️ Email delivery failed — check spam or contact support.`);
       } else {
-        toast.success("New code sent!");
+        toast.success("New code sent! Check spam folder if you do not see the OTP.");
       }
       startCooldown();
       otpRefs.current[0]?.focus();
