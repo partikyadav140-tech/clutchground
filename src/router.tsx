@@ -99,9 +99,7 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
 
   // Check if it's a rate limit error
   const isRateLimited =
-    errorMsg.includes("429") ||
-    errorMsg.includes("Too Many") ||
-    errorMsg.includes("rate limit");
+    errorMsg.includes("429") || errorMsg.includes("Too Many") || errorMsg.includes("rate limit");
 
   // Check if it's an invariant / assertion error (React internal)
   const isInvariantError =
@@ -130,11 +128,7 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
           </svg>
         </div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          {isRateLimited
-            ? "Slow down!"
-            : isInvariantError
-              ? "Page error"
-              : "Something went wrong"}
+          {isRateLimited ? "Slow down!" : isInvariantError ? "Page error" : "Something went wrong"}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {isRateLimited

@@ -94,7 +94,11 @@ export function PlayerSearchInvite({ captainId, disabled, onInvited }: PlayerSea
             >
               <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-xs overflow-hidden shrink-0">
                 {player.avatar_url ? (
-                  <img src={player.avatar_url} alt={player.ign || player.username || "Player"} className="w-full h-full object-cover" />
+                  <img
+                    src={player.avatar_url}
+                    alt={player.ign || player.username || "Player"}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   getInitials(player.ign || player.username)
                 )}

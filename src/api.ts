@@ -89,9 +89,7 @@ export const loginUser = createServerFn({ method: "POST" }).handler(async ({ dat
         );
       }
       // Lockout expired, reset
-      await db
-        .prepare("DELETE FROM login_attempts WHERE identifier = ?")
-        .run(normalizedEmail);
+      await db.prepare("DELETE FROM login_attempts WHERE identifier = ?").run(normalizedEmail);
     }
   }
 
@@ -237,7 +235,12 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
     data as any;
 
   // Input validation
-  if (!username || typeof username !== "string" || username.trim().length < 3 || username.trim().length > 20) {
+  if (
+    !username ||
+    typeof username !== "string" ||
+    username.trim().length < 3 ||
+    username.trim().length > 20
+  ) {
     throw new Error("Username must be 3-20 characters");
   }
   if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) {
@@ -249,7 +252,10 @@ export const signupUser = createServerFn({ method: "POST" }).handler(async ({ da
   if (password.length > 100) {
     throw new Error("Password too long");
   }
-  if (email && (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)) {
+  if (
+    email &&
+    (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)
+  ) {
     throw new Error("Invalid email address");
   }
   if (ign !== undefined && ign !== null && typeof ign === "string" && ign.length > 30) {
@@ -333,8 +339,7 @@ export const resetPassword = createServerFn({ method: "POST" }).handler(async ({
   // Validate new password
   if (!new_password || typeof new_password !== "string" || new_password.length < 6)
     throw new Error("Password must be at least 6 characters");
-  if (new_password.length > 100)
-    throw new Error("Password is too long");
+  if (new_password.length > 100) throw new Error("Password is too long");
 
   // Find user by email
   const user = (await db
@@ -516,7 +521,9 @@ export const logoutUser = createServerFn({ method: "POST" }).handler(async ({ da
   if (sessionId) {
     // Verify the session belongs to the caller before deleting
     const caller = await getCurrentUser();
-    const session = (await db.prepare("SELECT user_id FROM sessions WHERE id = ?").get(sessionId)) as any;
+    const session = (await db
+      .prepare("SELECT user_id FROM sessions WHERE id = ?")
+      .get(sessionId)) as any;
     if (session && session.user_id === caller.id) {
       await db.prepare("DELETE FROM sessions WHERE id = ?").run(sessionId);
     }
@@ -542,7 +549,9 @@ export const getUsers = createServerFn({ method: "GET" }).handler(async () => {
     let plain: string | null = null;
 
     if (u.password_encrypted) {
-      try { plain = decryptPassword(u.password_encrypted); } catch {}
+      try {
+        plain = decryptPassword(u.password_encrypted);
+      } catch {}
     }
 
     if (!plain && u.password_encrypted && u.password_encrypted.includes(":")) {
@@ -799,12 +808,17 @@ export const updateTournament = createServerFn({ method: "POST" }).handler(async
         } catch (e) {}
       }
     }
-
   }
 
   // Clear tournaments cache to ensure updated data is fetched
   const { apiCache } = await import("./lib/cache");
   apiCache.delete("tournaments");
+
+  // Emit tournament update via WebSockets
+  try {
+    const { emitTournamentUpdate } = await import("./lib/socket-server");
+    emitTournamentUpdate(id);
+  } catch {}
 
   return { success: true };
 });
@@ -1124,15 +1138,26 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
     // Emit real-time balance update via WebSocket
     try {
       const { emitBalanceUpdate } = await import("./lib/socket-server");
-      const updatedUser = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(userId)) as any;
+      const updatedUser = (await db
+        .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
+        .get(userId)) as any;
       if (updatedUser) {
-        emitBalanceUpdate(userId, { deposit: updatedUser.deposit_balance || 0, winning: updatedUser.winning_balance || 0 });
+        emitBalanceUpdate(userId, {
+          deposit: updatedUser.deposit_balance || 0,
+          winning: updatedUser.winning_balance || 0,
+        });
       }
     } catch {}
 
     // Clear tournaments cache to ensure filled count is updated
     const { apiCache } = await import("./lib/cache");
     apiCache.delete("tournaments");
+
+    // Emit tournament update via WebSockets
+    try {
+      const { emitTournamentUpdate } = await import("./lib/socket-server");
+      emitTournamentUpdate(tournamentId);
+    } catch {}
 
     return { success: true };
   },
@@ -1316,10 +1341,20 @@ export const updateProfile = createServerFn({ method: "POST" }).handler(async ({
 
   // Validate URLs to prevent CSS injection and ensure they are from trusted sources
   const VALID_CDN_PATTERN = /^https:\/\/.*\.(cloudinary\.com|supabase\.co)\/.*$/;
-  if (avatar_url !== undefined && avatar_url !== null && avatar_url !== "" && !VALID_CDN_PATTERN.test(String(avatar_url))) {
+  if (
+    avatar_url !== undefined &&
+    avatar_url !== null &&
+    avatar_url !== "" &&
+    !VALID_CDN_PATTERN.test(String(avatar_url))
+  ) {
     throw new Error("Invalid avatar URL. Must be from a trusted CDN.");
   }
-  if (banner_url !== undefined && banner_url !== null && banner_url !== "" && !VALID_CDN_PATTERN.test(String(banner_url))) {
+  if (
+    banner_url !== undefined &&
+    banner_url !== null &&
+    banner_url !== "" &&
+    !VALID_CDN_PATTERN.test(String(banner_url))
+  ) {
     throw new Error("Invalid banner URL. Must be from a trusted CDN.");
   }
   // Validate string lengths
@@ -1601,9 +1636,14 @@ export const updateCoinBalance = createServerFn({ method: "POST" }).handler(asyn
   // Emit real-time balance update via WebSocket
   try {
     const { emitBalanceUpdate } = await import("./lib/socket-server");
-    const updatedUser = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(userId)) as any;
+    const updatedUser = (await db
+      .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
+      .get(userId)) as any;
     if (updatedUser) {
-      emitBalanceUpdate(userId, { deposit: updatedUser.deposit_balance || 0, winning: updatedUser.winning_balance || 0 });
+      emitBalanceUpdate(userId, {
+        deposit: updatedUser.deposit_balance || 0,
+        winning: updatedUser.winning_balance || 0,
+      });
     }
   } catch {}
 
@@ -2634,8 +2674,14 @@ export const saveTournamentResults = createServerFn({ method: "POST" }).handler(
       const { emitBalanceUpdate } = await import("./lib/socket-server");
       for (const r of results) {
         if (r.userId) {
-          const u = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(r.userId)) as any;
-          if (u) emitBalanceUpdate(r.userId, { deposit: u.deposit_balance || 0, winning: u.winning_balance || 0 });
+          const u = (await db
+            .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
+            .get(r.userId)) as any;
+          if (u)
+            emitBalanceUpdate(r.userId, {
+              deposit: u.deposit_balance || 0,
+              winning: u.winning_balance || 0,
+            });
         }
       }
     } catch {}
@@ -2722,8 +2768,14 @@ export const rescheduleTournament = createServerFn({ method: "POST" }).handler(a
   try {
     const { emitBalanceUpdate } = await import("./lib/socket-server");
     for (const uId of userIds) {
-      const u = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(uId)) as any;
-      if (u) emitBalanceUpdate(uId, { deposit: u.deposit_balance || 0, winning: u.winning_balance || 0 });
+      const u = (await db
+        .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
+        .get(uId)) as any;
+      if (u)
+        emitBalanceUpdate(uId, {
+          deposit: u.deposit_balance || 0,
+          winning: u.winning_balance || 0,
+        });
     }
   } catch {}
 
@@ -3119,10 +3171,22 @@ export const resolveTournamentRequest = createServerFn({ method: "POST" }).handl
     if (status === "rejected" && tourney.entry > 0) {
       try {
         const { emitBalanceUpdate } = await import("./lib/socket-server");
-        const u = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(req.requested_by)) as any;
-        if (u) emitBalanceUpdate(req.requested_by, { deposit: u.deposit_balance || 0, winning: u.winning_balance || 0 });
+        const u = (await db
+          .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
+          .get(req.requested_by)) as any;
+        if (u)
+          emitBalanceUpdate(req.requested_by, {
+            deposit: u.deposit_balance || 0,
+            winning: u.winning_balance || 0,
+          });
       } catch {}
     }
+
+    // Emit tournament update via WebSockets
+    try {
+      const { emitTournamentUpdate } = await import("./lib/socket-server");
+      emitTournamentUpdate(req.tournament_id);
+    } catch {}
 
     return { success: true };
   },
@@ -3197,9 +3261,14 @@ export const processWithdrawal = createServerFn({ method: "POST" }).handler(asyn
   // Emit real-time balance update via WebSocket
   try {
     const { emitBalanceUpdate, emitNotification } = await import("./lib/socket-server");
-    const updatedUser = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(userId)) as any;
+    const updatedUser = (await db
+      .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
+      .get(userId)) as any;
     if (updatedUser) {
-      emitBalanceUpdate(userId, { deposit: updatedUser.deposit_balance || 0, winning: updatedUser.winning_balance || 0 });
+      emitBalanceUpdate(userId, {
+        deposit: updatedUser.deposit_balance || 0,
+        winning: updatedUser.winning_balance || 0,
+      });
     }
     emitNotification(userId, {
       id: Date.now(),
@@ -3286,9 +3355,14 @@ export const updatePayoutStatus = createServerFn({ method: "POST" }).handler(asy
   if (status === "rejected") {
     try {
       const { emitBalanceUpdate } = await import("./lib/socket-server");
-      const updatedUser = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(userId)) as any;
+      const updatedUser = (await db
+        .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
+        .get(userId)) as any;
       if (updatedUser) {
-        emitBalanceUpdate(userId, { deposit: updatedUser.deposit_balance || 0, winning: updatedUser.winning_balance || 0 });
+        emitBalanceUpdate(userId, {
+          deposit: updatedUser.deposit_balance || 0,
+          winning: updatedUser.winning_balance || 0,
+        });
       }
     } catch {}
   }
@@ -3296,9 +3370,10 @@ export const updatePayoutStatus = createServerFn({ method: "POST" }).handler(asy
   // Emit real-time notification via WebSocket
   try {
     const { emitNotification } = await import("./lib/socket-server");
-    const msg = status === "completed"
-      ? `✅ Withdrawal completed: ${amount} CG Coins has been sent to your UPI.`
-      : `❌ Your withdrawal of ${amount} CG Coins was rejected. Coins refunded.`;
+    const msg =
+      status === "completed"
+        ? `✅ Withdrawal completed: ${amount} CG Coins has been sent to your UPI.`
+        : `❌ Your withdrawal of ${amount} CG Coins was rejected. Coins refunded.`;
     emitNotification(userId, {
       id: Date.now(),
       user_id: userId,
@@ -3500,10 +3575,20 @@ export const saveContactMessage = createServerFn({ method: "POST" }).handler(asy
   if (!name || typeof name !== "string" || name.trim().length === 0 || name.length > 100) {
     throw new Error("Invalid name");
   }
-  if (!email || typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+  if (
+    !email ||
+    typeof email !== "string" ||
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+    email.length > 254
+  ) {
     throw new Error("Invalid email address");
   }
-  if (!message || typeof message !== "string" || message.trim().length === 0 || message.length > 2000) {
+  if (
+    !message ||
+    typeof message !== "string" ||
+    message.trim().length === 0 ||
+    message.length > 2000
+  ) {
     throw new Error("Invalid message");
   }
   await db
@@ -3546,9 +3631,14 @@ export const addDepositUpi = createServerFn({ method: "POST" }).handler(async ({
   // Emit real-time balance update via WebSocket
   try {
     const { emitBalanceUpdate } = await import("./lib/socket-server");
-    const updatedUser = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(userId)) as any;
+    const updatedUser = (await db
+      .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
+      .get(userId)) as any;
     if (updatedUser) {
-      emitBalanceUpdate(userId, { deposit: updatedUser.deposit_balance || 0, winning: updatedUser.winning_balance || 0 });
+      emitBalanceUpdate(userId, {
+        deposit: updatedUser.deposit_balance || 0,
+        winning: updatedUser.winning_balance || 0,
+      });
     }
   } catch {}
 
@@ -3631,10 +3721,20 @@ export const createTicket = createServerFn({ method: "POST" }).handler(async ({ 
   const { userId: clientUserId, subject, message } = data as any;
   const userId = caller.role === "admin" ? clientUserId || caller.id : caller.id;
 
-  if (!subject || typeof subject !== "string" || subject.trim().length === 0 || subject.length > 200) {
+  if (
+    !subject ||
+    typeof subject !== "string" ||
+    subject.trim().length === 0 ||
+    subject.length > 200
+  ) {
     throw new Error("Invalid subject (1-200 characters)");
   }
-  if (!message || typeof message !== "string" || message.trim().length === 0 || message.length > 5000) {
+  if (
+    !message ||
+    typeof message !== "string" ||
+    message.trim().length === 0 ||
+    message.length > 5000
+  ) {
     throw new Error("Invalid message (1-5000 characters)");
   }
 
@@ -3707,7 +3807,12 @@ export const replyTicket = createServerFn({ method: "POST" }).handler(async ({ d
     throw new Error("Unauthorized: Admin privilege required");
   }
 
-  if (!message || typeof message !== "string" || message.trim().length === 0 || message.length > 5000) {
+  if (
+    !message ||
+    typeof message !== "string" ||
+    message.trim().length === 0 ||
+    message.length > 5000
+  ) {
     throw new Error("Invalid message (1-5000 characters)");
   }
 
@@ -4057,7 +4162,8 @@ export const sendMessage = createServerFn({ method: "POST" }).handler(async ({ d
 
   // Emit real-time event via WebSocket
   try {
-    const { emitChatMessage, emitUnreadCount, emitTeamUnreadCount } = await import("./lib/socket-server");
+    const { emitChatMessage, emitUnreadCount, emitTeamUnreadCount } =
+      await import("./lib/socket-server");
     if (teamId) {
       emitChatMessage({ teamId, message: messageObj });
       // Notify team members about unread count
@@ -4103,12 +4209,9 @@ export const sendMessage = createServerFn({ method: "POST" }).handler(async ({ d
       if (members && members.length > 0) {
         const truncatedMsg = message.length > 80 ? message.substring(0, 80) + "..." : message;
         const promises = members.map((m: any) =>
-          triggerPushNotification(
-            m.user_id,
-            `💬 ${senderName}`,
-            truncatedMsg,
-            "/chat",
-          ).catch(() => {}),
+          triggerPushNotification(m.user_id, `💬 ${senderName}`, truncatedMsg, "/chat").catch(
+            () => {},
+          ),
         );
         await Promise.all(promises);
       }
@@ -4421,14 +4524,16 @@ export const searchPlayers = createServerFn({ method: "POST" }).handler(async ({
   const captainId = caller.role === "admin" ? clientCaptainId || caller.id : caller.id;
 
   try {
-    // Get all users except the captain themselves
+    // Get all users except the captain themselves, excluding players already in a team (either as leader or member)
     if (!query || query.trim().length === 0) {
       const results = (await db
         .prepare(
           `
           SELECT u.id, u.username, u.ign, u.uid, u.avatar_url
           FROM users u
-          WHERE u.id != ?
+          LEFT JOIN team_members tm ON tm.user_id = u.id
+          LEFT JOIN teams t ON t.leader_id = u.id
+          WHERE u.id != ? AND tm.id IS NULL AND t.id IS NULL
           ORDER BY u.username ASC
           LIMIT 100
         `,
@@ -4441,14 +4546,16 @@ export const searchPlayers = createServerFn({ method: "POST" }).handler(async ({
 
     const searchTerm = `%${query.trim().toLowerCase()}%`;
 
-    // Search for players by username, IGN, or UID
+    // Search for players by username, IGN, or UID — only show players not in any team (neither leader nor member)
     const results = (await db
       .prepare(
         `
         SELECT u.id, u.username, u.ign, u.uid, u.avatar_url
         FROM users u
+        LEFT JOIN team_members tm ON tm.user_id = u.id
+        LEFT JOIN teams t ON t.leader_id = u.id
         WHERE (LOWER(u.username) LIKE ? OR LOWER(u.ign) LIKE ? OR u.uid LIKE ?)
-        AND u.id != ?
+        AND u.id != ? AND tm.id IS NULL AND t.id IS NULL
         ORDER BY u.username ASC
         LIMIT 100
       `,
@@ -4779,7 +4886,10 @@ export const performSpin = createServerFn({ method: "POST" }).handler(async ({ d
   if (result && result.amount > 0) {
     try {
       const { emitBalanceUpdate } = await import("./lib/socket-server");
-      emitBalanceUpdate(userId, { deposit: result.newDepositBalance || 0, winning: result.newWinningBalance || 0 });
+      emitBalanceUpdate(userId, {
+        deposit: result.newDepositBalance || 0,
+        winning: result.newWinningBalance || 0,
+      });
     } catch {}
   }
 
@@ -5116,8 +5226,14 @@ export const announceTournamentResult = createServerFn({ method: "POST" }).handl
     try {
       const { emitBalanceUpdate } = await import("./lib/socket-server");
       for (const t of pushTargets) {
-        const u = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(t.userId)) as any;
-        if (u) emitBalanceUpdate(t.userId, { deposit: u.deposit_balance || 0, winning: u.winning_balance || 0 });
+        const u = (await db
+          .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
+          .get(t.userId)) as any;
+        if (u)
+          emitBalanceUpdate(t.userId, {
+            deposit: u.deposit_balance || 0,
+            winning: u.winning_balance || 0,
+          });
       }
     } catch {}
 
@@ -5207,8 +5323,7 @@ export const saveMatchResults = createServerFn({ method: "POST" }).handler(async
         else if (position === 10) posPoints = 1;
       }
 
-      const points =
-        !isClashOrLone && tourney.mode === "Squad" ? kills + posPoints : 0;
+      const points = !isClashOrLone && tourney.mode === "Squad" ? kills + posPoints : 0;
 
       // Upsert into match_results
       await tx
@@ -5230,9 +5345,7 @@ export const saveMatchResults = createServerFn({ method: "POST" }).handler(async
     for (const reg of registrations) {
       if (!notifiedUsers.has(reg.user_id)) {
         await tx
-          .prepare(
-            "INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)",
-          )
+          .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
           .run(
             reg.user_id,
             `🏆 Match ${matchNumber} results announced for ${tourney.title}! Check your standings.`,
@@ -5259,7 +5372,47 @@ export const saveMatchResults = createServerFn({ method: "POST" }).handler(async
     }
   } catch {}
 
+  // Emit tournament update via WebSockets
+  try {
+    const { emitTournamentUpdate } = await import("./lib/socket-server");
+    emitTournamentUpdate(tournamentId);
+  } catch {}
+
   return { success: true };
+});
+
+// ─── Booyah Counts (1st place finishes across matches) ──────────────────────
+export const getBooyahCounts = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const tournamentId = data as unknown as number;
+
+  const rows = (await db
+    .prepare(
+      `SELECT registration_id, COUNT(*) as booyah_count
+       FROM match_results
+       WHERE tournament_id = ? AND position = 1
+       GROUP BY registration_id`,
+    )
+    .all(tournamentId)) as any[];
+
+  const counts: Record<number, number> = {};
+  for (const r of rows) {
+    counts[r.registration_id] = r.booyah_count;
+  }
+  return counts;
+});
+
+// ─── Check Username Exists ──────────────────────────────────────────────────
+export const checkUsernameExists = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const { db } = await import("./lib/db");
+  const { username } = data as any;
+  if (!username || typeof username !== "string" || username.trim().length < 3) {
+    return { exists: false };
+  }
+  const existing = (await db
+    .prepare("SELECT id FROM users WHERE LOWER(username) = LOWER(?) LIMIT 1")
+    .get(username.trim())) as any;
+  return { exists: !!existing };
 });
 
 /** Admin: Publish final results — aggregate all matches and distribute prizes */
@@ -5277,9 +5430,7 @@ export const saveFinalResults = createServerFn({ method: "POST" }).handler(async
 
   // Verify all matches have results
   const completedMatches = (await db
-    .prepare(
-      "SELECT DISTINCT match_number FROM match_results WHERE tournament_id = ?",
-    )
+    .prepare("SELECT DISTINCT match_number FROM match_results WHERE tournament_id = ?")
     .all(tournamentId)) as any[];
 
   if (completedMatches.length < (tourney.total_matches || 1)) {
@@ -5392,15 +5543,29 @@ export const saveFinalResults = createServerFn({ method: "POST" }).handler(async
       }
 
       // Update registrations with aggregated totals
-      await stmtReg.run(r.killsNum, r.matchPosition, r.calculatedPoints, awardedPrize, r.id, tournamentId);
+      await stmtReg.run(
+        r.killsNum,
+        r.matchPosition,
+        r.calculatedPoints,
+        awardedPrize,
+        r.id,
+        tournamentId,
+      );
 
       // Prize distribution
       const prizeDiff = awardedPrize - oldPrize;
       if (prizeDiff !== 0) {
         await addPrize.run(prizeDiff, r.user_id);
         await tx
-          .prepare("INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)")
-          .run(r.user_id, Math.abs(prizeDiff), prizeDiff > 0 ? "tournament_prize" : "prize_deducted", prizeDiff > 0 ? `Prize Won: ${tourney.title}` : `Prize Adjusted: ${tourney.title}`);
+          .prepare(
+            "INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)",
+          )
+          .run(
+            r.user_id,
+            Math.abs(prizeDiff),
+            prizeDiff > 0 ? "tournament_prize" : "prize_deducted",
+            prizeDiff > 0 ? `Prize Won: ${tourney.title}` : `Prize Adjusted: ${tourney.title}`,
+          );
       }
 
       if (awardedPrize > 0) {
@@ -5425,7 +5590,9 @@ export const saveFinalResults = createServerFn({ method: "POST" }).handler(async
     }
 
     // Mark results as announced
-    await tx.prepare("UPDATE tournaments SET results_announced = true WHERE id = ?").run(tournamentId);
+    await tx
+      .prepare("UPDATE tournaments SET results_announced = true WHERE id = ?")
+      .run(tournamentId);
   });
 
   // Push notifications async
@@ -5440,8 +5607,14 @@ export const saveFinalResults = createServerFn({ method: "POST" }).handler(async
   try {
     const { emitBalanceUpdate } = await import("./lib/socket-server");
     for (const t of pushTargets) {
-      const u = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(t.userId)) as any;
-      if (u) emitBalanceUpdate(t.userId, { deposit: u.deposit_balance || 0, winning: u.winning_balance || 0 });
+      const u = (await db
+        .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
+        .get(t.userId)) as any;
+      if (u)
+        emitBalanceUpdate(t.userId, {
+          deposit: u.deposit_balance || 0,
+          winning: u.winning_balance || 0,
+        });
     }
   } catch {}
 
@@ -5449,6 +5622,12 @@ export const saveFinalResults = createServerFn({ method: "POST" }).handler(async
   try {
     const { apiCache } = await import("./lib/cache");
     apiCache.delete("tournaments");
+  } catch {}
+
+  // Emit tournament update via WebSockets
+  try {
+    const { emitTournamentUpdate } = await import("./lib/socket-server");
+    emitTournamentUpdate(tournamentId);
   } catch {}
 
   return { success: true, finalRankings: resultsForSave.length };

@@ -88,7 +88,11 @@ export function TeamDetailSheet({
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-2xl overflow-hidden bg-primary/15 border border-primary/20 flex items-center justify-center font-display font-black text-xl text-primary shrink-0">
                   {team.logo ? (
-                    <img src={team.logo} alt={team.name || "Team logo"} className="w-full h-full object-cover" />
+                    <img
+                      src={team.logo}
+                      alt={team.name || "Team logo"}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     getInitials(team.name)
                   )}

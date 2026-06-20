@@ -126,8 +126,11 @@ export function Footer() {
             Designed and Developed by{" "}
             <span className="font-semibold text-foreground">Pratikk Yadav</span>
             {" · "}
-            <a href="tel:+918307224756" className="hover:text-primary transition-colors">
-              +91 8307224756
+            <a
+              href="mailto:partikyadav140@gmail.com"
+              className="hover:text-primary transition-colors"
+            >
+              partikyadav140@gmail.com
             </a>
           </p>
         </div>

@@ -8,7 +8,13 @@ type AnimatedCounterProps = {
   suffix?: string;
 };
 
-export function AnimatedCounter({ value, duration = 800, className = "", prefix = "", suffix = "" }: AnimatedCounterProps) {
+export function AnimatedCounter({
+  value,
+  duration = 800,
+  className = "",
+  prefix = "",
+  suffix = "",
+}: AnimatedCounterProps) {
   const [display, setDisplay] = useState(value);
   const prevRef = useRef(value);
   const frameRef = useRef<number>(0);
@@ -32,8 +38,16 @@ export function AnimatedCounter({ value, duration = 800, className = "", prefix 
       }
     };
     frameRef.current = requestAnimationFrame(animate);
-    return () => { if (frameRef.current) cancelAnimationFrame(frameRef.current); };
+    return () => {
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    };
   }, [value, duration]);
 
-  return <span className={className}>{prefix}{display.toLocaleString()}{suffix}</span>;
+  return (
+    <span className={className}>
+      {prefix}
+      {display.toLocaleString()}
+      {suffix}
+    </span>
+  );
 }

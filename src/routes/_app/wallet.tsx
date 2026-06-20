@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   Clock,
   AlertCircle,
+  Lock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { GodCoin } from "@/components/GodCoin";
@@ -19,7 +20,13 @@ import { useAuth } from "../../lib/auth-client";
 import { useState, useEffect, useMemo } from "react";
 import { WalletDepositDialog } from "@/components/WalletDepositDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { processWithdrawal, getTransactionHistory, saveUpiId, getSiteSettings, checkPendingDeposit } from "../../api";
+import {
+  processWithdrawal,
+  getTransactionHistory,
+  saveUpiId,
+  getSiteSettings,
+  checkPendingDeposit,
+} from "../../api";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { AnimatedCounter } from "@/components/AnimatedCounter";
@@ -49,7 +56,10 @@ function WalletPage() {
 
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
 
-  const [pendingDeposit, setPendingDeposit] = useState<{ hasPending: boolean; deposit: any } | null>(null);
+  const [pendingDeposit, setPendingDeposit] = useState<{
+    hasPending: boolean;
+    deposit: any;
+  } | null>(null);
 
   const loadSettings = async () => {
     try {
@@ -248,7 +258,9 @@ function WalletPage() {
                 className="rounded-xl px-3 py-2 border"
                 style={{ background: "rgba(16,185,129,0.08)", borderColor: "rgba(16,185,129,0.2)" }}
               >
-                <p className="text-[8px] font-black uppercase tracking-widest text-emerald-500 mb-0.5">Winnings</p>
+                <p className="text-[8px] font-black uppercase tracking-widest text-emerald-500 mb-0.5">
+                  Winnings
+                </p>
                 <div className="flex items-center gap-1">
                   <GodCoin className="w-3 h-3 text-emerald-400" />
                   <span className="font-display font-black text-lg text-white tabular-nums">
@@ -260,7 +272,12 @@ function WalletPage() {
                 className="rounded-xl px-3 py-2 border"
                 style={{ background: "rgba(0,200,255,0.08)", borderColor: "rgba(0,200,255,0.2)" }}
               >
-                <p className="text-[8px] font-black uppercase tracking-widest mb-0.5" style={{ color: "var(--primary)" }}>Deposited</p>
+                <p
+                  className="text-[8px] font-black uppercase tracking-widest mb-0.5"
+                  style={{ color: "var(--primary)" }}
+                >
+                  Deposited
+                </p>
                 <div className="flex items-center gap-1">
                   <GodCoin className="w-3 h-3 text-primary" />
                   <span className="font-display font-black text-lg text-white tabular-nums">
@@ -271,8 +288,8 @@ function WalletPage() {
             </div>
 
             {/* Action Buttons inside card */}
-            <div id="tutorial-wallet-actions" className="grid grid-cols-2 gap-2">
-              <div id="tutorial-wallet-addcash">
+            <div id="tutorial-wallet-actions" className="grid grid-cols-2 gap-3 mt-2">
+              <div id="tutorial-wallet-addcash" className="w-full">
                 <WalletDepositDialog
                   primaryUpi={primaryUpi}
                   locked={addCashLocked || !primaryUpi}
@@ -290,22 +307,28 @@ function WalletPage() {
                     }
                   }}
                   trigger={
-                    <button
-                      type="button"
-                      className={`w-full h-12 rounded-xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest transition-all press-effect active:scale-95 ${
-                        (!primaryUpi || addCashLocked) && !isTutorialActive
-                          ? "bg-white/5 text-white/30 border border-white/10"
-                          : "text-white border border-primary/30"
-                      }`}
-                      style={
-                        !(!primaryUpi || addCashLocked) || isTutorialActive
-                          ? { background: "var(--gradient-primary)" }
-                          : undefined
-                      }
-                    >
-                      <ArrowDownToLine className="w-4 h-4" />
-                      Add Cash
-                    </button>
+                    (!primaryUpi || addCashLocked) && !isTutorialActive ? (
+                      <button
+                        type="button"
+                        className="relative w-full h-12 rounded-2xl flex items-center justify-center gap-2 font-display font-black text-[11px] uppercase tracking-wider transition-all duration-200 bg-white/5 text-white/30 border border-white/5 cursor-pointer opacity-70 hover:bg-white/10"
+                      >
+                        <Lock className="w-3.5 h-3.5 shrink-0" />
+                        <span>Add Cash</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="relative w-full h-12 rounded-2xl flex items-center justify-center gap-2 font-display font-black text-[11px] uppercase tracking-wider text-white border border-t-white/25 border-x-white/10 border-b-black/30 press-effect transition-all duration-200 overflow-hidden shadow-[0_4px_16px_rgba(255,107,0,0.3)] hover:shadow-[0_6px_24px_rgba(255,107,0,0.5)] hover:scale-[1.02] active:scale-[0.97]"
+                        style={{ background: "linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%)" }}
+                      >
+                        {/* Glass reflection shine */}
+                        <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+                          <div className="absolute top-0 -left-[100%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-[-25deg] animate-[shimmerSweep_3s_infinite]" />
+                        </div>
+                        <ArrowDownToLine className="w-3.5 h-3.5 shrink-0" />
+                        <span>Add Cash</span>
+                      </button>
+                    )
                   }
                   onSuccess={loadTx}
                 />
@@ -325,11 +348,15 @@ function WalletPage() {
                   setUpiId(primaryUpi || "dummy@upi");
                   setWithdrawOpen(true);
                 }}
-                className="w-full h-12 rounded-xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-widest text-white border border-emerald-500/30 press-effect active:scale-95 transition-all"
-                style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}
+                className="relative w-full h-12 rounded-2xl flex items-center justify-center gap-2 font-display font-black text-[11px] uppercase tracking-wider text-white border border-t-white/20 border-x-white/10 border-b-black/30 press-effect transition-all duration-200 overflow-hidden shadow-[0_4px_16px_rgba(16,185,129,0.3)] hover:shadow-[0_6px_24px_rgba(16,185,129,0.5)] hover:scale-[1.02] active:scale-[0.97]"
+                style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)" }}
               >
-                <ArrowUpFromLine className="w-4 h-4" />
-                Withdraw
+                {/* Glass reflection shine */}
+                <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none">
+                  <div className="absolute top-0 -left-[100%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-[-25deg] animate-[shimmerSweep_3s_infinite]" />
+                </div>
+                <ArrowUpFromLine className="w-3.5 h-3.5 shrink-0" />
+                <span>Withdraw</span>
               </button>
             </div>
           </div>
@@ -337,11 +364,17 @@ function WalletPage() {
           {/* Deposit timing strip */}
           <div
             className="px-5 py-2 flex items-center justify-between"
-            style={{ background: addCashLocked ? "rgba(239,68,68,0.08)" : "rgba(16,185,129,0.06)", borderTop: "1px solid rgba(255,255,255,0.05)" }}
+            style={{
+              background: addCashLocked ? "rgba(239,68,68,0.08)" : "rgba(16,185,129,0.06)",
+              borderTop: "1px solid rgba(255,255,255,0.05)",
+            }}
           >
             <div className="flex items-center gap-1.5">
               <Clock className="w-3 h-3" style={{ color: addCashLocked ? "#f87171" : "#10b981" }} />
-              <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: addCashLocked ? "#f87171" : "#10b981" }}>
+              <span
+                className="text-[9px] font-black uppercase tracking-widest"
+                style={{ color: addCashLocked ? "#f87171" : "#10b981" }}
+              >
                 {addCashLocked ? "Deposits Closed" : "Deposits Open"}
               </span>
             </div>
@@ -358,7 +391,9 @@ function WalletPage() {
           <div className="flex items-center gap-2.5 p-3 rounded-2xl border bg-amber-500/8 border-amber-500/20">
             <AlertCircle className="w-4 h-4 shrink-0 text-amber-500" />
             <p className="text-xs font-bold text-muted-foreground flex-1">
-              Deposit of <strong className="text-foreground">₹{pendingDeposit.deposit?.amount}</strong> awaiting review
+              Deposit of{" "}
+              <strong className="text-foreground">₹{pendingDeposit.deposit?.amount}</strong>{" "}
+              awaiting review
             </p>
             <span className="text-[9px] font-black text-amber-500 uppercase shrink-0">
               {pendingDeposit.deposit?.status === "submitted" ? "Under Review" : "Pending"}
@@ -377,7 +412,9 @@ function WalletPage() {
             <AtSign className="w-3.5 h-3.5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Primary UPI</p>
+            <p className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">
+              Primary UPI
+            </p>
             {primaryUpi ? (
               <p className="font-mono text-xs font-bold text-foreground truncate">{primaryUpi}</p>
             ) : (
@@ -405,8 +442,12 @@ function WalletPage() {
           style={{ background: "rgba(0,200,255,0.04)", borderColor: "rgba(0,200,255,0.12)" }}
         >
           <Info className="w-3.5 h-3.5 shrink-0" style={{ color: "var(--primary)" }} />
-          <p className="text-[10px] font-semibold leading-relaxed" style={{ color: "rgba(0,200,255,0.7)" }}>
-            <span className="font-black text-primary">1 Coin = ₹1</span> · Deposits pay entry fees. Only <span className="font-black">Winnings</span> can be withdrawn.
+          <p
+            className="text-[10px] font-semibold leading-relaxed"
+            style={{ color: "rgba(0,200,255,0.7)" }}
+          >
+            <span className="font-black text-primary">1 Coin = ₹1</span> · Deposits pay entry fees.
+            Only <span className="font-black">Winnings</span> can be withdrawn.
           </p>
         </div>
       </div>

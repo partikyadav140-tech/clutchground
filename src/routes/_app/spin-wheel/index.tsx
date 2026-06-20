@@ -146,7 +146,9 @@ function SpinWheelPage() {
                   <Gift className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <p className="font-display font-black text-sm text-foreground">Unlock Your Daily Free Spin</p>
+                  <p className="font-display font-black text-sm text-foreground">
+                    Unlock Your Daily Free Spin
+                  </p>
                   <p className="text-[11px] text-muted-foreground font-semibold mt-0.5">
                     Complete the steps below to start winning
                   </p>
@@ -161,7 +163,8 @@ function SpinWheelPage() {
                   <div>
                     <p className="text-xs font-bold text-foreground">Join a Tournament</p>
                     <p className="text-[11px] text-muted-foreground font-semibold mt-0.5 leading-relaxed">
-                      Browse upcoming Free Fire tournaments and register your team. Entry is instant.
+                      Browse upcoming Free Fire tournaments and register your team. Entry is
+                      instant.
                     </p>
                   </div>
                 </div>
@@ -173,7 +176,8 @@ function SpinWheelPage() {
                   <div>
                     <p className="text-xs font-bold text-foreground">Come Back Daily</p>
                     <p className="text-[11px] text-muted-foreground font-semibold mt-0.5 leading-relaxed">
-                      Once unlocked, you get one free spin every day. Winnings go straight to your deposit balance.
+                      Once unlocked, you get one free spin every day. Winnings go straight to your
+                      deposit balance.
                     </p>
                   </div>
                 </div>
@@ -185,7 +189,8 @@ function SpinWheelPage() {
                   <div>
                     <p className="text-xs font-bold text-foreground">Win CG Coins</p>
                     <p className="text-[11px] text-muted-foreground font-semibold mt-0.5 leading-relaxed">
-                      Each spin rewards real coins. Use them for tournament entries or withdraw your winnings.
+                      Each spin rewards real coins. Use them for tournament entries or withdraw your
+                      winnings.
                     </p>
                   </div>
                 </div>

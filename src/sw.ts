@@ -92,9 +92,14 @@ const OFFLINE_URL = "/offline";
 // Cache offline page on install
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.put(OFFLINE_URL, new Response(OFFLINE_HTML, {
-      headers: { "Content-Type": "text/html" },
-    }))),
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.put(
+        OFFLINE_URL,
+        new Response(OFFLINE_HTML, {
+          headers: { "Content-Type": "text/html" },
+        }),
+      ),
+    ),
   );
   self.skipWaiting();
 });
@@ -103,9 +108,13 @@ self.addEventListener("install", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate" && !navigator.onLine) {
     event.respondWith(
-      caches.match(OFFLINE_URL).then((cached) => cached || new Response(OFFLINE_HTML, {
-        headers: { "Content-Type": "text/html" },
-      })),
+      caches.match(OFFLINE_URL).then(
+        (cached) =>
+          cached ||
+          new Response(OFFLINE_HTML, {
+            headers: { "Content-Type": "text/html" },
+          }),
+      ),
     );
   }
 });
@@ -115,9 +124,7 @@ registerRoute(
   ({ url }) => url.hostname === "res.cloudinary.com",
   new CacheFirst({
     cacheName: "cloudinary-images",
-    plugins: [
-      new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 30 * 24 * 60 * 60 }),
-    ],
+    plugins: [new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 30 * 24 * 60 * 60 })],
   }),
 );
 
@@ -126,9 +133,7 @@ registerRoute(
   ({ url }) => url.pathname.startsWith("/api/"),
   new StaleWhileRevalidate({
     cacheName: "api-cache",
-    plugins: [
-      new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 5 * 60 }),
-    ],
+    plugins: [new ExpirationPlugin({ maxEntries: 100, maxAgeSeconds: 5 * 60 })],
   }),
 );
 

@@ -304,8 +304,7 @@ export function JoinBattleDialog({
           });
           if (result?.isRegistered) {
             toast.success(`🔥 Slot reserved for ${leader.ign} in ${tournamentTitle}!`, {
-              description:
-                "Room ID will be sent to your in-app inbox 10 minutes before start.",
+              description: "Room ID will be sent to your in-app inbox 10 minutes before start.",
             });
             setOpen(false);
             setTimeout(reset, 300);

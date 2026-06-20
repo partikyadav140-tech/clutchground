@@ -40,7 +40,7 @@ export function useSocket() {
 /**
  * Hook to join/leave Socket.io rooms automatically.
  */
-export function useRoom(roomType: "team" | "ticket", roomId: number | null) {
+export function useRoom(roomType: "team" | "ticket" | "tournament", roomId: number | null) {
   const { emit, on } = useSocket();
 
   useEffect(() => {

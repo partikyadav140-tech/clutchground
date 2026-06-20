@@ -469,7 +469,12 @@ function AdminTicketChatPage() {
             {/* Attachment Preview */}
             {selectedImage && (
               <div className="relative inline-flex items-center rounded-2xl bg-secondary/80 border border-border/80 p-2 pr-8 animate-scale-in">
-                <img src={selectedImage} className="w-12 h-12 rounded-xl object-cover" loading="lazy" alt="Attached image" />
+                <img
+                  src={selectedImage}
+                  className="w-12 h-12 rounded-xl object-cover"
+                  loading="lazy"
+                  alt="Attached image"
+                />
                 <span className="text-[10px] text-muted-foreground ml-2 max-w-[120px] truncate">
                   photo_attached.jpg
                 </span>

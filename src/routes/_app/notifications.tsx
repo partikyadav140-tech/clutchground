@@ -240,7 +240,11 @@ function NotificationsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(i * 0.04, 0.3) }}
                 onClick={() => {
-                  if (n.redirect_url && n.redirect_url.startsWith("/") && !/[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(n.redirect_url)) {
+                  if (
+                    n.redirect_url &&
+                    n.redirect_url.startsWith("/") &&
+                    !/[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(n.redirect_url)
+                  ) {
                     router.navigate({ to: n.redirect_url });
                   }
                 }}

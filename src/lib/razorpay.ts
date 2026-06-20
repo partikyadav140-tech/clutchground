@@ -149,9 +149,14 @@ export const verifyRazorpayPayment = createServerFn({ method: "POST" }).handler(
     // Emit real-time balance update via WebSocket
     try {
       const { emitBalanceUpdate } = await import("./socket-server");
-      const updatedUser = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(userId)) as any;
+      const updatedUser = (await db
+        .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
+        .get(userId)) as any;
       if (updatedUser) {
-        emitBalanceUpdate(userId, { deposit: updatedUser.deposit_balance || 0, winning: updatedUser.winning_balance || 0 });
+        emitBalanceUpdate(userId, {
+          deposit: updatedUser.deposit_balance || 0,
+          winning: updatedUser.winning_balance || 0,
+        });
       }
     } catch {}
 

@@ -30,6 +30,12 @@ interface Props {
   results: ResultRow[];
   /** Pass "clash_squad" | "lone_wolf" to override column logic */
   tournamentType?: string;
+  /** Optional label for badge (e.g., "Match 1", "Final Results") */
+  label?: string;
+  /** Map of registration id to booyah (1st place) count across matches */
+  booyahCounts?: Record<number, number>;
+  /** When true, show computed rank instead of raw position, and show placement points */
+  isOverall?: boolean;
 }
 
 /* ─── palette ─── */
@@ -220,7 +226,15 @@ function drawCanvas(
 }
 
 /* ─── React component ─── */
-export function StandingsCard({ tournamentName, mode, results, tournamentType }: Props) {
+export function StandingsCard({
+  tournamentName,
+  mode,
+  results,
+  tournamentType,
+  label,
+  booyahCounts,
+  isOverall,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const modeL = mode?.toLowerCase() ?? "";
@@ -348,8 +362,24 @@ export function StandingsCard({ tournamentName, mode, results, tournamentType }:
                   className="text-center px-2 py-2.5 text-[9px] font-black uppercase tracking-widest"
                   style={{ color: "rgba(255,255,255,0.3)", width: 64 }}
                 >
-                  Pos
+                  {showPoints && isOverall ? "Rank" : "Pos"}
                 </th>
+                {showPoints && booyahCounts && Object.keys(booyahCounts).length > 0 && (
+                  <th
+                    className="text-center px-1 py-2.5 text-[9px] font-black uppercase tracking-widest"
+                    style={{ color: "rgba(255,255,255,0.3)", width: 48 }}
+                  >
+                    🏆
+                  </th>
+                )}
+                {showPoints && isOverall && (
+                  <th
+                    className="text-center px-1 py-2.5 text-[9px] font-black uppercase tracking-widest"
+                    style={{ color: "rgba(255,255,255,0.3)", width: 52 }}
+                  >
+                    Pos Pts
+                  </th>
+                )}
                 {showPoints && (
                   <th
                     className="text-right pr-4 py-2.5 text-[9px] font-black uppercase tracking-widest"
@@ -416,32 +446,69 @@ export function StandingsCard({ tournamentName, mode, results, tournamentType }:
                       </div>
                     </td>
 
-                    {/* Position */}
+                    {/* Position / Rank */}
                     <td className="px-2 py-3 text-center align-middle" style={{ width: 64 }}>
-                      {row.position ? (
-                        <span
-                          className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-black tabular-nums"
-                          style={{
-                            background:
-                              row.position === 1
-                                ? "rgba(245,158,11,0.18)"
-                                : "rgba(255,255,255,0.07)",
-                            color: row.position === 1 ? "#fbbf24" : "rgba(255,255,255,0.5)",
-                            border:
-                              row.position === 1
-                                ? "1px solid rgba(245,158,11,0.4)"
-                                : "1px solid rgba(255,255,255,0.1)",
-                            minWidth: 32,
-                          }}
-                        >
-                          #{row.position}
-                        </span>
-                      ) : (
-                        <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>—</span>
-                      )}
+                      {(() => {
+                        // For overall standings in Squad BR, show rank; per-match shows raw position
+                        const displayPos = showPoints && isOverall ? i + 1 : row.position;
+                        return displayPos ? (
+                          <span
+                            className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-black tabular-nums"
+                            style={{
+                              background:
+                                displayPos === 1
+                                  ? "rgba(245,158,11,0.18)"
+                                  : "rgba(255,255,255,0.07)",
+                              color: displayPos === 1 ? "#fbbf24" : "rgba(255,255,255,0.5)",
+                              border:
+                                displayPos === 1
+                                  ? "1px solid rgba(245,158,11,0.4)"
+                                  : "1px solid rgba(255,255,255,0.1)",
+                              minWidth: 32,
+                            }}
+                          >
+                            #{displayPos}
+                          </span>
+                        ) : (
+                          <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 12 }}>—</span>
+                        );
+                      })()}
                     </td>
 
-                    {/* Points (Squad only) */}
+                    {/* Booyah count (Squad multi-match only) */}
+                    {showPoints && booyahCounts && Object.keys(booyahCounts).length > 0 && (
+                      <td className="px-1 py-3 text-center align-middle" style={{ width: 48 }}>
+                        {(booyahCounts[row.id] || 0) > 0 ? (
+                          <span
+                            className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-[10px] font-black tabular-nums"
+                            style={{
+                              background: "rgba(245,158,11,0.15)",
+                              color: "#fbbf24",
+                              border: "1px solid rgba(245,158,11,0.3)",
+                              minWidth: 24,
+                            }}
+                          >
+                            {booyahCounts[row.id]}
+                          </span>
+                        ) : (
+                          <span style={{ color: "rgba(255,255,255,0.15)", fontSize: 10 }}>0</span>
+                        )}
+                      </td>
+                    )}
+
+                    {/* Placement Points (Overall Squad only) */}
+                    {showPoints && isOverall && (
+                      <td className="px-1 py-3 text-center align-middle" style={{ width: 52 }}>
+                        <span
+                          className="font-black text-xs tabular-nums"
+                          style={{ color: isTop3 ? "#10b981" : "rgba(16,185,129,0.55)" }}
+                        >
+                          {Math.max(0, (row.points ?? 0) - (row.kills ?? 0))}
+                        </span>
+                      </td>
+                    )}
+
+                    {/* Total Points (Squad only) */}
                     {showPoints && (
                       <td className="pr-4 py-3 text-right align-middle" style={{ width: 64 }}>
                         <span

@@ -36,12 +36,17 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
           />
         ))}
       </div>
-      <p className={`text-[10px] font-bold ${
-        strength.score <= 1 ? "text-red-500" :
-        strength.score <= 2 ? "text-orange-500" :
-        strength.score <= 3 ? "text-yellow-500" :
-        "text-emerald-500"
-      }`}>
+      <p
+        className={`text-[10px] font-bold ${
+          strength.score <= 1
+            ? "text-red-500"
+            : strength.score <= 2
+              ? "text-orange-500"
+              : strength.score <= 3
+                ? "text-yellow-500"
+                : "text-emerald-500"
+        }`}
+      >
         {strength.label}
       </p>
     </div>

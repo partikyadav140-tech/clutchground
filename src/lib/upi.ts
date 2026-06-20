@@ -268,9 +268,14 @@ export const approveUpiDeposit = createServerFn({ method: "POST" }).handler(asyn
   // Emit real-time balance update via WebSocket
   try {
     const { emitBalanceUpdate } = await import("./socket-server");
-    const updatedUser = (await db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?").get(deposit.user_id)) as any;
+    const updatedUser = (await db
+      .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
+      .get(deposit.user_id)) as any;
     if (updatedUser) {
-      emitBalanceUpdate(deposit.user_id, { deposit: updatedUser.deposit_balance || 0, winning: updatedUser.winning_balance || 0 });
+      emitBalanceUpdate(deposit.user_id, {
+        deposit: updatedUser.deposit_balance || 0,
+        winning: updatedUser.winning_balance || 0,
+      });
     }
   } catch {}
 

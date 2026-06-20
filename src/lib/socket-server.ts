@@ -84,19 +84,21 @@ export function emitBalanceUpdate(userId: number, balance?: { deposit: number; w
     socketIo.to(`user:${userId}`).emit("balance-update", balance);
   } else {
     // Look up balance from DB
-    import("./db").then(({ db }) => {
-      db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
-        .get(userId)
-        .then((user: any) => {
-          if (user) {
-            socketIo.to(`user:${userId}`).emit("balance-update", {
-              deposit: user.deposit_balance || 0,
-              winning: user.winning_balance || 0,
-            });
-          }
-        })
-        .catch(() => {});
-    }).catch(() => {});
+    import("./db")
+      .then(({ db }) => {
+        db.prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
+          .get(userId)
+          .then((user: any) => {
+            if (user) {
+              socketIo.to(`user:${userId}`).emit("balance-update", {
+                deposit: user.deposit_balance || 0,
+                winning: user.winning_balance || 0,
+              });
+            }
+          })
+          .catch(() => {});
+      })
+      .catch(() => {});
   }
 }
 
@@ -118,4 +120,13 @@ export function emitFriendUpdate(userId: number) {
   const socketIo = getSocketIO();
   if (!socketIo) return;
   socketIo.to(`user:${userId}`).emit("friends-update");
+}
+
+/**
+ * Emit tournament update to all connected clients viewing that tournament.
+ */
+export function emitTournamentUpdate(tournamentId: number, data?: any) {
+  const socketIo = getSocketIO();
+  if (!socketIo) return;
+  socketIo.to(`tournament:${tournamentId}`).emit("tournament-update", { tournamentId, ...data });
 }

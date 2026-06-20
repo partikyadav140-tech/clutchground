@@ -215,7 +215,10 @@ export function SkeletonNotification() {
     <div className="space-y-3 px-4">
       <Shimmer className="h-14 rounded-2xl" />
       {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="flex items-start gap-3 bg-card border border-border rounded-2xl px-4 py-3.5">
+        <div
+          key={i}
+          className="flex items-start gap-3 bg-card border border-border rounded-2xl px-4 py-3.5"
+        >
           <Shimmer className="w-10 h-10 rounded-xl shrink-0" />
           <div className="flex-1 space-y-1.5">
             <Shimmer className="w-40 h-3 rounded-full" />
@@ -234,7 +237,10 @@ export function SkeletonChatList() {
     <div className="space-y-3 px-4">
       <Shimmer className="h-12 rounded-2xl" />
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 py-3">
+        <div
+          key={i}
+          className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 py-3"
+        >
           <Shimmer className="w-12 h-12 rounded-full shrink-0" />
           <div className="flex-1 space-y-1.5">
             <div className="flex items-center justify-between">
@@ -255,7 +261,10 @@ export function SkeletonTeamList() {
     <div className="space-y-3 px-4">
       <Shimmer className="h-12 rounded-2xl" />
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 py-3.5">
+        <div
+          key={i}
+          className="flex items-center gap-3 bg-card border border-border rounded-2xl px-4 py-3.5"
+        >
           <Shimmer className="w-14 h-14 rounded-2xl shrink-0" />
           <div className="flex-1 space-y-1.5">
             <Shimmer className="w-32 h-3.5 rounded-full" />
@@ -413,7 +422,10 @@ export function SkeletonAdminTable() {
         <Shimmer className="h-10 w-24 rounded-xl" />
       </div>
       {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3">
+        <div
+          key={i}
+          className="bg-card border border-border rounded-xl px-4 py-3 flex items-center gap-3"
+        >
           <Shimmer className="w-9 h-9 rounded-xl" />
           <div className="flex-1 space-y-1.5">
             <Shimmer className="w-32 h-3 rounded-full" />

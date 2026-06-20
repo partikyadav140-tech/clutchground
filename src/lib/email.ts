@@ -137,11 +137,7 @@ export async function sendOtpEmail(
  * Sends a general email using Resend.
  * Used for room details, notifications, etc.
  */
-export async function sendEmail(
-  to: string,
-  subject: string,
-  htmlBody: string,
-): Promise<void> {
+export async function sendEmail(to: string, subject: string, htmlBody: string): Promise<void> {
   const apiKey = getEnvVar("RESEND_API_KEY");
   const fromEmail = getEnvVar("RESEND_FROM_EMAIL") || "noreply@clutchground.games";
 

@@ -22,7 +22,10 @@ export function MyTeamFab() {
 
   // Load team data
   React.useEffect(() => {
-    if (!user) { setLoaded(true); return; }
+    if (!user) {
+      setLoaded(true);
+      return;
+    }
     (getMyTeam as any)({ data: user.id })
       .then((t: any) => {
         setMyTeam(t);
@@ -77,7 +80,12 @@ export function MyTeamFab() {
       >
         <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-primary/15 text-primary border border-primary/20 overflow-hidden">
           {hasTeam && myTeam.logo ? (
-            <img src={myTeam.logo} className="w-full h-full object-cover" alt="team logo" loading="lazy" />
+            <img
+              src={myTeam.logo}
+              className="w-full h-full object-cover"
+              alt="team logo"
+              loading="lazy"
+            />
           ) : (
             <Users className="w-5 h-5" />
           )}

@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Gift, Zap, Ticket, ShoppingCart, ChevronRight, Lock, Trophy, CheckCircle2 } from "lucide-react";
+import {
+  Sparkles,
+  Gift,
+  Zap,
+  Ticket,
+  ShoppingCart,
+  ChevronRight,
+  Lock,
+  Trophy,
+  CheckCircle2,
+} from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import {

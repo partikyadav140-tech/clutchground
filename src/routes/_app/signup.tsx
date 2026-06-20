@@ -1,7 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
-import { signupUser, sendEmailOtp, verifyEmailOtp, checkEmailExists } from "../../api";
+import {
+  signupUser,
+  sendEmailOtp,
+  verifyEmailOtp,
+  checkEmailExists,
+  checkUsernameExists,
+} from "../../api";
 import { setSessionId } from "../../lib/auth-client";
 import {
   Eye,
@@ -48,22 +54,72 @@ function SignupPage() {
   });
   const [passwordError, setPasswordError] = useState("");
   const [usernameError, setUsernameError] = useState("");
+  const [usernameChecking, setUsernameChecking] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState(false);
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const validateUsername = (u: string) => {
-    if (!u) { setUsernameError(""); return false; }
-    if (u.trim().length < 3) { setUsernameError("Username must be at least 3 characters"); return false; }
-    if (u.trim().length > 20) { setUsernameError("Username must be 20 characters or less"); return false; }
-    if (!/^[a-zA-Z0-9_]+$/.test(u.trim())) { setUsernameError("Only letters, numbers, and underscores allowed"); return false; }
+    if (!u) {
+      setUsernameError("");
+      setUsernameAvailable(false);
+      return false;
+    }
+    if (u.trim().length < 3) {
+      setUsernameError("Username must be at least 3 characters");
+      setUsernameAvailable(false);
+      return false;
+    }
+    if (u.trim().length > 20) {
+      setUsernameError("Username must be 20 characters or less");
+      setUsernameAvailable(false);
+      return false;
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(u.trim())) {
+      setUsernameError("Only letters, numbers, and underscores allowed");
+      setUsernameAvailable(false);
+      return false;
+    }
     setUsernameError("");
     return true;
   };
 
+  const handleUsernameCheck = async (usernameVal: string) => {
+    const trimmed = usernameVal.trim();
+    if (!trimmed || trimmed.length < 3 || !/^[a-zA-Z0-9_]+$/.test(trimmed)) {
+      setUsernameAvailable(false);
+      return;
+    }
+    setUsernameChecking(true);
+    try {
+      const res = await (checkUsernameExists as any)({ data: { username: trimmed } });
+      if (res.exists) {
+        setUsernameError("Username is already taken");
+        setUsernameAvailable(false);
+      } else {
+        setUsernameError("");
+        setUsernameAvailable(true);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUsernameChecking(false);
+    }
+  };
+
   const validatePassword = (pw: string) => {
-    if (!pw) { setPasswordError(""); return false; }
-    if (pw.length < 6) { setPasswordError("Password must be at least 6 characters"); return false; }
-    if (pw.length > 100) { setPasswordError("Password is too long"); return false; }
+    if (!pw) {
+      setPasswordError("");
+      return false;
+    }
+    if (pw.length < 6) {
+      setPasswordError("Password must be at least 6 characters");
+      return false;
+    }
+    if (pw.length > 100) {
+      setPasswordError("Password is too long");
+      return false;
+    }
     setPasswordError("");
     return true;
   };
@@ -327,7 +383,12 @@ function SignupPage() {
                   icon={User}
                   placeholder="Username"
                   value={form.username}
-                  onChange={(e) => { set("username")(e); validateUsername(e.target.value); }}
+                  onChange={(e) => {
+                    set("username")(e);
+                    validateUsername(e.target.value);
+                    setUsernameAvailable(false);
+                  }}
+                  onBlur={(e) => handleUsernameCheck(e.target.value)}
                   required
                   autoComplete="username"
                 />
@@ -337,7 +398,13 @@ function SignupPage() {
                     {usernameError}
                   </p>
                 )}
-                {form.username && !usernameError && form.username.trim().length >= 3 && (
+                {usernameChecking && form.username && !usernameError && (
+                  <p className="text-muted-foreground text-[11px] font-semibold px-1 flex items-center gap-1">
+                    <span className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin shrink-0" />
+                    Checking availability...
+                  </p>
+                )}
+                {usernameAvailable && form.username && !usernameError && !usernameChecking && (
                   <p className="text-emerald-500 text-[11px] font-semibold px-1 flex items-center gap-1">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                     Username is available
@@ -356,7 +423,9 @@ function SignupPage() {
                     // Live Gmail validation
                     const val = e.target.value.trim().toLowerCase();
                     if (val && !val.endsWith("@gmail.com") && val.includes("@")) {
-                      setGmailError("Only Gmail addresses are allowed. Please use a Gmail account.");
+                      setGmailError(
+                        "Only Gmail addresses are allowed. Please use a Gmail account.",
+                      );
                     } else {
                       setGmailError("");
                     }
@@ -381,7 +450,10 @@ function SignupPage() {
                   type={showPass ? "text" : "password"}
                   placeholder="Password"
                   value={form.password}
-                  onChange={(e) => { set("password")(e); validatePassword(e.target.value); }}
+                  onChange={(e) => {
+                    set("password")(e);
+                    validatePassword(e.target.value);
+                  }}
                   required
                   autoComplete="new-password"
                   className="w-full h-13 bg-secondary/50 border border-border focus:border-primary/60 focus:bg-secondary/80 focus:ring-1 focus:ring-primary/20 rounded-2xl pl-12 pr-12 text-sm font-semibold text-foreground outline-none transition-all"
@@ -409,10 +481,29 @@ function SignupPage() {
               {form.password && <PasswordStrength password={form.password} />}
               <button
                 type="submit"
-                disabled={loading || !!emailError || !!gmailError || !!usernameError || !form.username || form.username.trim().length < 3 || !form.password || form.password.length < 6}
+                disabled={
+                  loading ||
+                  !!emailError ||
+                  !!gmailError ||
+                  !!usernameError ||
+                  !form.username ||
+                  form.username.trim().length < 3 ||
+                  !form.password ||
+                  form.password.length < 6
+                }
                 className="w-full h-13 rounded-2xl font-black text-xs uppercase tracking-widest text-white flex items-center justify-center gap-2 transition-all active:scale-95 press-effect shadow-cta mt-2"
                 style={{
-                  background: loading || !!emailError || !!gmailError || !!usernameError || !form.username || form.username.trim().length < 3 || !form.password || form.password.length < 6 ? "var(--secondary)" : "var(--gradient-cta)",
+                  background:
+                    loading ||
+                    !!emailError ||
+                    !!gmailError ||
+                    !!usernameError ||
+                    !form.username ||
+                    form.username.trim().length < 3 ||
+                    !form.password ||
+                    form.password.length < 6
+                      ? "var(--secondary)"
+                      : "var(--gradient-cta)",
                 }}
               >
                 {loading ? (

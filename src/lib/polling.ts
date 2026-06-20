@@ -6,13 +6,16 @@
 // ── Shared Polling Manager ────────────────────────────────────────────────
 // Ensures only one polling interval runs per key across all component instances.
 
-const activePollers = new Map<string, {
-  intervalId: ReturnType<typeof setInterval> | null;
-  refCount: number;
-  baseInterval: number;
-  currentInterval: number;
-  consecutiveErrors: number;
-}>();
+const activePollers = new Map<
+  string,
+  {
+    intervalId: ReturnType<typeof setInterval> | null;
+    refCount: number;
+    baseInterval: number;
+    currentInterval: number;
+    consecutiveErrors: number;
+  }
+>();
 
 const MAX_BACKOFF_INTERVAL = 60_000; // Max 60 seconds between polls
 const BACKOFF_MULTIPLIER = 2;

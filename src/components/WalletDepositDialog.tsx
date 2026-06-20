@@ -8,7 +8,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { createUpiDeposit, submitUpiUtr, getWalletBalance, getActiveUpiConfig, checkPendingDeposit } from "../api";
+import {
+  createUpiDeposit,
+  submitUpiUtr,
+  getWalletBalance,
+  getActiveUpiConfig,
+  checkPendingDeposit,
+} from "../api";
 import { useAuth } from "../lib/auth-client";
 import {
   CreditCard,
@@ -122,10 +128,7 @@ export function WalletDepositDialog({
     if (open) {
       // Check for pending deposits and load UPI config simultaneously
       setCheckingPending(true);
-      Promise.all([
-        getActiveUpiConfig(),
-        checkPendingDeposit(),
-      ])
+      Promise.all([getActiveUpiConfig(), checkPendingDeposit()])
         .then(([cfg, pendingResult]) => {
           setUpiConfig(cfg);
           const minVal = parseInt(cfg.minDeposit) || 50;
@@ -282,9 +285,7 @@ export function WalletDepositDialog({
                 </p>
                 <p className="text-sm text-muted-foreground max-w-[280px] mx-auto">
                   You already have a deposit of{" "}
-                  <strong className="text-foreground">
-                    ₹{pendingDeposit.deposit?.amount}
-                  </strong>{" "}
+                  <strong className="text-foreground">₹{pendingDeposit.deposit?.amount}</strong>{" "}
                   awaiting admin review.
                 </p>
               </div>
@@ -298,15 +299,19 @@ export function WalletDepositDialog({
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Amount</span>
-                  <span className="font-bold text-foreground">₹{pendingDeposit.deposit?.amount}</span>
+                  <span className="font-bold text-foreground">
+                    ₹{pendingDeposit.deposit?.amount}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status</span>
-                  <span className={`font-bold px-2 py-0.5 rounded-full text-[10px] ${
-                    pendingDeposit.deposit?.status === "submitted"
-                      ? "bg-blue-500/10 text-blue-500"
-                      : "bg-amber-500/10 text-amber-600"
-                  }`}>
+                  <span
+                    className={`font-bold px-2 py-0.5 rounded-full text-[10px] ${
+                      pendingDeposit.deposit?.status === "submitted"
+                        ? "bg-blue-500/10 text-blue-500"
+                        : "bg-amber-500/10 text-amber-600"
+                    }`}
+                  >
                     {pendingDeposit.deposit?.status === "submitted"
                       ? "Under Review"
                       : "Awaiting Confirmation"}
@@ -314,14 +319,17 @@ export function WalletDepositDialog({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Ref</span>
-                  <span className="font-mono text-[11px] font-semibold text-foreground">{pendingDeposit.deposit?.txn_ref}</span>
+                  <span className="font-mono text-[11px] font-semibold text-foreground">
+                    {pendingDeposit.deposit?.txn_ref}
+                  </span>
                 </div>
               </div>
             </div>
 
             <p className="text-xs text-muted-foreground text-center leading-relaxed">
-              Please wait for admin to <strong className="text-foreground">approve or reject</strong> your
-              existing deposit before making a new one.
+              Please wait for admin to{" "}
+              <strong className="text-foreground">approve or reject</strong> your existing deposit
+              before making a new one.
             </p>
 
             <Button
@@ -460,8 +468,6 @@ export function WalletDepositDialog({
             <p className="text-[10px] text-muted-foreground text-center font-semibold">
               Opens your UPI app with amount auto-filled • Just enter PIN & pay
             </p>
-
-
 
             {/* Paying to info */}
             <div className="bg-secondary/60 border border-border rounded-xl p-3">

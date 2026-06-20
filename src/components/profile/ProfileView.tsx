@@ -1,15 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import Cropper from "react-easy-crop";
 import { useState, useEffect, useRef } from "react";
-import {
-  Camera,
-  Edit3,
-  Gamepad2,
-  Share2,
-  Sparkles,
-  ChevronRight,
-  Shield,
-} from "lucide-react";
+import { Camera, Edit3, Gamepad2, Share2, Sparkles, ChevronRight, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { GodCoin } from "@/components/GodCoin";
@@ -29,8 +21,6 @@ type ProfileViewProps = {
   isOwner: boolean;
   onUpdated?: (profile: any) => void;
 };
-
-
 
 export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
   const [editOpen, setEditOpen] = useState(false);
@@ -155,8 +145,6 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
     toast.success("Profile link copied!");
   };
 
-
-
   return (
     <div className="pb-6">
       {/* ════════════ HERO BANNER — Full-bleed ════════════ */}
@@ -222,7 +210,11 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
                 style={{ borderColor: "var(--background)" }}
               >
                 {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt={profile.ign || profile.username || "Profile"} className="w-full h-full object-cover" />
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.ign || profile.username || "Profile"}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <div
                     className="w-full h-full flex items-center justify-center font-display font-black text-4xl text-white"
@@ -334,9 +326,6 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
         </div>
       </motion.div>
 
-
-
-
       {/* ════════════ TEAM CARD ════════════ */}
       {profile?.team && (
         <motion.div
@@ -361,7 +350,11 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
 
               <div className="w-14 h-14 rounded-xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center font-display font-black text-xl text-primary shrink-0 relative">
                 {profile.team.logo ? (
-                  <img src={profile.team.logo} alt={profile.team.name || "Team"} className="w-full h-full object-cover" />
+                  <img
+                    src={profile.team.logo}
+                    alt={profile.team.name || "Team"}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   profile.team.name?.[0]
                 )}
@@ -383,7 +376,11 @@ export function ProfileView({ profile, isOwner, onUpdated }: ProfileViewProps) {
             <div className="flex items-center gap-4 p-4 rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm relative overflow-hidden">
               <div className="w-14 h-14 rounded-xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center font-display font-black text-xl text-primary shrink-0">
                 {profile.team.logo ? (
-                  <img src={profile.team.logo} alt={profile.team.name || "Team"} className="w-full h-full object-cover" />
+                  <img
+                    src={profile.team.logo}
+                    alt={profile.team.name || "Team"}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   profile.team.name?.[0]
                 )}

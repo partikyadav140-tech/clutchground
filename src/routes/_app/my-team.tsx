@@ -335,7 +335,11 @@ function MyTeamPage() {
               <div className="relative shrink-0">
                 <div className="w-20 h-20 rounded-2xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center font-display font-black text-2xl text-primary">
                   {teamForm.logo ? (
-                    <img src={teamForm.logo} alt="Team logo preview" className="w-full h-full object-cover" />
+                    <img
+                      src={teamForm.logo}
+                      alt="Team logo preview"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     getInitials(teamForm.name || "?")
                   )}

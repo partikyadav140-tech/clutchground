@@ -40,7 +40,8 @@ const SECURITY_HEADERS = {
   "X-Frame-Options": "DENY",
   "X-XSS-Protection": "0",
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer()",
+  "Permissions-Policy":
+    "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer()",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
 };
 
@@ -84,11 +85,22 @@ function checkRateLimit(ip) {
 
 // ── Block suspicious paths ────────────────────────────────────────────────
 const BLOCKED_PATHS = [
-  "/wp-admin", "/wp-login", "/wp-content", "/xmlrpc.php",
-  "/.env", "/.git", "/.htaccess", "/.htpasswd",
-  "/phpmyadmin", "/adminer", "/server-status",
-  "/config.json", "/config.yml", "/package.json",
-  "/.DS_Store", "/Thumbs.db",
+  "/wp-admin",
+  "/wp-login",
+  "/wp-content",
+  "/xmlrpc.php",
+  "/.env",
+  "/.git",
+  "/.htaccess",
+  "/.htpasswd",
+  "/phpmyadmin",
+  "/adminer",
+  "/server-status",
+  "/config.json",
+  "/config.yml",
+  "/package.json",
+  "/.DS_Store",
+  "/Thumbs.db",
 ];
 
 const server = createServer(async (req, res) => {
@@ -115,10 +127,11 @@ const server = createServer(async (req, res) => {
     }
 
     // ── Rate limit by IP ──────────────────────────────────────────────────
-    const clientIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim()
-      || req.headers["x-real-ip"]
-      || req.socket?.remoteAddress
-      || "unknown";
+    const clientIp =
+      req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+      req.headers["x-real-ip"] ||
+      req.socket?.remoteAddress ||
+      "unknown";
 
     if (!checkRateLimit(clientIp)) {
       res.writeHead(429, {
@@ -126,11 +139,13 @@ const server = createServer(async (req, res) => {
         "Content-Type": "application/json",
         ...SECURITY_HEADERS,
       });
-      res.end(JSON.stringify({
-        error: "Too Many Requests",
-        message: "You're making requests too quickly. Please slow down.",
-        retryAfter: 30,
-      }));
+      res.end(
+        JSON.stringify({
+          error: "Too Many Requests",
+          message: "You're making requests too quickly. Please slow down.",
+          retryAfter: 30,
+        }),
+      );
       return;
     }
 
@@ -207,7 +222,11 @@ const server = createServer(async (req, res) => {
 const io = new SocketIOServer(server, {
   path: "/ws",
   cors: {
-    origin: ["https://clutchground.games", "https://www.clutchground.games", "http://localhost:8080"],
+    origin: [
+      "https://clutchground.games",
+      "https://www.clutchground.games",
+      "http://localhost:8080",
+    ],
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -300,6 +319,15 @@ io.on("connection", (socket) => {
 
   socket.on("leave-ticket", (ticketId) => {
     socket.leave(`ticket:${ticketId}`);
+  });
+
+  // ── Join tournament room ────────────────────────────────────────────
+  socket.on("join-tournament", (tournamentId) => {
+    socket.join(`tournament:${tournamentId}`);
+  });
+
+  socket.on("leave-tournament", (tournamentId) => {
+    socket.leave(`tournament:${tournamentId}`);
   });
 
   socket.on("disconnect", () => {

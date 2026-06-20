@@ -146,9 +146,17 @@ export function Navbar() {
     async function fetchInitial() {
       try {
         const notifsFetch = getNotifications as unknown as (args: { data: number }) => Promise<
-          { id: string; is_read: boolean; message?: string; action_type?: string; redirect_url?: string }[]
+          {
+            id: string;
+            is_read: boolean;
+            message?: string;
+            action_type?: string;
+            redirect_url?: string;
+          }[]
         >;
-        const unreadChatsFetch = getUnreadChatCount as unknown as (args: { data: number }) => Promise<number>;
+        const unreadChatsFetch = getUnreadChatCount as unknown as (args: {
+          data: number;
+        }) => Promise<number>;
         const notifs = await notifsFetch({ data: user.id });
         setUnread(notifs.filter((n) => !n.is_read).length);
         const chatUnread = await unreadChatsFetch({ data: user.id });
@@ -173,7 +181,12 @@ export function Navbar() {
           notification?.message?.startsWith("🏆");
         showBrowserNotification("🎮 ClutchGround", {
           body: notification?.message || "You have a new notification",
-          url: (notification?.redirect_url && notification?.redirect_url.startsWith("/") && !/[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(notification.redirect_url)) ? notification.redirect_url : "/notifications",
+          url:
+            notification?.redirect_url &&
+            notification?.redirect_url.startsWith("/") &&
+            !/[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(notification.redirect_url)
+              ? notification.redirect_url
+              : "/notifications",
           tag: `cg-notif-${notification?.id}`,
           important: !!important,
         });

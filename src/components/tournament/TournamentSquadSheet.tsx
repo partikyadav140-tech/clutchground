@@ -24,10 +24,22 @@ export function TournamentSquadSheet({ registrationId, open, onOpenChange, mode 
   }, [open, registrationId]);
 
   const allMembers = squad
-    ? [
-        { ...squad.leader, ign: squad.leader.ign || squad.leader.username, role: "Captain" },
-        ...squad.players.map((p: any) => ({ ...p, role: "Player" })),
-      ]
+    ? (() => {
+        const leaderId = squad.leader?.userId;
+        const leaderIgn = (squad.leader?.ign || squad.leader?.username || "").toLowerCase();
+        // players_json may include the captain — filter them out to avoid duplication
+        const filteredPlayers = squad.players.filter((p: any) => {
+          // Match by userId if available
+          if (leaderId && p.userId && p.userId === leaderId) return false;
+          // Match by IGN as fallback
+          if (leaderIgn && (p.ign || "").toLowerCase() === leaderIgn) return false;
+          return true;
+        });
+        return [
+          { ...squad.leader, ign: squad.leader.ign || squad.leader.username, role: "Captain" },
+          ...filteredPlayers.map((p: any) => ({ ...p, role: "Player" })),
+        ];
+      })()
     : [];
 
   return (
@@ -49,7 +61,11 @@ export function TournamentSquadSheet({ registrationId, open, onOpenChange, mode 
             <div className="flex items-center gap-3 p-4 rounded-2xl bg-secondary/30 border border-border">
               <div className="w-14 h-14 rounded-2xl overflow-hidden bg-primary/10 border border-primary/20 flex items-center justify-center font-display font-black text-xl text-primary shrink-0">
                 {squad.teamLogo ? (
-                  <img src={squad.teamLogo} alt={squad.teamName || "Team logo"} className="w-full h-full object-cover" />
+                  <img
+                    src={squad.teamLogo}
+                    alt={squad.teamName || "Team logo"}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   squad.teamName?.[0]
                 )}
@@ -68,7 +84,11 @@ export function TournamentSquadSheet({ registrationId, open, onOpenChange, mode 
                   <div className="flex items-center gap-3 p-3 rounded-2xl border border-border bg-card">
                     <div className="w-10 h-10 rounded-xl overflow-hidden bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0">
                       {m.avatar_url ? (
-                        <img src={m.avatar_url} alt={m.ign || m.username || "Player"} className="w-full h-full object-cover" />
+                        <img
+                          src={m.avatar_url}
+                          alt={m.ign || m.username || "Player"}
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         (m.ign || "?")[0]
                       )}

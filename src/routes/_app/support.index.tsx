@@ -65,11 +65,12 @@ function SupportPage() {
     }
   };
 
-  if (loading || !user) return (
-    <div className="min-h-[60vh] pb-6">
-      <SkeletonSupport />
-    </div>
-  );
+  if (loading || !user)
+    return (
+      <div className="min-h-[60vh] pb-6">
+        <SkeletonSupport />
+      </div>
+    );
 
   return (
     <div className="min-h-full bg-background pb-6">

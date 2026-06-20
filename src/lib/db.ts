@@ -510,9 +510,13 @@ async function initDb() {
         `,
           [hashedPassword, encryptedPassword],
         );
-        console.log("[DB] Default admin seeded. IMPORTANT: Change the admin password immediately after first login!");
+        console.log(
+          "[DB] Default admin seeded. IMPORTANT: Change the admin password immediately after first login!",
+        );
         if (!process.env.ADMIN_PASSWORD) {
-          console.log("[DB] WARNING: Using default password 'admin123'. Set ADMIN_PASSWORD env var for better security.");
+          console.log(
+            "[DB] WARNING: Using default password 'admin123'. Set ADMIN_PASSWORD env var for better security.",
+          );
         }
       } else {
         console.log("[DB] Admin accounts already exist. Skipping seed.");

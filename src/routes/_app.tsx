@@ -79,11 +79,7 @@ export const Route = createFileRoute("/_app")({
           className={[
             "flex-1 overflow-x-hidden hide-scrollbar relative",
             isChatPage ? "h-full flex flex-col overflow-hidden" : "overflow-y-auto",
-            !isAuthRoute
-              ? isChatPage
-                ? "lg:pt-16"
-                : "pt-[60px]"
-              : "",
+            !isAuthRoute ? (isChatPage ? "lg:pt-16" : "pt-[60px]") : "",
             !isAuthRoute && !isChatPage
               ? "pb-[calc(80px+env(safe-area-inset-bottom,0px))] lg:pb-0"
               : "",

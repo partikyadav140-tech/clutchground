@@ -98,22 +98,28 @@ function setupBalanceListener() {
   if (balanceListenerSetup || typeof window === "undefined") return;
   balanceListenerSetup = true;
   // Lazy import to avoid SSR issues
-  import("./socket-client").then(({ getSocket }) => {
-    const checkSocket = () => {
-      const socket = getSocket();
-      if (socket) {
-        socket.on("balance-update", (data: { deposit: number; winning: number }) => {
-          if (globalUser) {
-            globalUser = { ...globalUser, deposit_balance: data.deposit, winning_balance: data.winning };
-            notifyListeners();
-          }
-        });
-      } else {
-        setTimeout(checkSocket, 2000);
-      }
-    };
-    checkSocket();
-  }).catch(() => {});
+  import("./socket-client")
+    .then(({ getSocket }) => {
+      const checkSocket = () => {
+        const socket = getSocket();
+        if (socket) {
+          socket.on("balance-update", (data: { deposit: number; winning: number }) => {
+            if (globalUser) {
+              globalUser = {
+                ...globalUser,
+                deposit_balance: data.deposit,
+                winning_balance: data.winning,
+              };
+              notifyListeners();
+            }
+          });
+        } else {
+          setTimeout(checkSocket, 2000);
+        }
+      };
+      checkSocket();
+    })
+    .catch(() => {});
 }
 
 export function useAuth() {

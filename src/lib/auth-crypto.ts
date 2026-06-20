@@ -29,10 +29,16 @@ function getEncryptionKey(): string {
   const key = getEnvVar("ENCRYPTION_KEY");
   if (!key) {
     if (process.env.NODE_ENV === "production") {
-      console.error("[FATAL] ENCRYPTION_KEY environment variable is not set. Password encryption is insecure.");
-      throw new Error("ENCRYPTION_KEY must be set in production. Password encryption cannot proceed without a secure key.");
+      console.error(
+        "[FATAL] ENCRYPTION_KEY environment variable is not set. Password encryption is insecure.",
+      );
+      throw new Error(
+        "ENCRYPTION_KEY must be set in production. Password encryption cannot proceed without a secure key.",
+      );
     }
-    console.warn("[SECURITY] ENCRYPTION_KEY not set — using insecure dev fallback. Set ENCRYPTION_KEY before production deployment.");
+    console.warn(
+      "[SECURITY] ENCRYPTION_KEY not set — using insecure dev fallback. Set ENCRYPTION_KEY before production deployment.",
+    );
     return "default_clutchground_secret_32_bytes_key_dev!";
   }
   if (key.length < 32) {

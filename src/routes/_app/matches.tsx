@@ -16,6 +16,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../lib/auth-client";
 import { getMyMatches, getTournamentResults, getMatchResults, getMatchCount } from "../../api";
+import { useSocket } from "@/hooks/useSocket";
 import { ClashSquadResults } from "@/components/tournament/results/ClashSquadResults";
 import { LoneWolfResults } from "@/components/tournament/results/LoneWolfResults";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -24,7 +25,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { GodCoin } from "@/components/GodCoin";
 import { StandingsCard } from "@/components/StandingsCard";
 import { CountdownTimer } from "@/components/CountdownTimer";
-import { RewardCelebration } from "@/components/spin-wheel/RewardCelebration";
+
 import { SkeletonMatchCard } from "@/components/SkeletonPage";
 import { getTournamentPoster } from "@/lib/mode-colors";
 
@@ -63,15 +64,17 @@ function MatchesPage() {
   const [standings, setStandings] = useState<any[]>([]);
   const [loadingStandings, setLoadingStandings] = useState(false);
   const [tab, setTab] = useState<"upcoming" | "history">("upcoming");
-  const [celebrationOpen, setCelebrationOpen] = useState(false);
-  const [winPrize, setWinPrize] = useState<{ label: string; amount: number } | null>(null);
-  const celebrationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Multi-match standings state
-  const [standingsMatchInfo, setStandingsMatchInfo] = useState<{ totalMatches: number; completedMatches: number[] }>({ totalMatches: 1, completedMatches: [] });
+  const [standingsMatchInfo, setStandingsMatchInfo] = useState<{
+    totalMatches: number;
+    completedMatches: number[];
+  }>({ totalMatches: 1, completedMatches: [] });
   const [standingsSelectedMatch, setStandingsSelectedMatch] = useState(0);
   const [standingsPerMatch, setStandingsPerMatch] = useState<any[]>([]);
   const [loadingPerMatch, setLoadingPerMatch] = useState(false);
+
+  const { on: socketOn, emit } = useSocket();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -83,29 +86,38 @@ function MatchesPage() {
       try {
         const m = await (getMyMatches as any)({ data: user.id });
         setMatches(m || []);
-
-        const win = (m || []).find(
-          (match: any) => match.position === 1 && (match.awarded_prize ?? 0) > 0
-        );
-        if (win) {
-          setWinPrize({
-            label: win.name || "Tournament Win",
-            amount: win.awarded_prize,
-          });
-          celebrationTimerRef.current = setTimeout(() => {
-            setCelebrationOpen(true);
-          }, 2000);
-        }
       } catch {}
       setLoading(false);
     })();
   }, [user, authLoading]);
 
+  const upcoming = matches.filter((m) => m.match_status !== "completed");
+
+  // Join WebSocket rooms for all active/upcoming tournaments in the user's list
   useEffect(() => {
+    if (!socketOn || !upcoming.length) return;
+    upcoming.forEach((m) => {
+      emit("join-tournament", m.id);
+    });
     return () => {
-      if (celebrationTimerRef.current) clearTimeout(celebrationTimerRef.current);
+      upcoming.forEach((m) => {
+        emit("leave-tournament", m.id);
+      });
     };
-  }, []);
+  }, [upcoming.map((m) => m.id).join(","), socketOn, emit]);
+
+  // Listen for real-time tournament updates to refresh the list automatically
+  useEffect(() => {
+    if (!user || !socketOn) return;
+    return socketOn("tournament-update", () => {
+      (async () => {
+        try {
+          const m = await (getMyMatches as any)({ data: user.id });
+          setMatches(m || []);
+        } catch {}
+      })();
+    });
+  }, [user?.id, socketOn]);
 
   const openStandings = async (m: any) => {
     setStandingsTournament(m);
@@ -130,12 +142,19 @@ function MatchesPage() {
   const loadStandingsMatch = async (matchNum: number) => {
     if (!standingsTournament) return;
     setStandingsSelectedMatch(matchNum);
-    if (matchNum === 0) { setStandingsPerMatch([]); return; }
+    if (matchNum === 0) {
+      setStandingsPerMatch([]);
+      return;
+    }
     setLoadingPerMatch(true);
     try {
-      const mr = await (getMatchResults as any)({ data: { tournamentId: standingsTournament.id, matchNumber: matchNum } });
+      const mr = await (getMatchResults as any)({
+        data: { tournamentId: standingsTournament.id, matchNumber: matchNum },
+      });
       setStandingsPerMatch(mr || []);
-    } catch { setStandingsPerMatch([]); }
+    } catch {
+      setStandingsPerMatch([]);
+    }
     setLoadingPerMatch(false);
   };
 
@@ -154,7 +173,6 @@ function MatchesPage() {
       </div>
     );
 
-  const upcoming = matches.filter((m) => m.match_status !== "completed");
   const history = matches.filter((m) => m.match_status === "completed");
 
   return (
@@ -250,7 +268,9 @@ function MatchesPage() {
               className="text-[10px] font-black uppercase tracking-widest mt-0.5"
               style={{ color: "var(--primary)" }}
             >
-              {standingsMatchInfo.totalMatches > 1 ? `${standingsMatchInfo.totalMatches} Match Tournament` : "Final Standings"}
+              {standingsMatchInfo.totalMatches > 1
+                ? `${standingsMatchInfo.totalMatches} Match Tournament`
+                : "Final Standings"}
             </p>
           </div>
 
@@ -268,23 +288,27 @@ function MatchesPage() {
                 >
                   Overall
                 </button>
-                {Array.from({ length: standingsMatchInfo.totalMatches }, (_, i) => i + 1).map((matchNum) => (
-                  <button
-                    key={matchNum}
-                    onClick={() => loadStandingsMatch(matchNum)}
-                    disabled={!standingsMatchInfo.completedMatches.includes(matchNum)}
-                    className={`shrink-0 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
-                      standingsSelectedMatch === matchNum
-                        ? "bg-primary text-white shadow-sm"
-                        : standingsMatchInfo.completedMatches.includes(matchNum)
-                          ? "bg-card text-foreground border border-border"
-                          : "bg-secondary/50 text-muted-foreground/40 border border-border/50 cursor-not-allowed"
-                    }`}
-                  >
-                    Match {matchNum}
-                    {standingsMatchInfo.completedMatches.includes(matchNum) && standingsSelectedMatch !== matchNum && " ✓"}
-                  </button>
-                ))}
+                {Array.from({ length: standingsMatchInfo.totalMatches }, (_, i) => i + 1).map(
+                  (matchNum) => (
+                    <button
+                      key={matchNum}
+                      onClick={() => loadStandingsMatch(matchNum)}
+                      disabled={!standingsMatchInfo.completedMatches.includes(matchNum)}
+                      className={`shrink-0 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                        standingsSelectedMatch === matchNum
+                          ? "bg-primary text-white shadow-sm"
+                          : standingsMatchInfo.completedMatches.includes(matchNum)
+                            ? "bg-card text-foreground border border-border"
+                            : "bg-secondary/50 text-muted-foreground/40 border border-border/50 cursor-not-allowed"
+                      }`}
+                    >
+                      Match {matchNum}
+                      {standingsMatchInfo.completedMatches.includes(matchNum) &&
+                        standingsSelectedMatch !== matchNum &&
+                        " ✓"}
+                    </button>
+                  ),
+                )}
               </div>
             </div>
           )}
@@ -302,9 +326,15 @@ function MatchesPage() {
                 </div>
               ) : standingsPerMatch.length > 0 ? (
                 standingsTournament?.tournament_type === "clash_squad" ? (
-                  <ClashSquadResults tournamentName={`${standingsTournament?.name} — Match ${standingsSelectedMatch}`} results={standingsPerMatch} />
+                  <ClashSquadResults
+                    tournamentName={`${standingsTournament?.name} — Match ${standingsSelectedMatch}`}
+                    results={standingsPerMatch}
+                  />
                 ) : standingsTournament?.tournament_type === "lone_wolf" ? (
-                  <LoneWolfResults tournamentName={`${standingsTournament?.name} — Match ${standingsSelectedMatch}`} results={standingsPerMatch} />
+                  <LoneWolfResults
+                    tournamentName={`${standingsTournament?.name} — Match ${standingsSelectedMatch}`}
+                    results={standingsPerMatch}
+                  />
                 ) : (
                   <StandingsCard
                     tournamentName={`${standingsTournament?.name} — Match ${standingsSelectedMatch}`}
@@ -318,36 +348,35 @@ function MatchesPage() {
                   No results for this match yet.
                 </div>
               )
-            ) : (
-              /* Overall standings */
-              standings.length > 0 ? (
-                standingsTournament?.tournament_type === "clash_squad" ? (
-                  <ClashSquadResults tournamentName={standingsTournament?.name || ""} results={standings} />
-                ) : standingsTournament?.tournament_type === "lone_wolf" ? (
-                  <LoneWolfResults tournamentName={standingsTournament?.name || ""} results={standings} />
-                ) : (
-                  <StandingsCard
-                    tournamentName={standingsTournament?.name || ""}
-                    mode={standingsTournament?.format || standingsTournament?.mode || "Solo"}
-                    results={standings}
-                    tournamentType={standingsTournament?.tournament_type}
-                  />
-                )
+            ) : /* Overall standings */
+            standings.length > 0 ? (
+              standingsTournament?.tournament_type === "clash_squad" ? (
+                <ClashSquadResults
+                  tournamentName={standingsTournament?.name || ""}
+                  results={standings}
+                />
+              ) : standingsTournament?.tournament_type === "lone_wolf" ? (
+                <LoneWolfResults
+                  tournamentName={standingsTournament?.name || ""}
+                  results={standings}
+                />
               ) : (
-                <div className="py-12 text-center text-muted-foreground text-sm font-semibold">
-                  No standings data available.
-                </div>
+                <StandingsCard
+                  tournamentName={standingsTournament?.name || ""}
+                  mode={standingsTournament?.format || standingsTournament?.mode || "Solo"}
+                  results={standings}
+                  tournamentType={standingsTournament?.tournament_type}
+                  isOverall={true}
+                />
               )
+            ) : (
+              <div className="py-12 text-center text-muted-foreground text-sm font-semibold">
+                No standings data available.
+              </div>
             )}
           </div>
         </DialogContent>
       </Dialog>
-
-      <RewardCelebration
-        open={celebrationOpen}
-        onClose={() => setCelebrationOpen(false)}
-        prize={winPrize}
-      />
     </div>
   );
 }
@@ -600,7 +629,12 @@ function MatchCard({ m, i }: { m: any; i: number }) {
             )}
 
             <div className="flex gap-2">
-              <Link to={`/tournaments/${m.id}` as any} className="flex-1">
+              <Link
+                to="/tournaments/$id"
+                params={{ id: String(m.id) }}
+                search={{}}
+                className="flex-1"
+              >
                 <button className="w-full h-10 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-border text-foreground bg-secondary press-effect active:scale-95 flex items-center justify-center gap-1">
                   <Shield className="w-3.5 h-3.5" />
                   View Details
@@ -714,20 +748,31 @@ function HistoryMatchCard({
 
           {/* Footer buttons */}
           <div className="p-3 flex gap-2">
-            <Link to={`/tournaments/${m.id}` as any} className="flex-1">
+            <Link
+              to="/tournaments/$id"
+              params={{ id: String(m.id) }}
+              search={{}}
+              className="flex-1"
+            >
               <button className="w-full h-10 rounded-xl text-[10px] font-black uppercase tracking-widest border border-border text-foreground bg-secondary press-effect active:scale-95 flex items-center justify-center gap-1">
                 <Shield className="w-3.5 h-3.5" />
                 Details
               </button>
             </Link>
-            <button
-              onClick={() => openStandings(m)}
-              className="flex-1 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white hover:opacity-95 press-effect active:scale-95 flex items-center justify-center gap-1.5"
-              style={{ background: "var(--gradient-primary)" }}
+            <Link
+              to="/tournaments/$id"
+              params={{ id: String(m.id) }}
+              search={{ tab: "standings" }}
+              className="flex-1"
             >
-              <Trophy className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-              View Full Standings
-            </button>
+              <button
+                className="w-full h-10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white hover:opacity-95 press-effect active:scale-95 flex items-center justify-center gap-1.5"
+                style={{ background: "var(--gradient-primary)" }}
+              >
+                <Trophy className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+                View Full Standings
+              </button>
+            </Link>
           </div>
         </div>
       </div>

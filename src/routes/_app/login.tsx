@@ -98,8 +98,14 @@ function LoginPage() {
                 type="text"
                 placeholder="Email address"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); if (emailTouched && e.target.value.trim()) setEmailError(""); }}
-                onBlur={() => { setEmailTouched(true); setEmailError(email.trim() ? "" : "Email address is required"); }}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (emailTouched && e.target.value.trim()) setEmailError("");
+                }}
+                onBlur={() => {
+                  setEmailTouched(true);
+                  setEmailError(email.trim() ? "" : "Email address is required");
+                }}
                 required
                 autoComplete="email"
                 className="w-full h-13 bg-secondary/50 border border-border focus:border-primary/60 rounded-2xl pl-12 pr-4 text-sm font-semibold text-foreground outline-none transition-all focus:ring-1 focus:ring-primary/20 focus:bg-secondary/80"
@@ -122,8 +128,14 @@ function LoginPage() {
                 type={showPass ? "text" : "password"}
                 placeholder="Your password"
                 value={password}
-                onChange={(e) => { setPassword(e.target.value); if (passwordTouched && e.target.value) setPasswordError(""); }}
-                onBlur={() => { setPasswordTouched(true); setPasswordError(password ? "" : "Password is required"); }}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (passwordTouched && e.target.value) setPasswordError("");
+                }}
+                onBlur={() => {
+                  setPasswordTouched(true);
+                  setPasswordError(password ? "" : "Password is required");
+                }}
                 required
                 autoComplete="current-password"
                 className="w-full h-13 bg-secondary/50 border border-border focus:border-primary/60 rounded-2xl pl-12 pr-12 text-sm font-semibold text-foreground outline-none transition-all focus:ring-1 focus:ring-primary/20 focus:bg-secondary/80"
@@ -154,11 +166,13 @@ function LoginPage() {
 
           {/* Error / Lockout message */}
           {errorMsg && (
-            <div className={`p-3 rounded-2xl border text-[12px] font-semibold ${
-              isLocked
-                ? "bg-red-500/10 border-red-500/30 text-red-400"
-                : "bg-amber-500/10 border-amber-500/30 text-amber-400"
-            }`}>
+            <div
+              className={`p-3 rounded-2xl border text-[12px] font-semibold ${
+                isLocked
+                  ? "bg-red-500/10 border-red-500/30 text-red-400"
+                  : "bg-amber-500/10 border-amber-500/30 text-amber-400"
+              }`}
+            >
               {errorMsg}
             </div>
           )}
@@ -168,7 +182,10 @@ function LoginPage() {
             type="submit"
             disabled={loading || isLocked || !email.trim() || !password}
             className="w-full h-13 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all active:scale-95 press-effect shadow-cta mt-2"
-            style={{ background: loading || !email.trim() || !password ? "var(--secondary)" : "var(--gradient-cta)" }}
+            style={{
+              background:
+                loading || !email.trim() || !password ? "var(--secondary)" : "var(--gradient-cta)",
+            }}
           >
             {loading ? (
               <>

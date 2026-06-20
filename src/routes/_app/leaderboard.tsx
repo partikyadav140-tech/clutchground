@@ -250,7 +250,12 @@ function LeaderboardPage() {
                         }}
                       >
                         {p.logo ? (
-                          <img src={p.logo} className="w-full h-full object-cover" loading="lazy" alt={p.team || "Player"} />
+                          <img
+                            src={p.logo}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            alt={p.team || "Player"}
+                          />
                         ) : (
                           (p.team || "T")[0].toUpperCase()
                         )}
@@ -331,7 +336,12 @@ function PodiumPillar({
         style={{ background: cfg.bg, borderColor: cfg.color, boxShadow: cfg.glow }}
       >
         {p.logo ? (
-          <img src={p.logo} className="w-full h-full object-cover" loading="lazy" alt={p.team || "Player"} />
+          <img
+            src={p.logo}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            alt={p.team || "Player"}
+          />
         ) : (
           (p.team || "T")[0].toUpperCase()
         )}

@@ -186,7 +186,9 @@ function AdminTournamentsPage() {
     try {
       const [data, mInfo] = await Promise.all([
         (getTournamentResults as any)({ data: t.id }),
-        t.total_matches > 1 ? (getMatchCount as any)({ data: t.id }) : Promise.resolve({ totalMatches: 1, completedMatches: [] }),
+        t.total_matches > 1
+          ? (getMatchCount as any)({ data: t.id })
+          : Promise.resolve({ totalMatches: 1, completedMatches: [] }),
       ]);
       setResultsData(data || []);
       setMatchInfo(mInfo);
@@ -209,12 +211,24 @@ function AdminTournamentsPage() {
     setActiveMatchTab(matchNum);
     if (matchInfo.completedMatches.includes(matchNum)) {
       try {
-        const mr = await (getMatchResults as any)({ data: { tournamentId: resultsTId.id, matchNumber: matchNum } });
+        const mr = await (getMatchResults as any)({
+          data: { tournamentId: resultsTId.id, matchNumber: matchNum },
+        });
         setMatchResultsData(mr || []);
-      } catch { setMatchResultsData([]); }
+      } catch {
+        setMatchResultsData([]);
+      }
     } else {
       // No results yet — prepare blank entries from registrations
-      setMatchResultsData(resultsData.map((r: any) => ({ ...r, kills: 0, position: 0, points: 0, registration_id: r.id })));
+      setMatchResultsData(
+        resultsData.map((r: any) => ({
+          ...r,
+          kills: 0,
+          position: 0,
+          points: 0,
+          registration_id: r.id,
+        })),
+      );
     }
   };
 
@@ -534,7 +548,10 @@ function AdminTournamentsPage() {
   // Multi-match results state
   const [activeMatchTab, setActiveMatchTab] = useState(1);
   const [matchResultsData, setMatchResultsData] = useState<any[]>([]);
-  const [matchInfo, setMatchInfo] = useState<{ totalMatches: number; completedMatches: number[] }>({ totalMatches: 1, completedMatches: [] });
+  const [matchInfo, setMatchInfo] = useState<{ totalMatches: number; completedMatches: number[] }>({
+    totalMatches: 1,
+    completedMatches: [],
+  });
   const [savingMatch, setSavingMatch] = useState(false);
 
   if (loading)
@@ -1075,19 +1092,24 @@ function AdminTournamentsPage() {
                   onChange={(e) => setFormData({ ...formData, hosted_by: e.target.value })}
                   placeholder="Host Name"
                 />
-                {formData.tournament_type !== 'clash_squad' && formData.tournament_type !== 'lone_wolf' && formData.mode === 'Squad' && (
-                <Input
-                  label="Number of Matches"
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={formData.total_matches}
-                  onChange={(e) =>
-                    setFormData({ ...formData, total_matches: Math.max(1, Number(e.target.value)) })
-                  }
-                  placeholder="1"
-                />
-                )}
+                {formData.tournament_type !== "clash_squad" &&
+                  formData.tournament_type !== "lone_wolf" &&
+                  formData.mode === "Squad" && (
+                    <Input
+                      label="Number of Matches"
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={formData.total_matches}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          total_matches: Math.max(1, Number(e.target.value)),
+                        })
+                      }
+                      placeholder="1"
+                    />
+                  )}
                 <div>
                   <label className="block text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1.5 ml-1">
                     Event Card Banner
@@ -1533,7 +1555,9 @@ function AdminTournamentsPage() {
                       }`}
                     >
                       Match {matchNum}
-                      {matchInfo.completedMatches.includes(matchNum) && activeMatchTab !== matchNum && " ✓"}
+                      {matchInfo.completedMatches.includes(matchNum) &&
+                        activeMatchTab !== matchNum &&
+                        " ✓"}
                     </button>
                   ),
                 )}

@@ -97,7 +97,6 @@ function HomePage() {
     }
   }, [user]);
 
-
   /* ── Carousels ── */
   const [featuredRef] = useEmblaCarousel({ loop: true, align: "center", containScroll: false }, [
     Autoplay({ delay: 3000, stopOnInteraction: false }),
@@ -430,7 +429,12 @@ function HomePage() {
                   {/* Avatar */}
                   <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center font-display font-black text-xs text-foreground shrink-0 overflow-hidden border border-border">
                     {p.logo ? (
-                      <img src={p.logo} className="w-full h-full object-cover" alt={p.team || "Player"} loading="lazy" />
+                      <img
+                        src={p.logo}
+                        className="w-full h-full object-cover"
+                        alt={p.team || "Player"}
+                        loading="lazy"
+                      />
                     ) : (
                       (p.team || "T")[0].toUpperCase()
                     )}

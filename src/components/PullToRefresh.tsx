@@ -12,20 +12,26 @@ export function PullToRefresh({ onRefresh, children, className = "" }: PullToRef
   const startY = useRef(0);
   const pullingRef = useRef(false);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (refreshing) return;
-    startY.current = e.touches[0].clientY;
-    pullingRef.current = false;
-  }, [refreshing]);
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (refreshing) return;
+      startY.current = e.touches[0].clientY;
+      pullingRef.current = false;
+    },
+    [refreshing],
+  );
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (refreshing) return;
-    const diff = e.touches[0].clientY - startY.current;
-    if (diff > 0 && diff < 150) {
-      pullingRef.current = true;
-      setPullDistance(diff * 0.4);
-    }
-  }, [refreshing]);
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (refreshing) return;
+      const diff = e.touches[0].clientY - startY.current;
+      if (diff > 0 && diff < 150) {
+        pullingRef.current = true;
+        setPullDistance(diff * 0.4);
+      }
+    },
+    [refreshing],
+  );
 
   const handleTouchEnd = useCallback(async () => {
     if (!pullingRef.current || refreshing) return;
@@ -35,7 +41,9 @@ export function PullToRefresh({ onRefresh, children, className = "" }: PullToRef
 
     if (distance > 60) {
       setRefreshing(true);
-      try { await onRefresh(); } catch {}
+      try {
+        await onRefresh();
+      } catch {}
       setRefreshing(false);
     }
   }, [pullDistance, refreshing, onRefresh]);
@@ -51,11 +59,18 @@ export function PullToRefresh({ onRefresh, children, className = "" }: PullToRef
         <div className="flex justify-center py-2">
           <div
             className={`w-6 h-6 border-2 border-primary border-t-transparent rounded-full transition-transform ${refreshing ? "animate-spin" : ""}`}
-            style={{ transform: refreshing ? undefined : `rotate(${Math.min(pullDistance * 3, 360)}deg)` }}
+            style={{
+              transform: refreshing ? undefined : `rotate(${Math.min(pullDistance * 3, 360)}deg)`,
+            }}
           />
         </div>
       )}
-      <div style={{ transform: refreshing ? undefined : `translateY(${pullDistance}px)`, transition: pullingRef.current ? "none" : "transform 0.3s ease" }}>
+      <div
+        style={{
+          transform: refreshing ? undefined : `translateY(${pullDistance}px)`,
+          transition: pullingRef.current ? "none" : "transform 0.3s ease",
+        }}
+      >
         {children}
       </div>
     </div>

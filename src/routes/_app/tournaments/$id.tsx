@@ -1,6 +1,12 @@
-import { createFileRoute, notFound, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, notFound, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { getTournaments, getTournamentResults, getMyMatches, getMatchResults, getMatchCount } from "../../../api";
+import {
+  getTournaments,
+  getTournamentResults,
+  getMyMatches,
+  getMatchResults,
+  getMatchCount,
+} from "../../../api";
 import {
   Calendar,
   Trophy,
@@ -23,6 +29,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { JoinBattleDialog } from "@/components/JoinBattleDialog";
 import { GodCoin } from "@/components/GodCoin";
+import { useSocket, useRoom } from "@/hooks/useSocket";
 import { useAuth } from "../../../lib/auth-client";
 import { StandingsCard } from "@/components/StandingsCard";
 import { ClashSquadResults } from "@/components/tournament/results/ClashSquadResults";
@@ -50,15 +57,19 @@ export const Route = createFileRoute("/_app/tournaments/$id")({
       </Link>
     </div>
   ),
+  validateSearch: (search: Record<string, unknown>) => ({
+    tab: (search.tab as string) || undefined,
+  }),
   loader: async ({ params }) => {
     const ts = await getTournaments();
     const t = ts.find((x: any) => String(x.id) === params.id);
     if (!t) throw notFound();
     const allRegistrations = await (getTournamentResults as any)({ data: t.id });
     const results = t.status === "completed" ? allRegistrations : [];
-    const matchInfoData = (t.total_matches || 1) > 1
-      ? await (getMatchCount as any)({ data: t.id })
-      : { totalMatches: 1, completedMatches: [] };
+    const matchInfoData =
+      (t.total_matches || 1) > 1
+        ? await (getMatchCount as any)({ data: t.id })
+        : { totalMatches: 1, completedMatches: [] };
     return { t, results, allRegistrations, matchInfoData };
   },
   pendingComponent: () => (
@@ -93,19 +104,55 @@ type Tab = "info" | "registered" | "prizes" | "standings";
 
 function TournamentDetailPage() {
   const { t, results, allRegistrations, matchInfoData } = Route.useLoaderData();
+  const { tab: searchTab } = Route.useSearch();
   const { user } = useAuth();
   const [isJoined, setIsJoined] = useState(false);
-  const [tab, setTab] = useState<Tab>("info");
+  const [tab, setTab] = useState<Tab>(
+    searchTab === "standings" ||
+      searchTab === "info" ||
+      searchTab === "registered" ||
+      searchTab === "prizes"
+      ? (searchTab as Tab)
+      : "info",
+  );
   const [squadRegId, setSquadRegId] = useState<number | null>(null);
   const [squadOpen, setSquadOpen] = useState(false);
   const navigate = useNavigate();
   const mc = MODE_CONFIG[t.mode] || MODE_CONFIG.Solo;
+
+  const router = useRouter();
+  const { on: socketOn } = useSocket();
+
+  // Join the tournament room for real-time WebSocket updates
+  useRoom("tournament", t.id);
+
+  // Listen for real-time updates to invalidate and reload data
+  useEffect(() => {
+    if (!socketOn) return;
+    return socketOn("tournament-update", (data: { tournamentId: number }) => {
+      if (String(data.tournamentId) === String(t.id)) {
+        router.invalidate();
+      }
+    });
+  }, [t.id, socketOn, router]);
 
   // Multi-match state
   const isMultiMatch = (t.total_matches || 1) > 1;
   const [selectedMatch, setSelectedMatch] = useState<number>(0); // 0 = Overall
   const [perMatchResults, setPerMatchResults] = useState<any[]>([]);
   const [loadingMatch, setLoadingMatch] = useState(false);
+  const [booyahCounts, setBooyahCounts] = useState<Record<number, number>>({});
+
+  // Load booyah counts for multi-match Squad BR tournaments
+  useEffect(() => {
+    if (isMultiMatch && t.mode === "Squad" && t.tournament_type === "battle_royale") {
+      import("../../../api").then(({ getBooyahCounts }) => {
+        (getBooyahCounts as any)({ data: t.id })
+          .then((counts: any) => setBooyahCounts(counts || {}))
+          .catch(() => {});
+      });
+    }
+  }, [t.id, isMultiMatch, t.mode, t.tournament_type]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -152,7 +199,9 @@ function TournamentDetailPage() {
     }
     setLoadingMatch(true);
     try {
-      const mr = await (getMatchResults as any)({ data: { tournamentId: t.id, matchNumber: matchNum } });
+      const mr = await (getMatchResults as any)({
+        data: { tournamentId: t.id, matchNumber: matchNum },
+      });
       setPerMatchResults(mr || []);
     } catch {
       setPerMatchResults([]);
@@ -164,7 +213,12 @@ function TournamentDetailPage() {
     <div className="min-h-screen bg-background pb-[88px]">
       {/* ── HERO BANNER ── */}
       <div className="relative overflow-hidden" style={{ height: 220 }}>
-        <img src={getTournamentPoster(t)} alt={t.title} className="w-full h-full object-cover" loading="lazy" />
+        <img
+          src={getTournamentPoster(t)}
+          alt={t.title}
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
         {/* Dark readability layer — always dark so image text is visible */}
         <div
           className="absolute inset-0"
@@ -272,28 +326,40 @@ function TournamentDetailPage() {
             >
               {t.title}
             </h1>
-            {(t.startsAt || t.startsat) && (() => {
-              const d = new Date(t.startsAt || t.startsat);
-              if (isNaN(d.getTime())) return null;
-              const dateLabel = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-              const timeLabel = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
-              return (
-                <div
-                  className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl"
-                  style={{
-                    background: "rgba(0,0,0,0.6)",
-                    backdropFilter: "blur(10px)",
-                    border: `1px solid ${mc.color}40`,
-                  }}
-                >
-                  <Calendar className="w-3 h-3" style={{ color: mc.color }} />
-                  <div className="flex flex-col items-end">
-                    <span className="text-[9px] font-black text-white leading-tight">{dateLabel}</span>
-                    <span className="text-[8px] font-bold leading-tight" style={{ color: mc.color }}>{timeLabel}</span>
+            {(t.startsAt || t.startsat) &&
+              (() => {
+                const d = new Date(t.startsAt || t.startsat);
+                if (isNaN(d.getTime())) return null;
+                const dateLabel = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+                const timeLabel = d.toLocaleTimeString("en-IN", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                });
+                return (
+                  <div
+                    className="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl"
+                    style={{
+                      background: "rgba(0,0,0,0.6)",
+                      backdropFilter: "blur(10px)",
+                      border: `1px solid ${mc.color}40`,
+                    }}
+                  >
+                    <Calendar className="w-3 h-3" style={{ color: mc.color }} />
+                    <div className="flex flex-col items-end">
+                      <span className="text-[9px] font-black text-white leading-tight">
+                        {dateLabel}
+                      </span>
+                      <span
+                        className="text-[8px] font-bold leading-tight"
+                        style={{ color: mc.color }}
+                      >
+                        {timeLabel}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
           </div>
         </div>
       </div>
@@ -368,8 +434,8 @@ function TournamentDetailPage() {
         </div>
       </div>
 
-      {/* ── ROOM CARD (if joined) ── */}
-      {isJoined && (
+      {/* ── ROOM CARD (if joined & not completed) ── */}
+      {isJoined && !isComp && (
         <div
           className="mx-4 mt-3 rounded-2xl border overflow-hidden"
           style={{ background: mc.bg, borderColor: `${mc.color}30` }}
@@ -503,7 +569,9 @@ function TournamentDetailPage() {
                   { icon: Users, label: "Mode", value: t.mode },
                   { icon: Calendar, label: "Starts", value: "__TIMER__" },
                   { icon: Shield, label: "Slots", value: `${t.filled} / ${displaySlots}` },
-                  ...((t.total_matches || 1) > 1 ? [{ icon: Swords, label: "Matches", value: `${t.total_matches} Matches` }] : []),
+                  ...((t.total_matches || 1) > 1
+                    ? [{ icon: Swords, label: "Matches", value: `${t.total_matches} Matches` }]
+                    : []),
                 ].map(({ icon: Icon, label, value }) => (
                   <div
                     key={label}
@@ -552,10 +620,11 @@ function TournamentDetailPage() {
                       {t.total_matches}-Match Tournament
                     </p>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      This tournament has <strong className="text-foreground">{t.total_matches} matches</strong>. 
-                      Results from each match will be shared after every round. 
-                      Final standings are calculated by combining kills & points from all matches. 
-                      Prizes are distributed based on the final combined standings only.
+                      This tournament has{" "}
+                      <strong className="text-foreground">{t.total_matches} matches</strong>.
+                      Results from each match will be shared after every round. Final standings are
+                      calculated by combining kills & points from all matches. Prizes are
+                      distributed based on the final combined standings only.
                     </p>
                   </div>
                 </div>
@@ -717,9 +786,12 @@ function TournamentDetailPage() {
                     className="mt-3 rounded-xl p-3 border text-xs text-muted-foreground leading-relaxed"
                     style={{ background: `${mc.color}06`, borderColor: `${mc.color}20` }}
                   >
-                    <span className="font-black text-foreground">📋 {t.total_matches}-Match Format:</span>{" "}
-                    Kills & points from all {t.total_matches} matches are combined to calculate the final standings. 
-                    Prizes are distributed only after all matches are completed based on the overall combined results — not per match.
+                    <span className="font-black text-foreground">
+                      📋 {t.total_matches}-Match Format:
+                    </span>{" "}
+                    Kills & points from all {t.total_matches} matches are combined to calculate the
+                    final standings. Prizes are distributed only after all matches are completed
+                    based on the overall combined results — not per match.
                   </div>
                 )}
               </div>
@@ -854,7 +926,9 @@ function TournamentDetailPage() {
                       style={selectedMatch === matchNum ? { background: mc.gradient } : undefined}
                     >
                       Match {matchNum}
-                      {matchInfoData.completedMatches.includes(matchNum) && selectedMatch !== matchNum && " ✓"}
+                      {matchInfoData.completedMatches.includes(matchNum) &&
+                        selectedMatch !== matchNum &&
+                        " ✓"}
                     </button>
                   ))}
                 </div>
@@ -865,14 +939,22 @@ function TournamentDetailPage() {
                 loadingMatch ? (
                   <div className="py-10 flex flex-col items-center justify-center">
                     <div className="w-6 h-6 border-3 border-primary border-t-transparent rounded-full animate-spin mb-3" />
-                    <p className="text-xs font-bold text-muted-foreground">Loading match results...</p>
+                    <p className="text-xs font-bold text-muted-foreground">
+                      Loading match results...
+                    </p>
                   </div>
                 ) : perMatchResults.length > 0 ? (
                   /* Use the same professional StandingsCard for per-match results */
                   t.tournament_type === "clash_squad" ? (
-                    <ClashSquadResults tournamentName={`${t.title} — Match ${selectedMatch}`} results={perMatchResults} />
+                    <ClashSquadResults
+                      tournamentName={`${t.title} — Match ${selectedMatch}`}
+                      results={perMatchResults}
+                    />
                   ) : t.tournament_type === "lone_wolf" ? (
-                    <LoneWolfResults tournamentName={`${t.title} — Match ${selectedMatch}`} results={perMatchResults} />
+                    <LoneWolfResults
+                      tournamentName={`${t.title} — Match ${selectedMatch}`}
+                      results={perMatchResults}
+                    />
                   ) : (
                     <StandingsCard
                       tournamentName={`${t.title} — Match ${selectedMatch}`}
@@ -900,6 +982,9 @@ function TournamentDetailPage() {
                         mode={t.mode}
                         results={results}
                         tournamentType={t.tournament_type}
+                        label="Final Results"
+                        booyahCounts={isMultiMatch ? booyahCounts : undefined}
+                        isOverall={true}
                       />
                     )
                   ) : !isMultiMatch && results?.length > 0 ? (
@@ -914,15 +999,21 @@ function TournamentDetailPage() {
                         mode={t.mode}
                         results={results}
                         tournamentType={t.tournament_type}
+                        booyahCounts={isMultiMatch ? booyahCounts : undefined}
+                        isOverall={true}
                       />
                     )
                   ) : isMultiMatch ? (
                     <div className="py-10 text-center bg-card rounded-2xl border border-border">
                       <Trophy className="w-8 h-8 mx-auto mb-3 text-muted-foreground opacity-30" />
-                      <p className="text-sm font-bold text-foreground mb-1">Final standings coming soon</p>
+                      <p className="text-sm font-bold text-foreground mb-1">
+                        Final standings coming soon
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        {matchInfoData.completedMatches.length} of {matchInfoData.totalMatches} matches completed.
-                        <br />Select a match tab above to view per-match results.
+                        {matchInfoData.completedMatches.length} of {matchInfoData.totalMatches}{" "}
+                        matches completed.
+                        <br />
+                        Select a match tab above to view per-match results.
                       </p>
                     </div>
                   ) : null}
