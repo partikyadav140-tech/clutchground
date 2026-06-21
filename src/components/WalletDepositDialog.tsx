@@ -15,6 +15,7 @@ import {
   getWalletBalance,
   getActiveUpiConfig,
   checkPendingDeposit,
+  cancelPendingDeposit,
 } from "../api";
 import { useAuth } from "../lib/auth-client";
 import {
@@ -225,6 +226,48 @@ export function WalletDepositDialog({
     onSuccess?.();
   };
 
+  const [cancelling, setCancelling] = useState(false);
+
+  const handleCancelPending = async () => {
+    if (!pendingDeposit?.deposit?.txn_ref) return;
+    setCancelling(true);
+    try {
+      await (cancelPendingDeposit as any)({
+        data: { txnRef: pendingDeposit.deposit.txn_ref },
+      });
+      toast.success("Incomplete deposit discarded.");
+      // Refresh pending check
+      setCheckingPending(true);
+      const pendingResult = await checkPendingDeposit();
+      setPendingDeposit(pendingResult as any);
+      setStep("amount");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to cancel deposit");
+    } finally {
+      setCancelling(false);
+      setCheckingPending(false);
+    }
+  };
+
+  const handleResumePending = () => {
+    if (!pendingDeposit?.deposit) return;
+    const dep = pendingDeposit.deposit;
+    const upiId = upiConfig?.upiId || "clutchground@nyes";
+    const upiName = upiConfig?.upiName || "CLUTCHGROUND";
+    const safePlatformName = encodeURIComponent(upiName.trim().replace(/\s+/g, ""));
+    const safeUpiId = encodeURIComponent(upiId.trim());
+    const upiLink = `upi://pay?pa=${safeUpiId}&pn=${safePlatformName}&am=${dep.amount}&cu=INR`;
+
+    setPayData({
+      txnRef: dep.txn_ref,
+      upiId: upiId,
+      platformName: upiName,
+      upiLink: upiLink,
+      amount: dep.amount,
+    });
+    setStep("pay");
+  };
+
   /* ── UPI QR via QR API (fallback) ── */
   // QR Code is now generated locally via qrcode package
 
@@ -320,25 +363,34 @@ export function WalletDepositDialog({
             <div className="flex flex-col items-center text-center gap-3 py-4">
               <div
                 className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                style={{ background: "rgba(245,158,11,0.12)" }}
+                style={{ background: pendingDeposit.deposit?.status === "pending" ? "rgba(59,130,246,0.12)" : "rgba(245,158,11,0.12)" }}
               >
-                <Clock className="w-8 h-8 text-amber-500" />
+                <Clock className={`w-8 h-8 ${pendingDeposit.deposit?.status === "pending" ? "text-blue-500" : "text-amber-500"}`} />
               </div>
               <div>
                 <p className="font-display font-black text-lg text-foreground mb-1">
-                  Pending Deposit
+                  {pendingDeposit.deposit?.status === "pending" ? "Incomplete Deposit" : "Pending Deposit"}
                 </p>
                 <p className="text-sm text-muted-foreground max-w-[280px] mx-auto">
-                  You already have a deposit of{" "}
-                  <strong className="text-foreground">₹{pendingDeposit.deposit?.amount}</strong>{" "}
-                  awaiting admin review.
+                  {pendingDeposit.deposit?.status === "pending" ? (
+                    <>
+                      You started a deposit of{" "}
+                      <strong className="text-foreground">₹{pendingDeposit.deposit?.amount}</strong> but did not confirm payment.
+                    </>
+                  ) : (
+                    <>
+                      You already have a deposit of{" "}
+                      <strong className="text-foreground">₹{pendingDeposit.deposit?.amount}</strong>{" "}
+                      awaiting admin review.
+                    </>
+                  )}
                 </p>
               </div>
             </div>
 
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 space-y-2">
-              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-amber-600">
-                <AlertCircle className="w-3.5 h-3.5" />
+            <div className="bg-secondary/40 border border-border/80 rounded-xl p-3.5 space-y-2">
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                <AlertCircle className="w-3.5 h-3.5 text-primary" />
                 Deposit Details
               </div>
               <div className="space-y-1.5 text-xs">
@@ -372,17 +424,48 @@ export function WalletDepositDialog({
             </div>
 
             <p className="text-xs text-muted-foreground text-center leading-relaxed">
-              Please wait for admin to{" "}
-              <strong className="text-foreground">approve or reject</strong> your existing deposit
-              before making a new one.
+              {pendingDeposit.deposit?.status === "pending" ? (
+                <>
+                  You can resume this payment to credit your account, or discard it if you want to start a new transaction.
+                </>
+              ) : (
+                <>
+                  Please wait for admin to{" "}
+                  <strong className="text-foreground">approve or reject</strong> your existing deposit
+                  before making a new one.
+                </>
+              )}
             </p>
 
-            <Button
-              onClick={() => setOpen(false)}
-              className="w-full bg-primary text-white font-display rounded-xl h-11"
-            >
-              Got it, Close
-            </Button>
+            {pendingDeposit.deposit?.status === "pending" ? (
+              <div className="space-y-2.5 pt-2">
+                <Button
+                  onClick={handleResumePending}
+                  className="w-full bg-primary text-white font-display rounded-xl h-11 text-sm font-bold flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform"
+                >
+                  🚀 Complete Payment
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleCancelPending}
+                  disabled={cancelling}
+                  className="w-full border-destructive/20 text-destructive hover:bg-destructive/10 font-display rounded-xl h-11 text-sm font-bold flex items-center justify-center gap-2"
+                >
+                  {cancelling ? (
+                    <span className="w-4 h-4 border-2 border-destructive/30 border-t-destructive rounded-full animate-spin" />
+                  ) : (
+                    "❌ Discard & Start New"
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <Button
+                onClick={() => setOpen(false)}
+                className="w-full bg-primary text-white font-display rounded-xl h-11"
+              >
+                Got it, Close
+              </Button>
+            )}
           </div>
         )}
 

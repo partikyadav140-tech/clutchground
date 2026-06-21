@@ -22,7 +22,6 @@ export const Route = createFileRoute("/_app/rules")({
           "Stream sniping, teaming with enemies, or chat abuse leads to disqualification.",
           "Submit screenshot proof within 30 minutes of match end.",
           "Admin verdicts on disputes are final. Appeals go through support.",
-          "Prize money is credited to your wallet within 24 hours of verification.",
           "Withdrawals require KYC. Minimum 500 coins. Processed within 48 hours.",
         ].map((rule, i) => (
           <motion.div

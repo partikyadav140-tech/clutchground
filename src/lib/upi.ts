@@ -37,14 +37,14 @@ export const getActiveUpiConfig = createServerFn({ method: "GET" }).handler(asyn
   };
 });
 
-/** Check if user has a submitted deposit awaiting admin review */
+/** Check if user has a submitted/pending deposit awaiting admin review or completion */
 export const checkPendingDeposit = createServerFn({ method: "GET" }).handler(async () => {
   const user = await getCurrentUser();
   const db = await getDb();
   const pending = (await db
     .prepare(
       `SELECT id, amount, status, txn_ref, created_at FROM upi_deposits
-       WHERE user_id = ? AND status = 'submitted'
+       WHERE user_id = ? AND status IN ('submitted', 'pending')
        ORDER BY created_at DESC LIMIT 1`,
     )
     .get(user.id)) as any;
@@ -101,13 +101,18 @@ export const createUpiDeposit = createServerFn({ method: "POST" }).handler(async
     );
   }
 
-  // Block if user already has a submitted deposit awaiting admin review
+  // Block if user already has an active deposit awaiting action or review
   const existingPending = (await db
     .prepare(
-      `SELECT id, amount FROM upi_deposits WHERE user_id = ? AND status = 'submitted' LIMIT 1`,
+      `SELECT id, amount, status FROM upi_deposits WHERE user_id = ? AND status IN ('submitted', 'pending') LIMIT 1`,
     )
     .get(userId)) as any;
   if (existingPending) {
+    if (existingPending.status === "pending") {
+      throw new Error(
+        `You already have an incomplete deposit of ₹${existingPending.amount}. Please complete or cancel it before starting a new one.`,
+      );
+    }
     throw new Error(
       `You already have a pending deposit of ₹${existingPending.amount}. Please wait for admin approval before making a new deposit.`,
     );
@@ -199,13 +204,36 @@ export const submitUpiUtr = createServerFn({ method: "POST" }).handler(async ({ 
   return { success: true };
 });
 
+/** User: cancel an incomplete/pending deposit request */
+export const cancelPendingDeposit = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  const user = await getCurrentUser();
+  const db = await getDb();
+  const { txnRef } = data as any;
+
+  const deposit = (await db
+    .prepare("SELECT * FROM upi_deposits WHERE txn_ref = ?")
+    .get(txnRef)) as any;
+
+  if (!deposit) throw new Error("Deposit request not found");
+  if (deposit.user_id !== user.id) {
+    throw new Error("Unauthorized");
+  }
+  if (deposit.status !== "pending") {
+    throw new Error("Only incomplete deposits can be cancelled");
+  }
+
+  await db.prepare("DELETE FROM upi_deposits WHERE txn_ref = ?").run(txnRef);
+
+  return { success: true };
+});
+
 /** Admin: get all UPI deposits */
 export const getPendingUpiDeposits = createServerFn({ method: "GET" }).handler(async () => {
   await getCurrentUser("admin");
   const db = await getDb();
   return (await db
     .prepare(
-      `SELECT d.*, u.username, u.email
+      `SELECT d.*, u.username, u.email, u.upi_id as user_upi_id
          FROM upi_deposits d
          JOIN users u ON d.user_id = u.id
          ORDER BY d.created_at DESC`,
@@ -353,6 +381,141 @@ export const getUserUpiDeposits = createServerFn({ method: "POST" }).handler(asy
   return (await db
     .prepare(`SELECT * FROM upi_deposits WHERE user_id = ? ORDER BY created_at DESC LIMIT 20`)
     .all(userId)) as any[];
+});
+
+/** Admin: bulk approve UPI deposits */
+export const bulkApproveUpiDeposits = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
+  const db = await getDb();
+  const { depositIds } = data as unknown as { depositIds: number[] };
+  if (!depositIds || depositIds.length === 0) return { success: true };
+
+  for (const depositId of depositIds) {
+    const deposit = (await db
+      .prepare("SELECT * FROM upi_deposits WHERE id = ?")
+      .get(depositId)) as any;
+
+    if (!deposit || deposit.status === "approved") continue;
+
+    await db.transaction(async (tx: any) => {
+      await tx
+        .prepare(
+          "UPDATE upi_deposits SET status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE id = ?",
+        )
+        .run(depositId);
+
+      await tx
+        .prepare("UPDATE users SET deposit_balance = deposit_balance + ? WHERE id = ?")
+        .run(deposit.amount, deposit.user_id);
+
+      await tx
+        .prepare("INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)")
+        .run(
+          deposit.user_id,
+          deposit.amount,
+          "deposit_added",
+          `Wallet deposit via UPI (${deposit.utr || deposit.txn_ref}) (Bulk)`,
+        );
+
+      await tx
+        .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+        .run(
+          deposit.user_id,
+          `💰 ₹${deposit.amount} deposited — ${deposit.amount} CG Coins added to your wallet!`,
+          "/wallet",
+        );
+    });
+
+    try {
+      const { triggerPushNotification } = await import("./push-server");
+      triggerPushNotification(
+        deposit.user_id,
+        "💰 Wallet Deposit",
+        `💰 ₹${deposit.amount} deposited — ${deposit.amount} CG Coins added to your wallet!`,
+        "/wallet",
+      ).catch((e) => console.error("UPI deposit approval push error:", e));
+    } catch (e) {}
+
+    // Emit real-time balance update via WebSocket
+    try {
+      const { emitBalanceUpdate } = await import("./socket-server");
+      const updatedUser = (await db
+        .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
+        .get(deposit.user_id)) as any;
+      if (updatedUser) {
+        emitBalanceUpdate(deposit.user_id, {
+          deposit: updatedUser.deposit_balance || 0,
+          winning: updatedUser.winning_balance || 0,
+        });
+      }
+    } catch {}
+
+    // Emit real-time notification via WebSocket
+    try {
+      const { emitNotification } = await import("./socket-server");
+      emitNotification(deposit.user_id, {
+        id: Date.now(),
+        user_id: deposit.user_id,
+        message: `💰 ₹${deposit.amount} deposited — ${deposit.amount} CG Coins added to your wallet!`,
+        redirect_url: "/wallet",
+        is_read: false,
+        created_at: new Date().toISOString(),
+      });
+    } catch {}
+  }
+  return { success: true };
+});
+
+/** Admin: bulk reject UPI deposits */
+export const bulkRejectUpiDeposits = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
+  const db = await getDb();
+  const { depositIds, reason } = data as unknown as { depositIds: number[]; reason?: string };
+  if (!depositIds || depositIds.length === 0) return { success: true };
+
+  for (const depositId of depositIds) {
+    const deposit = (await db
+      .prepare("SELECT * FROM upi_deposits WHERE id = ?")
+      .get(depositId)) as any;
+
+    if (!deposit || deposit.status === "approved" || deposit.status === "rejected") continue;
+
+    await db
+      .prepare("UPDATE upi_deposits SET status = 'rejected', reject_reason = ? WHERE id = ?")
+      .run(reason || "Payment could not be verified", depositId);
+
+    await db
+      .prepare("INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)")
+      .run(
+        deposit.user_id,
+        `❌ Your deposit of ₹${deposit.amount} was rejected. Reason: ${reason || "Payment not verified"}. Contact support if you believe this is an error.`,
+        "/wallet",
+      );
+
+    try {
+      const { triggerPushNotification } = await import("./push-server");
+      triggerPushNotification(
+        deposit.user_id,
+        "❌ Deposit Rejected",
+        `❌ Your deposit of ₹${deposit.amount} was rejected. Reason: ${reason || "Payment not verified"}.`,
+        "/wallet",
+      ).catch((e) => console.error("UPI deposit rejection push error:", e));
+    } catch (e) {}
+
+    // Emit real-time notification via WebSocket
+    try {
+      const { emitNotification } = await import("./socket-server");
+      emitNotification(deposit.user_id, {
+        id: Date.now(),
+        user_id: deposit.user_id,
+        message: `❌ Your deposit of ₹${deposit.amount} was rejected. Reason: ${reason || "Payment not verified"}. Contact support if you believe this is an error.`,
+        redirect_url: "/wallet",
+        is_read: false,
+        created_at: new Date().toISOString(),
+      });
+    } catch {}
+  }
+  return { success: true };
 });
 
 export { getWalletBalance, getTransactionHistory } from "./razorpay";

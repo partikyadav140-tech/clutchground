@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
 import {
   Users,
   Trophy,
@@ -33,6 +34,7 @@ import { toast } from "sonner";
 import { CountdownTimer } from "@/components/CountdownTimer";
 import { GodCoin } from "@/components/GodCoin";
 import { SkeletonAdminTable } from "@/components/SkeletonPage";
+import { useSocket } from "@/hooks/useSocket";
 
 export const Route = createFileRoute("/_app/admin/")({
   head: () => ({ meta: [{ title: "Command Center — CLUTCHGROUND" }] }),
@@ -162,6 +164,20 @@ function AdminDashboard() {
   const { user, loading } = useAuth();
   const stats = Route.useLoaderData() as any;
   const router = useRouter();
+
+  const { on: socketOn } = useSocket();
+  useEffect(() => {
+    if (!socketOn) return;
+    const cleanup = socketOn("new-notification", (notif: any) => {
+      router.invalidate();
+      if (notif.message) {
+        toast.info(notif.message, {
+          description: "Dashboard updated in real-time.",
+        });
+      }
+    });
+    return () => cleanup();
+  }, [socketOn, router]);
 
   const handleResetFinance = async (type: "revenue" | "payouts" | "withdrawable") => {
     const ok = window.confirm(

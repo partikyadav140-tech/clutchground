@@ -1,7 +1,19 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
-import { ArrowLeft, Banknote, CheckCircle, XCircle, ShieldAlert, IndianRupee } from "lucide-react";
-import { getPayouts, updatePayoutStatus } from "../../../api";
+import { useState, useMemo, useEffect } from "react";
+import {
+  ArrowLeft,
+  Banknote,
+  CheckCircle,
+  XCircle,
+  ShieldAlert,
+  IndianRupee,
+  Search,
+  X,
+  CheckSquare,
+  Square,
+} from "lucide-react";
+import { getPayouts, updatePayoutStatus, bulkUpdatePayoutStatus } from "../../../api";
+import { useSocket } from "@/hooks/useSocket";
 import { useAuth } from "../../../lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { GodCoin } from "@/components/GodCoin";
@@ -36,6 +48,22 @@ function AdminPayoutsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [tab, setTab] = useState<FilterTab>("pending");
+  const [search, setSearch] = useState("");
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  const { on: socketOn } = useSocket();
+  useEffect(() => {
+    if (!socketOn) return;
+    const cleanup = socketOn("new-notification", (notif: any) => {
+      router.invalidate();
+      if (notif.message && (notif.message.includes("Withdrawal") || notif.message.includes("payout"))) {
+        toast.info(notif.message, {
+          description: "Real-time sync completed.",
+        });
+      }
+    });
+    return () => cleanup();
+  }, [socketOn, router]);
 
   if (loading)
     return (
@@ -83,6 +111,46 @@ function AdminPayoutsPage() {
     }
   };
 
+  const handleBulkApprove = async () => {
+    if (selectedIds.length === 0) return;
+    const yes = await confirmDialog({
+      title: "Bulk Approve Payouts?",
+      description: `Mark ${selectedIds.length} selected payouts as Paid?`,
+      confirmText: "MARK PAID ALL",
+      isDestructive: false,
+    });
+    if (!yes) return;
+    const toastId = toast.loading(`Processing bulk payouts...`);
+    try {
+      await (bulkUpdatePayoutStatus as any)({ data: { payoutIds: selectedIds, status: "completed" } });
+      toast.success(`Successfully approved ${selectedIds.length} payouts!`, { id: toastId });
+      setSelectedIds([]);
+      router.invalidate();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to bulk approve", { id: toastId });
+    }
+  };
+
+  const handleBulkReject = async () => {
+    if (selectedIds.length === 0) return;
+    const yes = await confirmDialog({
+      title: "Bulk Reject Payouts?",
+      description: `Reject ${selectedIds.length} selected payouts? Coins will be refunded to users.`,
+      confirmText: "REJECT ALL",
+      isDestructive: true,
+    });
+    if (!yes) return;
+    const toastId = toast.loading(`Rejecting bulk payouts...`);
+    try {
+      await (bulkUpdatePayoutStatus as any)({ data: { payoutIds: selectedIds, status: "rejected" } });
+      toast.success(`Successfully rejected ${selectedIds.length} payouts!`, { id: toastId });
+      setSelectedIds([]);
+      router.invalidate();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to bulk reject", { id: toastId });
+    }
+  };
+
   const pendingCount = payouts.filter((p: any) => p.status === "pending").length;
   const pendingTotal = payouts.reduce(
     (s: number, p: any) => s + (p.status === "pending" ? p.amount : 0),
@@ -112,10 +180,26 @@ function AdminPayoutsPage() {
     { key: "all", label: "All", count: payouts.length },
   ];
 
-  const filtered = useMemo(
-    () => (tab === "all" ? payouts : payouts.filter((p: any) => p.status === tab)),
-    [payouts, tab],
-  );
+  const filtered = useMemo(() => {
+    let list = payouts;
+    if (tab !== "all") {
+      list = list.filter((p: any) => p.status === tab);
+    }
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(
+        (p: any) =>
+          p.username?.toLowerCase().includes(q) ||
+          p.email?.toLowerCase().includes(q) ||
+          p.phone?.toLowerCase().includes(q) ||
+          p.upi_id?.toLowerCase().includes(q) ||
+          p.upi_number?.toLowerCase().includes(q) ||
+          String(p.amount).includes(q)
+      );
+    }
+    return list;
+  }, [payouts, tab, search]);
 
   return (
     <div className="bg-background min-h-screen pb-2">
@@ -173,12 +257,34 @@ function AdminPayoutsPage() {
       </div>
 
       <div className="px-4 pt-4">
+        {/* Search bar */}
+        <div className="relative mb-3">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search username, email, UPI ID, amount..."
+            className="w-full h-11 bg-card border border-border focus:border-primary outline-none pl-10 pr-10 text-sm rounded-xl transition-all font-semibold shadow-sm"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
         {/* Tabs */}
         <div className="flex gap-1.5 mb-4 overflow-x-auto hide-scrollbar pb-1">
           {TABS.map((t) => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => {
+                setTab(t.key);
+                setSelectedIds([]);
+              }}
               className={`px-3 py-1.5 rounded-full font-bold text-xs whitespace-nowrap flex items-center gap-1.5 transition-colors shrink-0 ${
                 tab === t.key
                   ? "bg-primary text-white"
@@ -195,6 +301,44 @@ function AdminPayoutsPage() {
           ))}
         </div>
 
+        {/* Bulk Action Panel */}
+        {selectedIds.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-card border border-primary/30 rounded-2xl p-3.5 mb-4 shadow-md flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-2">
+              <span className="bg-primary text-white text-[11px] font-black px-2.5 py-1 rounded-full">
+                {selectedIds.length} selected
+              </span>
+              <button
+                onClick={() => setSelectedIds([])}
+                className="text-xs text-muted-foreground hover:text-foreground font-semibold underline"
+              >
+                Clear
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs h-9 rounded-xl"
+                onClick={handleBulkApprove}
+              >
+                <CheckCircle className="w-3.5 h-3.5 mr-1" /> Mark Paid
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-destructive/20 text-destructive hover:bg-destructive/10 font-bold text-xs h-9 rounded-xl"
+                onClick={handleBulkReject}
+              >
+                <XCircle className="w-3.5 h-3.5 mr-1" /> Reject
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
         {filtered.length === 0 ? (
           <div className="text-center py-16 bg-card rounded-2xl border border-border">
             <Banknote className="w-10 h-10 mx-auto mb-2 text-muted-foreground/30" />
@@ -203,85 +347,109 @@ function AdminPayoutsPage() {
         ) : (
           <div className="space-y-3">
             <AnimatePresence>
-              {filtered.map((p: any, i: number) => (
-                <motion.div
-                  key={p.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.15, delay: Math.min(i * 0.04, 0.3) }}
-                  className={`bg-card rounded-2xl border overflow-hidden ${p.status === "pending" ? "border-amber-400/30 shadow-md" : "border-border/50 shadow-sm"}`}
-                >
-                  <div className="p-4">
-                    {/* Top row */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <h3 className="font-display font-black text-foreground">{p.username}</h3>
-                          <span
-                            className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-full border ${STATUS_PILL[p.status] || ""}`}
-                          >
-                            {p.status}
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground font-semibold">
-                          {p.email || p.phone || "—"}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1 font-display font-black text-xl text-foreground">
-                        <GodCoin className="w-5 h-5" /> {p.amount}
-                      </div>
-                    </div>
-
-                    {/* Details */}
-                    <div className="bg-secondary/30 rounded-xl p-3 space-y-2 text-xs mb-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">
-                          UPI ID
-                        </span>
-                        <span className="font-mono font-bold text-cta bg-primary/5 px-2 py-0.5 rounded">
-                          {p.upi_id}
-                        </span>
-                      </div>
-                      {p.upi_number && (
-                        <div className="flex items-center justify-between border-t border-border pt-2">
-                          <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">
-                            UPI Phone
-                          </span>
-                          <span className="font-mono font-bold text-foreground">
-                            {p.upi_number}
-                          </span>
-                        </div>
+              {filtered.map((p: any, i: number) => {
+                const isSelected = selectedIds.includes(p.id);
+                const canSelect = p.status === "pending";
+                return (
+                  <motion.div
+                    key={p.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.15, delay: Math.min(i * 0.04, 0.3) }}
+                    className={`bg-card rounded-2xl border overflow-hidden transition-all ${isSelected ? "border-primary/60 bg-primary/5" : p.status === "pending" ? "border-amber-400/30 shadow-md" : "border-border/50 shadow-sm"}`}
+                  >
+                    <div className="flex items-stretch">
+                      {canSelect && (
+                        <button
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedIds(selectedIds.filter((id) => id !== p.id));
+                            } else {
+                              setSelectedIds([...selectedIds, p.id]);
+                            }
+                          }}
+                          className="px-3 border-r border-border/40 flex items-center justify-center hover:bg-secondary/20 transition-colors"
+                        >
+                          {isSelected ? (
+                            <CheckSquare className="w-4 h-4 text-primary" />
+                          ) : (
+                            <Square className="w-4 h-4 text-muted-foreground/30" />
+                          )}
+                        </button>
                       )}
-                      <div className="flex items-center justify-between border-t border-border pt-2">
-                        <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">
-                          Requested
-                        </span>
-                        <span className="text-foreground font-semibold">
-                          {new Date(p.created_at).toLocaleString("en-IN")}
-                        </span>
+                      <div className="flex-1 p-4">
+                        {/* Top row */}
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <h3 className="font-display font-black text-foreground">{p.username}</h3>
+                              <span
+                                className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-full border ${STATUS_PILL[p.status] || ""}`}
+                              >
+                                {p.status}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground font-semibold">
+                              {p.email || p.phone || "—"}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1 font-display font-black text-xl text-foreground">
+                            <GodCoin className="w-5 h-5" /> {p.amount}
+                          </div>
+                        </div>
+
+                        {/* Details */}
+                        <div className="bg-secondary/35 rounded-xl p-3 space-y-2 text-xs mb-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">
+                              UPI ID
+                            </span>
+                            <span className="font-mono font-bold text-cta bg-primary/5 px-2 py-0.5 rounded">
+                              {p.upi_id}
+                            </span>
+                          </div>
+                          {p.upi_number && (
+                            <div className="flex items-center justify-between border-t border-border pt-2">
+                              <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">
+                                UPI Phone
+                              </span>
+                              <span className="font-mono font-bold text-foreground">
+                                {p.upi_number}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between border-t border-border pt-2">
+                            <span className="text-muted-foreground font-bold uppercase tracking-wider text-[10px]">
+                              Requested
+                            </span>
+                            <span className="text-foreground font-semibold">
+                              {new Date(p.created_at).toLocaleString("en-IN")}
+                            </span>
+                          </div>
+                        </div>
+
+                        {p.status === "pending" && (
+                          <div className="flex gap-2">
+                            <Button
+                              className="flex-1 h-10 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-600 text-white"
+                              onClick={() => handleResolve(p.id, p.user_id, p.amount, "completed")}
+                            >
+                              <CheckCircle className="w-3.5 h-3.5 mr-1.5" /> Mark Paid
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="flex-1 h-10 rounded-xl font-bold text-xs text-destructive border-destructive/20 hover:bg-destructive/10"
+                              onClick={() => handleResolve(p.id, p.user_id, p.amount, "rejected")}
+                            >
+                              <XCircle className="w-3.5 h-3.5 mr-1.5" /> Reject
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
-
-                    {p.status === "pending" && (
-                      <div className="flex gap-2">
-                        <Button
-                          className="flex-1 h-10 rounded-xl font-bold text-xs bg-emerald-500 hover:bg-emerald-600 text-white"
-                          onClick={() => handleResolve(p.id, p.user_id, p.amount, "completed")}
-                        >
-                          <CheckCircle className="w-3.5 h-3.5 mr-1.5" /> Mark Paid
-                        </Button>
-                        <Button
-                          variant="outline"
-                          className="flex-1 h-10 rounded-xl font-bold text-xs text-destructive border-destructive/20 hover:bg-destructive/10"
-                          onClick={() => handleResolve(p.id, p.user_id, p.amount, "rejected")}
-                        >
-                          <XCircle className="w-3.5 h-3.5 mr-1.5" /> Reject
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           </div>
         )}

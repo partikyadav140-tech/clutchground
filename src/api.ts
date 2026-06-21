@@ -12,6 +12,9 @@ export {
   getUserUpiDeposits,
   getActiveUpiConfig,
   checkPendingDeposit,
+  bulkApproveUpiDeposits,
+  bulkRejectUpiDeposits,
+  cancelPendingDeposit,
 } from "./lib/upi";
 
 export async function getCurrentUser(requiredRole?: "admin" | "user", dataSessionId?: string) {
@@ -3461,7 +3464,7 @@ export const getAdminStats = createServerFn({ method: "GET" }).handler(async () 
   const pendingDeposits =
     (
       (await db
-        .prepare("SELECT COUNT(*) as c FROM upi_deposits WHERE status = 'submitted'")
+        .prepare("SELECT COUNT(*) as c FROM upi_deposits WHERE status IN ('submitted', 'pending')")
         .get()) as any
     )?.c || 0;
   const pendingPayouts =
@@ -5632,3 +5635,99 @@ export const saveFinalResults = createServerFn({ method: "POST" }).handler(async
 
   return { success: true, finalRankings: resultsForSave.length };
 });
+
+export const bulkUpdatePayoutStatus = createServerFn({ method: "POST" }).handler(async ({ data }) => {
+  await getCurrentUser("admin");
+  const { db } = await import("./lib/db");
+  const { payoutIds, status } = data as unknown as {
+    payoutIds: number[];
+    status: string;
+  };
+  if (!payoutIds || payoutIds.length === 0) return { success: true };
+
+  for (const payoutId of payoutIds) {
+    const payout = (await db
+      .prepare("SELECT * FROM withdrawals WHERE id = ?")
+      .get(payoutId)) as any;
+
+    if (!payout || payout.status !== "pending") continue;
+
+    await db.transaction(async (tx) => {
+      await tx.prepare("UPDATE withdrawals SET status = ? WHERE id = ?").run(status, payoutId);
+
+      if (status === "completed") {
+        await tx
+          .prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")
+          .run(
+            payout.user_id,
+            `✅ Withdrawal completed: ${payout.amount} CG Coins has been sent to your UPI. Please check your bank statement.`,
+          );
+      } else if (status === "rejected") {
+        // Refund the coins
+        await tx
+          .prepare("UPDATE users SET winning_balance = winning_balance + ? WHERE id = ?")
+          .run(payout.amount, payout.user_id);
+        await tx
+          .prepare(
+            "INSERT INTO transactions (user_id, amount, type, description) VALUES (?, ?, ?, ?)",
+          )
+          .run(payout.user_id, payout.amount, "refund", `Withdrawal Refunded (Bulk)`);
+        await tx
+          .prepare("INSERT INTO notifications (user_id, message) VALUES (?, ?)")
+          .run(
+            payout.user_id,
+            `❌ Your withdrawal of ${payout.amount} CG Coins was rejected. The coins have been refunded to your wallet.`,
+          );
+      }
+    });
+
+    try {
+      const { triggerPushNotification } = await import("./lib/push-server");
+      const msg =
+        status === "completed"
+          ? `✅ Withdrawal completed: ${payout.amount} CG Coins has been sent to your UPI. Please check your bank statement.`
+          : `❌ Your withdrawal of ${payout.amount} CG Coins was rejected. The coins have been refunded to your wallet.`;
+      triggerPushNotification(
+        payout.user_id,
+        status === "completed" ? "✅ Withdrawal Success" : "❌ Withdrawal Rejected",
+        msg,
+        "/wallet",
+      ).catch((e) => console.error("Payout status push error:", e));
+    } catch (e) {}
+
+    // Emit real-time balance update via WebSocket (for rejected refunds)
+    if (status === "rejected") {
+      try {
+        const { emitBalanceUpdate } = await import("./lib/socket-server");
+        const updatedUser = (await db
+          .prepare("SELECT deposit_balance, winning_balance FROM users WHERE id = ?")
+          .get(payout.user_id)) as any;
+        if (updatedUser) {
+          emitBalanceUpdate(payout.user_id, {
+            deposit: updatedUser.deposit_balance || 0,
+            winning: updatedUser.winning_balance || 0,
+          });
+        }
+      } catch {}
+    }
+
+    // Emit real-time notification via WebSocket
+    try {
+      const { emitNotification } = await import("./lib/socket-server");
+      const msg =
+        status === "completed"
+          ? `✅ Withdrawal completed: ${payout.amount} CG Coins has been sent to your UPI.`
+          : `❌ Your withdrawal of ${payout.amount} CG Coins was rejected. The coins have been refunded to your wallet.`;
+      emitNotification(payout.user_id, {
+        id: Date.now(),
+        user_id: payout.user_id,
+        message: msg,
+        redirect_url: "/wallet",
+        is_read: false,
+        created_at: new Date().toISOString(),
+      });
+    } catch {}
+  }
+  return { success: true };
+});
+

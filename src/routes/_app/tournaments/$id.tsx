@@ -729,7 +729,6 @@ function TournamentDetailPage() {
                     "Room ID & password released 10 minutes before match start.",
                     "Hacking, teaming, or stream sniping = permanent ban.",
                     "Admin verdicts are final. No disputes accepted after 24h.",
-                    "Prizes credited to wallet within 24h of verification.",
                   ].map((r, i) => (
                     <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
                       <span
