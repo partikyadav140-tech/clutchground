@@ -1471,7 +1471,7 @@ export const getPublicProfile = createServerFn({ method: "POST" }).handler(async
         `SELECT ${PROFILE_SELECT} FROM users WHERE id = ? AND COALESCE(banned, false) = false`,
       )
       .get(userId)) as any;
-    if (!profile || profile.role === "admin") return null;
+    if (!profile) return null;
     return enrichProfile(db, profile, false);
   } catch (e) {
     console.error("getPublicProfile error:", e);
