@@ -93,7 +93,7 @@ export const Route = createRootRoute({
       },
       {
         property: "og:image",
-        content: "https://clutchground.games/logo-transparent.png",
+        content: "https://clutchground.games/og-image.png",
       },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
@@ -118,7 +118,7 @@ export const Route = createRootRoute({
       },
       {
         name: "twitter:image",
-        content: "https://clutchground.games/logo-transparent.png",
+        content: "https://clutchground.games/og-image.png",
       },
       { name: "twitter:image:alt", content: "ClutchGround Free Fire Esports Platform" },
     ],
