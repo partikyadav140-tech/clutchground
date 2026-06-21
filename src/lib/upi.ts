@@ -140,8 +140,8 @@ export const createUpiDeposit = createServerFn({ method: "POST" }).handler(async
   const safeNote = encodeURIComponent("Wallet_Deposit");
   const safeUpiId = encodeURIComponent(upiCfg.upiId.trim());
 
-  // standard UPI intent
-  const upiLink = `upi://pay?pa=${safeUpiId}&pn=${safePlatformName}&am=${amount}&cu=INR&tn=${safeNote}&tr=${safeTxnRef}`;
+  // standard UPI intent - cleaned parameters for personal VPA compatibility (no tr/tn)
+  const upiLink = `upi://pay?pa=${safeUpiId}&pn=${safePlatformName}&am=${amount}&cu=INR`;
 
   return {
     txnRef,

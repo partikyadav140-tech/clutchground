@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import QRCode from "qrcode";
 import {
   Dialog,
   DialogContent,
@@ -104,6 +105,24 @@ export function WalletDepositDialog({
     amount: number;
   } | null>(null);
 
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
+
+  useEffect(() => {
+    if (payData?.upiLink) {
+      QRCode.toDataURL(payData.upiLink, {
+        errorCorrectionLevel: "M",
+        margin: 1,
+        width: 256,
+      })
+        .then((url) => {
+          setQrCodeUrl(url);
+        })
+        .catch((err) => {
+          console.error("Error generating QR code:", err);
+        });
+    }
+  }, [payData?.upiLink]);
+
   const [senderUpiId, setSenderUpiId] = useState("");
   const { user } = useAuth();
 
@@ -207,9 +226,7 @@ export function WalletDepositDialog({
   };
 
   /* ── UPI QR via QR API (fallback) ── */
-  const qrUrl = payData
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(payData.upiLink)}&bgcolor=ffffff&color=1a1a2e&margin=8`
-    : "";
+  // QR Code is now generated locally via qrcode package
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -508,16 +525,19 @@ export function WalletDepositDialog({
                   {/* QR Code */}
                   <div className="flex flex-col items-center gap-2">
                     <div className="bg-white rounded-xl p-2 shadow-sm border border-border">
-                      <img
-                        src={qrUrl}
-                        alt="UPI QR Code"
-                        width={160}
-                        height={160}
-                        className="rounded-lg"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = "none";
-                        }}
-                      />
+                      {qrCodeUrl ? (
+                        <img
+                          src={qrCodeUrl}
+                          alt="UPI QR Code"
+                          width={160}
+                          height={160}
+                          className="rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-[160px] h-[160px] flex items-center justify-center bg-muted rounded-lg">
+                          <span className="text-xs text-muted-foreground">Generating QR...</span>
+                        </div>
+                      )}
                     </div>
                     <p className="text-[10px] text-muted-foreground font-semibold">
                       Scan with any UPI app
