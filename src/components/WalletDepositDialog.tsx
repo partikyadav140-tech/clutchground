@@ -229,8 +229,36 @@ export function WalletDepositDialog({
   // QR Code is now generated locally via qrcode package
 
   const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copied!`);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(() => toast.success(`${label} copied!`))
+        .catch(() => fallbackCopy(text, label));
+    } else {
+      fallbackCopy(text, label);
+    }
+  };
+
+  const fallbackCopy = (text: string, label: string) => {
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.top = "0";
+      textArea.style.left = "0";
+      textArea.style.position = "fixed";
+      textArea.style.opacity = "0";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+      if (successful) {
+        toast.success(`${label} copied!`);
+      } else {
+        toast.error(`Failed to copy ${label}`);
+      }
+    } catch (err) {
+      toast.error(`Failed to copy ${label}`);
+    }
   };
 
   const handleTriggerClick = (e: React.MouseEvent) => {
@@ -422,7 +450,7 @@ export function WalletDepositDialog({
             <div className="bg-primary/8 border border-primary/20 rounded-xl p-3 text-xs text-foreground/70 flex items-start gap-2">
               <ShieldCheck className="w-4 h-4 text-cta shrink-0 mt-0.5" />
               <span>
-                Pay securely via <strong className="text-foreground">Bharat UPI</strong>. Coins
+                Pay securely via <strong className="text-foreground">any UPI app</strong>. Coins
                 credited after admin verification (usually within 30 min).
               </span>
             </div>
@@ -462,8 +490,18 @@ export function WalletDepositDialog({
               </span>
             </div>
 
-            {/* Primary CTA: Pay via UPI */}
+            {/* Direct instructions note */}
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 text-xs text-foreground/80 flex items-start gap-2">
+              <Smartphone className="w-4 h-4 text-cta shrink-0 mt-0.5" />
+              <span>
+                <strong className="text-foreground block mb-0.5">Using same phone?</strong>
+                Take a screenshot of the QR to scan in your UPI app, or copy the UPI ID below to pay manually. Click <strong>"I've Paid"</strong> once done.
+              </span>
+            </div>
+
+            {/* Primary CTA: Pay via UPI - Commented out for now until Merchant UPI is integrated
             <button
+              type="button"
               onClick={openUpiApp}
               className="w-full h-14 rounded-2xl font-black text-base uppercase tracking-wider text-white flex items-center justify-center gap-3 press-effect active:scale-[0.97] transition-all shadow-lg relative overflow-hidden"
               style={{
@@ -485,6 +523,7 @@ export function WalletDepositDialog({
             <p className="text-[10px] text-muted-foreground text-center font-semibold">
               Opens your UPI app with amount auto-filled • Just enter PIN & pay
             </p>
+            */}
 
             {/* Paying to info */}
             <div className="bg-secondary/60 border border-border rounded-xl p-3">
@@ -496,6 +535,7 @@ export function WalletDepositDialog({
                   <p className="font-mono font-bold text-foreground text-sm">{payData.upiId}</p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => copyToClipboard(payData.upiId, "UPI ID")}
                   className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                 >
@@ -504,63 +544,29 @@ export function WalletDepositDialog({
               </div>
             </div>
 
-            {/* Collapsible fallback: QR Code + manual options */}
-            <div className="border border-border/50 rounded-xl overflow-hidden">
-              <button
-                onClick={() => setShowFallback(!showFallback)}
-                className="w-full flex items-center justify-between px-3 py-2.5 bg-secondary/20 hover:bg-secondary/40 transition-colors"
-              >
-                <span className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
-                  <QrCode className="w-3.5 h-3.5" />
-                  Can't open UPI app? Scan QR or copy UPI ID
-                </span>
-                {showFallback ? (
-                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                )}
-              </button>
-              {showFallback && (
-                <div className="p-3 space-y-3 border-t border-border/50 bg-secondary/10">
-                  {/* QR Code */}
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="bg-white rounded-xl p-2 shadow-sm border border-border">
-                      {qrCodeUrl ? (
-                        <img
-                          src={qrCodeUrl}
-                          alt="UPI QR Code"
-                          width={160}
-                          height={160}
-                          className="rounded-lg"
-                        />
-                      ) : (
-                        <div className="w-[160px] h-[160px] flex items-center justify-center bg-muted rounded-lg">
-                          <span className="text-xs text-muted-foreground">Generating QR...</span>
-                        </div>
-                      )}
+            {/* QR Code (always visible) */}
+            <div className="p-3 space-y-4 border border-border/50 rounded-xl bg-secondary/10">
+              {/* QR Code */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="bg-white rounded-xl p-2 shadow-sm border border-border">
+                  {qrCodeUrl ? (
+                    <img
+                      src={qrCodeUrl}
+                      alt="UPI QR Code"
+                      width={160}
+                      height={160}
+                      className="rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-[160px] h-[160px] flex items-center justify-center bg-muted rounded-lg">
+                      <span className="text-xs text-muted-foreground">Generating QR...</span>
                     </div>
-                    <p className="text-[10px] text-muted-foreground font-semibold">
-                      Scan with any UPI app
-                    </p>
-                  </div>
-
-                  {/* Ref */}
-                  <div className="bg-secondary/60 border border-border rounded-xl p-2.5">
-                    <p className="text-[9px] uppercase tracking-widest font-bold text-muted-foreground mb-1">
-                      Transaction Ref (add as note)
-                    </p>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono text-xs text-foreground">{payData.txnRef}</span>
-                      <button
-                        onClick={() => copyToClipboard(payData.txnRef, "Reference")}
-                        className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                      >
-                        <Copy className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
-              )}
+                <p className="text-[10px] text-muted-foreground font-semibold">
+                  Scan QR code with any UPI app to pay
+                </p>
+              </div>
             </div>
 
             {/* ⚠️ Professional Warning Note */}
