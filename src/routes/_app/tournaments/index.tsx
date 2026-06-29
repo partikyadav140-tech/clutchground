@@ -9,7 +9,7 @@ import { TournamentCard } from "@/components/TournamentCard";
 import { SkeletonPage } from "@/components/SkeletonPage";
 
 export const Route = createFileRoute("/_app/tournaments/")({
-  head: () => ({ meta: [{ title: "Arena — CLUTCHGROUND" }] }),
+  head: () => ({ meta: [{ title: "Free Fire Tournaments Arena — CLUTCHGROUND" }] }),
   loader: async () => await getTournaments(),
   component: TournamentsPage,
   pendingComponent: () => (

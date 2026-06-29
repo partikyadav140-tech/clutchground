@@ -206,6 +206,46 @@ function RootShell({ children }: { children: React.ReactNode }) {
       <head>
         {/* Anti-flash theme script — runs before CSS */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        
+        {/* JSON-LD Structured Schema Markups for Google SEO */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "SportsOrganization",
+                  "@id": "https://clutchground.games/#organization",
+                  "name": "ClutchGround",
+                  "url": "https://clutchground.games/",
+                  "logo": {
+                    "@type": "ImageObject",
+                    "url": "https://clutchground.games/logo-transparent.png",
+                    "width": "512",
+                    "height": "512"
+                  },
+                  "sport": "Free Fire Esports",
+                  "description": "India's premier Free Fire & Free Fire MAX esports tournament platform offering daily cash prize tournaments.",
+                  "sameAs": [
+                    "https://www.instagram.com/clutchground"
+                  ]
+                },
+                {
+                  "@type": "WebSite",
+                  "@id": "https://clutchground.games/#website",
+                  "url": "https://clutchground.games/",
+                  "name": "ClutchGround",
+                  "description": "India's #1 Free Fire Esports Tournament Platform | Win Real Cash",
+                  "publisher": {
+                    "@id": "https://clutchground.games/#organization"
+                  }
+                }
+              ]
+            })
+          }}
+        />
+
         <HeadContent />
         <link rel="manifest" href="/manifest.webmanifest" />
         <script

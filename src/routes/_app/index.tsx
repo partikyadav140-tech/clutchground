@@ -32,7 +32,7 @@ import { SpinWheelFab } from "@/components/spin-wheel/SpinWheelFab";
 import { SkeletonHome } from "@/components/SkeletonPage";
 
 export const Route = createFileRoute("/_app/")({
-  head: () => ({ meta: [{ title: "ClutchGround | Clutch Ground — Rule the Battleground" }] }),
+  head: () => ({ meta: [{ title: "ClutchGround | Free Fire Esports Tournaments & Arena" }] }),
   loader: async () => {
     const [ts, lb] = await Promise.allSettled([getTournaments(), (getGlobalLeaderboard as any)()]);
     return {

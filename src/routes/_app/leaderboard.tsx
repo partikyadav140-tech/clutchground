@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { SkeletonLeaderboard } from "@/components/SkeletonPage";
 
 export const Route = createFileRoute("/_app/leaderboard")({
-  head: () => ({ meta: [{ title: "Leaderboard — CLUTCHGROUND" }] }),
+  head: () => ({ meta: [{ title: "Free Fire Esports Leaderboard — CLUTCHGROUND" }] }),
   loader: async () => {
     const [leaderboard, settings] = await Promise.all([
       (getGlobalLeaderboard as any)(),
