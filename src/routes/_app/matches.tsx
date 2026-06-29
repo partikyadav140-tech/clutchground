@@ -160,7 +160,7 @@ function MatchesPage() {
 
   if (!user || loading)
     return (
-      <div className="min-h-screen bg-background pb-[80px]">
+      <div className="min-h-screen bg-background pb-[120px]">
         <div className="px-4 pt-5 pb-4">
           <div className="w-12 h-2 rounded-full bg-secondary animate-pulse mb-1" />
           <div className="w-32 h-6 rounded-full bg-secondary animate-pulse" />
@@ -173,10 +173,12 @@ function MatchesPage() {
       </div>
     );
 
-  const history = matches.filter((m) => m.match_status === "completed");
+  const history = matches
+    .filter((m) => m.match_status === "completed")
+    .sort((a: any, b: any) => new Date(b.startsat || 0).getTime() - new Date(a.startsat || 0).getTime());
 
   return (
-    <div className="min-h-screen bg-background pb-[80px]">
+    <div className="min-h-screen bg-background pb-[120px]">
       {/* ── Header ── */}
       <div className="px-4 pt-5 pb-4">
         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-0.5">

@@ -81,7 +81,7 @@ export const Route = createFileRoute("/_app")({
             isChatPage ? "h-full flex flex-col overflow-hidden" : "overflow-y-auto",
             !isAuthRoute ? (isChatPage ? "lg:pt-16" : "pt-[60px]") : "",
             !isAuthRoute && !isChatPage
-              ? "pb-[calc(80px+env(safe-area-inset-bottom,0px))] lg:pb-0"
+              ? "pb-[120px] lg:pb-0"
               : "",
           ]
             .filter(Boolean)
@@ -103,6 +103,7 @@ export const Route = createFileRoute("/_app")({
                 <Outlet />
               </Suspense>
               {!isAuthRoute && !isChatPage && <Footer />}
+              {!isAuthRoute && !isChatPage && <div className="shrink-0 h-[30px]" aria-hidden="true" />}
             </div>
           </div>
         </main>

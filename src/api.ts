@@ -1101,7 +1101,7 @@ export const registerForTournament = createServerFn({ method: "POST" }).handler(
           requester =
             requester || (await tx.prepare("SELECT username FROM users WHERE id = ?").get(userId));
           const members = (await tx
-            .prepare("SELECT user_id FROM team_members WHERE team_id = ? AND user_id IS NOT NULL")
+            .prepare("SELECT tm.user_id FROM team_members tm JOIN users u ON u.id = tm.user_id WHERE tm.team_id = ? AND tm.user_id IS NOT NULL")
             .all(team.id)) as any[];
           const insertNotif = tx.prepare(
             "INSERT INTO notifications (user_id, message, redirect_url) VALUES (?, ?, ?)",
@@ -2358,15 +2358,17 @@ export const getTournamentResults = createServerFn({ method: "POST" }).handler(a
   const results = (await db
     .prepare(
       `
-      SELECT r.*, u.username, u.avatar_url, COALESCE(r.team_name, u.username) as display_name, t.mode as tourney_mode, tm.logo as team_logo
+      SELECT r.*, u.username, u.avatar_url, COALESCE(r.team_name, u.username) as display_name, t.mode as tourney_mode, t.tournament_type as tourney_type, tm.logo as team_logo
       FROM registrations r
       JOIN users u ON r.user_id = u.id
       JOIN tournaments t ON r.tournament_id = t.id
       LEFT JOIN teams tm ON tm.name = r.team_name
       WHERE r.tournament_id = ? 
       ORDER BY 
-        CASE WHEN t.mode IN ('Duo', 'Solo') THEN (CASE WHEN r.position > 0 THEN r.position ELSE 99999 END) ELSE 0 END ASC,
-        CASE WHEN t.mode = 'Squad' THEN r.points ELSE NULL END DESC,
+        CASE WHEN t.mode IN ('Duo', 'Solo') OR t.tournament_type IN ('clash_squad', 'lone_wolf')
+             THEN (CASE WHEN r.position > 0 THEN r.position ELSE 99999 END) ELSE 0 END ASC,
+        CASE WHEN t.mode = 'Squad' AND t.tournament_type NOT IN ('clash_squad', 'lone_wolf')
+             THEN r.points ELSE NULL END DESC,
         r.kills DESC
     `,
     )

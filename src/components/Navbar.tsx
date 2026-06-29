@@ -338,11 +338,20 @@ export function Navbar() {
           • Desktop → hidden (navigation is in the top header)
          ══════════════════════════════════════════════════════ */}
       <nav
-        className={`app-bottom-nav fixed bottom-0 inset-x-0 z-50 lg:hidden pointer-events-none ${isTicketChat ? "hidden" : ""}`}
+        className={`app-bottom-nav fixed bottom-0 inset-x-0 z-50 lg:hidden ${isTicketChat ? "hidden" : ""}`}
         aria-label="Main navigation"
+        style={{ paddingBottom: "max(10px, env(safe-area-inset-bottom, 0px))" }}
       >
-        <div className="px-4 mb-[max(10px,env(safe-area-inset-bottom))] max-w-[480px] mx-auto w-full pointer-events-auto">
-          <div className="app-bottom-nav-inner relative flex items-center justify-around h-[66px] px-2 rounded-[18px] border border-border/80 bg-card/98 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.18)] overflow-hidden">
+        {/* Solid mask to hide content behind the safe area and rounded corners at the bottom */}
+        <div
+          className="absolute inset-x-0 bottom-0 pointer-events-none z-0"
+          style={{
+            height: "calc(max(10px, env(safe-area-inset-bottom, 0px)) + 20px)",
+            background: "var(--background)",
+          }}
+        />
+        <div className="px-4 max-w-[480px] mx-auto w-full relative z-10">
+          <div className="app-bottom-nav-inner relative flex items-center justify-around h-[66px] px-2 rounded-[18px] border border-border/80 bg-card backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.18)] overflow-hidden">
             {MOBILE_NAV_ITEMS.map(({ to, label, icon: Icon }) => {
               const isActive = to === "/" ? path === "/" : path.startsWith(to);
               return (

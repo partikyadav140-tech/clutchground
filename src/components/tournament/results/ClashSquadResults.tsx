@@ -2,11 +2,9 @@
  * ClashSquadResults — Professional Clash Squad Tournament Standings
  *
  * Mobile-first HTML table: Rank | Team | Kills | Position
- * Keeps hidden canvas for "Save Image" download.
  */
 
-import { useEffect, useRef } from "react";
-import { Download, ImageIcon, Flame, MapPin } from "lucide-react";
+import { ImageIcon, Flame } from "lucide-react";
 
 interface TeamResult {
   id?: number;
@@ -26,167 +24,14 @@ const MEDAL = [
   { border: "#cd7c2f", bg: "rgba(205,124,47,0.10)", label: "🥉" },
 ];
 
-/* ── canvas for download ── */
-function drawCanvas(canvas: HTMLCanvasElement, tournamentName: string, results: TeamResult[]) {
-  const SCALE = 2,
-    W = 900,
-    PAD = 32;
-  const HEADER_H = 160,
-    ROW_H = 56,
-    FOOTER_H = 60;
-  const H = HEADER_H + results.length * ROW_H + FOOTER_H + PAD;
-  canvas.width = W * SCALE;
-  canvas.height = H * SCALE;
-  const ctx = canvas.getContext("2d")!;
-  ctx.scale(SCALE, SCALE);
-
-  const bg = ctx.createLinearGradient(0, 0, W, H);
-  bg.addColorStop(0, "#0f0c1a");
-  bg.addColorStop(0.5, "#16102a");
-  bg.addColorStop(1, "#0a0a14");
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
-
-  ctx.strokeStyle = "rgba(255,255,255,0.03)";
-  ctx.lineWidth = 1;
-  for (let x = 0; x < W; x += 60) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, H);
-    ctx.stroke();
-  }
-  for (let y = 0; y < H; y += 60) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(W, y);
-    ctx.stroke();
-  }
-
-  const hg = ctx.createLinearGradient(0, 0, W, 0);
-  hg.addColorStop(0, "#ff6b00");
-  hg.addColorStop(0.5, "#ff4d6d");
-  hg.addColorStop(1, "#7c3aed");
-  ctx.fillStyle = hg;
-  ctx.fillRect(0, 0, W, 6);
-
-  ctx.font = "bold 13px Arial";
-  ctx.fillStyle = "rgba(255,255,255,0.4)";
-  ctx.textAlign = "left";
-  ctx.fillText("CLUTCHGROUND • CLASH SQUAD", PAD, 36);
-  ctx.font = "bold 28px Arial Black";
-  ctx.fillStyle = "#ffffff";
-  ctx.fillText(tournamentName || "Clash Squad Results", PAD, 76);
-  ctx.font = "14px Arial";
-  ctx.fillStyle = "rgba(255,255,255,0.5)";
-  ctx.fillText("Clash Squad • Free Fire • Final Standings", PAD, 100);
-  ctx.fillStyle = "rgba(255,255,255,0.08)";
-  ctx.fillRect(PAD, 114, W - PAD * 2, 1);
-
-  const tableTop = 126;
-  ctx.font = "bold 10px Arial";
-  ctx.fillStyle = "rgba(255,255,255,0.35)";
-  ctx.letterSpacing = "2px";
-  const headers = [
-    { label: "RANK", x: PAD, align: "center" as CanvasTextAlign, w: 60 },
-    { label: "TEAM", x: PAD + 70, align: "left" as CanvasTextAlign, w: 400 },
-    { label: "KILLS", x: PAD + 490, align: "center" as CanvasTextAlign, w: 130 },
-    { label: "POSITION", x: W - PAD - 140, align: "center" as CanvasTextAlign, w: 140 },
-  ];
-  headers.forEach((c) => {
-    ctx.textAlign = c.align;
-    const tx = c.align === "right" ? c.x + c.w : c.align === "center" ? c.x + c.w / 2 : c.x;
-    ctx.fillText(c.label, tx, tableTop);
-  });
-  ctx.letterSpacing = "0px";
-
-  const rowStart = tableTop + 16;
-  const RANK_CLR = ["#FFD700", "#C0C0C0", "#CD7F32"];
-  results.forEach((r, i) => {
-    const ry = rowStart + i * ROW_H,
-      top3 = i < 3;
-    if (i % 2 === 0) {
-      ctx.fillStyle = "rgba(255,255,255,0.03)";
-      ctx.beginPath();
-      ctx.roundRect(PAD - 8, ry - 2, W - PAD * 2 + 16, ROW_H - 4, 10);
-      ctx.fill();
-    }
-    if (top3) {
-      ctx.fillStyle = RANK_CLR[i];
-      ctx.beginPath();
-      ctx.roundRect(PAD - 8, ry - 2, 3, ROW_H - 4, 2);
-      ctx.fill();
-    }
-    const cy = ry + ROW_H / 2 - 4;
-    ctx.textAlign = "center";
-    if (top3) {
-      ctx.font = "bold 18px Arial";
-      ctx.fillStyle = RANK_CLR[i];
-      ctx.fillText(["🥇", "🥈", "🥉"][i], PAD + 30, cy + 8);
-    } else {
-      ctx.font = "bold 15px Arial";
-      ctx.fillStyle = "rgba(255,255,255,0.35)";
-      ctx.fillText(`#${i + 1}`, PAD + 30, cy + 6);
-    }
-    ctx.textAlign = "left";
-    ctx.font = top3 ? "bold 15px Arial" : "600 14px Arial";
-    ctx.fillStyle = top3 ? "#ffffff" : "rgba(255,255,255,0.8)";
-    ctx.fillText(r.team_name || `Team ${i + 1}`, PAD + 70, cy + 6);
-    ctx.textAlign = "center";
-    ctx.font = "bold 14px 'Courier New',monospace";
-    ctx.fillStyle = "#f97316";
-    ctx.fillText(String(r.kills || 0), PAD + 490 + 65, cy + 6);
-    ctx.font = "14px Arial";
-    ctx.fillStyle = "rgba(255,255,255,0.55)";
-    ctx.fillText(r.position ? `#${r.position}` : "—", W - PAD - 70, cy + 6);
-    if (i < results.length - 1) {
-      ctx.fillStyle = "rgba(255,255,255,0.05)";
-      ctx.fillRect(PAD, ry + ROW_H - 6, W - PAD * 2, 1);
-    }
-  });
-
-  const fy = rowStart + results.length * ROW_H + 16;
-  ctx.fillStyle = "rgba(255,255,255,0.06)";
-  ctx.fillRect(PAD, fy, W - PAD * 2, 1);
-  ctx.font = "12px Arial";
-  ctx.textAlign = "center";
-  ctx.fillStyle = "rgba(255,255,255,0.25)";
-  ctx.fillText(
-    `clutchground.games  •  ${new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}`,
-    W / 2,
-    fy + 28,
-  );
-  const bg2 = ctx.createLinearGradient(0, 0, W, 0);
-  bg2.addColorStop(0, "#7c3aed");
-  bg2.addColorStop(0.5, "#ff4d6d");
-  bg2.addColorStop(1, "#ff6b00");
-  ctx.fillStyle = bg2;
-  ctx.fillRect(0, H - 4, W, 4);
-}
-
 /* ── React component ── */
 export function ClashSquadResults({ tournamentName, results }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
   const sorted = [...results].sort((a, b) => {
     const pa = a.position ?? 999,
       pb = b.position ?? 999;
     if (pa !== pb) return pa - pb;
     return (b.kills ?? 0) - (a.kills ?? 0);
   });
-
-  useEffect(() => {
-    if (canvasRef.current && results.length > 0) {
-      drawCanvas(canvasRef.current, tournamentName, sorted);
-    }
-  }, [tournamentName, results]);
-
-  const handleDownload = () => {
-    if (!canvasRef.current) return;
-    const link = document.createElement("a");
-    link.download = `${tournamentName.replace(/\s+/g, "_")}_ClashSquad.png`;
-    link.href = canvasRef.current.toDataURL("image/png");
-    link.click();
-  };
 
   if (!results.length) {
     return (
@@ -383,21 +228,6 @@ export function ClashSquadResults({ tournamentName, results }: Props) {
           style={{ background: "linear-gradient(90deg,#7c3aed,#ff4d6d,#ff6b00)" }}
         />
       </div>
-
-      <canvas ref={canvasRef} style={{ display: "none" }} />
-
-      <button
-        onClick={handleDownload}
-        className="w-full h-11 rounded-2xl flex items-center justify-center gap-2 border text-sm font-black uppercase tracking-widest press-effect active:scale-95 transition-all"
-        style={{
-          background: "rgba(0,200,255,0.08)",
-          color: "#00c8ff",
-          borderColor: "rgba(0,200,255,0.25)",
-        }}
-      >
-        <Download className="w-4 h-4" />
-        Save Standings Image
-      </button>
     </div>
   );
 }
