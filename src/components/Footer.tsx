@@ -124,14 +124,7 @@ export function Footer() {
           </p>
           <p className="text-xs text-muted-foreground/80">
             Designed and Developed by{" "}
-            <span className="font-semibold text-foreground">Pratikk Yadav</span>
-            {" · "}
-            <a
-              href="mailto:partikyadav140@gmail.com"
-              className="hover:text-primary transition-colors"
-            >
-              partikyadav140@gmail.com
-            </a>
+            <span className="font-semibold text-foreground">RDX</span>
           </p>
         </div>
       </div>

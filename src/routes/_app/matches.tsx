@@ -634,7 +634,7 @@ function MatchCard({ m, i }: { m: any; i: number }) {
               <Link
                 to="/tournaments/$id"
                 params={{ id: String(m.id) }}
-                search={{}}
+                search={{ tab: undefined }}
                 className="flex-1"
               >
                 <button className="w-full h-10 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-border text-foreground bg-secondary press-effect active:scale-95 flex items-center justify-center gap-1">
@@ -753,7 +753,7 @@ function HistoryMatchCard({
             <Link
               to="/tournaments/$id"
               params={{ id: String(m.id) }}
-              search={{}}
+              search={{ tab: undefined }}
               className="flex-1"
             >
               <button className="w-full h-10 rounded-xl text-[10px] font-black uppercase tracking-widest border border-border text-foreground bg-secondary press-effect active:scale-95 flex items-center justify-center gap-1">
