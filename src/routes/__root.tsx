@@ -66,6 +66,7 @@ export const Route = createRootRoute({
         content: "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1",
       },
       { name: "google-site-verification", content: "1lzJttEC5fS02fFzJrv4p2FH67VPj33kfmciXQ0l6J8" },
+      { name: "google-adsense-account", content: "ca-pub-2553905112927103" },
       { name: "author", content: "ClutchGround" },
       { name: "theme-color", content: "#080c14" },
       { name: "application-name", content: "ClutchGround" },
