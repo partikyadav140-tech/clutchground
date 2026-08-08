@@ -249,6 +249,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
         <HeadContent />
         <link rel="manifest" href="/manifest.webmanifest" />
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2553905112927103" crossorigin="anonymous"></script>
         <script
           dangerouslySetInnerHTML={{
             __html: `
