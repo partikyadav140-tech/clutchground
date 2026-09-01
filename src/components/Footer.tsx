@@ -124,7 +124,10 @@ export function Footer() {
           </p>
           <p className="text-xs text-muted-foreground/80">
             Designed and Developed by{" "}
-            <span className="font-semibold text-foreground">RDX</span>
+            <span className="font-semibold text-foreground">Pratikk Yadav</span>{" "}
+            <a href="tel:+918307224756" className="hover:text-primary transition-colors">
+              +91 8307224756
+            </a>
           </p>
         </div>
       </div>
